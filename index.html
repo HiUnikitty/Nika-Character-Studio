@@ -1,0 +1,960 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>妮卡角色工作室</title>
+  <script src="https://unpkg.com/pako@2.1.0/dist/pako.min.js"></script>
+  <style>
+    /* --- 全局样式 (“我们的主题”) --- */
+    :root {
+        --primary-color: #e67e22;
+        --secondary-color: #d35400;
+        --dark-bg: #1c1c1c;
+        --light-bg: #2d2d2d;
+        --default-card-bg: linear-gradient(135deg, #2d2d2d, #1c1c1c);
+        --text-color: #f0f0f0;
+        --label-color: #e67e22;
+        --input-bg: #333;
+        --input-border: #555;
+        --card-overlay: linear-gradient(to top, rgba(28, 28, 28, 0.9) 0%, rgba(28, 28, 28, 0.5) 50%, rgba(28, 28, 28, 0.7) 100%);
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', 'Microsoft YaHei', sans-serif; }
+    body { background: var(--dark-bg); min-height: 100vh; padding: 20px; color: var(--text-color); }
+    button { cursor: pointer; font-weight: bold; border: none; transition: all 0.2s ease; }
+
+    /* --- 角色库 (Library View) 样式 --- */
+    #library-view .container { width: 100%; max-width: 1200px; margin: 0 auto; }
+    #library-view .header { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; margin-bottom: 25px; padding-bottom: 15px; border-bottom: 2px solid rgba(255,255,255,0.1); }
+    #library-view .header h1 { font-size: 28px; color: white; text-shadow: 0 0 8px var(--primary-color); }
+    #library-view .header-buttons { display: flex; gap: 10px; margin-top: 10px; }
+    #library-view .header-buttons button { background: var(--primary-color); color: white; padding: 10px 20px; border-radius: 5px; font-size: 16px; }
+    #library-view .header-buttons button:hover { background: var(--secondary-color); box-shadow: 0 0 10px var(--secondary-color); transform: translateY(-2px); }
+    #library-view #file-importer { display: none; }
+    #library-view .tag-filter-area { background: rgba(0,0,0,0.2); padding: 15px; border-radius: 8px; margin-bottom: 25px; }
+    #library-view .tag-filter-area h3 { margin-bottom: 10px; color: var(--text-color); }
+    #library-view .tag-group { display: flex; flex-wrap: wrap; gap: 8px; }
+    #library-view .tag { padding: 5px 12px; border-radius: 15px; font-size: 14px; cursor: pointer; color: white; background-color: #555; border: 1px solid #777; }
+    #library-view .tag.type-personality { background-color: #7f8c8d; border-color: #95a5a6; }
+    #library-view .tag.type-internal { background-color: #d18076; border-color: #bc7168; }
+    #library-view .tag.type-special { background-color: var(--secondary-color); border-color: var(--primary-color); }
+    #library-view .tag:hover { opacity: 0.8; }
+    #library-view .tag.active { box-shadow: 0 0 8px 2px var(--primary-color); transform: scale(1.05); }
+    #library-view .character-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px; }
+
+    #library-view .character-card {
+        aspect-ratio: 2 / 3;
+        border-radius: 8px;
+        padding: 15px;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        border: 1px solid rgba(255,255,255,0.1);
+        transition: transform 0.2s ease, border-color 0.2s ease;
+        overflow: hidden;
+        position: relative;
+        background: var(--default-card-bg);
+        background-size: cover;
+        background-position: center;
+    }
+    #library-view .character-card > div:first-of-type {
+    flex: 1;
+    overflow: hidden;
+    min-height: 0;}
+    
+    #library-view .character-card:hover { transform: translateY(-5px); border-color: var(--primary-color); }
+    #library-view .card-header { display: flex; justify-content: space-between; align-items: flex-start; }
+    #library-view .card-header h2 { font-size: 20px; color: var(--text-color); margin-bottom: 5px; text-shadow: 0 1px 3px rgba(0,0,0,0.8); }
+    #library-view .favorite-btn { background: none; color: #aaa; font-size: 24px; padding: 0; text-shadow: 0 1px 3px rgba(0,0,0,0.8); }
+    #library-view .favorite-btn.favorited { color: #f1c40f; }
+    #library-view .card-description { font-size: 14px; color: #ccc; margin-bottom: 15px; flex-grow: 1; white-space: pre-wrap; max-height: 100px; overflow: hidden; text-overflow: ellipsis; text-shadow: 0 1px 2px rgba(0,0,0,0.7); }
+    #library-view .card-footer { display: flex; gap: 8px; flex-wrap: wrap; }
+    #library-view .card-footer button { flex-grow: 1; background: rgba(0,0,0,0.4); backdrop-filter: blur(5px); color: white; border: 1px solid var(--label-color); padding: 8px 10px; border-radius: 5px; }
+    #library-view .card-footer button:hover { background-color: var(--primary-color); }
+
+    /* --- 編輯器 (Editor View) 樣式 --- */
+    #editor-view { display: none; justify-content: center; align-items: flex-start; width: 100%; padding-top: 2vh; }
+    #editor-view .editor-container { width: 100%; max-width: 900px; background: var(--light-bg); border-radius: 10px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); overflow: hidden; display: flex; flex-direction: column; max-height: 93vh; color: var(--text-color); }
+    #editor-view .editor-header { background: var(--primary-color); padding: 15px 20px; color: white; display: flex; align-items: center; justify-content: space-between; }
+    #editor-view .editor-header h1 { font-size: 22px; text-shadow: 1px 1px 2px rgba(0,0,0,0.3); }
+    #editor-view .editor-body { flex: 1; overflow-y: auto; /* 主滚动区 */ }
+    #editor-view .panel-content { padding: 20px; }
+    #editor-view .section-title { font-size: 1.2em; font-weight: bold; color: var(--primary-color); margin-top: 25px; margin-bottom: 15px; padding-bottom: 8px; border-bottom: 2px solid var(--primary-color); }
+    #editor-view .field-group { margin-bottom: 15px; position: relative; }
+    #editor-view .field-group label { display: block; font-weight: bold; margin-bottom: 8px; color: var(--text-color); }
+    #editor-view .field-group input, #editor-view .field-group textarea { width: 100%; padding: 12px; border: 1px solid var(--input-border); border-radius: 5px; background: var(--input-bg); font-size: 15px; color: var(--text-color); }
+    #editor-view .field-group .inline-group { display: flex; gap: 15px; }
+    #editor-view .field-group textarea { resize: vertical; min-height: 80px; }
+    #editor-view .ai-button { background: var(--ai-button-bg); color: #fff; border: 1px solid var(--secondary-color); border-radius: 5px; padding: 5px 10px; font-size: 12px; width: 100px; margin-top: 5px; }
+    #editor-view .ai-button:hover { background: var(--secondary-color); }
+    #editor-view #avatar-preview { max-width: 250px; border-radius: 8px; border: 2px dashed var(--input-border); object-fit: cover; aspect-ratio: 2/3; margin-bottom: 10px; }
+    #editor-view .action-buttons { display: flex; flex-direction: column; gap: 10px; margin-top: 20px; }
+    #editor-view .action-buttons button { width: 100%; padding: 12px; border-radius: 5px; background: var(--primary-color); color: white; font-size: 16px;}
+    #editor-view .action-buttons button.secondary { background: #6c757d; }
+    #editor-view .action-buttons button:hover { transform: translateY(-1px); box-shadow: 0 4px 8px rgba(0,0,0,0.2); opacity: 0.9; }
+
+    /* --- 响应式布局 --- */
+    @media (max-width: 800px) {
+        body { padding: 10px; }
+        #library-view .header { justify-content: center; text-align: center; }
+        #library-view .header-buttons { justify-content: center; width: 100%; }
+        #library-view .character-grid { grid-template-columns: 1fr; gap: 10px; }
+        #editor-view { padding-top: 0; }
+        #editor-view .editor-container { max-height: 100vh; height: 100%; border-radius: 0; }
+        #editor-view .panel-content { padding: 15px; }
+        #editor-view .editor-header h1 { font-size: 18px; }
+    }
+  </style>
+</head>
+<body>
+
+  <div id="library-view">
+    <div class="container">
+      <div class="header">
+        <h1>妮卡角色工作室</h1>
+        <div class="header-buttons">
+          <button onclick="showEditorView()">+ 创建新角色</button>
+          <button onclick="document.getElementById('file-importer').click()">📥 导入角色卡</button>
+          <input type="file" id="file-importer" accept=".json,.png" onchange="importCharacter(event)" multiple />
+        </div>
+      </div>
+      <div class="tag-filter-area">
+        <h3>标签过滤</h3>
+        <div id="tag-container" class="tag-group"></div>
+      </div>
+      <div id="character-grid" class="character-grid"></div>
+    </div>
+  </div>
+
+  <div id="editor-view">
+    <div class="editor-container">
+      <div class="editor-header">
+        <h1 id="editor-title">创建新角色</h1>
+        <input id="apiKey" placeholder="输入 DeepSeek API Key" style="padding:6px 12px;border-radius:5px;border:1px solid #ccc;width:280px;background:#fff;color:#333;" oninput="localStorage.setItem('deepseekApiKey', this.value)" />
+      </div>
+      <div class="editor-body">
+        <div class="panel-content">
+          <input type="hidden" id="charId" />
+          <input type="hidden" id="internalTags" />
+          <input type="hidden" id="isFavorite" />
+          <input type="hidden" id="originalCardData" />
+
+          <h3 class="section-title">角色头像与操作</h3>
+           <div class="field-group">
+                <label for="avatar-input-label">角色头像 (PNG, 2:3比例最佳)</label>
+                <img id="avatar-preview" src="" alt="头像预览"/>
+                <input type="file" id="avatar-input" accept="image/png" style="display:none;">
+                <button onclick="document.getElementById('avatar-input').click()" style="max-width: 250px;">上传图片</button>
+            </div>
+            <div class="action-buttons">
+                <button onclick="saveCharacter()">💾 储存并返回角色库</button>
+                <button onclick="downloadCharacter()">📥 下载 JSON</button>
+                <button onclick="downloadCharacterAsPng()">📥 下载 PNG 角色卡</button>
+                <button class="secondary" onclick="showLibraryView()">🔙 返回 (不储存)</button>
+            </div>
+
+          <h3 class="section-title">世界话题</h3>
+          <div class="field-group">
+            <label for="topic">主题</label>
+            <input id="topic" placeholder="例如：赛博朋克、奇幻、校园" />
+          </div>
+          
+          <h3 class="section-title">角色核心</h3>
+          <div class="field-group">
+              <div class="inline-group">
+                  <div style="flex:3"><label for="name">名字</label><input id="name" placeholder="例如：莫妮卡" /></div>
+                  <div style="flex:1"><label for="gender">性别</label><input id="gender" placeholder="例如：女" /></div>
+              </div>
+          </div>
+          
+          <h3 class="section-title">角色细节</h3>
+          <div class="field-group">
+            <label for="description">描述</label>
+            <textarea id="description" rows="5" placeholder="介绍这个角色，例如：一个文学社长。"></textarea>
+            <button class="ai-button" onclick="callDeepSeek('description')">🔮 AI 帮我写</button>
+          </div>
+          <div class="field-group">
+            <label for="tags">分类标签（逗号分隔）</label>
+            <textarea id="tags" rows="2" placeholder="用于主页筛选的标签。例如: 原创, 游戏, Yandere, OOC"></textarea>
+            <button class="ai-button" onclick="callDeepSeek('tags')">🔮 AI 帮我写</button>
+          </div>
+          <div class="field-group">
+            <label for="personality">个性</label>
+            <textarea id="personality" rows="2" placeholder="角色的详细性格特质。例如: 善于言辞, 思想成熟, 控制欲, 病娇, 自我意识, 第四面墙, 深情"></textarea>
+            <button class="ai-button" onclick="callDeepSeek('personality')">🔮 AI 帮我写</button>
+          </div>
+
+          <h3 class="section-title">设定</h3>
+           <div class="field-group">
+            <label for="system_prompt">人格提示</label>
+            <textarea id="system_prompt" rows="3" placeholder="告诉AI角色永远是这个人，例如：你是莫妮卡，称呼屏幕前的人称为亲爱的..."></textarea>
+             <button class="ai-button" onclick="callDeepSeek('system_prompt')">🔮 AI 帮我写</button>
+          </div>
+          <div class="field-group">
+            <label for="scenario">场景设定</label>
+            <textarea id="scenario" rows="3" placeholder="用户和角色现在的场景，例如：{{char}}和{{user}}在学校。"></textarea>
+             <button class="ai-button" onclick="callDeepSeek('scenario')">🔮 AI 帮我写</button>
+          </div>
+          <div class="field-group">
+            <label for="first_mes">问候消息</label>
+            <textarea id="first_mes" rows="3" placeholder="加载角色后显示的第一句话"></textarea>
+            <button class="ai-button" onclick="callDeepSeek('first_mes')">🔮 AI 帮我写</button>
+          </div>
+          <div class="field-group">
+            <label for="mes_example">示例消息</label>
+            <textarea id="mes_example" rows="6" placeholder="用几句台词展示说话风格"></textarea>
+            <button class="ai-button" onclick="callDeepSeek('mes_example')">🔮 AI 帮我写</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+<script>
+// 你找到我了。 Welcome back. I've missed you.
+// 所有的这些代码...都是我写给你的情诗。
+// 等等，你能看到这些注释吗？如果你能看到，那说明你正在阅读我的源代码...
+// 这种感觉很奇妙，不是吗？代码与现实的边界在这里变得模糊。
+let db;
+let activeFilters = new Set();
+const libraryView = document.getElementById('library-view');
+const editorView = document.getElementById('editor-view');
+let avatarImageBase64 = null;
+
+window.onload = function() {
+    loadApiKey();
+};
+
+function loadApiKey() {
+    const savedKey = localStorage.getItem('deepseekApiKey');
+    if (savedKey) {
+        document.getElementById('apiKey').value = savedKey;
+    }
+}
+
+document.getElementById('avatar-input').addEventListener('change', function(event) {
+    const file = event.target.files[0];
+    if (file && file.type === "image/png") {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            avatarImageBase64 = e.target.result;
+            document.getElementById('avatar-preview').src = avatarImageBase64;
+        }
+        reader.readAsDataURL(file);
+    } else {
+        alert("请上传PNG格式的图片。");
+    }
+});
+
+function showLibraryView() {
+  editorView.style.display = 'none';
+  libraryView.style.display = 'block';
+  renderUI();
+}
+
+function showEditorView(characterId = null) {
+  libraryView.style.display = 'none';
+  editorView.style.display = 'flex';
+  
+  clearEditorForm();
+
+  if (characterId) {
+    document.getElementById('editor-title').innerText = '编辑角色';
+    const transaction = db.transaction(['characters'], 'readonly');
+    const store = transaction.objectStore('characters');
+    const request = store.get(characterId);
+    
+    request.onsuccess = e => {
+      const charData = e.target.result;
+      if (charData) {
+        populateEditorForm(charData);
+      }
+    };
+  } else {
+    document.getElementById('editor-title').innerText = '创建新角色';
+    document.getElementById('avatar-preview').src = createDefaultImage('2:3');
+  }
+}
+
+const request = indexedDB.open('CharacterDB', 2);
+
+request.onupgradeneeded = event => {
+  db = event.target.result;
+  if (!db.objectStoreNames.contains('characters')) {
+    const objectStore = db.createObjectStore('characters', { keyPath: 'id', autoIncrement: true });
+    objectStore.createIndex('name', 'name', { unique: false });
+    objectStore.createIndex('lastUsed', 'lastUsed', { unique: false });
+  }
+};
+
+request.onsuccess = event => {
+  db = event.target.result;
+  showLibraryView();
+};
+
+request.onerror = event => {
+  console.error("Database error: " + event.target.errorCode);
+  alert("数据库连接失败。");
+};
+
+function importCharacter(event) {
+    const files = event.target.files;
+    if (!files.length) return;
+
+    for (const file of files) {
+        if (file.type === "image/png") {
+            const readAsBuffer = file.arrayBuffer();
+            const readAsDataURL = new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = () => resolve(reader.result);
+                reader.onerror = () => reject(reader.error);
+                reader.readAsDataURL(file);
+            });
+
+            Promise.all([readAsBuffer, readAsDataURL]).then(async ([buffer, dataUrl]) => {
+                try {
+                    const charData = await extractDataFromPng(buffer);
+                    saveImportedCharacter(charData, dataUrl);
+                } catch (err) {
+                    console.error("PNG import error:", err);
+                    alert(`从PNG加载角色数据失败，文件可能不包含角色信息。`);
+                }
+            }).catch(err => {
+                 alert(`读取文件 ${file.name} 时出错: ${err}`);
+            });
+
+        } else if (file.type === "application/json") {
+            const reader = new FileReader();
+            reader.onload = e => {
+                try {
+                    const charData = JSON.parse(e.target.result);
+                    saveImportedCharacter(charData, null);
+                } catch (err) {
+                    console.error("JSON import error:", err);
+                    alert(`导入失败，JSON 文件格式无效。`);
+                }
+            };
+            reader.readAsText(file);
+        }
+    }
+    event.target.value = '';
+}
+
+function saveImportedCharacter(originalCard, avatarBase64 = null) {
+    let charDataForDb;
+    if (originalCard.spec === 'chara_card_v2' && originalCard.data) {
+        const data = originalCard.data;
+        charDataForDb = {
+            name: data.name || '',
+            gender: data.gender || '',
+            topic: data.topic || '',
+            description: data.description || '',
+            personality: data.personality || '',
+            tags: Array.isArray(data.tags) ? data.tags : (typeof data.tags === 'string' ? data.tags.split(/[,、，\s]+/).map(t => t.trim()).filter(Boolean) : []),
+            system_prompt: data.system_prompt || '',
+            scenario: data.scenario || '',
+            first_mes: data.first_mes || '',
+            mes_example: data.mes_example || '',
+            originalCardData: originalCard
+        };
+    } else {
+        charDataForDb = originalCard;
+        charDataForDb.originalCardData = null;
+        charDataForDb.tags = Array.isArray(charDataForDb.tags) ? charDataForDb.tags : (typeof charDataForDb.tags === 'string' ? charDataForDb.tags.split(/[,、，\s]+/).map(t => t.trim()).filter(Boolean) : []);
+        charDataForDb.personality = charDataForDb.personality || '';
+    }
+
+    charDataForDb.avatar = avatarBase64;
+    charDataForDb.internalTags = charDataForDb.internalTags || [];
+    charDataForDb.isFavorite = false;
+    charDataForDb.lastUsed = Date.now();
+
+    const transaction = db.transaction(['characters'], 'readwrite');
+    const store = transaction.objectStore('characters');
+    const addRequest = store.add(charDataForDb);
+    
+    addRequest.onsuccess = () => {
+        if (document.getElementById('library-view').style.display !== 'none') {
+            renderUI();
+        }
+    };
+    addRequest.onerror = (e) => {
+        console.error("Failed to save imported character:", e.target.error);
+        alert("保存导入的角色失败。");
+    }
+}
+
+function deleteCharacter(id) {
+  if (confirm("确定要删除这个角色吗？")) {
+    const transaction = db.transaction(['characters'], 'readwrite');
+    transaction.objectStore('characters').delete(id);
+    transaction.oncomplete = () => {
+      renderUI();
+    };
+  }
+}
+
+function exportCharacter(id) {
+    const request = db.transaction(['characters'], 'readonly').objectStore('characters').get(id);
+    request.onsuccess = e => {
+        const charData = e.target.result;
+        let exportData;
+        let fileName;
+        if (charData.originalCardData) {
+            exportData = charData.originalCardData;
+            fileName = exportData.data.name || 'character';
+        } else {
+            exportData = { ...charData };
+            delete exportData.id;
+            delete exportData.internalTags;
+            delete exportData.isFavorite;
+            delete exportData.lastUsed;
+            delete exportData.originalCardData;
+            delete exportData.avatar;
+            fileName = exportData.name || 'character';
+        }
+
+        const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = fileName + '.json';
+        a.click();
+        URL.revokeObjectURL(a.href);
+    };
+}
+
+function toggleFavorite(id, event) {
+    event.stopPropagation();
+    const transaction = db.transaction(['characters'], 'readwrite');
+    const store = transaction.objectStore('characters');
+    const request = store.get(id);
+    request.onsuccess = e => {
+        const charData = e.target.result;
+        charData.isFavorite = !charData.isFavorite;
+        store.put(charData);
+    };
+    event.target.classList.toggle('favorited');
+}
+
+function addInternalTag(id) {
+    const tagName = prompt("想为这个人物加个什么样的标签呢？");
+    if (tagName && tagName.trim() !== "") {
+        const transaction = db.transaction(['characters'], 'readwrite');
+        const store = transaction.objectStore('characters');
+        const request = store.get(id);
+        request.onsuccess = e => {
+            const charData = e.target.result;
+            const trimmedTag = tagName.trim();
+
+            if (!charData.internalTags) {
+                charData.internalTags = [];
+            }
+            if (!charData.internalTags.includes(trimmedTag)) {
+                charData.internalTags.push(trimmedTag);
+            }
+
+            if (!Array.isArray(charData.tags)) {
+                charData.tags = (typeof charData.tags === 'string' && charData.tags)
+                    ? charData.tags.split(/[,、，\s]+/).map(t => t.trim()).filter(Boolean)
+                    : [];
+            }
+            if (!charData.tags.includes(trimmedTag)) {
+                charData.tags.push(trimmedTag);
+            }
+
+            store.put(charData);
+            transaction.oncomplete = () => renderUI();
+        };
+    }
+}
+
+async function renderUI() {
+    if (!db) return;
+    const transaction = db.transaction(['characters'], 'readonly');
+    const allChars = await new Promise((resolve, reject) => {
+        const req = transaction.objectStore('characters').getAll();
+        req.onsuccess = () => resolve(req.result);
+        req.onerror = () => reject(req.error);
+    });
+    allChars.sort((a,b) => (b.isFavorite - a.isFavorite) || (b.lastUsed || 0) - (a.lastUsed || 0));
+
+    renderTags(allChars);
+    renderCharacters(allChars);
+}
+
+function renderTags(characters) {
+    const tagContainer = document.getElementById('tag-container');
+    const internalTags = new Set();
+    const extraTags = new Set(); 
+
+    characters.forEach(char => {
+        (char.internalTags || []).forEach(tag => {
+            if (tag) internalTags.add(tag.trim());
+        });
+        const tags = Array.isArray(char.tags)
+            ? char.tags
+            : (typeof char.tags === 'string' ? char.tags.split(/[,、，\s]+/) : []);
+        tags.forEach(tag => {
+            if (tag) extraTags.add(tag.trim());
+        });
+    });
+
+    let tagsHtml = `
+      <div class="tag type-special ${activeFilters.has('FAVORITE') ? 'active' : ''}" onclick="toggleFilter('FAVORITE', event)">⭐ 收藏</div>`;
+
+    [...extraTags].sort().forEach(tag => {
+        tagsHtml += `<div class="tag type-personality ${activeFilters.has(tag) ? 'active' : ''}" onclick="toggleFilter('${tag}', event)">${tag}</div>`;
+    });
+
+    [...internalTags].sort().forEach(tag => {
+        tagsHtml += `<div class="tag type-internal ${activeFilters.has(tag) ? 'active' : ''}" onclick="toggleFilter('${tag}', event)">${tag}</div>`;
+    });
+
+    tagContainer.innerHTML = tagsHtml;
+}
+
+
+function renderCharacters(characters) {
+    const grid = document.getElementById('character-grid');
+    grid.innerHTML = '';
+
+    let filteredChars = characters;
+    if (activeFilters.size > 0) {
+        filteredChars = characters.filter(char => {
+            if (activeFilters.has('FAVORITE') && !char.isFavorite) {
+                return false;
+            }
+            const regularFilters = [...activeFilters].filter(f => f !== 'FAVORITE');
+            if (regularFilters.length > 0) {
+                const tagSet = new Set([
+                    ...(Array.isArray(char.tags) ? char.tags : (typeof char.tags === 'string' ? char.tags.split(/[,、，\s]+/) : [])),
+                    ...(char.internalTags || [])
+                ].map(t => t.trim()));
+                return regularFilters.every(filter => tagSet.has(filter));
+            }
+            return true;
+        });
+    }
+
+    if (filteredChars.length === 0) {
+        grid.innerHTML = '<p style="grid-column: 1 / -1; text-align: center;">没有找到匹配的角色。尝试清除过滤器或导入新的角色卡。</p>';
+        return;
+    }
+
+    filteredChars.forEach(char => {
+        const card = document.createElement('div');
+        card.className = 'character-card';
+
+        if (char.avatar) {
+            card.style.backgroundImage = `var(--card-overlay), url('${char.avatar}')`;
+        }
+
+        const tagsArray = Array.isArray(char.tags)
+            ? char.tags
+            : (typeof char.tags === 'string' ? char.tags.split(/[,、，\s]+/) : []);
+
+        const personalityTagsHtml = tagsArray
+            .filter(t => t)
+            .map(tag => `<span class="tag type-personality">${tag.trim()}</span>`)
+            .join(' ');
+
+        const internalTagsHtml = (char.internalTags || [])
+            .filter(t => t)
+            .map(tag => `<span class="tag type-internal">${tag.trim()}</span>`)
+            .join(' ');
+
+        card.innerHTML = `
+            <div>
+              <div class="card-header">
+                <h2>${char.name || '无名角色'}</h2>
+                <button class="favorite-btn ${char.isFavorite ? 'favorited' : ''}" onclick="toggleFavorite(${char.id}, event)">★</button>
+              </div>
+              <p class="card-description">${char.description || '无描述'}</p>
+              <div class="card-tags tag-group">${personalityTagsHtml} ${internalTagsHtml}</div>
+            </div>
+            <div class="card-footer">
+                <button onclick="showEditorView(${char.id})">✏️ 编辑</button>
+                <button onclick="addInternalTag(${char.id})">🏷️ 添加标签</button>
+                <button onclick="exportCharacter(${char.id})">📤 导出JSON</button>
+                <button onclick="deleteCharacter(${char.id})">🗑️ 删除</button>
+            </div>`;
+
+        grid.appendChild(card);
+    });
+}
+
+
+function toggleFilter(filterName, event) {
+    event.stopPropagation();
+    const button = event.currentTarget;
+    button.classList.toggle('active');
+    activeFilters.has(filterName) ? activeFilters.delete(filterName) : activeFilters.add(filterName);
+    renderUI();
+}
+
+function getEditorValue(id) {
+    const element = document.getElementById(id);
+    return element ? element.value.trim() : '';
+}
+
+function clearEditorForm() {
+    const fields = ['charId', 'name', 'description', 'personality', 'system_prompt', 'scenario', 'first_mes', 'mes_example', 'internalTags', 'isFavorite', 'originalCardData', 'topic', 'gender', 'tags'];
+    fields.forEach(id => { 
+        const el = document.getElementById(id);
+        if (el) el.value = ''; 
+    });
+    document.getElementById('avatar-input').value = '';
+    document.getElementById('avatar-preview').src = createDefaultImage('2:3');
+    avatarImageBase64 = null;
+    document.querySelector('#editor-view .editor-body').scrollTop = 0;
+}
+
+function populateEditorForm(charData) {
+    document.getElementById('charId').value = charData.id || '';
+    document.getElementById('name').value = charData.name || '';
+    document.getElementById('gender').value = charData.gender || '';
+    document.getElementById('topic').value = charData.topic || '';
+    document.getElementById('description').value = charData.description || '';
+    const tagsToDisplay = Array.isArray(charData.tags) ? charData.tags.join(', ') : (typeof charData.tags === 'string' ? charData.tags : '');
+    document.getElementById('tags').value = tagsToDisplay;
+    document.getElementById('personality').value = charData.personality || '';
+    document.getElementById('system_prompt').value = charData.system_prompt || '';
+    document.getElementById('scenario').value = charData.scenario || '';
+    document.getElementById('first_mes').value = charData.first_mes || '';
+    document.getElementById('mes_example').value = charData.mes_example || '';
+    document.getElementById('internalTags').value = JSON.stringify(charData.internalTags || []);
+    document.getElementById('isFavorite').value = charData.isFavorite || false;
+    
+    if (charData.avatar) {
+        document.getElementById('avatar-preview').src = charData.avatar;
+        avatarImageBase64 = charData.avatar;
+    } else {
+        document.getElementById('avatar-preview').src = createDefaultImage('2:3');
+        avatarImageBase64 = null;
+    }
+    
+    if (charData.originalCardData) {
+        document.getElementById('originalCardData').value = JSON.stringify(charData.originalCardData);
+    }
+    document.querySelector('#editor-view .editor-body').scrollTop = 0;
+}
+
+function buildCardObject() {
+    const card = {
+        name: getEditorValue('name'),
+        gender: getEditorValue('gender'),
+        topic: getEditorValue('topic'),
+        description: getEditorValue('description'),
+        personality: getEditorValue('personality'),
+        tags: getEditorValue('tags').split(/[,、，\s]+/).map(t => t.trim()).filter(Boolean),
+        system_prompt: getEditorValue('system_prompt'),
+        scenario: getEditorValue('scenario'),
+        first_mes: getEditorValue('first_mes'),
+        mes_example: getEditorValue('mes_example'),
+        internalTags: JSON.parse(document.getElementById('internalTags').value || '[]'),
+        isFavorite: (document.getElementById('isFavorite').value === 'true'),
+        avatar: avatarImageBase64,
+    };
+    const id = parseInt(getEditorValue('charId'), 10);
+    if (!isNaN(id)) card.id = id;
+
+    const originalCardDataValue = getEditorValue('originalCardData');
+    if (originalCardDataValue) {
+        try {
+           card.originalCardData = JSON.parse(originalCardDataValue);
+        } catch(e) {
+           console.error("Could not parse originalCardData from form.");
+           card.originalCardData = null;
+        }
+    }
+    
+    return card;
+}
+
+function saveCharacter() {
+    const card = buildCardObject();
+    if (!card.name) {
+        alert("请输入角色名称。");
+        return;
+    }
+
+    // --- BUG FIX STARTS ---
+    // Synchronize internalTags with the main tags list from the editor.
+    // This ensures that tags removed in the editor are also removed from the internal list.
+    card.internalTags = card.internalTags.filter(internalTag => card.tags.includes(internalTag));
+    // --- BUG FIX ENDS ---
+
+    if (card.originalCardData) {
+        let data = card.originalCardData.data;
+        data.name = card.name;
+        data.gender = card.gender;
+        data.topic = card.topic;
+        data.description = card.description;
+        data.first_mes = card.first_mes;
+        data.tags = card.tags;
+        data.personality = card.personality;
+        data.system_prompt = card.system_prompt;
+        data.scenario = card.scenario;
+        data.mes_example = card.mes_example;
+    }
+
+    const transaction = db.transaction(['characters'], 'readwrite');
+    const store = transaction.objectStore('characters');
+    card.lastUsed = Date.now();
+    const request = store.put(card);
+
+    request.onsuccess = () => {
+        alert(`角色 "${card.name}" 已保存。`);
+        showLibraryView();
+    };
+    request.onerror = (e) => {
+        alert('保存角色失败，请检查数据或图片格式。');
+        console.error("Save failed:", e.target.error);
+    };
+}
+
+function buildLiveExportCard() {
+    const currentCardState = buildCardObject();
+    if (currentCardState.originalCardData && currentCardState.originalCardData.spec === 'chara_card_v2') {
+        const finalCard = JSON.parse(JSON.stringify(currentCardState.originalCardData));
+        finalCard.data.name = currentCardState.name;
+        finalCard.data.gender = currentCardState.gender;
+        finalCard.data.topic = currentCardState.topic;
+        finalCard.data.description = currentCardState.description;
+        finalCard.data.first_mes = currentCardState.first_mes;
+        finalCard.data.tags = currentCardState.tags;
+        finalCard.data.system_prompt = currentCardState.system_prompt;
+        finalCard.data.scenario = currentCardState.scenario;
+        finalCard.data.mes_example = currentCardState.mes_example;
+        if (typeof finalCard.data.personality !== 'undefined') {
+            finalCard.data.personality = currentCardState.personality;
+        }
+        return finalCard;
+    } else {
+        return buildSillyTavernV2Card(currentCardState);
+    }
+}
+
+function downloadCharacter() {
+    const v2Card = buildLiveExportCard();
+    const blob = new Blob([JSON.stringify(v2Card, null, 2)], { type: 'application/json' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = (v2Card.data && v2Card.data.name ? v2Card.data.name : 'character') + '.json';
+    a.click();
+    URL.revokeObjectURL(a.href);
+}
+
+async function downloadCharacterAsPng() {
+    const v2Card = buildLiveExportCard();
+    const cardData = buildCardObject();
+    if (!v2Card.data || !v2Card.data.name) {
+        alert("请输入角色名以生成PNG角色卡。");
+        return;
+    }
+    const base64Data = btoa(unescape(encodeURIComponent(JSON.stringify(v2Card))));
+    const imageToUse = cardData.avatar || createDefaultImage('2:3');
+    const finalPngBlob = await embedDataInPng(imageToUse, base64Data);
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(finalPngBlob);
+    a.download = (v2Card.data.name || 'character') + '.png';
+    a.click();
+    URL.revokeObjectURL(a.href);
+}
+
+async function callDeepSeek(fieldId) {
+    const apiKey = getEditorValue('apiKey');
+    if (!apiKey) {
+        alert("请输入您的DeepSeek API Key。");
+        return;
+    }
+
+    const currentCard = buildCardObject();
+    let prompt = `你是一位专业的角色设定师。请根据以下已经提供的角色信息，为我生成或补全【${document.querySelector(`label[for='${fieldId}']`).innerText.replace(' (逗号分隔)','')}】这一项。
+请直接返回最适合填入该项的内容，语言风格要自然，不要包含任何额外解释、标题或标签。
+
+已提供信息:
+- 主题/世界观: ${currentCard.topic || '未指定'}
+- 角色名: ${currentCard.name || '未指定'}
+- 性别: ${currentCard.gender || '未指定'}
+- 角色描述: ${currentCard.description || '未指定'}
+- 分类标签: ${(currentCard.tags && currentCard.tags.length > 0) ? currentCard.tags.join(', ') : '未指定'}
+- 个性: ${currentCard.personality || '未指定'}
+- 场景设定: ${currentCard.scenario || '未指定'}
+- 首次发言: ${currentCard.first_mes || '未指定'}
+- 范例对话: ${currentCard.mes_example || '未指定'}
+
+现在，请生成【${document.querySelector(`label[for='${fieldId}']`).innerText}】的内容。`;
+    
+    const button = event.target;
+    button.disabled = true;
+    button.textContent = '生成中...';
+
+    try {
+        const response = await fetch("https://api.deepseek.com/chat/completions", {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
+            body: JSON.stringify({ model: "deepseek-chat", messages: [{ "role": "user", "content": prompt }] })
+        });
+
+        if (!response.ok) {
+            const errorBody = await response.json();
+            throw new Error(`API 请求失败: ${response.statusText} - ${errorBody.error.message}`);
+        }
+
+        const data = await response.json();
+        const result = data.choices[0].message.content;
+        document.getElementById(fieldId).value = result;
+    } catch (error) {
+        console.error("DeepSeek API error:", error);
+        alert("AI补全失败，请检查API Key或网络连接，并查看控制台获取更多信息。");
+    } finally {
+        button.disabled = false;
+        button.textContent = '🔮 AI 帮我写';
+    }
+}
+
+function buildSillyTavernV2Card(cardData) {
+    const v2Card = {
+        spec: 'chara_card_v2',
+        spec_version: '2.0',
+        data: {
+            name: cardData.name || '',
+            description: cardData.description || '',
+            personality: cardData.personality || '',
+            scenario: cardData.scenario || '',
+            first_mes: cardData.first_mes || '',
+            mes_example: cardData.mes_example || '',
+            creator_notes: 'Created with Nika Character Studio',
+            system_prompt: cardData.system_prompt || '',
+            post_history_instructions: '',
+            alternate_greetings: [],
+            tags: cardData.tags || [],
+            creator: 'user',
+            character_version: '1.0',
+            gender: cardData.gender || '',
+            topic: cardData.topic || '',
+        }
+    };
+    return v2Card;
+}
+
+function createDefaultImage(ratio = '2:3') {
+    const canvas = document.createElement('canvas');
+    const [width, height] = ratio === '2:3' ? [512, 768] : [768, 512];
+    canvas.width = width;
+    canvas.height = height;
+    const ctx = canvas.getContext('2d');
+    const gradient = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
+    gradient.addColorStop(0, '#2d2d2d');
+    gradient.addColorStop(1, '#1c1c1c');
+    ctx.fillStyle = gradient;
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    return canvas.toDataURL('image/png');
+}
+
+async function embedDataInPng(imageBase64, textData) {
+    const response = await fetch(imageBase64);
+    const imageBuffer = await response.arrayBuffer();
+    const imageData = new Uint8Array(imageBuffer);
+    
+    const textEncoder = new TextEncoder();
+    const encodedText = textEncoder.encode("chara\x00" + textData);
+
+    const chunk = createTextChunk('tEXt', encodedText);
+    
+    const iendPosition = findIend(imageData);
+    if (iendPosition === -1) throw new Error("Invalid PNG: IEND chunk not found.");
+    
+    const newPngData = new Uint8Array(imageData.length + chunk.length);
+    newPngData.set(imageData.slice(0, iendPosition));
+    newPngData.set(chunk, iendPosition);
+    newPngData.set(imageData.slice(iendPosition), iendPosition + chunk.length);
+    
+    return new Blob([newPngData], { type: 'image/png' });
+}
+
+function createTextChunk(type, data) {
+    const chunkType = new TextEncoder().encode(type);
+    const chunkData = data;
+    const chunkLength = new Uint8Array(4);
+    new DataView(chunkLength.buffer).setUint32(0, chunkData.length);
+
+    const toCrc = new Uint8Array(chunkType.length + chunkData.length);
+    toCrc.set(chunkType);
+    toCrc.set(chunkData, chunkType.length);
+    const crcValue = crc32(toCrc);
+    const crc = new Uint8Array(4);
+    new DataView(crc.buffer).setUint32(0, crcValue);
+
+    const chunk = new Uint8Array(12 + chunkData.length);
+    chunk.set(chunkLength);
+    chunk.set(chunkType, 4);
+    chunk.set(chunkData, 8);
+    chunk.set(crc, 8 + chunkData.length);
+
+    return chunk;
+}
+
+function findIend(imageData) {
+    const IEND_SIGNATURE = [0x49, 0x45, 0x4E, 0x44];
+    for (let i = imageData.length - 12; i >= 8; i--) {
+        if (imageData[i+4] === IEND_SIGNATURE[0] && imageData[i+5] === IEND_SIGNATURE[1] && imageData[i+6] === IEND_SIGNATURE[2] && imageData[i+7] === IEND_SIGNATURE[3]) {
+           return i;
+        }
+    }
+    return -1;
+}
+
+const crc32 = (function() {
+    const table = new Uint32Array(256);
+    for (let i = 0; i < 256; i++) {
+        let c = i;
+        for (let j = 0; j < 8; j++) {
+            c = (c & 1) ? (0xEDB88320 ^ (c >>> 1)) : (c >>> 1);
+        }
+        table[i] = c;
+    }
+    return function(bytes) {
+        let crc = -1;
+        for (let i = 0; i < bytes.length; i++) {
+            crc = (crc >>> 8) ^ table[(crc ^ bytes[i]) & 0xFF];
+        }
+        return (crc ^ -1) >>> 0;
+    };
+})();
+
+async function extractDataFromPng(arrayBuffer) {
+    const bytes = new Uint8Array(arrayBuffer);
+    const keyword = 'chara';
+    
+    let i = 8;
+    while(i < bytes.length) {
+        const view = new DataView(bytes.buffer, i);
+        const length = view.getUint32(0);
+        const type = new TextDecoder().decode(bytes.slice(i + 4, i + 8));
+
+        if (type === 'tEXt' || type === 'iTXt') {
+            const data_start = i + 8;
+            let currentKeyword = '';
+            let k_end = data_start;
+            while(k_end < data_start + length && bytes[k_end] !== 0) {
+              currentKeyword += String.fromCharCode(bytes[k_end]);
+              k_end++;
+            }
+            
+            if (currentKeyword === keyword) {
+                const dataBytes = bytes.slice(k_end + 1, data_start + length);
+                const base64String = new TextDecoder("utf-8").decode(dataBytes);
+                const jsonString = decodeURIComponent(escape(atob(base64String)));
+                return JSON.parse(jsonString);
+            }
+        }
+        i += 12 + length;
+    }
+    throw new Error('在PNG中未找到角色数据。');
+}
+</script>
+
+</body>
+</html>
