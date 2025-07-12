@@ -3,6 +3,7 @@
 一个优雅的AI角色卡管理系统，专为ST角色创作和管理而设计。
 
 > **多语言支持**: This document is available in Chinese and English.
+> [Jump to English Version](#englsih-version)
 
 ---
 
