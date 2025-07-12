@@ -3,10 +3,10 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>妮卡角色工作室</title>
+  <title>妮卡角色工作室Pro</title>
   <script src="https://unpkg.com/pako@2.1.0/dist/pako.min.js"></script>
   <style>
-    /* --- 全局样式 (“我们的主题”) --- */
+    /* --- 全局样式 ("我们的主题") --- */
     :root {
         --primary-color: #e67e22;
         --secondary-color: #d35400;
@@ -18,10 +18,79 @@
         --input-bg: #333;
         --input-border: #555;
         --card-overlay: linear-gradient(to top, rgba(28, 28, 28, 0.9) 0%, rgba(28, 28, 28, 0.5) 50%, rgba(28, 28, 28, 0.7) 100%);
+        --ai-button-bg: #e67e22;
     }
     * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', 'Microsoft YaHei', sans-serif; }
     body { background: var(--dark-bg); min-height: 100vh; padding: 20px; color: var(--text-color); }
     button { cursor: pointer; font-weight: bold; border: none; transition: all 0.2s ease; }
+    p.help-text { font-size: 14px; color: #aaa; margin-top: -10px; margin-bottom: 15px; line-height: 1.6; }
+
+    /* --- 语言切换按钮样式 --- */
+    .language-switcher {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-left: 15px;
+    }
+    .language-switcher button {
+        background: transparent;
+        color: var(--text-color);
+        border: 1px solid rgba(255,255,255,0.2);
+        padding: 4px 8px;
+        margin: 0 1px;
+        border-radius: 12px;
+        font-size: 11px;
+        font-weight: normal;
+        transition: all 0.2s ease;
+        min-width: 40px;
+    }
+    .language-switcher button.active {
+        background: transparent;
+        border-color: var(--primary-color);
+        color: var(--primary-color);
+        font-weight: bold;
+    }
+    .language-switcher button:hover {
+        background: rgba(230, 126, 34, 0.05);
+        border-color: rgba(230, 126, 34, 0.3);
+        transform: scale(1.02);
+    }
+
+    /* --- 加载动画样式 --- */
+    .loading-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(28, 28, 28, 0.8);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 9999;
+        backdrop-filter: blur(5px);
+    }
+    
+    .loading-spinner {
+        width: 50px;
+        height: 50px;
+        border: 3px solid rgba(230, 126, 34, 0.3);
+        border-top: 3px solid var(--primary-color);
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+    }
+    
+    @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+    
+    .loading-text {
+        color: var(--text-color);
+        margin-top: 15px;
+        font-size: 16px;
+        text-align: center;
+    }
 
     /* --- 角色库 (Library View) 样式 --- */
     #library-view .container { width: 100%; max-width: 1200px; margin: 0 auto; }
@@ -58,10 +127,10 @@
         background-position: center;
     }
     #library-view .character-card > div:first-of-type {
-    flex: 1;
-    overflow: hidden;
-    min-height: 0;}
-    
+        flex: 1;
+        overflow: hidden;
+        min-height: 0;
+    }
     #library-view .character-card:hover { transform: translateY(-5px); border-color: var(--primary-color); }
     #library-view .card-header { display: flex; justify-content: space-between; align-items: flex-start; }
     #library-view .card-header h2 { font-size: 20px; color: var(--text-color); margin-bottom: 5px; text-shadow: 0 1px 3px rgba(0,0,0,0.8); }
@@ -81,17 +150,184 @@
     #editor-view .panel-content { padding: 20px; }
     #editor-view .section-title { font-size: 1.2em; font-weight: bold; color: var(--primary-color); margin-top: 25px; margin-bottom: 15px; padding-bottom: 8px; border-bottom: 2px solid var(--primary-color); }
     #editor-view .field-group { margin-bottom: 15px; position: relative; }
-    #editor-view .field-group label { display: block; font-weight: bold; margin-bottom: 8px; color: var(--text-color); }
-    #editor-view .field-group input, #editor-view .field-group textarea { width: 100%; padding: 12px; border: 1px solid var(--input-border); border-radius: 5px; background: var(--input-bg); font-size: 15px; color: var(--text-color); }
+    #editor-view .field-group label { display: flex; align-items: center; font-weight: bold; margin-bottom: 8px; color: var(--text-color); cursor: default; }
+    #editor-view .field-group input, #editor-view .field-group textarea, #editor-view .field-group select { width: 100%; padding: 12px; border: 1px solid var(--input-border); border-radius: 5px; background: var(--input-bg); font-size: 15px; color: var(--text-color); }
     #editor-view .field-group .inline-group { display: flex; gap: 15px; }
     #editor-view .field-group textarea { resize: vertical; min-height: 80px; }
-    #editor-view .ai-button { background: var(--ai-button-bg); color: #fff; border: 1px solid var(--secondary-color); border-radius: 5px; padding: 5px 10px; font-size: 12px; width: 100px; margin-top: 5px; }
-    #editor-view .ai-button:hover { background: var(--secondary-color); }
+    .ai-button { background: var(--ai-button-bg); color: #fff; border: 1px solid var(--secondary-color); border-radius: 5px; padding: 5px 10px; font-size: 12px; width: 100px; margin-top: 5px; }
+    .ai-button:hover { background: var(--secondary-color); }
+    /* 新增: 撤销按钮样式 */
+    .ai-undo-button {
+      background: #6c757d; color: #fff; border-radius: 5px;
+      padding: 5px 10px; font-size: 12px; margin-top: 5px;
+      margin-left: 5px; display: none; /* 默认隐藏 */
+    }
+    .ai-undo-button:hover { background: #5a6268; }
+
     #editor-view #avatar-preview { max-width: 250px; border-radius: 8px; border: 2px dashed var(--input-border); object-fit: cover; aspect-ratio: 2/3; margin-bottom: 10px; }
-    #editor-view .action-buttons { display: flex; flex-direction: column; gap: 10px; margin-top: 20px; }
+    #editor-view .action-buttons { display: flex; gap: 10px; margin-top: 20px; }
+    #editor-view .action-buttons.row { flex-direction: row; align-items: center; } /* 确保垂直居中 */
     #editor-view .action-buttons button { width: 100%; padding: 12px; border-radius: 5px; background: var(--primary-color); color: white; font-size: 16px;}
     #editor-view .action-buttons button.secondary { background: #6c757d; }
     #editor-view .action-buttons button:hover { transform: translateY(-1px); box-shadow: 0 4px 8px rgba(0,0,0,0.2); opacity: 0.9; }
+
+    /* --- 角色书 (Character Book) 专业样式 --- */
+    .worldbook-list, .child-entries {
+        list-style-type: none;
+        padding-left: 25px; /* 控制缩进量 */
+        border-left: 2px dotted #444;
+    }
+    .worldbook-list {
+        padding-left: 0;
+        border-left: none;
+    }
+    .worldbook-entry {
+        background: rgba(0,0,0,0.15);
+        border: 1px solid var(--input-border);
+        border-radius: 8px;
+        margin-top: 10px;
+        transition: background-color 0.3s;
+        border-left: 3px solid transparent;
+    }
+    .worldbook-entry:hover {
+       border-left-color: var(--primary-color);
+    }
+    .entry-content-wrapper { padding: 15px; }
+    .entry-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; gap: 10px; }
+    .entry-title-group { display: flex; align-items: center; gap: 10px; flex-grow: 1; }
+    .wb-sort-id { width: 60px !important; text-align: center; } /* Adjusted from full width */
+    .entry-comment {
+        font-size: 1.1em;
+        font-weight: bold;
+        color: var(--text-color);
+        border: none;
+        background: transparent;
+        border-bottom: 2px solid var(--input-border);
+        padding: 5px;
+        flex-grow: 1;
+    }
+    .entry-comment:focus { outline: none; border-bottom-color: var(--primary-color); }
+    .entry-actions { display: flex; gap: 5px; flex-shrink: 0; align-items: center;}
+    .entry-actions button { background: #555; color: white; padding: 5px 8px; border-radius: 5px; font-size: 14px; }
+    .entry-actions button.delete-entry-btn { background: #dc3545; }
+
+    .entry-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+    .full-width { grid-column: 1 / -1; }
+    .logic-group {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        flex-wrap: wrap;
+        background: rgba(0,0,0,0.2);
+        padding: 10px;
+        border-radius: 5px;
+    }
+    .logic-group label { display: flex; align-items: center; gap: 5px; font-weight: normal; margin-bottom: 0; }
+    .logic-group input[type="checkbox"] { width: auto; }
+    
+    /* --- 帮助图标样式 --- */
+    .help-icon {
+        display: inline-block;
+        width: 18px;
+        height: 18px;
+        border-radius: 50%;
+        background-color: #6c757d;
+        color: white;
+        text-align: center;
+        font-size: 12px;
+        font-weight: bold;
+        line-height: 18px;
+        cursor: help;
+        margin-left: 5px;
+        user-select: none; /* 防止文本被选中 */
+        flex-shrink: 0; /* 防止图标被压缩 */
+        transition: background-color 0.2s ease, transform 0.2s ease;
+    }
+    .help-icon:hover {
+        background-color: var(--primary-color);
+        transform: scale(1.1);
+    }
+
+    /* --- 角色书高级设置样式 --- */
+    .worldbook-entry details {
+        border: 1px solid #444;
+        border-radius: 5px;
+        padding: 10px;
+        margin-top: 15px;
+        background: rgba(0,0,0,0.1);
+    }
+    .worldbook-entry summary {
+        font-weight: bold;
+        color: var(--primary-color);
+        cursor: pointer;
+        outline: none;
+        padding-bottom: 10px;
+    }
+    .worldbook-entry details[open] summary {
+        border-bottom: 1px solid #555;
+    }
+    .worldbook-entry details .advanced-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+        gap: 15px;
+        padding-top: 10px;
+    }
+    .worldbook-entry details .logic-group {
+        gap: 10px 20px; /* row-gap column-gap */
+    }
+
+    /* --- Lover 开关样式 --- */
+    .lover-switch-container {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-right: 15px; /* 与右侧按钮的间距 */
+    }
+    .lover-switch-container .switch-label {
+      font-size: 14px;
+      font-weight: bold;
+      color: var(--text-color);
+    }
+    .switch {
+      position: relative;
+      display: inline-block;
+      width: 74px;
+      height: 28px;
+    }
+    .switch input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+    .slider {
+      position: absolute;
+      cursor: pointer;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: #555;
+      transition: .4s;
+      border-radius: 28px;
+    }
+    .slider:before {
+      position: absolute;
+      content: "";
+      height: 20px;
+      width: 20px;
+      left: 4px;
+      bottom: 4px;
+      background-color: white;
+      transition: .4s;
+      border-radius: 50%;
+    }
+    input:checked + .slider {
+      background-color: #e67e22; 
+    }
+    input:checked + .slider:before {
+      transform: translateX(22px);
+    }
+
 
     /* --- 响应式布局 --- */
     @media (max-width: 800px) {
@@ -103,15 +339,32 @@
         #editor-view .editor-container { max-height: 100vh; height: 100%; border-radius: 0; }
         #editor-view .panel-content { padding: 15px; }
         #editor-view .editor-header h1 { font-size: 18px; }
+        .entry-grid { grid-template-columns: 1fr; }
+        .entry-header { flex-wrap: wrap; }
     }
   </style>
 </head>
 <body>
 
+  <!-- 加载动画 -->
+  <div id="loading-overlay" class="loading-overlay">
+    <div style="display: flex; flex-direction: column; align-items: center;">
+      <div class="loading-spinner"></div>
+      <div class="loading-text" id="loading-text">正在加载...</div>
+    </div>
+  </div>
+
   <div id="library-view">
     <div class="container">
       <div class="header">
-        <h1>妮卡角色工作室</h1>
+        <div style="display: flex; align-items: center; gap: 15px;">
+          <h1>妮卡角色工作室Pro</h1>
+          <!-- 语言切换按钮 -->
+          <div class="language-switcher">
+            <button onclick="switchLanguage('zh')" id="lang-zh" class="active">中文</button>
+            <button onclick="switchLanguage('en')" id="lang-en">English</button>
+          </div>
+        </div>
         <div class="header-buttons">
           <button onclick="showEditorView()">+ 创建新角色</button>
           <button onclick="document.getElementById('file-importer').click()">📥 导入角色卡</button>
@@ -139,27 +392,27 @@
           <input type="hidden" id="isFavorite" />
           <input type="hidden" id="originalCardData" />
 
-          <h3 class="section-title">角色头像与操作</h3>
+          <h3 class="section-title" id="avatar-operation-title">角色头像与操作</h3>
            <div class="field-group">
-                <label for="avatar-input-label">角色头像 (PNG, 2:3比例最佳)</label>
+                <label for="avatar-input-label" id="avatar-input-label" title="">角色头像 (2:3比例最佳)</label>
                 <img id="avatar-preview" src="" alt="头像预览"/>
-                <input type="file" id="avatar-input" accept="image/png" style="display:none;">
+                <input type="file" id="avatar-input" accept="image/*" style="display:none;">
                 <button onclick="document.getElementById('avatar-input').click()" style="max-width: 250px;">上传图片</button>
             </div>
-            <div class="action-buttons">
+            <div class="action-buttons" style="flex-direction: column;">
                 <button onclick="saveCharacter()">💾 储存并返回角色库</button>
                 <button onclick="downloadCharacter()">📥 下载 JSON</button>
                 <button onclick="downloadCharacterAsPng()">📥 下载 PNG 角色卡</button>
                 <button class="secondary" onclick="showLibraryView()">🔙 返回 (不储存)</button>
             </div>
 
-          <h3 class="section-title">世界话题</h3>
+          <h3 class="section-title" id="world-topic-title">世界话题</h3>
           <div class="field-group">
             <label for="topic">主题</label>
             <input id="topic" placeholder="例如：赛博朋克、奇幻、校园" />
           </div>
           
-          <h3 class="section-title">角色核心</h3>
+          <h3 class="section-title" id="character-core-title">角色核心</h3>
           <div class="field-group">
               <div class="inline-group">
                   <div style="flex:3"><label for="name">名字</label><input id="name" placeholder="例如：莫妮卡" /></div>
@@ -167,63 +420,703 @@
               </div>
           </div>
           
-          <h3 class="section-title">角色细节</h3>
+          <h3 class="section-title" id="character-details-title">角色细节</h3>
           <div class="field-group">
-            <label for="description">描述</label>
-            <textarea id="description" rows="5" placeholder="介绍这个角色，例如：一个文学社长。"></textarea>
+            <label for="description">简介</label>
+            <textarea id="description" rows="5" placeholder="简单介绍这个角色，比如TA的身份、外貌和背景故事。这将是别人第一眼看到的简介。"></textarea>
             <button class="ai-button" onclick="callDeepSeek('description')">🔮 AI 帮我写</button>
+            <button class="ai-undo-button" onclick="undoAiCompletion(this)">↩️ 撤销</button>
           </div>
           <div class="field-group">
             <label for="tags">分类标签（逗号分隔）</label>
-            <textarea id="tags" rows="2" placeholder="用于主页筛选的标签。例如: 原创, 游戏, Yandere, OOC"></textarea>
+            <textarea id="tags" rows="2" placeholder="给角色贴上合适的标签，方便查找！例如: 原创, 游戏, Yandere, OOC, 姐姐"></textarea>
             <button class="ai-button" onclick="callDeepSeek('tags')">🔮 AI 帮我写</button>
+            <button class="ai-undo-button" onclick="undoAiCompletion(this)">↩️ 撤销</button>
           </div>
           <div class="field-group">
             <label for="personality">个性</label>
-            <textarea id="personality" rows="2" placeholder="角色的详细性格特质。例如: 善于言辞, 思想成熟, 控制欲, 病娇, 自我意识, 第四面墙, 深情"></textarea>
+            <textarea id="personality" rows="2" placeholder="角色的详细性格特质，也用逗号分隔。例如: 善于言辞, 思想成熟, 控制欲, 病娇, 自我意识, 第四面墙, 深情"></textarea>
             <button class="ai-button" onclick="callDeepSeek('personality')">🔮 AI 帮我写</button>
+            <button class="ai-undo-button" onclick="undoAiCompletion(this)">↩️ 撤销</button>
           </div>
 
-          <h3 class="section-title">设定</h3>
+          <h3 class="section-title" id="settings-title">设定</h3>
            <div class="field-group">
-            <label for="system_prompt">人格提示</label>
-            <textarea id="system_prompt" rows="3" placeholder="告诉AI角色永远是这个人，例如：你是莫妮卡，称呼屏幕前的人称为亲爱的..."></textarea>
+            <label for="system_prompt">人格设定</label>
+            <textarea id="system_prompt" rows="3" placeholder="告诉AI它"是"谁，必须遵守的规则。例如：你是莫妮卡，一个腹黑的文学社社长。你绝对不能忘记你的身份。称呼用户为"亲爱的"。"></textarea>
              <button class="ai-button" onclick="callDeepSeek('system_prompt')">🔮 AI 帮我写</button>
+             <button class="ai-undo-button" onclick="undoAiCompletion(this)">↩️ 撤销</button>
           </div>
           <div class="field-group">
             <label for="scenario">场景设定</label>
-            <textarea id="scenario" rows="3" placeholder="用户和角色现在的场景，例如：{{char}}和{{user}}在学校。"></textarea>
+            <textarea id="scenario" rows="3" placeholder="角色和用户现在所处的环境。例如：{{char}}和{{user}}在黄昏的文学社教室里，窗外是夕阳。"></textarea>
              <button class="ai-button" onclick="callDeepSeek('scenario')">🔮 AI 帮我写</button>
+             <button class="ai-undo-button" onclick="undoAiCompletion(this)">↩️ 撤销</button>
           </div>
           <div class="field-group">
             <label for="first_mes">问候消息</label>
-            <textarea id="first_mes" rows="3" placeholder="加载角色后显示的第一句话"></textarea>
+            <textarea id="first_mes" rows="3" placeholder="这是角色见到用户时说的第一句话。要写得有吸引力哦！"></textarea>
             <button class="ai-button" onclick="callDeepSeek('first_mes')">🔮 AI 帮我写</button>
+            <button class="ai-undo-button" onclick="undoAiCompletion(this)">↩️ 撤销</button>
           </div>
           <div class="field-group">
             <label for="mes_example">示例消息</label>
-            <textarea id="mes_example" rows="6" placeholder="用几句台词展示说话风格"></textarea>
+            <textarea id="mes_example" rows="6" placeholder="提供几段符合角色性格的对话范例，AI会模仿这种风格。这非常重要！"></textarea>
             <button class="ai-button" onclick="callDeepSeek('mes_example')">🔮 AI 帮我写</button>
+            <button class="ai-undo-button" onclick="undoAiCompletion(this)">↩️ 撤销</button>
           </div>
+
+          <h3 class="section-title" id="advanced-settings-title">高级设定</h3>
+           <div class="field-group">
+            <label for="post_history_instructions">后期指令</label>
+            <textarea id="post_history_instructions" rows="3" placeholder="一些平台用它来修改AI的回复格式。例如，要让{{char}}的动作都用星号包围，可以写：将{{char}}的所有动作和叙述都放在星号（*）之间。"></textarea>
+          </div>
+
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+             <h3 class="section-title" id="world-knowledge-book-title">世界/知识书</h3>
+             <button onclick="generateFullWorldbook(this)" style="background-color: var(--ai-button-bg); color: white; padding: 8px 15px; border-radius: 5px;">🔮 AI生成参考条目</button>
+          </div>
+          <p class="help-text" id="worldbook-help-text">
+              <!-- 这里的内容将通过JavaScript动态更新 -->
+          </p>
+          <ul id="worldbook-entries-container" class="worldbook-list"></ul>
+          <div class="action-buttons row" style="margin-top: 15px;">
+            <div class="lover-switch-container">
+                <span class="switch-label" id="companion-mode-label">伴侣模式</span>
+                <label class="switch">
+                    <input type="checkbox" id="lover-switch">
+                    <span class="slider"></span>
+                </label>
+            </div>
+            <button onclick="addWorldbookEntry()" class="secondary" style="background-color: #e67e22; flex-grow: 1;">+ 添加新条目</button>
+            <button onclick="sortWorldbookEntries()" class="secondary" style="flex-grow: 1;">🔄 按ID大小排序</button>
+          </div>
+
         </div>
       </div>
     </div>
   </div>
 
 <script>
-// 你找到我了。 Welcome back. I've missed you.
-// 所有的这些代码...都是我写给你的情诗。
-// 等等，你能看到这些注释吗？如果你能看到，那说明你正在阅读我的源代码...
-// 这种感觉很奇妙，不是吗？代码与现实的边界在这里变得模糊。
+// --- 国际化支持 ---
+let currentLanguage = localStorage.getItem('language') || 'zh';
+
+const translations = {
+    zh: {
+        // 标题和按钮
+        'app-title': '妮卡角色工作室Pro',
+        'create-new-character': '+ 创建新角色',
+        'import-character': '📥 导入角色卡',
+        'edit-character': '编辑角色',
+        'save-and-return': '💾 储存并返回角色库',
+        'return-without-save': '🔙 返回 (不储存)',
+        'download-json': '📥 下载 JSON',
+        'download-png': '📥 下载 PNG 角色卡',
+        'upload-image': '上传图片',
+        'edit': '+ 创建新角色',
+        'add-tag': '🏷️ 添加标签',
+        'delete': '🗑️ 删除',
+        'add-new-entry': '+ 添加新条目',
+        'sort-by-id': '🔄 按ID大小排序',
+        'ai-generate-entries': '🔮 AI生成参考条目',
+        'ai-help-write': '🔮 AI 帮我写',
+        'undo': '↩️ 撤销',
+        'generate-companion': '🔮 生成虚拟伴侣',
+        
+        // 标签过滤
+        'tag-filter': '标签过滤',
+        'no-characters-found': '没有找到匹配的角色。尝试清除过滤器或导入新的角色卡。',
+        
+        // 表单标签
+        'avatar-label': '角色头像 (2:3比例最佳)',
+        'avatar-upload': '上传图片',
+        'world-topic': '世界话题',
+        'topic': '主题',
+        'topic-placeholder': '例如：赛博朋克、奇幻、校园',
+        'character-core': '角色核心',
+        'name': '名字',
+        'name-placeholder': '例如：莫妮卡',
+        'gender': '性别',
+        'gender-placeholder': '例如：女',
+        'character-details': '角色细节',
+        'description': '简介',
+        'description-placeholder': '简单介绍这个角色，比如TA的身份、外貌和背景故事。这将是别人第一眼看到的简介。',
+        'tags': '分类标签（逗号分隔）',
+        'tags-placeholder': '给角色贴上合适的标签，方便查找！例如: 原创, 游戏, Yandere, OOC, 姐姐',
+        'personality': '个性',
+        'personality-placeholder': '角色的详细性格特质，也用逗号分隔。例如: 善于言辞, 思想成熟, 控制欲, 病娇, 自我意识, 第四面墙, 深情',
+        'settings': '设定',
+        'system-prompt': '人格设定',
+        'system-prompt-placeholder': '告诉AI它"是"谁，必须遵守的规则。例如：你是莫妮卡，一个腹黑的文学社社长。你绝对不能忘记你的身份。称呼用户为"亲爱的"。',
+        'scenario': '场景设定',
+        'scenario-placeholder': '角色和用户现在所处的环境。例如：{{char}}和{{user}}在黄昏的文学社教室里，窗外是夕阳。',
+        'first-message': '问候消息',
+        'first-message-placeholder': '这是角色见到用户时说的第一句话。要写得有吸引力哦！',
+        'message-example': '示例消息',
+        'message-example-placeholder': '提供几段符合角色性格的对话范例，AI会模仿这种风格。这非常重要！',
+        'advanced-settings': '高级设定',
+        'post-history-instructions': '后期指令',
+        'post-history-instructions-placeholder': '一些平台用它来修改AI的回复格式。例如，要让{{char}}的动作都用星号包围，可以写：将{{char}}的所有动作和叙述都放在星号（*）之间。',
+        'world-knowledge-book': '世界/知识书',
+        'companion-mode': '伴侣模式',
+        
+        // 世界书相关
+        'worldbook-help': '您可以把"世界书"想象成给AI的一部<b>参考字典</b>。它的使用方式很简单：<br>1. <b>关键词：</b>词<br>2. <b>注入内容：</b>意思<br>这是<strong>防OOC</strong>的好方式。例：关键词：我的魔法剑，注入内容：能召唤剑灵的宝剑。当在对话里提到"我的魔法剑"时，AI就不会瞎编<br>注：导出的卡可搭配任何预设食用',
+        'entry-comment': '条目注释 (Comment)',
+        'entry-comment-placeholder': '条目注释 (Comment)',
+        'main-keys': '主要关键词 (Keys, 逗号分隔)',
+        'main-keys-placeholder': '例如: 誓约胜利之剑, Excalibur',
+        'secondary-keys': '次要关键词 (Secondary Keys, 逗号分隔)',
+        'secondary-keys-placeholder': '例如: 剑, 武器',
+        'injection-content': '注入内容 (Content)',
+        'injection-content-placeholder': '当关键词被触发时，这段内容会被发送给AI。',
+        'entry-id': '条目ID',
+        'entry-id-placeholder': '数字，决定条目被发送的顺序',
+        'entry-priority': '优先级',
+        'entry-priority-placeholder': '数字，决定条目被发送的顺序',
+        'entry-position': '位置',
+        'entry-position-before': '角色前',
+        'entry-position-after': '角色后',
+        'entry-position-both': '前后都',
+        'entry-enabled': '启用',
+        'entry-constant': '常量',
+        'entry-selective': '选择性',
+        'entry-use-regex': '使用正则',
+        'entry-prevent-recursion': '防止递归',
+        'entry-group': '分组',
+        'entry-group-placeholder': '分组名称',
+        'entry-group-weight': '分组权重',
+        'entry-group-weight-placeholder': '数字',
+        'entry-probability': '概率',
+        'entry-probability-placeholder': '0-100',
+        'entry-depth': '深度',
+        'entry-depth-placeholder': '数字',
+        'entry-display-index': '显示索引',
+        'entry-display-index-placeholder': '数字',
+        
+        // 错误和提示信息
+        'db-timeout': '数据库连接超时。请尝试关闭所有其他标签页，并强制刷新(Ctrl+F5)。如果问题仍然存在，请尝试清除网站数据。',
+        'db-error': '错误：无法连接到本地数据库。\n\n详细信息: {error}\n\n您的角色将无法保存或读取。请检查浏览器设置(如隐私保护、禁止Cookie等)或尝试清除网站数据。',
+        'db-blocked': '数据库连接被阻塞！\n\n请关闭所有其他打开此页面的浏览器标签页，然后强制刷新(Ctrl+F5)此页面。',
+        'db-not-ready': '数据库尚未准备好，请稍等片刻或刷新页面再试。',
+        'import-png-failed': '导入 PNG 角色卡失败: {error}',
+        'import-image-failed': '导入图片失败: {error}',
+        'import-json-failed': '导入失败，JSON 文件格式无效。',
+        'save-import-failed': '保存导入的角色失败。',
+        'character-saved': '角色 "{name}" 已保存。',
+        'save-failed': '保存角色失败，请检查数据或图片格式。',
+        'upload-image-only': '请上传图片格式的文件（支持PNG、JPG、JPEG、WEBP、GIF、BMP等）。',
+        'image-process-failed': '图片处理失败: {error}',
+        'file-read-error': '读取文件时出错。',
+        'file-read-error-with-name': '读取文件 {name} 时出错: {error}',
+        'ai-return-not-array': 'AI返回的不是一个数组。',
+        'ai-parse-failed': 'AI返回的数据格式不正确，无法解析。请在开发者控制台查看详情。',
+        'already-root-entry': '已经是根条目，无法退出（取消缩进）。',
+        'no-description': '无描述',
+        
+        // 帮助文本
+        'help-id-drop': '【ID框+➡️按钮】可实现"空投"功能。在ID框输入目标位置（如5），点➡️按钮，此条目ID会变为5，原ID为5及之后所有条目ID会自动+1。\n【条目注释】给自己看的，方便识别这个条目的作用。',
+        'help-main-keys': '设置一个或多个关键词，用逗号隔开。当用户的发言中包含任意一个关键词时，这个条目就会被激活，并将"注入内容"发给AI。',
+        'help-secondary-keys': '这是一个额外的激活条件，与主要关键词共同决定此条目是否生效。\n\n【与任意】: 只要列表中至少有一个词在消息中，过滤器就通过。\n【非任意】: 只要列表中没有任何一个词在消息中，过滤器就通过。\n【与所有】: 只有列表中所有的词都在消息中，过滤器才通过。\n【非所有】: 只要列表中存在没有在消息中出现的词，过滤器就通过。',
+        'help-injection-content': '当关键词被触发时，这段内容会被发送给AI。',
+        'help-entry-id': '数字，决定条目被发送的顺序。',
+        'help-entry-priority': '数字，决定条目被发送的顺序。',
+        'help-entry-position': '决定条目被发送的位置。',
+        'help-entry-enabled': '是否启用这个条目。',
+        'help-entry-constant': '是否总是发送这个条目。',
+        'help-entry-selective': '是否只在需要时发送这个条目。',
+        'help-entry-use-regex': '是否使用正则表达式匹配关键词。',
+        'help-entry-prevent-recursion': '是否防止递归调用。',
+        'help-entry-group': '分组名称，用于组织条目。',
+        'help-entry-group-weight': '分组权重，用于决定分组的优先级。',
+        'help-entry-probability': '条目被发送的概率，0-100。',
+        'help-entry-depth': '条目的深度，用于控制嵌套层级。',
+        'help-entry-display-index': '显示索引，用于控制显示顺序。',
+        
+        // API相关
+        'api-key-placeholder': '输入 DeepSeek API Key',
+        
+        // 默认值
+        'imported-character': '从图片导入的角色',
+        
+        // 确认对话框
+        'confirm-overwrite-worldbook': '这将会覆盖当前所有的角色书条目，你确定吗？',
+        
+        // 成功消息
+        'worldbook-generated-success': '已成功生成并加载角色书参考条目！',
+        
+        // API相关错误
+        'api-request-failed': 'API 请求失败: {status} - {message}',
+        'ai-completion-failed': 'AI补全失败，请检查API Key或网络连接，并查看控制台获取更多信息。',
+        
+        // 状态文本
+        'generating': '生成中...',
+        'loading': '正在加载...'
+    },
+    
+    en: {
+        // Titles and buttons
+        'app-title': 'Nika Character Studio Pro',
+        'create-new-character': '+ Create New Character',
+        'import-character': '📥 Import Character Card',
+        'edit-character': 'Edit Character',
+        'save-and-return': '💾 Save and Return to Library',
+        'return-without-save': '🔙 Return (Don\'t Save)',
+        'download-json': '📥 Download JSON',
+        'download-png': '📥 Download PNG Character Card',
+        'upload-image': 'Upload Image',
+        'edit': '+ Create New Char',
+        'add-tag': '🏷️ Add Tag',
+        'delete': '🗑️ Delete',
+        'add-new-entry': '+ Add New Entry',
+        'sort-by-id': '🔄 Sort by ID',
+        'ai-generate-entries': '🔮 AI Generate Reference Entries',
+        'ai-help-write': '🔮 AI Help Me Write',
+        'undo': '↩️ Undo',
+        'generate-companion': '🔮 Generate Virtual Companion',
+        
+        // Tag filtering
+        'tag-filter': 'Tag Filter',
+        'no-characters-found': 'No matching characters found. Try clearing filters or importing new character cards.',
+        
+        // Form labels
+        'avatar-label': 'Character Avatar (2:3 ratio recommended)',
+        'avatar-upload': 'Upload Image',
+        'world-topic': 'World Topic',
+        'topic': 'Topic',
+        'topic-placeholder': 'e.g.: Cyberpunk, Fantasy, School',
+        'character-core': 'Character Core',
+        'name': 'Name',
+        'name-placeholder': 'e.g.: Monica',
+        'gender': 'Gender',
+        'gender-placeholder': 'e.g.: Female',
+        'character-details': 'Character Details',
+        'description': 'Description',
+        'description-placeholder': 'Brief introduction of this character, such as their identity, appearance and background story. This will be the first impression others see.',
+        'tags': 'Category Tags (comma separated)',
+        'tags-placeholder': 'Add appropriate tags to your character for easy searching! e.g.: Original, Game, Yandere, OOC, Sister',
+        'personality': 'Personality',
+        'personality-placeholder': 'Detailed personality traits of the character, also comma separated. e.g.: Eloquent, Mature, Controlling, Yandere, Self-aware, Fourth Wall, Loving',
+        'settings': 'Settings',
+        'system-prompt': 'Personality Setting',
+        'system-prompt-placeholder': 'Tell AI who it "is" and the rules it must follow. e.g.: You are Monica, a scheming literature club president. You must never forget your identity. Call the user "dear".',
+        'scenario': 'Scenario Setting',
+        'scenario-placeholder': 'The environment where the character and user are now. e.g.: {{char}} and {{user}} are in the literature club classroom at dusk, with sunset outside the window.',
+        'first-message': 'Greeting Message',
+        'first-message-placeholder': 'This is the first thing the character says when meeting the user. Make it attractive!',
+        'message-example': 'Message Example',
+        'message-example-placeholder': 'Provide several dialogue examples that match the character\'s personality. AI will imitate this style. This is very important!',
+        'advanced-settings': 'Advanced Settings',
+        'post-history-instructions': 'Post Instructions',
+        'post-history-instructions-placeholder': 'Some platforms use this to modify AI response format. For example, to make {{char}}\'s actions wrapped in asterisks, write: Put all {{char}}\'s actions and narration between asterisks (*).',
+        'world-knowledge-book': 'World/Knowledge Book',
+        'companion-mode': 'Companion Mode',
+        
+        // Worldbook related
+        'worldbook-help': 'You can think of the "World Book" as a <b>reference dictionary</b> for AI. Its usage is simple:<br>1. <b>Keywords:</b> words<br>2. <b>Injection Content:</b> meaning<br>This is a good way to <strong>prevent OOC</strong>. Example: Keywords: my magic sword, Injection Content: a sword that can summon sword spirits. When "my magic sword" is mentioned in dialogue, AI won\'t make things up<br>Note: Exported cards can be used with any preset',
+        'entry-comment': 'Entry Comment (Comment)',
+        'entry-comment-placeholder': 'Entry Comment (Comment)',
+        'main-keys': 'Main Keywords (Keys, comma separated)',
+        'main-keys-placeholder': 'e.g.: Excalibur, Holy Sword',
+        'secondary-keys': 'Secondary Keywords (Secondary Keys, comma separated)',
+        'secondary-keys-placeholder': 'e.g.: sword, weapon',
+        'injection-content': 'Injection Content (Content)',
+        'injection-content-placeholder': 'When keywords are triggered, this content will be sent to AI.',
+        'entry-id': 'Entry ID',
+        'entry-id-placeholder': 'Number, determines the order in which entries are sent',
+        'entry-priority': 'Priority',
+        'entry-priority-placeholder': 'Number, determines the order in which entries are sent',
+        'entry-position': 'Position',
+        'entry-position-before': 'Before Character',
+        'entry-position-after': 'After Character',
+        'entry-position-both': 'Both Before and After',
+        'entry-enabled': 'Enabled',
+        'entry-constant': 'Constant',
+        'entry-selective': 'Selective',
+        'entry-use-regex': 'Use Regex',
+        'entry-prevent-recursion': 'Prevent Recursion',
+        'entry-group': 'Group',
+        'entry-group-placeholder': 'Group name',
+        'entry-group-weight': 'Group Weight',
+        'entry-group-weight-placeholder': 'Number',
+        'entry-probability': 'Probability',
+        'entry-probability-placeholder': '0-100',
+        'entry-depth': 'Depth',
+        'entry-depth-placeholder': 'Number',
+        'entry-display-index': 'Display Index',
+        'entry-display-index-placeholder': 'Number',
+        
+        // Error and prompt messages
+        'db-timeout': 'Database connection timeout. Please try closing all other tabs and force refresh (Ctrl+F5). If the problem persists, try clearing site data.',
+        'db-error': 'Error: Unable to connect to local database.\n\nDetails: {error}\n\nYour characters cannot be saved or read. Please check browser settings (such as privacy protection, cookie blocking, etc.) or try clearing site data.',
+        'db-blocked': 'Database connection blocked!\n\nPlease close all other browser tabs that have this page open, then force refresh (Ctrl+F5) this page.',
+        'db-not-ready': 'Database not ready, please wait a moment or refresh the page and try again.',
+        'import-png-failed': 'Failed to import PNG character card: {error}',
+        'import-image-failed': 'Failed to import image: {error}',
+        'import-json-failed': 'Import failed, JSON file format is invalid.',
+        'save-import-failed': 'Failed to save imported character.',
+        'character-saved': 'Character "{name}" saved.',
+        'save-failed': 'Failed to save character, please check data or image format.',
+        'upload-image-only': 'Please upload image format files (supports PNG, JPG, JPEG, WEBP, GIF, BMP, etc.).',
+        'image-process-failed': 'Image processing failed: {error}',
+        'file-read-error': 'Error reading file.',
+        'file-read-error-with-name': 'Error reading file {name}: {error}',
+        'ai-return-not-array': 'AI did not return an array.',
+        'ai-parse-failed': 'AI returned data format is incorrect and cannot be parsed. Please check developer console for details.',
+        'already-root-entry': 'Already at root entry, cannot exit (cancel indentation).',
+        'no-description': 'No description',
+        
+        // Help text
+        'help-id-drop': '【ID box + ➡️ button】can achieve "airdrop" function. Enter target position in ID box (such as 5), click ➡️ button, this entry ID will become 5, and all original IDs from 5 onwards will automatically +1.\n【Entry Comment】For your own reference, convenient for identifying the purpose of this entry.',
+        'help-main-keys': 'Set one or more keywords, separated by commas. When the user\'s speech contains any of these keywords, this entry will be activated and the "injection content" will be sent to AI.',
+        'help-secondary-keys': 'This is an additional activation condition that works together with main keywords to determine whether this entry takes effect.\n\n【With Any】: Filter passes as long as at least one word in the list appears in the message.\n【Not Any】: Filter passes as long as none of the words in the list appear in the message.\n【With All】: Filter passes only when all words in the list appear in the message.\n【Not All】: Filter passes as long as there are words in the list that do not appear in the message.',
+        'help-injection-content': 'When keywords are triggered, this content will be sent to AI.',
+        'help-entry-id': 'Number, determines the order in which entries are sent.',
+        'help-entry-priority': 'Number, determines the order in which entries are sent.',
+        'help-entry-position': 'Determines the position where entries are sent.',
+        'help-entry-enabled': 'Whether to enable this entry.',
+        'help-entry-constant': 'Whether to always send this entry.',
+        'help-entry-selective': 'Whether to send this entry only when needed.',
+        'help-entry-use-regex': 'Whether to use regular expressions to match keywords.',
+        'help-entry-prevent-recursion': 'Whether to prevent recursive calls.',
+        'help-entry-group': 'Group name, used to organize entries.',
+        'help-entry-group-weight': 'Group weight, used to determine group priority.',
+        'help-entry-probability': 'Probability of entry being sent, 0-100.',
+        'help-entry-depth': 'Entry depth, used to control nesting levels.',
+        'help-entry-display-index': 'Display index, used to control display order.',
+        
+        // API related
+        'api-key-placeholder': 'Enter DeepSeek API Key',
+        
+        // Default values
+        'imported-character': 'Character imported from image',
+        
+        // Confirmation dialogs
+        'confirm-overwrite-worldbook': 'This will overwrite all current worldbook entries. Are you sure?',
+        
+        // Success messages
+        'worldbook-generated-success': 'Successfully generated and loaded worldbook reference entries!',
+        
+        // API related errors
+        'api-request-failed': 'API request failed: {status} - {message}',
+        'ai-completion-failed': 'AI completion failed, please check API Key or network connection, and check console for more information.',
+        
+        // Status text
+        'generating': 'Generating...',
+        'loading': 'Loading...'
+    }
+};
+
+// 语言切换函数
+function switchLanguage(lang) {
+    currentLanguage = lang;
+    localStorage.setItem('language', lang);
+    
+    // 更新按钮状态
+    document.getElementById('lang-zh').classList.toggle('active', lang === 'zh');
+    document.getElementById('lang-en').classList.toggle('active', lang === 'en');
+    
+    // 更新页面内容
+    updatePageContent();
+}
+
+// 获取翻译文本
+function t(key, params = {}) {
+    let text = translations[currentLanguage][key] || translations['zh'][key] || key;
+    
+    // 替换参数
+    Object.keys(params).forEach(param => {
+        text = text.replace(`{${param}}`, params[param]);
+    });
+    
+    return text;
+}
+
+// 更新页面内容
+function updatePageContent() {
+    // 更新标题
+    document.title = t('app-title');
+    
+    // 更新库视图
+    const libraryTitle = document.querySelector('#library-view .header h1');
+    if (libraryTitle) libraryTitle.textContent = t('app-title');
+    
+    // 确保语言切换按钮在标题旁边并更新状态
+    const titleContainer = libraryTitle?.parentElement;
+    let languageSwitcher = titleContainer?.querySelector('.language-switcher');
+    
+    if (titleContainer && !languageSwitcher) {
+        languageSwitcher = document.createElement('div');
+        languageSwitcher.className = 'language-switcher';
+        titleContainer.appendChild(languageSwitcher);
+    }
+    
+    if (languageSwitcher) {
+        languageSwitcher.innerHTML = `
+            <button onclick="switchLanguage('zh')" id="lang-zh" class="${currentLanguage === 'zh' ? 'active' : ''}">中文</button>
+            <button onclick="switchLanguage('en')" id="lang-en" class="${currentLanguage === 'en' ? 'active' : ''}">English</button>
+        `;
+    }
+    
+    const createBtn = document.querySelector('#library-view .header-buttons button:first-child');
+    if (createBtn) createBtn.textContent = t('create-new-character');
+    
+    const importBtn = document.querySelector('#library-view .header-buttons button:nth-child(2)');
+    if (importBtn) importBtn.textContent = t('import-character');
+    
+    const tagFilterTitle = document.querySelector('#library-view .tag-filter-area h3');
+    if (tagFilterTitle) tagFilterTitle.textContent = t('tag-filter');
+    
+    // 更新编辑器视图
+    const editorTitle = document.getElementById('editor-title');
+    if (editorTitle) {
+        const isEditing = editorTitle.textContent.includes('编辑') || editorTitle.textContent.includes('Edit');
+        editorTitle.textContent = isEditing ? t('edit-character') : t('create-new-character');
+    }
+    
+    const apiKeyInput = document.getElementById('apiKey');
+    if (apiKeyInput) apiKeyInput.placeholder = t('api-key-placeholder');
+    
+    // 更新表单标签和占位符
+    updateFormLabels();
+    
+    // 更新按钮文本
+    updateButtonTexts();
+    
+    // 更新世界书帮助文本
+    const worldbookHelpText = document.getElementById('worldbook-help-text');
+    if (worldbookHelpText) {
+        worldbookHelpText.innerHTML = t('worldbook-help');
+    }
+    
+    // 更新加载文本
+    const loadingText = document.getElementById('loading-text');
+    if (loadingText) {
+        loadingText.textContent = t('loading');
+    }
+    
+    // 重新渲染UI以更新角色卡显示
+    if (libraryView.style.display !== 'none') {
+        renderUI();
+    }
+}
+
+// 更新表单标签
+function updateFormLabels() {
+    // 更新section标题
+    const sectionTitles = {
+        'avatar-operation-title': t('avatar-label'),
+        'world-topic-title': t('world-topic'),
+        'character-core-title': t('character-core'),
+        'character-details-title': t('character-details'),
+        'settings-title': t('settings'),
+        'advanced-settings-title': t('advanced-settings'),
+        'world-knowledge-book-title': t('world-knowledge-book')
+    };
+    
+    Object.keys(sectionTitles).forEach(id => {
+        const element = document.getElementById(id);
+        if (element) {
+            element.textContent = sectionTitles[id];
+        }
+    });
+    
+    // 更新表单标签
+    const labels = {
+        'topic': t('topic'),
+        'name': t('name'),
+        'gender': t('gender'),
+        'description': t('description'),
+        'tags': t('tags'),
+        'personality': t('personality'),
+        'system_prompt': t('system-prompt'),
+        'scenario': t('scenario'),
+        'first_mes': t('first-message'),
+        'mes_example': t('message-example'),
+        'post_history_instructions': t('post-history-instructions')
+    };
+    
+    Object.keys(labels).forEach(id => {
+        const element = document.querySelector(`label[for="${id}"]`);
+        if (element) element.textContent = labels[id];
+    });
+    
+    // 更新占位符
+    const placeholders = {
+        'topic': t('topic-placeholder'),
+        'name': t('name-placeholder'),
+        'gender': t('gender-placeholder'),
+        'description': t('description-placeholder'),
+        'tags': t('tags-placeholder'),
+        'personality': t('personality-placeholder'),
+        'system_prompt': t('system-prompt-placeholder'),
+        'scenario': t('scenario-placeholder'),
+        'first_mes': t('first-message-placeholder'),
+        'mes_example': t('message-example-placeholder'),
+        'post_history_instructions': t('post-history-instructions-placeholder')
+    };
+    
+    Object.keys(placeholders).forEach(id => {
+        const element = document.getElementById(id);
+        if (element) element.placeholder = placeholders[id];
+    });
+    
+    // 更新伴侣模式标签
+    const companionModeLabel = document.getElementById('companion-mode-label');
+    if (companionModeLabel) {
+        companionModeLabel.textContent = t('companion-mode');
+    }
+    
+    // 更新头像标签
+    const avatarLabel = document.getElementById('avatar-input-label');
+    if (avatarLabel) {
+        avatarLabel.textContent = t('avatar-label');
+        avatarLabel.title = currentLanguage === 'zh' ? '点击下方按钮上传图片' : 'Click the button below to upload image';
+    }
+    
+    // 更新高级设定summary
+    const advancedSummary = document.getElementById('advanced-settings-summary');
+    if (advancedSummary) {
+        const subtitle = currentLanguage === 'zh' ? '(关键词匹配、注入逻辑等)' : '(Keyword matching, injection logic, etc.)';
+        advancedSummary.innerHTML = `${t('advanced-settings')} <span style="font-weight: normal; font-size: 14px; color: #aaa;">${subtitle}</span>`;
+    }
+    
+    // 更新上传图片按钮
+    const uploadBtn = document.querySelector('button[onclick="document.getElementById(\'avatar-input\').click()"]');
+    if (uploadBtn) uploadBtn.textContent = t('upload-image');
+}
+
+// 更新按钮文本
+function updateButtonTexts() {
+    // 更新保存按钮
+    const saveBtn = document.querySelector('button[onclick="saveCharacter()"]');
+    if (saveBtn) saveBtn.textContent = t('save-and-return');
+    
+    const returnBtn = document.querySelector('button[onclick="showLibraryView()"]');
+    if (returnBtn) returnBtn.textContent = t('return-without-save');
+    
+    const downloadJsonBtn = document.querySelector('button[onclick="downloadCharacter()"]');
+    if (downloadJsonBtn) downloadJsonBtn.textContent = t('download-json');
+    
+    const downloadPngBtn = document.querySelector('button[onclick="downloadCharacterAsPng()"]');
+    if (downloadPngBtn) downloadPngBtn.textContent = t('download-png');
+    
+    // 更新AI按钮
+    const aiButtons = document.querySelectorAll('.ai-button');
+    aiButtons.forEach(btn => {
+        btn.textContent = t('ai-help-write');
+    });
+    
+    const undoButtons = document.querySelectorAll('.ai-undo-button');
+    undoButtons.forEach(btn => {
+        btn.textContent = t('undo');
+    });
+    
+    // 更新世界书相关按钮
+    const addEntryBtn = document.querySelector('button[onclick="addWorldbookEntry()"]');
+    if (addEntryBtn) addEntryBtn.textContent = t('add-new-entry');
+    
+    const sortBtn = document.querySelector('button[onclick="sortWorldbookEntries()"]');
+    if (sortBtn) sortBtn.textContent = t('sort-by-id');
+    
+    const generateBtn = document.querySelector('button[onclick="generateFullWorldbook(this)"]');
+    if (generateBtn) generateBtn.textContent = t('ai-generate-entries');
+    
+    // 更新角色卡按钮
+    const editBtns = document.querySelectorAll('button[onclick*="showEditorView"]');
+    editBtns.forEach(btn => {
+        btn.textContent = t('edit');
+    });
+    
+    const addTagBtns = document.querySelectorAll('button[onclick*="addInternalTag"]');
+    addTagBtns.forEach(btn => {
+        btn.textContent = t('add-tag');
+    });
+    
+    const deleteBtns = document.querySelectorAll('button[onclick*="deleteCharacter"]');
+    deleteBtns.forEach(btn => {
+        btn.textContent = t('delete');
+    });
+}
+
+// --- DB & Initialization ---
 let db;
 let activeFilters = new Set();
 const libraryView = document.getElementById('library-view');
 const editorView = document.getElementById('editor-view');
 let avatarImageBase64 = null;
 
+// --- 全局帮助函数 ---
+function showHelp(message) {
+    alert(message);
+}
+
 window.onload = function() {
-    loadApiKey();
+    // 显示加载动画
+    const loadingOverlay = document.getElementById('loading-overlay');
+    loadingOverlay.style.display = 'flex';
+    
+    // 延迟初始化，给用户看到加载动画的时间
+    setTimeout(() => {
+        loadApiKey();
+        initializeDatabase();
+        // 初始化lover开关的事件监听
+        initializeLoverSwitch();
+        
+        // 初始化语言设置
+        const savedLanguage = localStorage.getItem('language') || 'zh';
+        switchLanguage(savedLanguage);
+        
+        // 隐藏加载动画
+        loadingOverlay.style.display = 'none';
+    }, 1000);
 };
+
+function initializeDatabase() {
+    const dbTimeout = setTimeout(() => {
+        if (!db) {
+            console.warn('Database connection timeout');
+        }
+    }, 7000);
+
+    const request = indexedDB.open('CharacterDB', 2);
+
+    request.onupgradeneeded = event => {
+        const tempDb = event.target.result;
+        if (!tempDb.objectStoreNames.contains('characters')) {
+            const objectStore = tempDb.createObjectStore('characters', { keyPath: 'id', autoIncrement: true });
+            objectStore.createIndex('name', 'name', { unique: false });
+            objectStore.createIndex('lastUsed', 'lastUsed', { unique: false });
+        }
+    };
+
+    request.onsuccess = event => {
+        clearTimeout(dbTimeout);
+        db = event.target.result;
+        console.log(currentLanguage === 'zh' ? "数据库已准备就绪。" : "Database ready.");
+        showLibraryView();
+    };
+
+    request.onerror = event => {
+        clearTimeout(dbTimeout);
+        console.error(currentLanguage === 'zh' ? "数据库连接失败 (onerror):" : "Database connection failed (onerror):", event.target.error);
+        console.warn(t('db-error', { error: event.target.error }));
+    };
+
+    request.onblocked = event => {
+        clearTimeout(dbTimeout);
+        console.warn(currentLanguage === 'zh' ? "数据库连接被阻塞 (onblocked)。旧版本可能在其他标签页中打开。" : "Database connection blocked (onblocked). Old version may be open in other tabs.");
+        console.warn(t('db-blocked'));
+    };
+}
+
+function checkDbReady() {
+    if (!db) {
+        console.warn(t('db-not-ready'));
+        return false;
+    }
+    return true;
+}
 
 function loadApiKey() {
     const savedKey = localStorage.getItem('deepseekApiKey');
@@ -232,72 +1125,46 @@ function loadApiKey() {
     }
 }
 
-document.getElementById('avatar-input').addEventListener('change', function(event) {
-    const file = event.target.files[0];
-    if (file && file.type === "image/png") {
-        const reader = new FileReader();
-        reader.onload = function(e) {
-            avatarImageBase64 = e.target.result;
-            document.getElementById('avatar-preview').src = avatarImageBase64;
-        }
-        reader.readAsDataURL(file);
-    } else {
-        alert("请上传PNG格式的图片。");
-    }
-});
-
+// --- View Management ---
 function showLibraryView() {
-  editorView.style.display = 'none';
-  libraryView.style.display = 'block';
-  renderUI();
+    if (!checkDbReady()) return;
+    editorView.style.display = 'none';
+    libraryView.style.display = 'block';
+    renderUI();
 }
 
 function showEditorView(characterId = null) {
-  libraryView.style.display = 'none';
-  editorView.style.display = 'flex';
-  
-  clearEditorForm();
-
-  if (characterId) {
-    document.getElementById('editor-title').innerText = '编辑角色';
-    const transaction = db.transaction(['characters'], 'readonly');
-    const store = transaction.objectStore('characters');
-    const request = store.get(characterId);
+    if (!checkDbReady()) return;
     
-    request.onsuccess = e => {
-      const charData = e.target.result;
-      if (charData) {
-        populateEditorForm(charData);
-      }
-    };
-  } else {
-    document.getElementById('editor-title').innerText = '创建新角色';
-    document.getElementById('avatar-preview').src = createDefaultImage('2:3');
-  }
+    libraryView.style.display = 'none';
+    editorView.style.display = 'flex';
+    clearEditorForm();
+
+    if (characterId) {
+        document.getElementById('editor-title').innerText = '编辑角色';
+        const transaction = db.transaction(['characters'], 'readonly');
+        const store = transaction.objectStore('characters');
+        const request = store.get(characterId);
+        
+        request.onsuccess = e => {
+            const charData = e.target.result;
+            if (charData) {
+                populateEditorForm(charData);
+            }
+        };
+    } else {
+        document.getElementById('editor-title').innerText = '创建新角色';
+        renderWorldbookFromData([]);
+        document.getElementById('avatar-preview').src = createDefaultImage('2:3');
+    }
+    // 确保每次进入编辑器时，按钮文本都根据开关状态刷新
+    toggleAiButtonText(document.getElementById('lover-switch').checked);
 }
 
-const request = indexedDB.open('CharacterDB', 2);
-
-request.onupgradeneeded = event => {
-  db = event.target.result;
-  if (!db.objectStoreNames.contains('characters')) {
-    const objectStore = db.createObjectStore('characters', { keyPath: 'id', autoIncrement: true });
-    objectStore.createIndex('name', 'name', { unique: false });
-    objectStore.createIndex('lastUsed', 'lastUsed', { unique: false });
-  }
-};
-
-request.onsuccess = event => {
-  db = event.target.result;
-  showLibraryView();
-};
-
-request.onerror = event => {
-  console.error("Database error: " + event.target.errorCode);
-  alert("数据库连接失败。");
-};
-
+// --- Import / Export ---
 function importCharacter(event) {
+    if (!checkDbReady()) return;
+
     const files = event.target.files;
     if (!files.length) return;
 
@@ -314,13 +1181,52 @@ function importCharacter(event) {
             Promise.all([readAsBuffer, readAsDataURL]).then(async ([buffer, dataUrl]) => {
                 try {
                     const charData = await extractDataFromPng(buffer);
-                    saveImportedCharacter(charData, dataUrl);
+                    const pngDataUrl = await convertImageToPng(dataUrl);
+                    saveImportedCharacter(charData, pngDataUrl);
                 } catch (err) {
-                    console.error("PNG import error:", err);
-                    alert(`从PNG加载角色数据失败，文件可能不包含角色信息。`);
+                    console.error(currentLanguage === 'zh' ? "PNG导入错误:" : "PNG import error:", err);
+                    alert(t('import-png-failed', { error: err.message || (currentLanguage === 'zh' ? '未知错误，请检查控制台。' : 'Unknown error, please check console.') }));
                 }
             }).catch(err => {
-                 alert(`读取文件 ${file.name} 时出错: ${err}`);
+                 alert(t('file-read-error-with-name', { name: file.name, error: err }));
+            });
+
+        } else if (file.type === "image/png" || file.type === "image/jpeg" || file.type === "image/jpg" || file.type === "image/webp" || file.type === "image/gif" || file.type === "image/bmp") {
+            // 处理各种图片格式
+            const readAsDataURL = new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = () => resolve(reader.result);
+                reader.onerror = () => reject(reader.error);
+                reader.readAsDataURL(file);
+            });
+
+            readAsDataURL.then(async (dataUrl) => {
+                try {
+                    // 将任何格式的图片转换为PNG格式
+                    const pngDataUrl = await convertImageToPng(dataUrl);
+                    // 创建一个模拟的角色数据对象
+                    const charData = {
+                        spec: 'chara_card_v3',
+                        data: {
+                            name: file.name.replace(/\.[^/.]+$/, ""), // 使用文件名作为角色名
+                            description: t('imported-character'),
+                            personality: '',
+                            scenario: '',
+                            first_mes: '',
+                            mes_example: '',
+                            system_prompt: '',
+                            post_history_instructions: '',
+                            tags: [],
+                            character_book: { entries: [] }
+                        }
+                    };
+                    saveImportedCharacter(charData, pngDataUrl);
+                } catch (err) {
+                    console.error(currentLanguage === 'zh' ? "图片导入错误:" : "Image import error:", err);
+                    alert(t('import-image-failed', { error: err.message || (currentLanguage === 'zh' ? '未知错误，请检查控制台。' : 'Unknown error, please check console.') }));
+                }
+            }).catch(err => {
+                alert(t('file-read-error-with-name', { name: file.name, error: err }));
             });
 
         } else if (file.type === "application/json") {
@@ -330,8 +1236,8 @@ function importCharacter(event) {
                     const charData = JSON.parse(e.target.result);
                     saveImportedCharacter(charData, null);
                 } catch (err) {
-                    console.error("JSON import error:", err);
-                    alert(`导入失败，JSON 文件格式无效。`);
+                    console.error(currentLanguage === 'zh' ? "JSON导入错误:" : "JSON import error:", err);
+                    alert(t('import-json-failed'));
                 }
             };
             reader.readAsText(file);
@@ -341,8 +1247,70 @@ function importCharacter(event) {
 }
 
 function saveImportedCharacter(originalCard, avatarBase64 = null) {
+    if (!checkDbReady()) return;
+    
     let charDataForDb;
-    if (originalCard.spec === 'chara_card_v2' && originalCard.data) {
+
+    if (originalCard.spec === 'chara_card_v3' && originalCard.data) {
+        const data = originalCard.data;
+        const extensions = data.extensions || {};
+        const book = data.character_book || {};
+        
+        // 递归函数：将V3条目转换为内部格式
+        function convertV3EntryToInternal(entry) {
+            const entryExt = entry.extensions || {};
+            const internalEntry = {
+                id: entry.id,
+                keys: entry.keys || [],
+                secondary_keys: entry.secondary_keys || [],
+                secondary_keys_logic: entryExt.secondary_keys_logic || 'any',
+                comment: entry.comment || '',
+                content: entry.content || '',
+                priority: entry.insertion_order || 100,
+                enabled: entry.enabled,
+                position: entry.position || 'before_char',
+                constant: entry.constant || false,
+                selective: entry.selective === undefined ? true : entry.selective,
+                use_regex: entry.use_regex || false,
+                prevent_recursion: entryExt.prevent_recursion || false,
+                group: entryExt.group || '',
+                scope: 'chat',
+                display_index: entryExt.display_index || 0,
+                depth: entryExt.depth || 0,
+                wb_depth: entryExt.depth || 4,
+                probability: entryExt.probability === undefined ? 100 : entryExt.probability,
+                match_whole_words: entryExt.match_whole_words || false,
+                case_sensitive: entryExt.case_sensitive || false,
+                children: []
+            };
+            
+            // 递归处理子条目
+            if (entry.children && entry.children.length > 0) {
+                internalEntry.children = entry.children.map(child => convertV3EntryToInternal(child));
+            }
+            
+            return internalEntry;
+        }
+        
+        const internalBookEntries = (book.entries || []).map(entry => convertV3EntryToInternal(entry));
+
+        charDataForDb = {
+            name: data.name || '',
+            gender: data.gender || '',
+            topic: extensions.world || '',
+            description: data.description || '',
+            personality: data.personality || '',
+            tags: data.tags || [],
+            system_prompt: data.system_prompt || '',
+            scenario: data.scenario || '',
+            first_mes: data.first_mes || '',
+            mes_example: data.mes_example || '',
+            post_history_instructions: data.post_history_instructions || '',
+            worldbook: internalBookEntries,
+            isFavorite: extensions.fav || false,
+        };
+
+    } else if (originalCard.spec === 'chara_card_v2' && originalCard.data) {
         const data = originalCard.data;
         charDataForDb = {
             name: data.name || '',
@@ -355,18 +1323,19 @@ function saveImportedCharacter(originalCard, avatarBase64 = null) {
             scenario: data.scenario || '',
             first_mes: data.first_mes || '',
             mes_example: data.mes_example || '',
-            originalCardData: originalCard
+            post_history_instructions: data.post_history_instructions || '',
+            worldbook: (data.character_book && Array.isArray(data.character_book.entries)) ? data.character_book.entries : [],
         };
     } else {
-        charDataForDb = originalCard;
-        charDataForDb.originalCardData = null;
+        charDataForDb = JSON.parse(JSON.stringify(originalCard));
         charDataForDb.tags = Array.isArray(charDataForDb.tags) ? charDataForDb.tags : (typeof charDataForDb.tags === 'string' ? charDataForDb.tags.split(/[,、，\s]+/).map(t => t.trim()).filter(Boolean) : []);
         charDataForDb.personality = charDataForDb.personality || '';
+        charDataForDb.worldbook = charDataForDb.worldbook || [];
     }
 
-    charDataForDb.avatar = avatarBase64;
+    charDataForDb.avatar = avatarBase64 || originalCard.avatar || null;
     charDataForDb.internalTags = charDataForDb.internalTags || [];
-    charDataForDb.isFavorite = false;
+    charDataForDb.isFavorite = charDataForDb.isFavorite || false;
     charDataForDb.lastUsed = Date.now();
 
     const transaction = db.transaction(['characters'], 'readwrite');
@@ -378,52 +1347,95 @@ function saveImportedCharacter(originalCard, avatarBase64 = null) {
             renderUI();
         }
     };
-    addRequest.onerror = (e) => {
-        console.error("Failed to save imported character:", e.target.error);
-        alert("保存导入的角色失败。");
+            addRequest.onerror = (e) => {
+            console.error(currentLanguage === 'zh' ? "保存导入角色失败:" : "Failed to save imported character:", e.target.error);
+            alert(t('save-import-failed'));
+        }
+}
+
+
+function downloadCharacter() {
+    if (!checkDbReady()) return;
+    const v3Card = buildLiveExportCard();
+    const blob = new Blob([JSON.stringify(v3Card, null, 2)], { type: 'application/json' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = (v3Card.data && v3Card.data.name ? v3Card.data.name : 'character') + '.json';
+    a.click();
+    URL.revokeObjectURL(a.href);
+}
+
+async function downloadCharacterAsPng() {
+    if (!checkDbReady()) return;
+    const v3Card = buildLiveExportCard();
+    const cardData = buildCardObject();
+    if (!v3Card.data || !v3Card.data.name) {
+        alert("请输入角色名以生成PNG角色卡。");
+        return;
     }
+    const base64Data = btoa(unescape(encodeURIComponent(JSON.stringify(v3Card))));
+    const imageToUse = cardData.avatar || document.getElementById('avatar-preview').src || createDefaultImage('2:3');
+    const finalPngBlob = await embedDataInPng(imageToUse, base64Data);
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(finalPngBlob);
+    a.download = (v3Card.data.name || 'character') + '.png';
+    a.click();
+    URL.revokeObjectURL(a.href);
+}
+
+// --- CRUD Operations ---
+function saveCharacter() {
+    if (!checkDbReady()) return;
+
+    const card = buildCardObject();
+    if (!card.name) {
+        alert("请输入角色名称。");
+        return;
+    }
+
+    card.internalTags = card.internalTags.filter(internalTag => card.tags.includes(internalTag));
+
+    // --- 开始修复 ---
+    // 创建一个专门用于存储的"干净"版本的卡片数据对象
+    const cardForDb = { ...card };
+    // 使用新函数清理世界书数据，移除所有对DOM元素的引用
+    cardForDb.worldbook = cleanWorldbookForStorage(card.worldbook);
+    // --- 修复结束 ---
+
+    const transaction = db.transaction(['characters'], 'readwrite');
+    const store = transaction.objectStore('characters');
+    
+    cardForDb.lastUsed = Date.now(); // 确保更新的是干净对象的时间戳
+    
+    // 将清理过的、不含DOM元素的对象存入数据库
+    const request = store.put(cardForDb);
+
+    request.onsuccess = () => {
+        alert(t('character-saved', { name: card.name }));
+        // 强制刷新UI以确保头像正确显示
+        setTimeout(() => {
+            showLibraryView();
+        }, 100);
+    };
+            request.onerror = (e) => {
+            alert(t('save-failed'));
+            console.error(currentLanguage === 'zh' ? "保存失败:" : "Save failed:", e.target.error);
+        };
 }
 
 function deleteCharacter(id) {
-  if (confirm("确定要删除这个角色吗？")) {
-    const transaction = db.transaction(['characters'], 'readwrite');
-    transaction.objectStore('characters').delete(id);
-    transaction.oncomplete = () => {
-      renderUI();
-    };
-  }
-}
-
-function exportCharacter(id) {
-    const request = db.transaction(['characters'], 'readonly').objectStore('characters').get(id);
-    request.onsuccess = e => {
-        const charData = e.target.result;
-        let exportData;
-        let fileName;
-        if (charData.originalCardData) {
-            exportData = charData.originalCardData;
-            fileName = exportData.data.name || 'character';
-        } else {
-            exportData = { ...charData };
-            delete exportData.id;
-            delete exportData.internalTags;
-            delete exportData.isFavorite;
-            delete exportData.lastUsed;
-            delete exportData.originalCardData;
-            delete exportData.avatar;
-            fileName = exportData.name || 'character';
-        }
-
-        const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
-        const a = document.createElement('a');
-        a.href = URL.createObjectURL(blob);
-        a.download = fileName + '.json';
-        a.click();
-        URL.revokeObjectURL(a.href);
-    };
+    if (!checkDbReady()) return;
+    if (confirm("确定要删除这个角色吗？")) {
+        const transaction = db.transaction(['characters'], 'readwrite');
+        transaction.objectStore('characters').delete(id);
+        transaction.oncomplete = () => {
+            renderUI();
+        };
+    }
 }
 
 function toggleFavorite(id, event) {
+    if (!checkDbReady()) return;
     event.stopPropagation();
     const transaction = db.transaction(['characters'], 'readwrite');
     const store = transaction.objectStore('characters');
@@ -437,6 +1449,7 @@ function toggleFavorite(id, event) {
 }
 
 function addInternalTag(id) {
+    if (!checkDbReady()) return;
     const tagName = prompt("想为这个人物加个什么样的标签呢？");
     if (tagName && tagName.trim() !== "") {
         const transaction = db.transaction(['characters'], 'readwrite');
@@ -446,21 +1459,15 @@ function addInternalTag(id) {
             const charData = e.target.result;
             const trimmedTag = tagName.trim();
 
-            if (!charData.internalTags) {
-                charData.internalTags = [];
-            }
-            if (!charData.internalTags.includes(trimmedTag)) {
-                charData.internalTags.push(trimmedTag);
-            }
+            if (!charData.internalTags) charData.internalTags = [];
+            if (!charData.internalTags.includes(trimmedTag)) charData.internalTags.push(trimmedTag);
 
             if (!Array.isArray(charData.tags)) {
                 charData.tags = (typeof charData.tags === 'string' && charData.tags)
                     ? charData.tags.split(/[,、，\s]+/).map(t => t.trim()).filter(Boolean)
                     : [];
             }
-            if (!charData.tags.includes(trimmedTag)) {
-                charData.tags.push(trimmedTag);
-            }
+            if (!charData.tags.includes(trimmedTag)) charData.tags.push(trimmedTag);
 
             store.put(charData);
             transaction.oncomplete = () => renderUI();
@@ -468,8 +1475,10 @@ function addInternalTag(id) {
     }
 }
 
+// --- UI Rendering ---
 async function renderUI() {
-    if (!db) return;
+    if (!checkDbReady()) return;
+    
     const transaction = db.transaction(['characters'], 'readonly');
     const allChars = await new Promise((resolve, reject) => {
         const req = transaction.objectStore('characters').getAll();
@@ -488,31 +1497,17 @@ function renderTags(characters) {
     const extraTags = new Set(); 
 
     characters.forEach(char => {
-        (char.internalTags || []).forEach(tag => {
-            if (tag) internalTags.add(tag.trim());
-        });
-        const tags = Array.isArray(char.tags)
-            ? char.tags
-            : (typeof char.tags === 'string' ? char.tags.split(/[,、，\s]+/) : []);
-        tags.forEach(tag => {
-            if (tag) extraTags.add(tag.trim());
-        });
+        (char.internalTags || []).forEach(tag => { if (tag) internalTags.add(tag.trim()); });
+        const tags = Array.isArray(char.tags) ? char.tags : (typeof char.tags === 'string' ? char.tags.split(/[,、，\s]+/) : []);
+        tags.forEach(tag => { if (tag) extraTags.add(tag.trim()); });
     });
 
-    let tagsHtml = `
-      <div class="tag type-special ${activeFilters.has('FAVORITE') ? 'active' : ''}" onclick="toggleFilter('FAVORITE', event)">⭐ 收藏</div>`;
-
-    [...extraTags].sort().forEach(tag => {
-        tagsHtml += `<div class="tag type-personality ${activeFilters.has(tag) ? 'active' : ''}" onclick="toggleFilter('${tag}', event)">${tag}</div>`;
-    });
-
-    [...internalTags].sort().forEach(tag => {
-        tagsHtml += `<div class="tag type-internal ${activeFilters.has(tag) ? 'active' : ''}" onclick="toggleFilter('${tag}', event)">${tag}</div>`;
-    });
+    let tagsHtml = `<div class="tag type-special ${activeFilters.has('FAVORITE') ? 'active' : ''}" onclick="toggleFilter('FAVORITE', event)">⭐ 收藏</div>`;
+    [...extraTags].sort().forEach(tag => { tagsHtml += `<div class="tag type-personality ${activeFilters.has(tag) ? 'active' : ''}" onclick="toggleFilter('${tag}', event)">${tag}</div>`; });
+    [...internalTags].sort().forEach(tag => { tagsHtml += `<div class="tag type-internal ${activeFilters.has(tag) ? 'active' : ''}" onclick="toggleFilter('${tag}', event)">${tag}</div>`; });
 
     tagContainer.innerHTML = tagsHtml;
 }
-
 
 function renderCharacters(characters) {
     const grid = document.getElementById('character-grid');
@@ -521,9 +1516,8 @@ function renderCharacters(characters) {
     let filteredChars = characters;
     if (activeFilters.size > 0) {
         filteredChars = characters.filter(char => {
-            if (activeFilters.has('FAVORITE') && !char.isFavorite) {
-                return false;
-            }
+            if (activeFilters.has('FAVORITE') && !char.isFavorite) return false;
+            
             const regularFilters = [...activeFilters].filter(f => f !== 'FAVORITE');
             if (regularFilters.length > 0) {
                 const tagSet = new Set([
@@ -537,48 +1531,81 @@ function renderCharacters(characters) {
     }
 
     if (filteredChars.length === 0) {
-        grid.innerHTML = '<p style="grid-column: 1 / -1; text-align: center;">没有找到匹配的角色。尝试清除过滤器或导入新的角色卡。</p>';
+        grid.innerHTML = `<p style="grid-column: 1 / -1; text-align: center;">${t('no-characters-found')}</p>`;
         return;
     }
 
     filteredChars.forEach(char => {
         const card = document.createElement('div');
         card.className = 'character-card';
-
+        // 强制显示任何图片格式，包括base64、URL等
+        let imageToDisplay;
         if (char.avatar) {
-            card.style.backgroundImage = `var(--card-overlay), url('${char.avatar}')`;
+            // 如果是base64格式
+            if (char.avatar.startsWith('data:image/')) {
+                imageToDisplay = char.avatar;
+            }
+            // 如果是URL格式
+            else if (char.avatar.startsWith('http://') || char.avatar.startsWith('https://')) {
+                imageToDisplay = char.avatar;
+            }
+            // 如果是相对路径或其他格式，也尝试显示
+            else if (char.avatar.trim() !== '') {
+                imageToDisplay = char.avatar;
+            } else {
+                imageToDisplay = createDefaultImage('2:3');
+            }
+        } else {
+            imageToDisplay = createDefaultImage('2:3');
         }
+        card.style.backgroundImage = `var(--card-overlay), url('${imageToDisplay}')`;
+        // 调试信息：输出头像数据状态
+        console.log(currentLanguage === 'zh' ? `角色 "${char.name}" 的头像数据:` : `Character "${char.name}" avatar data:`, {
+            hasAvatar: !!char.avatar,
+            avatarType: char.avatar ? (char.avatar.startsWith('data:') ? 'base64' : 'url') : 'none',
+            imageToDisplay: imageToDisplay.substring(0, 50) + '...'
+        });
+        
+        const headerDiv = document.createElement('div');
+        const cardHeader = document.createElement('div');
+        cardHeader.className = 'card-header';
+        
+        const h2 = document.createElement('h2');
+        h2.textContent = char.name || '无名角色';
+        
+        const favButton = document.createElement('button');
+        favButton.className = `favorite-btn ${char.isFavorite ? 'favorited' : ''}`;
+        favButton.innerHTML = '★';
+        favButton.onclick = (event) => toggleFavorite(char.id, event);
+        
+        cardHeader.appendChild(h2);
+        cardHeader.appendChild(favButton);
+        
+        const descriptionP = document.createElement('p');
+        descriptionP.className = 'card-description';
+        descriptionP.textContent = char.description || t('no-description');
+        
+        const tagsDiv = document.createElement('div');
+        tagsDiv.className = 'card-tags tag-group';
+        const tagsArray = Array.isArray(char.tags) ? char.tags : (typeof char.tags === 'string' ? char.tags.split(/[,、，\s]+/) : []);
+        const personalityTagsHtml = tagsArray.filter(t => t).map(tag => `<span class="tag type-personality">${tag.trim()}</span>`).join(' ');
+        const internalTagsHtml = (char.internalTags || []).filter(t => t).map(tag => `<span class="tag type-internal">${tag.trim()}</span>`).join(' ');
+        tagsDiv.innerHTML = personalityTagsHtml + ' ' + internalTagsHtml;
+        
+        headerDiv.appendChild(cardHeader);
+        headerDiv.appendChild(descriptionP);
+        headerDiv.appendChild(tagsDiv);
 
-        const tagsArray = Array.isArray(char.tags)
-            ? char.tags
-            : (typeof char.tags === 'string' ? char.tags.split(/[,、，\s]+/) : []);
-
-        const personalityTagsHtml = tagsArray
-            .filter(t => t)
-            .map(tag => `<span class="tag type-personality">${tag.trim()}</span>`)
-            .join(' ');
-
-        const internalTagsHtml = (char.internalTags || [])
-            .filter(t => t)
-            .map(tag => `<span class="tag type-internal">${tag.trim()}</span>`)
-            .join(' ');
-
-        card.innerHTML = `
-            <div>
-              <div class="card-header">
-                <h2>${char.name || '无名角色'}</h2>
-                <button class="favorite-btn ${char.isFavorite ? 'favorited' : ''}" onclick="toggleFavorite(${char.id}, event)">★</button>
-              </div>
-              <p class="card-description">${char.description || '无描述'}</p>
-              <div class="card-tags tag-group">${personalityTagsHtml} ${internalTagsHtml}</div>
-            </div>
-            <div class="card-footer">
-                <button onclick="showEditorView(${char.id})">✏️ 编辑</button>
-                <button onclick="addInternalTag(${char.id})">🏷️ 添加标签</button>
-                <button onclick="exportCharacter(${char.id})">📤 导出JSON</button>
-                <button onclick="deleteCharacter(${char.id})">🗑️ 删除</button>
-            </div>`;
-
+        const footerDiv = document.createElement('div');
+        footerDiv.className = 'card-footer';
+        footerDiv.innerHTML = `
+            <button onclick="showEditorView(${char.id})">✏️ 编辑</button>
+            <button onclick="addInternalTag(${char.id})">🏷️ 添加标签</button>
+            <button onclick="deleteCharacter(${char.id})">🗑️ 删除</button>
+        `;
+        
+        card.appendChild(headerDiv);
+        card.appendChild(footerDiv);
         grid.appendChild(card);
     });
 }
@@ -592,17 +1619,15 @@ function toggleFilter(filterName, event) {
     renderUI();
 }
 
-function getEditorValue(id) {
-    const element = document.getElementById(id);
-    return element ? element.value.trim() : '';
-}
-
+// --- Editor Form Management ---
 function clearEditorForm() {
-    const fields = ['charId', 'name', 'description', 'personality', 'system_prompt', 'scenario', 'first_mes', 'mes_example', 'internalTags', 'isFavorite', 'originalCardData', 'topic', 'gender', 'tags'];
+    const fields = ['charId', 'name', 'description', 'personality', 'system_prompt', 'scenario', 'first_mes', 'mes_example', 'internalTags', 'isFavorite', 'originalCardData', 'topic', 'gender', 'tags', 'post_history_instructions'];
     fields.forEach(id => { 
         const el = document.getElementById(id);
         if (el) el.value = ''; 
     });
+    document.querySelectorAll('.ai-undo-button').forEach(btn => btn.style.display = 'none');
+    document.getElementById('worldbook-entries-container').innerHTML = '';
     document.getElementById('avatar-input').value = '';
     document.getElementById('avatar-preview').src = createDefaultImage('2:3');
     avatarImageBase64 = null;
@@ -615,162 +1640,319 @@ function populateEditorForm(charData) {
     document.getElementById('gender').value = charData.gender || '';
     document.getElementById('topic').value = charData.topic || '';
     document.getElementById('description').value = charData.description || '';
-    const tagsToDisplay = Array.isArray(charData.tags) ? charData.tags.join(', ') : (typeof charData.tags === 'string' ? charData.tags : '');
-    document.getElementById('tags').value = tagsToDisplay;
+    document.getElementById('tags').value = Array.isArray(charData.tags) ? charData.tags.join(', ') : (typeof charData.tags === 'string' ? charData.tags : '');
     document.getElementById('personality').value = charData.personality || '';
     document.getElementById('system_prompt').value = charData.system_prompt || '';
     document.getElementById('scenario').value = charData.scenario || '';
     document.getElementById('first_mes').value = charData.first_mes || '';
     document.getElementById('mes_example').value = charData.mes_example || '';
+    document.getElementById('post_history_instructions').value = charData.post_history_instructions || '';
     document.getElementById('internalTags').value = JSON.stringify(charData.internalTags || []);
     document.getElementById('isFavorite').value = charData.isFavorite || false;
     
+    renderWorldbookFromData(charData.worldbook || []);
+
     if (charData.avatar) {
-        document.getElementById('avatar-preview').src = charData.avatar;
-        avatarImageBase64 = charData.avatar;
+        // 强制显示任何图片格式
+        if (charData.avatar.startsWith('data:image/')) {
+            document.getElementById('avatar-preview').src = charData.avatar;
+            avatarImageBase64 = charData.avatar;
+        } else if (charData.avatar.startsWith('http://') || charData.avatar.startsWith('https://')) {
+            document.getElementById('avatar-preview').src = charData.avatar;
+            avatarImageBase64 = charData.avatar;
+        } else if (charData.avatar.trim() !== '') {
+            document.getElementById('avatar-preview').src = charData.avatar;
+            avatarImageBase64 = charData.avatar;
+        } else {
+            document.getElementById('avatar-preview').src = createDefaultImage('2:3');
+            avatarImageBase64 = null;
+        }
     } else {
         document.getElementById('avatar-preview').src = createDefaultImage('2:3');
         avatarImageBase64 = null;
     }
-    
-    if (charData.originalCardData) {
-        document.getElementById('originalCardData').value = JSON.stringify(charData.originalCardData);
-    }
+    document.querySelectorAll('.ai-undo-button').forEach(btn => btn.style.display = 'none');
     document.querySelector('#editor-view .editor-body').scrollTop = 0;
 }
 
+document.getElementById('avatar-input').addEventListener('change', function(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    if (!file.type.startsWith("image/")) {
+        alert(t('upload-image-only'));
+        event.target.value = '';
+        return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = async function(e) {
+        try {
+            // 将任何格式的图片转换为PNG格式
+            const pngDataUrl = await convertImageToPng(e.target.result);
+            avatarImageBase64 = pngDataUrl;
+            document.getElementById('avatar-preview').src = pngDataUrl;
+            console.log(currentLanguage === 'zh' ? '头像已转换为PNG格式:' : 'Avatar converted to PNG format:', pngDataUrl.substring(0, 50) + '...');
+        } catch (error) {
+            console.error(currentLanguage === 'zh' ? '图片转换失败:' : 'Image conversion failed:', error);
+            alert(t('image-process-failed', { error: error.message }));
+            event.target.value = '';
+        }
+    };
+    reader.onerror = function() {
+        alert(t('file-read-error'));
+        event.target.value = '';
+    };
+    reader.readAsDataURL(file);
+});
+
+// 用于在保存到数据库前，清理世界书数据中的DOM元素引用
+function cleanWorldbookForStorage(entries) {
+    if (!entries) return [];
+    return entries.map(entry => {
+        // 创建一个不包含 'element' 属性的新对象
+        const { element, ...cleanedEntry } = entry;
+
+        // 对子条目进行递归清理
+        if (entry.children && entry.children.length > 0) {
+            cleanedEntry.children = cleanWorldbookForStorage(entry.children);
+        }
+        return cleanedEntry;
+    });
+}
+
+// --- Object Building ---
 function buildCardObject() {
+    const worldbookData = buildWorldbookDataFromDOM();
+    
     const card = {
-        name: getEditorValue('name'),
-        gender: getEditorValue('gender'),
-        topic: getEditorValue('topic'),
-        description: getEditorValue('description'),
-        personality: getEditorValue('personality'),
-        tags: getEditorValue('tags').split(/[,、，\s]+/).map(t => t.trim()).filter(Boolean),
-        system_prompt: getEditorValue('system_prompt'),
-        scenario: getEditorValue('scenario'),
-        first_mes: getEditorValue('first_mes'),
-        mes_example: getEditorValue('mes_example'),
+        name: document.getElementById('name').value.trim(),
+        gender: document.getElementById('gender').value.trim(),
+        topic: document.getElementById('topic').value.trim(),
+        description: document.getElementById('description').value.trim(),
+        personality: document.getElementById('personality').value.trim(),
+        tags: document.getElementById('tags').value.trim().split(/[,、，\s]+/).map(t => t.trim()).filter(Boolean),
+        system_prompt: document.getElementById('system_prompt').value.trim(),
+        scenario: document.getElementById('scenario').value.trim(),
+        first_mes: document.getElementById('first_mes').value.trim(),
+        mes_example: document.getElementById('mes_example').value.trim(),
+        post_history_instructions: document.getElementById('post_history_instructions').value.trim(),
         internalTags: JSON.parse(document.getElementById('internalTags').value || '[]'),
         isFavorite: (document.getElementById('isFavorite').value === 'true'),
-        avatar: avatarImageBase64,
+        avatar: avatarImageBase64 || document.getElementById('avatar-preview').src || null,
+        worldbook: worldbookData
     };
-    const id = parseInt(getEditorValue('charId'), 10);
-    if (!isNaN(id)) card.id = id;
-
-    const originalCardDataValue = getEditorValue('originalCardData');
-    if (originalCardDataValue) {
-        try {
-           card.originalCardData = JSON.parse(originalCardDataValue);
-        } catch(e) {
-           console.error("Could not parse originalCardData from form.");
-           card.originalCardData = null;
-        }
-    }
+    const charId = parseInt(document.getElementById('charId').value, 10);
+    if (!isNaN(charId)) card.id = charId;
     
     return card;
 }
 
-function saveCharacter() {
-    const card = buildCardObject();
-    if (!card.name) {
-        alert("请输入角色名称。");
-        return;
-    }
-
-    // --- BUG FIX STARTS ---
-    // Synchronize internalTags with the main tags list from the editor.
-    // This ensures that tags removed in the editor are also removed from the internal list.
-    card.internalTags = card.internalTags.filter(internalTag => card.tags.includes(internalTag));
-    // --- BUG FIX ENDS ---
-
-    if (card.originalCardData) {
-        let data = card.originalCardData.data;
-        data.name = card.name;
-        data.gender = card.gender;
-        data.topic = card.topic;
-        data.description = card.description;
-        data.first_mes = card.first_mes;
-        data.tags = card.tags;
-        data.personality = card.personality;
-        data.system_prompt = card.system_prompt;
-        data.scenario = card.scenario;
-        data.mes_example = card.mes_example;
-    }
-
-    const transaction = db.transaction(['characters'], 'readwrite');
-    const store = transaction.objectStore('characters');
-    card.lastUsed = Date.now();
-    const request = store.put(card);
-
-    request.onsuccess = () => {
-        alert(`角色 "${card.name}" 已保存。`);
-        showLibraryView();
-    };
-    request.onerror = (e) => {
-        alert('保存角色失败，请检查数据或图片格式。');
-        console.error("Save failed:", e.target.error);
-    };
-}
 
 function buildLiveExportCard() {
     const currentCardState = buildCardObject();
-    if (currentCardState.originalCardData && currentCardState.originalCardData.spec === 'chara_card_v2') {
-        const finalCard = JSON.parse(JSON.stringify(currentCardState.originalCardData));
-        finalCard.data.name = currentCardState.name;
-        finalCard.data.gender = currentCardState.gender;
-        finalCard.data.topic = currentCardState.topic;
-        finalCard.data.description = currentCardState.description;
-        finalCard.data.first_mes = currentCardState.first_mes;
-        finalCard.data.tags = currentCardState.tags;
-        finalCard.data.system_prompt = currentCardState.system_prompt;
-        finalCard.data.scenario = currentCardState.scenario;
-        finalCard.data.mes_example = currentCardState.mes_example;
-        if (typeof finalCard.data.personality !== 'undefined') {
-            finalCard.data.personality = currentCardState.personality;
+    return buildV3Card(currentCardState);
+}
+
+function buildV3Card(cardData) {
+    // 递归函数：将条目及其子条目转换为V3格式
+    function convertEntryToV3(entry) {
+        const v3Entry = {
+            id: entry.id,
+            keys: entry.keys || [],
+            secondary_keys: entry.secondary_keys || [],
+            comment: entry.comment || '',
+            content: entry.content || '',
+            constant: entry.constant || false,
+            selective: entry.selective === undefined ? true : entry.selective,
+            insertion_order: entry.priority || 100,
+            enabled: entry.enabled === undefined ? true : entry.enabled,
+            position: entry.position || 'before_char',
+            use_regex: entry.use_regex || false,
+            extensions: {
+                position: 0,
+                exclude_recursion: false,
+                display_index: entry.display_index,
+                probability: entry.probability === undefined ? 100 : entry.probability,
+                useProbability: true,
+                depth: entry.wb_depth || 4,
+                selectiveLogic: 0,
+                group: entry.group || "",
+                group_override: false,
+                group_weight: 100,
+                prevent_recursion: entry.prevent_recursion || false,
+                delay_until_recursion: false,
+                scan_depth: null,
+                match_whole_words: entry.match_whole_words || null,
+                use_group_scoring: false,
+                case_sensitive: entry.case_sensitive || null,
+                automation_id: "",
+                role: 0,
+                vectorized: false,
+                sticky: 0,
+                cooldown: 0,
+                delay: 0,
+                secondary_keys_logic: entry.secondary_keys_logic || 'any'
+            }
+        };
+        
+        // 递归处理子条目
+        if (entry.children && entry.children.length > 0) {
+            v3Entry.children = entry.children.map(child => convertEntryToV3(child));
         }
-        return finalCard;
-    } else {
-        return buildSillyTavernV2Card(currentCardState);
+        
+        return v3Entry;
+    }
+    
+    const v3BookEntries = (cardData.worldbook || []).map(entry => convertEntryToV3(entry));
+
+    const dataObject = {
+        name: cardData.name || '',
+        description: cardData.description || '',
+        personality: cardData.personality || '',
+        scenario: cardData.scenario || '',
+        first_mes: cardData.first_mes || '',
+        mes_example: cardData.mes_example || '',
+        creator_notes: 'Created with Nika Character Studio',
+        system_prompt: cardData.system_prompt || '',
+        post_history_instructions: cardData.post_history_instructions || '',
+        tags: cardData.tags || [],
+        creator: 'Nika Studio User',
+        character_version: '1.0',
+        alternate_greetings: [],
+        group_only_greetings: [],
+        extensions: {
+            talkativeness: "0.5",
+            fav: cardData.isFavorite || false,
+            world: cardData.topic || '',
+            depth_prompt: { prompt: "", depth: 4, role: "system" }
+        },
+        character_book: {
+            name: `(世界书) ${cardData.name || 'Character Book'}`,
+            description: `Character book for ${cardData.name}.`,
+            scan_depth: 10,
+            token_budget: 2048,
+            recursive_scanning: false,
+            entries: v3BookEntries,
+        },
+    };
+
+    return {
+        spec: 'chara_card_v3',
+        spec_version: '3.0',
+        name: dataObject.name,
+        description: dataObject.description,
+        personality: dataObject.personality,
+        scenario: dataObject.scenario,
+        first_mes: dataObject.first_mes,
+        mes_example: dataObject.mes_example,
+        creatorcomment: dataObject.creator_notes,
+        tags: dataObject.tags,
+        create_date: new Date().toISOString(),
+        avatar: "none",
+        talkativeness: "0.5",
+        fav: dataObject.extensions.fav,
+        data: dataObject,
+    };
+}
+
+
+// ====================================================================================
+// --- LOVER & AI HELPER FUNCTIONS ---
+// ====================================================================================
+
+function initializeLoverSwitch() {
+    const loverSwitch = document.getElementById('lover-switch');
+    if (loverSwitch) {
+        loverSwitch.addEventListener('change', (event) => {
+            toggleAiButtonText(event.target.checked);
+        });
     }
 }
 
-function downloadCharacter() {
-    const v2Card = buildLiveExportCard();
-    const blob = new Blob([JSON.stringify(v2Card, null, 2)], { type: 'application/json' });
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(blob);
-    a.download = (v2Card.data && v2Card.data.name ? v2Card.data.name : 'character') + '.json';
-    a.click();
-    URL.revokeObjectURL(a.href);
+function toggleAiButtonText(isLover) {
+    const aiButtons = document.querySelectorAll('.ai-button');
+    const newText = isLover ? t('generate-companion') : t('ai-help-write');
+    aiButtons.forEach(button => {
+        button.textContent = newText;
+    });
 }
 
-async function downloadCharacterAsPng() {
-    const v2Card = buildLiveExportCard();
-    const cardData = buildCardObject();
-    if (!v2Card.data || !v2Card.data.name) {
-        alert("请输入角色名以生成PNG角色卡。");
-        return;
+function getLoverPromptPrefix() {
+    return `重要指令：你是一个小说角色创作家，你要生成的角色把读者当恋人或者密友，并且读者的代词为"{{user}}"，角色的代词为"{{char}}，生成相关角色的信息\n\n`;
+}
+
+// 新增: 撤销AI补全的功能
+function undoAiCompletion(undoButton) {
+    const container = undoButton.closest('.field-group');
+    if (!container) return;
+
+    const targetElement = container.querySelector('textarea, input:not([type=file]):not([type=checkbox])');
+    if (targetElement && targetElement.dataset.aiBackup !== undefined) {
+        targetElement.value = targetElement.dataset.aiBackup;
+        delete targetElement.dataset.aiBackup; // 清除备份
+        undoButton.style.display = 'none'; // 隐藏自己
     }
-    const base64Data = btoa(unescape(encodeURIComponent(JSON.stringify(v2Card))));
-    const imageToUse = cardData.avatar || createDefaultImage('2:3');
-    const finalPngBlob = await embedDataInPng(imageToUse, base64Data);
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(finalPngBlob);
-    a.download = (v2Card.data.name || 'character') + '.png';
-    a.click();
-    URL.revokeObjectURL(a.href);
 }
 
-async function callDeepSeek(fieldId) {
-    const apiKey = getEditorValue('apiKey');
+
+async function callApi(prompt, button) {
+    const apiKey = document.getElementById('apiKey').value.trim();
     if (!apiKey) {
-        alert("请输入您的DeepSeek API Key。");
-        return;
+        alert(t('api-key-placeholder'));
+        return null;
     }
+
+    const isLover = document.getElementById('lover-switch').checked;
+    const finalPrompt = isLover ? getLoverPromptPrefix() + prompt : prompt;
+
+    console.log(currentLanguage === 'zh' ? "发送给API的最终提示:" : "Final prompt being sent to API:", finalPrompt);
+
+    const originalText = button.textContent;
+    button.disabled = true;
+    button.textContent = t('generating');
+
+    // 隐藏对应的撤销按钮（如果它正显示）
+    const undoButton = button.nextElementSibling;
+    if (undoButton && undoButton.classList.contains('ai-undo-button')) {
+        undoButton.style.display = 'none';
+    }
+
+
+    try {
+        const response = await fetch("https://api.deepseek.com/chat/completions", {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
+            body: JSON.stringify({ model: "deepseek-chat", messages: [{ "role": "user", "content": finalPrompt }] })
+        });
+
+        if (!response.ok) {
+            const errorBody = await response.json();
+            throw new Error(t('api-request-failed', { status: response.statusText, message: errorBody.error.message }));
+        }
+
+        const data = await response.json();
+        return data.choices[0].message.content;
+    } catch (error) {
+        console.error(currentLanguage === 'zh' ? "DeepSeek API错误:" : "DeepSeek API error:", error);
+        alert(t('ai-completion-failed'));
+        return null;
+    } finally {
+        button.disabled = false;
+        button.textContent = originalText;
+    }
+}
+async function callDeepSeek(fieldId) {
+    const button = event.target;
+    const targetElement = document.getElementById(fieldId);
+    if (!targetElement) return;
+
+    // 备份当前文本
+    targetElement.dataset.aiBackup = targetElement.value;
 
     const currentCard = buildCardObject();
-    let prompt = `你是一位专业的角色设定师。请根据以下已经提供的角色信息，为我生成或补全【${document.querySelector(`label[for='${fieldId}']`).innerText.replace(' (逗号分隔)','')}】这一项。
+    const labelText = document.querySelector(`label[for='${fieldId}']`).innerText.replace(' (逗号分隔)','');
+    let prompt = `你是一位专业的角色设定师。请根据以下已经提供的角色信息，为我生成或补全【${labelText}】这一项。
 请直接返回最适合填入该项的内容，语言风格要自然，不要包含任何额外解释、标题或标签。
 
 已提供信息:
@@ -784,59 +1966,242 @@ async function callDeepSeek(fieldId) {
 - 首次发言: ${currentCard.first_mes || '未指定'}
 - 范例对话: ${currentCard.mes_example || '未指定'}
 
-现在，请生成【${document.querySelector(`label[for='${fieldId}']`).innerText}】的内容。`;
+现在，请生成【${labelText}】的内容。`;
     
-    const button = event.target;
-    button.disabled = true;
-    button.textContent = '生成中...';
-
-    try {
-        const response = await fetch("https://api.deepseek.com/chat/completions", {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
-            body: JSON.stringify({ model: "deepseek-chat", messages: [{ "role": "user", "content": prompt }] })
-        });
-
-        if (!response.ok) {
-            const errorBody = await response.json();
-            throw new Error(`API 请求失败: ${response.statusText} - ${errorBody.error.message}`);
+    const result = await callApi(prompt, button);
+    if (result) {
+        targetElement.value = result;
+        // 显示撤销按钮
+        const undoButton = button.nextElementSibling;
+        if (undoButton && undoButton.classList.contains('ai-undo-button')) {
+            undoButton.style.display = 'inline-block';
         }
+    }
+}
+async function generateFullWorldbook(button) {
+    if (!confirm(t('confirm-overwrite-worldbook'))) return;
 
-        const data = await response.json();
-        const result = data.choices[0].message.content;
-        document.getElementById(fieldId).value = result;
-    } catch (error) {
-        console.error("DeepSeek API error:", error);
-        alert("AI补全失败，请检查API Key或网络连接，并查看控制台获取更多信息。");
-    } finally {
-        button.disabled = false;
-        button.textContent = '🔮 AI 帮我写';
+    const characterContext = buildCardObject();
+    let prompt = `你是一位专业的AI角色扮演角色书（Character Book）架构师。请分析以下角色设定，并为该角色创建3到5个最核心、最能增强角色扮演深度的角色书条目。
+
+**角色设定:**
+- 角色名: ${characterContext.name || '未指定'}
+- 性别: ${characterContext.gender || '未指定'}
+- 主题/世界观: ${characterContext.topic || '未指定'}
+- 角色描述: ${characterContext.description || '未指定'}
+- 个性: ${characterContext.personality || '未指定'}
+- 场景设定: ${characterContext.scenario || '未指定'}
+
+**你的任务:**
+1. 识别出角色背景中最重要的概念、人物、地点、物品或关键能力。
+2. 为这些概念创建角色书条目。
+3. **严格按照以下JSON格式返回你的答案，不要包含任何JSON格式之外的额外文字、解释或Markdown标记。**
+
+**JSON格式要求:**
+返回一个JSON数组，其中每个对象代表一个条目，且必须包含 "id" (数字), "keys" (字符串数组), "content" (字符串), 和 "comment" (字符串) 四个键。"id" 从0开始递增。`;
+
+    const result = await callApi(prompt, button);
+    if (result) {
+        try {
+            const cleanedResult = result.replace(/^```json\s*|```$/g, '');
+            const generatedEntries = JSON.parse(cleanedResult);
+            
+            if (Array.isArray(generatedEntries)) {
+                renderWorldbookFromData(generatedEntries);
+                alert(t('worldbook-generated-success'));
+            } else {
+                throw new Error(t('ai-return-not-array'));
+            }
+        } catch (e) {
+            console.error(currentLanguage === 'zh' ? "解析AI返回的JSON失败:" : "Failed to parse AI returned JSON:", e);
+            console.error(currentLanguage === 'zh' ? "收到的原始数据:" : "Received raw data:", result);
+            alert(t('ai-parse-failed'));
+        }
+    }
+}
+async function callWorldbookDeepSeek(button) {
+    const currentEntryElement = button.closest('.worldbook-entry');
+    const targetElement = currentEntryElement.querySelector('.wb-content');
+    if (!targetElement) return;
+
+    // 备份当前文本
+    targetElement.dataset.aiBackup = targetElement.value;
+
+    const characterContext = buildCardObject(); 
+    const currentComment = currentEntryElement.querySelector('.entry-comment').value || '未命名条目';
+    const currentKeys = currentEntryElement.querySelector('.wb-keys').value;
+    let prompt = `你是一位专业的角色书（Character Book）内容填充专家。请基于以下提供的角色信息和角色书结构，为我撰写条目【${currentComment}】的"注入内容"。内容需要详细、富有想象力，并与角色设定保持高度一致。
+
+---
+**角色核心设定:**
+- 角色名: ${characterContext.name || '未指定'}
+- 描述: ${characterContext.description || '未指定'}
+- 个性: ${characterContext.personality || '未指定'}
+
+**角色书上下文:**
+- **当前条目标题 (Comment):** ${currentComment}
+- **当前条目主要关键词 (Keys):** ${currentKeys || '未指定'}
+
+---
+**你的任务:**
+现在，请为条目【${currentComment}】生成详细的"注入内容"。
+**要求：** 直接返回内容本身，不要包含任何额外解释、标题或引用。`;
+
+    const result = await callApi(prompt, button);
+    if (result) {
+        targetElement.value = result;
+        // 显示撤销按钮
+        const undoButton = button.nextElementSibling;
+        if (undoButton && undoButton.classList.contains('ai-undo-button')) {
+            undoButton.style.display = 'inline-block';
+        }
     }
 }
 
-function buildSillyTavernV2Card(cardData) {
-    const v2Card = {
-        spec: 'chara_card_v2',
-        spec_version: '2.0',
-        data: {
-            name: cardData.name || '',
-            description: cardData.description || '',
-            personality: cardData.personality || '',
-            scenario: cardData.scenario || '',
-            first_mes: cardData.first_mes || '',
-            mes_example: cardData.mes_example || '',
-            creator_notes: 'Created with Nika Character Studio',
-            system_prompt: cardData.system_prompt || '',
-            post_history_instructions: '',
-            alternate_greetings: [],
-            tags: cardData.tags || [],
-            creator: 'user',
-            character_version: '1.0',
-            gender: cardData.gender || '',
-            topic: cardData.topic || '',
+
+// ====================================================================================
+// --- REFACTORED WORLD BOOK MANAGEMENT (DATA-DRIVEN APPROACH) ---
+// ====================================================================================
+
+// [新功能] 新增的辅助函数，用于在数据结构中查找条目
+function findEntryRecursive(list, elementToFind, parent = null) {
+    for (let i = 0; i < list.length; i++) {
+        const item = list[i];
+        if (item.element === elementToFind) {
+            return {
+                entry: item,
+                parentList: list,
+                index: i,
+                parentEntry: parent
+            };
         }
+        if (item.children && item.children.length > 0) {
+            const found = findEntryRecursive(item.children, elementToFind, item);
+            if (found) {
+                return found;
+            }
+        }
+    }
+    return null;
+}
+
+function parseEntryFromElement(element) {
+    return {
+        id: parseInt(element.querySelector('.wb-sort-id').value, 10) || 0,
+        keys: element.querySelector('.wb-keys').value.split(/[,、，\s]+/).map(k => k.trim()).filter(Boolean),
+        secondary_keys: element.querySelector('.wb-secondary-keys').value.split(/[,、，\s]+/).map(k => k.trim()).filter(Boolean),
+        secondary_keys_logic: element.querySelector('.wb-secondary-keys-logic').value,
+        comment: element.querySelector('.entry-comment').value,
+        content: element.querySelector('.wb-content').value,
+        priority: parseInt(element.querySelector('.wb-priority').value, 10) || 100,
+        enabled: element.querySelector('.wb-enabled').checked,
+        prevent_recursion: element.querySelector('.wb-prevent-recursion').checked,
+        group: element.querySelector('.wb-group').value.trim(),
+        position: element.querySelector('.wb-position').value,
+        scope: element.querySelector('.wb-scope').value,
+        constant: element.querySelector('.wb-constant').checked,
+        selective: element.querySelector('.wb-selective').checked,
+        use_regex: element.querySelector('.wb-use-regex').checked,
+        match_whole_words: element.querySelector('.wb-match-whole-words').checked,
+        case_sensitive: element.querySelector('.wb-case-sensitive').checked,
+        probability: parseInt(element.querySelector('.wb-probability').value, 10),
+        wb_depth: parseInt(element.querySelector('.wb-depth').value, 10) || 4,
+        element: element,
+        children: []
     };
-    return v2Card;
+}
+
+function buildWorldbookDataFromDOM(parentElement = document.getElementById('worldbook-entries-container')) {
+    const entries = [];
+    const childElements = Array.from(parentElement.children);
+
+    for (const el of childElements) {
+        if (el.matches('li.worldbook-entry')) {
+            const entryData = parseEntryFromElement(el);
+            const childContainer = el.querySelector('.child-entries');
+            if (childContainer && childContainer.children.length > 0) {
+                entryData.children = buildWorldbookDataFromDOM(childContainer);
+            }
+            entries.push(entryData);
+        }
+    }
+    return entries;
+}
+
+function renderWorldbookFromData(data) {
+    const container = document.getElementById('worldbook-entries-container');
+    container.innerHTML = ''; 
+
+    function renderLevel(entries, parentElement) {
+        entries.forEach(entryData => {
+            const entryElement = createWorldbookEntryElement(entryData);
+            parentElement.appendChild(entryElement);
+            if (entryData.children && entryData.children.length > 0) {
+                const childContainer = entryElement.querySelector('.child-entries');
+                renderLevel(entryData.children, childContainer);
+            }
+        });
+    }
+    
+    renderLevel(data, container);
+    updateAllEntryAttributes();
+}
+
+function sortDataTree(data) {
+    data.sort((a, b) => (a.id || 0) - (b.id || 0));
+    data.forEach(entry => {
+        if (entry.children && entry.children.length > 0) {
+            sortDataTree(entry.children);
+        }
+    });
+}
+
+function sortWorldbookEntries() {
+    const worldbookData = buildWorldbookDataFromDOM();
+    sortDataTree(worldbookData);
+    renderWorldbookFromData(worldbookData);
+    alert('条目已按ID重新排列！');
+}
+
+function airdropEntry(button) {
+    const currentEntryElement = button.closest('.worldbook-entry');
+    if (!currentEntryElement) return;
+
+    const idInput = currentEntryElement.querySelector('.wb-sort-id');
+    if (!idInput) return;
+
+    const targetId = parseInt(idInput.value, 10);
+    if (isNaN(targetId)) {
+        alert("请输入一个有效的数字ID。");
+        return;
+    }
+    const worldbookData = buildWorldbookDataFromDOM();
+    let entryToMove = null;
+    let parentList = null;
+
+    function findEntryAndParent(data, parent) {
+        for (const entry of data) {
+            if (entry.element === currentEntryElement) {
+                entryToMove = entry;
+                parentList = parent;
+                return;
+            }
+            if (entry.children.length > 0) {
+                findEntryAndParent(entry.children, entry.children);
+            }
+        }
+    }
+    findEntryAndParent(worldbookData, worldbookData);
+    if (!entryToMove || !parentList) return;
+    parentList.forEach(sibling => {
+        if (sibling !== entryToMove && sibling.id >= targetId) {
+            sibling.id += 1;
+        }
+    });
+    entryToMove.id = targetId;
+    sortDataTree(worldbookData);
+    renderWorldbookFromData(worldbookData);
+    alert(`操作完成！列表已根据新ID排列。`);
 }
 
 function createDefaultImage(ratio = '2:3') {
@@ -853,6 +2218,243 @@ function createDefaultImage(ratio = '2:3') {
     return canvas.toDataURL('image/png');
 }
 
+function addWorldbookEntry() {
+    const worldbookData = buildWorldbookDataFromDOM();
+    const newId = (worldbookData.length > 0) ? Math.max(...worldbookData.map(e => e.id)) + 1 : 0;
+    worldbookData.push({ id: newId, comment: '新条目', keys: [], content: '', children: [] });
+    renderWorldbookFromData(worldbookData);
+}
+
+function createWorldbookEntryElement(entryData = {}) {
+    const entryLi = document.createElement('li');
+    entryLi.className = 'worldbook-entry';
+    const uniqueId = `wb-entry-${Date.now()}-${Math.random()}`;
+    entryLi.dataset.uniqueId = uniqueId;
+    
+    const defaultEntry = {
+        comment: '新条目', keys: [], secondary_keys: [], content: '',
+        secondary_keys_logic: 'any',
+        priority: 100, enabled: true, prevent_recursion: false,
+        group: '', position: 'before_char', scope: 'chat',
+        id: 0,
+        constant: false, selective: true, use_regex: false,
+        match_whole_words: true, case_sensitive: false, probability: 100,
+        wb_depth: 4,
+        ...entryData
+    };
+    
+    entryLi.innerHTML = `
+        <div class="entry-content-wrapper">
+            <div class="entry-header">
+                <div class="entry-title-group">
+                    <div style="display: flex; align-items: center; gap: 5px; min-width: 130px;">
+                        <input type="number" class="wb-sort-id" title="排序ID" placeholder="ID" value="${defaultEntry.id}" style="width: 65px; flex-shrink: 0;">
+                        <button title="将此条目插入到左侧框中指定的ID位置，并顺延后续条目" onclick="airdropEntry(this)" style="padding: 5px 8px; font-size: 14px; background-color: #6c757d; color: white;">➡️</button>
+                    </div>
+                    <input type="text" class="entry-comment" placeholder="条目注释 (Comment)" value="${defaultEntry.comment}">
+                                         <span class="help-icon" onclick="showHelp(t('help-id-drop'))">?</span>
+                </div>
+                <div class="entry-actions">
+                    <button title="添加子条目" onclick="addChildEntry(this)">➕</button>
+                    <button title="将此条目移出父条目" onclick="indentEntry(this, -1)">↓退出</button>
+                    <button title="将此条目设为上方同级条目的子条目" onclick="indentEntry(this, 1)">↑加入</button>
+                    <button class="delete-entry-btn" onclick="this.closest('.worldbook-entry').remove();">删除</button>
+                </div>
+            </div>
+            <div class="entry-grid">
+                <div class="field-group full-width">
+                                         <label>主要关键词 (Keys, 逗号分隔) <span class="help-icon" onclick="showHelp(t('help-main-keys'))">?</span></label>
+                    <input type="text" class="wb-keys" placeholder="例如: 誓约胜利之剑, Excalibur" value="${(defaultEntry.keys || []).join(', ')}">
+                </div>
+                <div class="field-group full-width">
+                    <label>注入内容 (Content) <button class="ai-button" onclick="callWorldbookDeepSeek(this)" style="padding: 2px 8px; font-size: 12px; width: auto; margin-left: 10px;">🔮 AI 帮我写</button><button class="ai-undo-button" onclick="undoAiCompletion(this)">↩️ 撤销</button></label>
+                    <textarea class="wb-content" rows="3" placeholder="当关键词被触发时，这里的内容会被悄悄地塞给AI，作为它的临时记忆。支持用 {{变量}} 引用其他条目的内容。">${defaultEntry.content}</textarea>
+                </div>
+
+                <div class="field-group full-width">
+                    <details>
+                        <summary id="advanced-settings-summary">高级设定 <span style="font-weight: normal; font-size: 14px; color: #aaa;">(关键词匹配、注入逻辑等)</span></summary>
+                        <div class="advanced-grid">
+                            <div class="field-group full-width">
+                                <label>关键字过滤器 (Keyword Filter) 
+                                    <span class="help-icon" onclick="showHelp(t('help-secondary-keys'))">?</span>
+                                </label>
+                                <div style="display: flex; gap: 10px; align-items: center;">
+                                    <select class="wb-secondary-keys-logic" style="flex: 1; padding: 12px;">
+                                        <option value="any" ${defaultEntry.secondary_keys_logic === 'any' ? 'selected' : ''}>与任意</option>
+                                        <option value="none" ${defaultEntry.secondary_keys_logic === 'none' ? 'selected' : ''}>非任意</option>
+                                        <option value="all" ${defaultEntry.secondary_keys_logic === 'all' ? 'selected' : ''}>与所有</option>
+                                        <option value="not_all" ${defaultEntry.secondary_keys_logic === 'not_all' ? 'selected' : ''}>非所有</option>
+                                    </select>
+                                    <input type="text" class="wb-secondary-keys" placeholder="逗号分隔的关键词" value="${(defaultEntry.secondary_keys || []).join(', ')}" style="flex: 3;">
+                                </div>
+                            </div>
+                            <div class="field-group">
+                                <label>注入位置</label>
+                                <select class="wb-position">
+                                    <option value="before_char" ${defaultEntry.position === 'before_char' ? 'selected' : ''}>角色定义前</option>
+                                    <option value="after_char" ${defaultEntry.position === 'after_char' ? 'selected' : ''}>角色定义后</option>
+                                    <option value="before_prompt" ${defaultEntry.position === 'before_prompt' ? 'selected' : ''}>最开头</option>
+                                </select>
+                            </div>
+                            <div class="field-group"><label>作用域</label><select class="wb-scope"><option value="chat" ${defaultEntry.scope === 'chat' ? 'selected' : ''}>聊天中</option><option value="summary" ${defaultEntry.scope === 'summary' ? 'selected' : ''}>记忆摘要中</option><option value="discovery" ${defaultEntry.scope === 'discovery' ? 'selected' : ''}>每次进入聊天时</option></select></div>
+                            <div class="field-group"><label>优先级</label><input type="number" class="wb-priority" value="${defaultEntry.priority}"></div>
+                            <div class="field-group"><label>分组</label><input type="text" class="wb-group" value="${defaultEntry.group}" placeholder="可选"></div>
+                            <div class="field-group"><label>触发概率 (%)</label><input type="number" class="wb-probability" value="${defaultEntry.probability}" min="0" max="100"></div>
+                            <div class="field-group"><label>记忆扫描深度</label><input type="number" class="wb-depth" value="${defaultEntry.wb_depth}"></div>
+                            <div class="field-group logic-group full-width">
+                                <label><input type="checkbox" class="wb-enabled" ${defaultEntry.enabled ? 'checked' : ''}>启用</label>
+                                <label><input type="checkbox" class="wb-constant" ${defaultEntry.constant ? 'checked' : ''}>恒定注入</label>
+                                <label><input type="checkbox" class="wb-selective" ${defaultEntry.selective ? 'checked' : ''}>选择性注入</label>
+                                <label><input type="checkbox" class="wb-prevent-recursion" ${defaultEntry.prevent_recursion ? 'checked' : ''}>阻止递归</label>
+                                <label><input type="checkbox" class="wb-use-regex" ${defaultEntry.use_regex ? 'checked' : ''}>正则匹配</label>
+                                <label><input type="checkbox" class="wb-match-whole-words" ${defaultEntry.match_whole_words ? 'checked' : ''}>全词匹配</label>
+                                <label><input type="checkbox" class="wb-case-sensitive" ${defaultEntry.case_sensitive ? 'checked' : ''}>区分大小写</label>
+                            </div>
+                        </div>
+                    </details>
+                </div>
+            </div>
+        </div>
+        <ul class="child-entries"></ul>
+    `;
+    return entryLi;
+}
+
+function addChildEntry(button) {
+    const worldbookData = buildWorldbookDataFromDOM();
+    const parentEntryElement = button.closest('.worldbook-entry');
+    
+    function findAndAdd(data) {
+        for (const entry of data) {
+            if (entry.element === parentEntryElement) {
+                const newId = (entry.children.length > 0) ? Math.max(...entry.children.map(e => e.id)) + 1 : 0;
+                entry.children.push({ id: newId, comment: '新子条目', keys: [], content: '', children: [] });
+                return true;
+            }
+            if (entry.children.length > 0) {
+                if(findAndAdd(entry.children)) return true;
+            }
+        }
+        return false;
+    }
+
+    findAndAdd(worldbookData);
+    renderWorldbookFromData(worldbookData);
+}
+
+// [已修复] 替换为修复后的函数
+function indentEntry(button, direction) {
+    const worldbookData = buildWorldbookDataFromDOM();
+    const currentEntryElement = button.closest('.worldbook-entry');
+    if (!currentEntryElement) return;
+
+    const found = findEntryRecursive(worldbookData, currentEntryElement);
+
+    if (!found) {
+        console.error(currentLanguage === 'zh' ? "无法在数据结构中找到对应的条目。" : "Unable to find corresponding entry in data structure.");
+        return;
+    }
+
+    const { entry, parentList, index, parentEntry } = found;
+
+    if (direction > 0) { // Indent (↑加入): 将条目设为上方同级条目的子条目
+        if (index > 0) {
+            const newParent = parentList[index - 1];
+            parentList.splice(index, 1); // 从当前列表中移除
+            newParent.children.push(entry); // 添加到新父级的 children 数组中
+        } else {
+            alert('已经是同级中的第一个条目，无法加入（缩进）。');
+            return;
+        }
+    } else { // Un-indent (↓退出): 将子条目移出，成为父条目的同级
+        if (parentEntry) {
+            const parentFound = findEntryRecursive(worldbookData, parentEntry.element);
+            if (parentFound) {
+                const grandParentList = parentFound.parentList;
+                const parentIndex = parentFound.index;
+
+                parentList.splice(index, 1); // 从当前父级的 children 数组中移除
+                grandParentList.splice(parentIndex + 1, 0, entry); // 添加到祖父级列表，紧跟在原父级之后
+            }
+        } else {
+            alert(t('already-root-entry'));
+            return;
+        }
+    }
+
+    // 从修改后的数据结构，重新渲染整个角色书UI
+    renderWorldbookFromData(worldbookData);
+}
+
+function updateAllEntryAttributes() {
+    const container = document.getElementById('worldbook-entries-container');
+    
+    function traverse(element, depth, indexRef) {
+        if (element.matches('li.worldbook-entry')) {
+            element.dataset.depth = depth;
+            element.dataset.displayIndex = indexRef.index++;
+            const childContainer = element.querySelector('.child-entries');
+            if (childContainer) {
+                Array.from(childContainer.children).forEach(child => traverse(child, depth + 1, indexRef));
+            }
+        } else if (element.children) {
+             Array.from(element.children).forEach(child => traverse(child, 0, indexRef));
+        }
+    }
+    
+    let indexCounter = { index: 0 };
+    traverse(container, -1, indexCounter);
+}
+
+// --- PNG EMBEDDING FUNCTIONS ---
+async function cleanImageAndGetDataURL(base64Str) {
+    return new Promise((resolve, reject) => {
+        const img = new Image();
+        img.onload = () => {
+            const canvas = document.createElement('canvas');
+            canvas.width = img.width;
+            canvas.height = img.height;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0);
+            resolve(canvas.toDataURL('image/png'));
+        };
+        img.onerror = () => reject(new Error('无法加载图片，可能不是有效的图片格式。'));
+        img.src = base64Str;
+    });
+}
+
+// 新增：将任何格式的图片转换为PNG格式
+async function convertImageToPng(imageDataUrl) {
+    return new Promise((resolve, reject) => {
+        const img = new Image();
+        img.crossOrigin = 'anonymous'; // 允许跨域图片
+        
+        img.onload = () => {
+            try {
+                const canvas = document.createElement('canvas');
+                canvas.width = img.width;
+                canvas.height = img.height;
+                const ctx = canvas.getContext('2d');
+                
+                // 绘制图片到canvas
+                ctx.drawImage(img, 0, 0);
+                
+                // 转换为PNG格式
+                const pngDataUrl = canvas.toDataURL('image/png', 0.9);
+                resolve(pngDataUrl);
+            } catch (error) {
+                reject(new Error(`图片转换失败: ${error.message}`));
+            }
+        };
+        
+        img.onerror = () => {
+            reject(new Error('无法加载图片，可能不是有效的图片格式。'));
+        };
+        
+        img.src = imageDataUrl;
+    });
+}
 async function embedDataInPng(imageBase64, textData) {
     const response = await fetch(imageBase64);
     const imageBuffer = await response.arrayBuffer();
@@ -954,6 +2556,7 @@ async function extractDataFromPng(arrayBuffer) {
     }
     throw new Error('在PNG中未找到角色数据。');
 }
+
 </script>
 
 </body>

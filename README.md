@@ -1,163 +1,246 @@
-# 妮卡角色工作室
+# 妮卡角色工作室 Pro
 
-一个优雅的角色卡管理系统，专为AI角色创作和管理而设计。
+一个优雅的AI角色卡管理系统，专为ST角色创作和管理而设计。
 
-## 🌟 项目简介
-
-妮卡角色工作室是一个基于Web的角色卡管理系统，支持创建、编辑、导入和导出AI角色卡。项目采用纯前端技术栈，数据本地存储，确保用户隐私安全。内置AI智能补全功能，非常适合AI角色扮演爱好者和创作者使用。
-
-## ✨ 主要功能
-
-### 角色管理
-- **创建角色**: 支持完整的角色信息录入，包括头像、基本信息、性格设定等
-- **编辑角色**: 随时修改和更新角色信息
-- **角色库**: 网格布局展示所有角色，支持收藏功能
-- **标签系统**: 多维度标签分类，便于角色筛选和管理
-
-### 导入导出
-- **JSON导入**: 支持导入标准格式的角色卡JSON文件
-- **PNG导入**: 支持从PNG图片中提取角色数据
-- **JSON导出**: 导出角色卡为JSON格式
-- **PNG导出**: 将角色卡嵌入PNG图片中，便于分享
-
-### AI辅助
-- **DeepSeek集成**: 集成DeepSeek AI API，提供智能内容生成
-- **智能补全**: AI协助生成角色描述、性格、对话示例等
-- **一键生成**: 快速生成角色设定内容
-
-### 界面设计
-- **现代化UI**: 采用酒馆的深色主题，界面优雅美观
-- **响应式设计**: 支持桌面和移动设备
-- **流畅动画**: 丰富的交互动画效果
-- **中文界面**: 完全中文化的用户界面
-
-![主页](./主页预览.png)
-
-![编辑页](./创建界面预览.png)
-
-## 🛠️ 技术特性
-
-### 前端技术
-- **纯HTML/CSS/JavaScript**: 无需构建工具，开箱即用
-- **IndexedDB**: 本地数据库存储，数据安全可靠
-- **Canvas API**: 图片处理和生成
-- **File API**: 文件上传和处理
-
-### 数据格式
-- **SillyTavern v2**: 兼容SillyTavern角色卡格式
-- **PNG嵌入**: 支持将角色数据嵌入PNG图片
-- **JSON标准**: 标准JSON格式，便于数据交换
-- **高度兼容**: 支持PNG角色卡的导入和导出，兼容主流的角色卡格式
-
-### 安全特性
-- **本地存储**: 所有数据存储在用户本地
-- **隐私保护**: 无需服务器，数据不上传
-- **API密钥**: 用户自行管理AI API密钥
-- **纯前端实现**: 无需任何后端服务，完全在浏览器中运行
-
-## 🚀 快速开始
-
-### 环境要求
-- 现代浏览器（Chrome、Firefox、Safari、Edge）
-- 支持JavaScript和IndexedDB（不要开启浏览器隐私模式，否则可能库功能失效）
-- 可选：DeepSeek API密钥（用于AI功能）
-
-### 安装使用
-1. 下载项目文件到同一个文件夹中
-2. 在浏览器中打开 `index.html`
-3. 开始创建和管理你的角色卡
-
-### 基本操作
-1. **创建角色**: 点击"创建新角色"按钮
-2. **编辑角色**: 在角色库中点击"编辑"按钮
-3. **导入角色**: 点击"导入角色卡"按钮
-4. **导出角色**: 在编辑器中点击"下载"按钮
-
-### 配置AI功能（可选）
-1. 在编辑器中输入您的DeepSeek API Key
-2. 点击各字段旁的"🔮 AI 帮我写"按钮
-3. AI将根据已有信息智能生成相关内容
-
-## 📖 使用指南
-
-### 角色创建流程
-1. 填写基本信息（姓名、性别、主题）
-2. 上传角色头像（PNG格式，2:3比例最佳）
-3. 编写角色描述和性格设定
-4. 设置AI对话参数（系统提示、场景设定等）
-5. 添加分类标签
-6. 保存角色
-
-### AI功能使用
-1. 在编辑器中输入DeepSeek API密钥
-2. 点击各字段旁的"🔮 AI 帮我写"按钮
-3. AI将根据已有信息生成相关内容
-
-### 标签管理
-- **分类标签**: 用于角色分类和筛选
-- **内部标签**: 个人管理标签，不导出
-- **收藏功能**: 标记重要角色
-
-## 🔧 高级功能
-
-### PNG角色卡
-- 支持将角色数据嵌入PNG图片
-- 便于在社交媒体分享
-- 保持图片质量的同时携带完整数据
-
-### 数据迁移
-- 支持从其他角色卡系统导入
-- 兼容多种数据格式
-- 数据转换和清理
-
-### 批量操作
-- 支持批量导入角色卡
-- 批量导出功能
-- 标签批量管理
-
-## ❓ 常见问题 (FAQ)
-
-**Q: 没有 DeepSeek API Key 怎么办？**
-**A:** 您需要访问 DeepSeek 官网，注册一个账户并至少充值 1 元人民币来创建一个 API Key。
-
-**Q: 我的 API Key 会被上传吗？是否安全？**
-**A:** 绝对安全。API Key 仅在您本地浏览器的内存中使用，绝不会被上传到任何外部服务器。
-
-**Q: AI 补全功能无法使用？**
-**A:** 请检查以下几点：
-1. 确保您的 API Key 是正确的
-2. 检查您的网络连接是否通畅
-3. 确认您的 DeepSeek 账户有足够的额度
-
-**Q: 角色数据存储在哪里？**
-**A:** 所有的角色数据都安全地保存在您本地浏览器的 IndexedDB 数据库中。
-
-**Q: 如何备份或迁移我的角色？**
-**A:** 您可以使用"下载 JSON"或"下载 PNG 角色卡"功能来导出和备份您的角色。
-
-## 🤝 贡献指南
-
-本工具由我与Gemini合作创建，我刚开始学前端，欢迎大佬们来改进项目！
-
-### 开发环境
-1. Fork项目
-2. 创建功能分支
-3. 提交更改
-4. 发起Pull Request
-
-### 代码规范
-- 使用中文注释
-- 遵循JavaScript最佳实践
-- 保持代码简洁可读
-
-## 📄 许可证
-
-本项目采用MIT许可证，详见LICENSE文件。
-
-## 🙏 致谢
-
-感谢所有为项目做出贡献的开发者！
+> **多语言支持**: This document is available in Chinese and English.
 
 ---
 
-**祝您愉快地创造属于您的角色！**
+## 主要功能
+
+### 角色管理
+- **创建/编辑角色**: 完整的角色信息录入，包括头像、基本信息、性格设定等
+- **角色库**: 网格布局展示，支持收藏和标签筛选
+- **世界书系统**: 高级角色书功能，支持层级结构和AI生成
+
+### 导入导出
+- **多格式导入**: 支持JSON、PNG角色卡，以及所有图片格式（PNG、JPG、WEBP、GIF、BMP）
+- **自动转换**: 所有图片自动转换为PNG格式存储
+- **JSON/PNG导出**: 导出角色卡为JSON或PNG格式
+
+### AI辅助
+- **DeepSeek集成**: 智能内容生成
+- **一键补全**: AI协助生成角色描述、性格、对话示例等
+- **伴侣模式**: 专门为虚拟伴侣角色设计的AI补全功能
+- **世界书生成**: AI自动生成角色书条目
+
+### 界面设计
+- **现代化UI**: 深色主题，界面优雅美观
+- **响应式设计**: 支持桌面和移动设备
+- **中文界面**: 完全中文化的用户界面
+
+## 快速开始
+
+### 环境要求
+- 现代浏览器（开启隐私模式会影响本地库的存储）
+- 可选：DeepSeek API密钥（用于AI功能）
+
+### 使用步骤
+1. 下载项目文件
+2. 在浏览器中打开 `index.html`
+3. 开始创建和管理你的角色卡
+
+## V3 Pro 新特性
+
+### 图片格式支持
+- 支持所有图片格式上传（PNG、JPG、JPEG、WEBP、GIF、BMP）
+- 自动转换为PNG格式存储
+- 导出时统一使用PNG格式
+
+### 世界书系统
+- 支持层级结构的角色书条目
+- 子条目功能，可创建复杂的知识体系
+- AI自动生成角色书条目
+- 完整的导入/导出支持
+
+### 伴侣模式
+- 专门的虚拟伴侣角色AI补全功能
+- 一键切换伴侣模式，AI生成更符合伴侣角色的内容
+- 智能调整生成策略，让角色更贴近伴侣设定
+
+### 加入后期指令词条
+- 可以为输出自定义格式，如括号里面描写动作，外面发言
+
+### 数据兼容性
+- 完全兼容V2和V3角色卡格式
+- 支持子条目的导入和导出
+- 递归处理嵌套结构
+
+## 技术特性
+
+- **纯前端实现**: HTML/CSS/JavaScript，无需构建工具
+- **本地存储**: IndexedDB数据库，数据安全可靠
+- **图片处理**: Canvas API，支持多格式转换
+- **AI集成**: DeepSeek API，智能内容生成
+
+## 使用指南
+
+### 基本操作
+1. **创建角色**: 点击"创建新角色"
+2. **编辑角色**: 在角色库中点击"编辑"
+3. **导入角色**: 支持JSON、PNG和图片文件
+4. **导出角色**: JSON或PNG格式
+
+### AI功能
+1. 输入DeepSeek API密钥
+2. 点击"AI 帮我写"按钮
+3. AI智能生成相关内容
+
+### 伴侣模式
+1. 在编辑器中开启"伴侣模式"开关
+2. AI按钮文本会变为"生成虚拟伴侣"
+3. 生成的内容会更符合伴侣角色设定
+
+### 世界书功能
+1. 点击"AI生成参考条目"自动生成
+2. 手动添加条目和子条目
+3. 设置关键词和注入内容
+
+## 常见问题
+
+**Q: 支持哪些图片格式？**
+A: 支持PNG、JPG、JPEG、WEBP、GIF、BMP等所有常见格式，会自动转换为PNG存储。
+
+**Q: 这个版本世界书子条目会丢失吗？**
+A: 不会，V3 Pro版本完全支持子条目的导入、导出和显示。
+
+**Q: 数据安全吗？**
+A: 所有数据存储在本地浏览器中，不会上传到任何服务器。
+
+**Q: 伴侣模式是什么？**
+A: 伴侣模式是专门为虚拟伴侣角色设计的AI补全功能，开启后AI会生成更符合伴侣设定的内容，让角色更贴近伴侣关系。
+
+## 许可证
+
+本项目仅供个人学习和非商业用途使用。
+
+### 版权声明
+本项目采用自定义许可证，保留所有权利。未经明确授权，不得用于商业目的。
+
+---
+
+开始创造属于你的角色吧！ 
+
+---
+
+# English Version
+
+# Nika Character Studio Pro
+
+An elegant AI character card management system designed specifically for ST character creation and management.
+
+## Main Features
+
+### Character Management
+- **Create/Edit Characters**: Complete character information entry, including avatars, basic information, personality settings, etc.
+- **Character Library**: Grid layout display with favorites and tag filtering
+- **World Book System**: Advanced character book functionality with hierarchical structure and AI generation
+
+### Import/Export
+- **Multi-format Import**: Supports JSON, PNG character cards, and all image formats (PNG, JPG, WEBP, GIF, BMP)
+- **Auto Conversion**: All images automatically converted to PNG format for storage
+- **JSON/PNG Export**: Export character cards in JSON or PNG format
+
+### AI Assistance
+- **DeepSeek Integration**: Intelligent content generation
+- **One-click Completion**: AI-assisted generation of character descriptions, personality, dialogue examples, etc.
+- **Companion Mode**: AI completion function specifically designed for virtual companion characters
+- **World Book Generation**: AI automatic generation of character book entries
+
+### Interface Design
+- **Modern UI**: Dark theme with elegant and beautiful interface
+- **Responsive Design**: Supports desktop and mobile devices
+- **Chinese Interface**: Fully localized Chinese user interface
+
+## Quick Start
+
+### Requirements
+- Modern browser (Chrome, Firefox, Safari, Edge)
+- JavaScript and IndexedDB support
+- Optional: DeepSeek API key (for AI features)
+
+### Usage Steps
+1. Download project files
+2. Open `index.html` in browser
+3. Start creating and managing your character cards
+
+## V3 Pro New Features
+
+### Image Format Support
+- Supports all image format uploads (PNG, JPG, JPEG, WEBP, GIF, BMP)
+- Automatic conversion to PNG format for storage
+- Unified PNG format for exports
+
+### World Book System
+- Supports hierarchical character book entries
+- Sub-entry functionality for complex knowledge systems
+- AI automatic generation of character book entries
+- Complete import/export support
+
+### Companion Mode
+- Specialized AI completion for virtual companion characters
+- One-click switch to companion mode with AI-generated content more suitable for companion characters
+- Intelligent generation strategy adjustment for more companion-like character settings
+
+### Add post instruction entries
+- You can customize the output format, such as describing actions in brackets and speaking outside
+
+### Data Compatibility
+- Fully compatible with V2 and V3 character card formats
+- Supports sub-entry import and export
+- Recursive processing of nested structures
+
+## Technical Features
+
+- **Pure Frontend Implementation**: HTML/CSS/JavaScript, no build tools required
+- **Local Storage**: IndexedDB database for secure and reliable data storage
+- **Image Processing**: Canvas API with multi-format conversion support
+- **AI Integration**: DeepSeek API for intelligent content generation
+
+## User Guide
+
+### Basic Operations
+1. **Create Character**: Click "Create New Character"
+2. **Edit Character**: Click "Edit" in character library
+3. **Import Character**: Supports JSON, PNG and image files
+4. **Export Character**: JSON or PNG format
+
+### AI Features
+1. Enter DeepSeek API key
+2. Click "AI Help Me Write" button
+3. AI intelligently generates related content
+
+### Companion Mode
+1. Enable "Companion Mode" switch in editor
+2. AI button text changes to "Generate Virtual Companion"
+3. Generated content better fits companion character settings
+
+### World Book Features
+1. Click "AI Generate Reference Entries" for automatic generation
+2. Manually add entries and sub-entries
+3. Set keywords and injection content
+
+## FAQ
+
+**Q: What image formats are supported?**
+A: Supports all common formats including PNG, JPG, JPEG, WEBP, GIF, BMP, automatically converted to PNG for storage.
+
+**Q: Will world book sub-entries be lost in this version?**
+A: No, V3 Pro version fully supports sub-entry import, export and display.
+
+**Q: Is data secure?**
+A: All data is stored locally in the browser and will not be uploaded to any server.
+
+**Q: What is Companion Mode?**
+A: Companion Mode is an AI completion function specifically designed for virtual companion characters. When enabled, AI generates content more suitable for companion settings, making characters more aligned with companion relationships.
+
+## License
+
+This project is for personal learning and non-commercial use only.
+
+### Copyright Notice
+This project uses a custom license with all rights reserved. Commercial use is not permitted without explicit authorization.
+
+---
+
+Start creating your own characters! 
