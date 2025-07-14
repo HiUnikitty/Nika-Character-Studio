@@ -1,6 +1,7 @@
 # 妮卡角色工作室 Pro
 
 一个优雅的AI角色卡管理系统，专为ST角色创作和管理而设计。
+An elegant AI character card management system designed for ST character creation and management.
 
 > **多语言支持**: This document is available in Chinese and English.
 > [Jump to English Version](#english-version)
