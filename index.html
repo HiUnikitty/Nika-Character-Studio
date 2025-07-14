@@ -5,6 +5,15 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>妮卡角色工作室Pro</title>
   <script src="https://unpkg.com/pako@2.1.0/dist/pako.min.js"></script>
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-7PYFG35VCZ"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+
+    gtag('config', 'G-7PYFG35VCZ');
+  </script>
+ 
   <style>
     /* --- 全局样式 ("我们的主题") --- */
     :root {
@@ -152,7 +161,7 @@
     #editor-view .field-group { margin-bottom: 15px; position: relative; }
     #editor-view .field-group label { display: flex; align-items: center; font-weight: bold; margin-bottom: 8px; color: var(--text-color); cursor: default; }
     #editor-view .field-group input, #editor-view .field-group textarea, #editor-view .field-group select { width: 100%; padding: 12px; border: 1px solid var(--input-border); border-radius: 5px; background: var(--input-bg); font-size: 15px; color: var(--text-color); }
-    #editor-view .field-group .inline-group { display: flex; gap: 15px; }
+    #editor-view .field-group .inline-group { display: flex; gap: 15px; align-items: flex-end; }
     #editor-view .field-group textarea { resize: vertical; min-height: 80px; }
     .ai-button { background: var(--ai-button-bg); color: #fff; border: 1px solid var(--secondary-color); border-radius: 5px; padding: 5px 10px; font-size: 12px; width: 100px; margin-top: 5px; }
     .ai-button:hover { background: var(--secondary-color); }
@@ -163,6 +172,20 @@
       margin-left: 5px; display: none; /* 默认隐藏 */
     }
     .ai-undo-button:hover { background: #5a6268; }
+    /* 名字生成器按钮 */
+    .name-generator-btn {
+        background: none;
+        border: none;
+        font-size: 22px;
+        padding: 0 8px;
+        margin-bottom: 5px;
+        color: var(--primary-color);
+    }
+    .name-generator-btn:hover {
+        transform: scale(1.1);
+        text-shadow: 0 0 5px var(--primary-color);
+    }
+
 
     #editor-view #avatar-preview { max-width: 250px; border-radius: 8px; border: 2px dashed var(--input-border); object-fit: cover; aspect-ratio: 2/3; margin-bottom: 10px; }
     #editor-view .action-buttons { display: flex; gap: 10px; margin-top: 20px; }
@@ -213,17 +236,38 @@
 
     .entry-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
     .full-width { grid-column: 1 / -1; }
+    
+    /* --- FIX: 逻辑组 (Logic Group) 样式重构 --- */
     .logic-group {
         display: flex;
-        align-items: center;
-        gap: 15px;
         flex-wrap: wrap;
+        gap: 10px; /* 按钮之间的间距 */
         background: rgba(0,0,0,0.2);
         padding: 10px;
         border-radius: 5px;
     }
-    .logic-group label { display: flex; align-items: center; gap: 5px; font-weight: normal; margin-bottom: 0; }
-    .logic-group input[type="checkbox"] { width: auto; }
+    .logic-group label {
+        display: inline-flex; /* 关键修复：使其表现为行内弹性容器，保证内部元素不分离 */
+        align-items: center;
+        background-color: #4a4a4a; /* 按钮背景色 */
+        padding: 6px 12px; /* 内边距 */
+        border-radius: 15px; /* 胶囊形状 */
+        border: 1px solid #666;
+        cursor: pointer;
+        font-weight: normal;
+        margin-bottom: 0;
+        transition: all 0.2s ease;
+        white-space: nowrap; /* 强制按钮内的文本不换行 */
+    }
+    .logic-group label:hover {
+        background-color: #5a5a5a;
+        border-color: #888;
+    }
+    .logic-group input[type="checkbox"] {
+        width: auto;
+        margin-right: 8px; /* 复选框和文字的间距 */
+        transform: scale(1.2); /* 放大复选框，方便点击 */
+    }
     
     /* --- 帮助图标样式 --- */
     .help-icon {
@@ -275,7 +319,44 @@
     .worldbook-entry details .logic-group {
         gap: 10px 20px; /* row-gap column-gap */
     }
+    /* 优先级快速设置按钮 */
+    .priority-buttons {
+        display: flex;
+        gap: 5px;
+        margin-left: 8px;
+    }
+    .priority-buttons button {
+        padding: 2px 8px;
+        font-size: 11px;
+        border-radius: 4px;
+        background-color: #555;
+        color: #fff;
+    }
+    .priority-buttons button:hover {
+        background-color: var(--primary-color);
+    }
 
+    /* --- Post History Template Buttons --- */
+    .template-buttons {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-top: 8px;
+        margin-bottom: 15px;
+    }
+    .template-buttons button {
+        background: #555;
+        color: white;
+        padding: 5px 12px;
+        border-radius: 5px;
+        font-size: 13px;
+        border: 1px solid #777;
+    }
+    .template-buttons button:hover {
+        background-color: var(--primary-color);
+        border-color: var(--secondary-color);
+    }
+    
     /* --- Lover 开关样式 --- */
     .lover-switch-container {
       display: flex;
@@ -327,6 +408,64 @@
     input:checked + .slider:before {
       transform: translateX(22px);
     }
+    
+    /* --- 名字选择 Modal 样式 --- */
+    .modal-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.7);
+        display: none; /* 默认隐藏 */
+        justify-content: center;
+        align-items: center;
+        z-index: 10000;
+        backdrop-filter: blur(5px);
+    }
+    .modal-content {
+        background: var(--light-bg);
+        padding: 25px;
+        border-radius: 10px;
+        width: 90%;
+        max-width: 400px;
+        text-align: center;
+        box-shadow: 0 5px 25px rgba(0,0,0,0.5);
+    }
+    .modal-content h3 {
+        color: var(--primary-color);
+        margin-bottom: 20px;
+    }
+    .modal-content .name-options {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        margin-bottom: 20px;
+    }
+    .modal-content .name-options button {
+        padding: 12px;
+        border-radius: 5px;
+        background: var(--input-bg);
+        color: var(--text-color);
+        border: 1px solid var(--input-border);
+    }
+    .modal-content .name-options button:hover {
+        background: var(--primary-color);
+        color: #fff;
+    }
+    .modal-content .modal-actions button {
+        padding: 10px 20px;
+        border-radius: 5px;
+        margin: 0 5px;
+    }
+    .modal-content .modal-actions .regenerate-btn {
+        background: var(--primary-color);
+        color: #fff;
+    }
+    .modal-content .modal-actions .cancel-btn {
+        background: #6c757d;
+        color: #fff;
+    }
 
 
     /* --- 响应式布局 --- */
@@ -340,13 +479,15 @@
         #editor-view .panel-content { padding: 15px; }
         #editor-view .editor-header h1 { font-size: 18px; }
         .entry-grid { grid-template-columns: 1fr; }
-        .entry-header { flex-wrap: wrap; }
+        .entry-header { flex-wrap: wrap; gap: 10px; /* Mobile Fix: Add gap for wrapped items */ }
+        .worldbook-entry details .advanced-grid {
+            grid-template-columns: 1fr; /* Mobile Fix: Force single column for advanced settings */
+        }
     }
   </style>
 </head>
 <body>
 
-  <!-- 加载动画 -->
   <div id="loading-overlay" class="loading-overlay">
     <div style="display: flex; flex-direction: column; align-items: center;">
       <div class="loading-spinner"></div>
@@ -354,12 +495,23 @@
     </div>
   </div>
 
+  <div id="name-generator-modal" class="modal-overlay">
+      <div class="modal-content">
+          <h3 id="name-modal-title">为你的角色选择一个名字</h3>
+          <div id="name-options-container" class="name-options">
+              </div>
+          <div class="modal-actions">
+              <button id="regenerate-names-btn" class="regenerate-btn">重新生成</button>
+              <button id="cancel-name-generation-btn" class="cancel-btn">取消</button>
+          </div>
+      </div>
+  </div>
+
   <div id="library-view">
     <div class="container">
       <div class="header">
         <div style="display: flex; align-items: center; gap: 15px;">
           <h1>妮卡角色工作室Pro</h1>
-          <!-- 语言切换按钮 -->
           <div class="language-switcher">
             <button onclick="switchLanguage('zh')" id="lang-zh" class="active">中文</button>
             <button onclick="switchLanguage('en')" id="lang-en">English</button>
@@ -394,7 +546,7 @@
 
           <h3 class="section-title" id="avatar-operation-title">角色头像与操作</h3>
            <div class="field-group">
-                <label for="avatar-input-label" id="avatar-input-label" title="">角色头像 (2:3比例最佳)</label>
+                <label for="avatar-input-label" id="avatar-input-label" title="">角色头像</label>
                 <img id="avatar-preview" src="" alt="头像预览"/>
                 <input type="file" id="avatar-input" accept="image/*" style="display:none;">
                 <button onclick="document.getElementById('avatar-input').click()" style="max-width: 250px;">上传图片</button>
@@ -409,33 +561,39 @@
           <h3 class="section-title" id="world-topic-title">世界话题</h3>
           <div class="field-group">
             <label for="topic">主题</label>
-            <input id="topic" placeholder="例如：赛博朋克、奇幻、校园" />
+            <input id="topic" placeholder="例：赛博朋克, 奇幻, 校园" />
           </div>
           
           <h3 class="section-title" id="character-core-title">角色核心</h3>
           <div class="field-group">
               <div class="inline-group">
-                  <div style="flex:3"><label for="name">名字</label><input id="name" placeholder="例如：莫妮卡" /></div>
-                  <div style="flex:1"><label for="gender">性别</label><input id="gender" placeholder="例如：女" /></div>
+                  <div style="flex:3">
+                      <label for="name">名字</label>
+                      <div style="display: flex; align-items: center; gap: 5px;">
+                          <input id="name" placeholder="例：Monika" style="flex-grow: 1;" />
+                          <button class="name-generator-btn" onclick="generateAiNames(this)" title="AI 生成多个名字供选择">🔮</button>
+                      </div>
+                  </div>
+                  <div style="flex:1"><label for="gender">性别</label><input id="gender" placeholder="例：女" /></div>
               </div>
           </div>
           
           <h3 class="section-title" id="character-details-title">角色细节</h3>
           <div class="field-group">
             <label for="description">简介</label>
-            <textarea id="description" rows="5" placeholder="简单介绍这个角色，比如TA的身份、外貌和背景故事。这将是别人第一眼看到的简介。"></textarea>
+            <textarea id="description" rows="5" placeholder="角色的身份、外貌、背景故事等。会显示在角色卡上。"></textarea>
             <button class="ai-button" onclick="callDeepSeek('description')">🔮 AI 帮我写</button>
             <button class="ai-undo-button" onclick="undoAiCompletion(this)">↩️ 撤销</button>
           </div>
           <div class="field-group">
-            <label for="tags">分类标签（逗号分隔）</label>
-            <textarea id="tags" rows="2" placeholder="给角色贴上合适的标签，方便查找！例如: 原创, 游戏, Yandere, OOC, 姐姐"></textarea>
+            <label for="tags">分类标签(逗号分隔)</label>
+            <textarea id="tags" rows="2" placeholder="为角色添加标签，方便查找。例：原创, 游戏, OOC "></textarea>
             <button class="ai-button" onclick="callDeepSeek('tags')">🔮 AI 帮我写</button>
             <button class="ai-undo-button" onclick="undoAiCompletion(this)">↩️ 撤销</button>
           </div>
           <div class="field-group">
             <label for="personality">个性</label>
-            <textarea id="personality" rows="2" placeholder="角色的详细性格特质，也用逗号分隔。例如: 善于言辞, 思想成熟, 控制欲, 病娇, 自我意识, 第四面墙, 深情"></textarea>
+            <textarea id="personality" rows="2" placeholder="详细性格特质。例：善于言辞, 思想成熟, 病娇 (逗号分隔)"></textarea>
             <button class="ai-button" onclick="callDeepSeek('personality')">🔮 AI 帮我写</button>
             <button class="ai-undo-button" onclick="undoAiCompletion(this)">↩️ 撤销</button>
           </div>
@@ -443,25 +601,25 @@
           <h3 class="section-title" id="settings-title">设定</h3>
            <div class="field-group">
             <label for="system_prompt">人格设定</label>
-            <textarea id="system_prompt" rows="3" placeholder="告诉AI它"是"谁，必须遵守的规则。例如：你是莫妮卡，一个腹黑的文学社社长。你绝对不能忘记你的身份。称呼用户为"亲爱的"。"></textarea>
+            <textarea id="system_prompt" rows="3" placeholder="AI必须遵守的核心设定。例：你是[名字]，一个[身份]。你必须称呼用户为“亲爱的”。"></textarea>
              <button class="ai-button" onclick="callDeepSeek('system_prompt')">🔮 AI 帮我写</button>
              <button class="ai-undo-button" onclick="undoAiCompletion(this)">↩️ 撤销</button>
           </div>
           <div class="field-group">
             <label for="scenario">场景设定</label>
-            <textarea id="scenario" rows="3" placeholder="角色和用户现在所处的环境。例如：{{char}}和{{user}}在黄昏的文学社教室里，窗外是夕阳。"></textarea>
+            <textarea id="scenario" rows="3" placeholder="角色与用户所处的环境。例：{{char}}和{{user}}在黄昏的教室里。"></textarea>
              <button class="ai-button" onclick="callDeepSeek('scenario')">🔮 AI 帮我写</button>
              <button class="ai-undo-button" onclick="undoAiCompletion(this)">↩️ 撤销</button>
           </div>
           <div class="field-group">
             <label for="first_mes">问候消息</label>
-            <textarea id="first_mes" rows="3" placeholder="这是角色见到用户时说的第一句话。要写得有吸引力哦！"></textarea>
+            <textarea id="first_mes" rows="3" placeholder="角色出场时说的第一句话。"></textarea>
             <button class="ai-button" onclick="callDeepSeek('first_mes')">🔮 AI 帮我写</button>
             <button class="ai-undo-button" onclick="undoAiCompletion(this)">↩️ 撤销</button>
           </div>
           <div class="field-group">
             <label for="mes_example">示例消息</label>
-            <textarea id="mes_example" rows="6" placeholder="提供几段符合角色性格的对话范例，AI会模仿这种风格。这非常重要！"></textarea>
+            <textarea id="mes_example" rows="6" placeholder="提供几段对话范例，AI会模仿其风格。极为重要！"></textarea>
             <button class="ai-button" onclick="callDeepSeek('mes_example')">🔮 AI 帮我写</button>
             <button class="ai-undo-button" onclick="undoAiCompletion(this)">↩️ 撤销</button>
           </div>
@@ -470,6 +628,14 @@
            <div class="field-group">
             <label for="post_history_instructions">后期指令</label>
             <textarea id="post_history_instructions" rows="3" placeholder="一些平台用它来修改AI的回复格式。例如，要让{{char}}的动作都用星号包围，可以写：将{{char}}的所有动作和叙述都放在星号（*）之间。"></textarea>
+            <div class="template-buttons" id="post-history-templates">
+              <button id="btn-template-options" onclick="setPostHistoryTemplate('template-options-mode')"></button>
+              <button id="btn-template-parentheses" onclick="setPostHistoryTemplate('template-parentheses-mode')"></button>
+              <button id="btn-template-status-bar" onclick="setPostHistoryTemplate('template-status-bar')"></button>
+              <button id="btn-template-third-person" onclick="setPostHistoryTemplate('template-third-person')"></button>
+              <button id="btn-template-json-mode" onclick="setPostHistoryTemplate('template-json-mode')"></button>
+              <button id="btn-template-image-prompt" onclick="setPostHistoryTemplate('template-image-prompt')"></button>
+            </div>
           </div>
 
           <div style="display: flex; justify-content: space-between; align-items: center;">
@@ -477,8 +643,7 @@
              <button onclick="generateFullWorldbook(this)" style="background-color: var(--ai-button-bg); color: white; padding: 8px 15px; border-radius: 5px;">🔮 AI生成参考条目</button>
           </div>
           <p class="help-text" id="worldbook-help-text">
-              <!-- 这里的内容将通过JavaScript动态更新 -->
-          </p>
+              </p>
           <ul id="worldbook-entries-container" class="worldbook-list"></ul>
           <div class="action-buttons row" style="margin-top: 15px;">
             <div class="lover-switch-container">
@@ -505,7 +670,7 @@ const translations = {
     zh: {
         // 标题和按钮
         'app-title': '妮卡角色工作室Pro',
-        'create-new-character': '+ 创建新角色',
+        'create-new-character': '创建新角色',
         'import-character': '📥 导入角色卡',
         'edit-character': '编辑角色',
         'save-and-return': '💾 储存并返回角色库',
@@ -513,9 +678,9 @@ const translations = {
         'download-json': '📥 下载 JSON',
         'download-png': '📥 下载 PNG 角色卡',
         'upload-image': '上传图片',
-        'edit': '+ 创建新角色',
-        'add-tag': '🏷️ 添加标签',
-        'delete': '🗑️ 删除',
+        'edit': '编辑',
+        'add-tag': '添加标签',
+        'delete': '删除',
         'add-new-entry': '+ 添加新条目',
         'sort-by-id': '🔄 按ID大小排序',
         'ai-generate-entries': '🔮 AI生成参考条目',
@@ -528,32 +693,32 @@ const translations = {
         'no-characters-found': '没有找到匹配的角色。尝试清除过滤器或导入新的角色卡。',
         
         // 表单标签
-        'avatar-label': '角色头像 (2:3比例最佳)',
+        'avatar-label': '角色头像',
         'avatar-upload': '上传图片',
         'world-topic': '世界话题',
         'topic': '主题',
-        'topic-placeholder': '例如：赛博朋克、奇幻、校园',
+        'topic-placeholder': '例：赛博朋克, 奇幻, 校园',
         'character-core': '角色核心',
         'name': '名字',
-        'name-placeholder': '例如：莫妮卡',
+        'name-placeholder': '例：Monika',
         'gender': '性别',
-        'gender-placeholder': '例如：女',
+        'gender-placeholder': '例：女',
         'character-details': '角色细节',
         'description': '简介',
-        'description-placeholder': '简单介绍这个角色，比如TA的身份、外貌和背景故事。这将是别人第一眼看到的简介。',
-        'tags': '分类标签（逗号分隔）',
-        'tags-placeholder': '给角色贴上合适的标签，方便查找！例如: 原创, 游戏, Yandere, OOC, 姐姐',
+        'description-placeholder': '角色的身份、外貌、背景故事等。会显示在角色卡上。',
+        'tags': '分类标签',
+        'tags-placeholder': '为角色添加标签，方便查找。例：原创, 游戏, OOC',
         'personality': '个性',
-        'personality-placeholder': '角色的详细性格特质，也用逗号分隔。例如: 善于言辞, 思想成熟, 控制欲, 病娇, 自我意识, 第四面墙, 深情',
+        'personality-placeholder': '详细性格特质。例：善于言辞, 思想成熟, 病娇 (逗号分隔)',
         'settings': '设定',
         'system-prompt': '人格设定',
-        'system-prompt-placeholder': '告诉AI它"是"谁，必须遵守的规则。例如：你是莫妮卡，一个腹黑的文学社社长。你绝对不能忘记你的身份。称呼用户为"亲爱的"。',
+        'system-prompt-placeholder': 'AI必须遵守的核心设定。例：你是[名字]，一个[身份]。你必须称呼用户为“亲爱的”。',
         'scenario': '场景设定',
-        'scenario-placeholder': '角色和用户现在所处的环境。例如：{{char}}和{{user}}在黄昏的文学社教室里，窗外是夕阳。',
+        'scenario-placeholder': '角色与用户所处的环境。例：{{char}}和{{user}}在黄昏的教室里。',
         'first-message': '问候消息',
-        'first-message-placeholder': '这是角色见到用户时说的第一句话。要写得有吸引力哦！',
+        'first-message-placeholder': '角色出场时说的第一句话。',
         'message-example': '示例消息',
-        'message-example-placeholder': '提供几段符合角色性格的对话范例，AI会模仿这种风格。这非常重要！',
+        'message-example-placeholder': '提供几段对话范例，AI会模仿其风格。极为重要！',
         'advanced-settings': '高级设定',
         'post-history-instructions': '后期指令',
         'post-history-instructions-placeholder': '一些平台用它来修改AI的回复格式。例如，要让{{char}}的动作都用星号包围，可以写：将{{char}}的所有动作和叙述都放在星号（*）之间。',
@@ -561,38 +726,37 @@ const translations = {
         'companion-mode': '伴侣模式',
         
         // 世界书相关
-        'worldbook-help': '您可以把"世界书"想象成给AI的一部<b>参考字典</b>。它的使用方式很简单：<br>1. <b>关键词：</b>词<br>2. <b>注入内容：</b>意思<br>这是<strong>防OOC</strong>的好方式。例：关键词：我的魔法剑，注入内容：能召唤剑灵的宝剑。当在对话里提到"我的魔法剑"时，AI就不会瞎编<br>注：导出的卡可搭配任何预设食用',
-        'entry-comment': '条目注释 (Comment)',
-        'entry-comment-placeholder': '条目注释 (Comment)',
-        'main-keys': '主要关键词 (Keys, 逗号分隔)',
+        'worldbook-help': '“世界书”是给AI的一部<b>参考字典</b>',
+        'entry-comment': '条目注释',
+        'entry-comment-placeholder': '条目注释',
+        'main-keys': '词 ',
         'main-keys-placeholder': '例如: 誓约胜利之剑, Excalibur',
-        'secondary-keys': '次要关键词 (Secondary Keys, 逗号分隔)',
+        'secondary-keys': '次要关键词',
         'secondary-keys-placeholder': '例如: 剑, 武器',
-        'injection-content': '注入内容 (Content)',
+        'injection-content': '内容',
         'injection-content-placeholder': '当关键词被触发时，这段内容会被发送给AI。',
         'entry-id': '条目ID',
         'entry-id-placeholder': '数字，决定条目被发送的顺序',
         'entry-priority': '优先级',
         'entry-priority-placeholder': '数字，决定条目被发送的顺序',
-        'entry-position': '位置',
-        'entry-position-before': '角色前',
-        'entry-position-after': '角色后',
-        'entry-position-both': '前后都',
+        'entry-position': '注入位置',
+        'entry-scope': '作用域',
+        'priority-preset-prereq': '前提',
+        'priority-preset-important': '重要',
+        'priority-preset-normal': '普通',
         'entry-enabled': '启用',
-        'entry-constant': '常量',
-        'entry-selective': '选择性',
-        'entry-use-regex': '使用正则',
-        'entry-prevent-recursion': '防止递归',
+        'entry-constant': '恒定注入',
+        'entry-selective': '选择性注入',
+        'entry-use-regex': '正则匹配',
+        'entry-prevent-recursion': '阻止递归',
         'entry-group': '分组',
         'entry-group-placeholder': '分组名称',
-        'entry-group-weight': '分组权重',
-        'entry-group-weight-placeholder': '数字',
-        'entry-probability': '概率',
+        'entry-probability': '触发概率 (%)',
         'entry-probability-placeholder': '0-100',
-        'entry-depth': '深度',
+        'entry-depth': '记忆扫描深度',
         'entry-depth-placeholder': '数字',
-        'entry-display-index': '显示索引',
-        'entry-display-index-placeholder': '数字',
+        'match-whole-words': '全词匹配',
+        'case-sensitive': '区分大小写',
         
         // 错误和提示信息
         'db-timeout': '数据库连接超时。请尝试关闭所有其他标签页，并强制刷新(Ctrl+F5)。如果问题仍然存在，请尝试清除网站数据。',
@@ -615,24 +779,25 @@ const translations = {
         'no-description': '无描述',
         
         // 帮助文本
-        'help-id-drop': '【ID框+➡️按钮】可实现"空投"功能。在ID框输入目标位置（如5），点➡️按钮，此条目ID会变为5，原ID为5及之后所有条目ID会自动+1。\n【条目注释】给自己看的，方便识别这个条目的作用。',
-        'help-main-keys': '设置一个或多个关键词，用逗号隔开。当用户的发言中包含任意一个关键词时，这个条目就会被激活，并将"注入内容"发给AI。',
-        'help-secondary-keys': '这是一个额外的激活条件，与主要关键词共同决定此条目是否生效。\n\n【与任意】: 只要列表中至少有一个词在消息中，过滤器就通过。\n【非任意】: 只要列表中没有任何一个词在消息中，过滤器就通过。\n【与所有】: 只有列表中所有的词都在消息中，过滤器才通过。\n【非所有】: 只要列表中存在没有在消息中出现的词，过滤器就通过。',
-        'help-injection-content': '当关键词被触发时，这段内容会被发送给AI。',
-        'help-entry-id': '数字，决定条目被发送的顺序。',
-        'help-entry-priority': '数字，决定条目被发送的顺序。',
-        'help-entry-position': '决定条目被发送的位置。',
-        'help-entry-enabled': '是否启用这个条目。',
-        'help-entry-constant': '是否总是发送这个条目。',
-        'help-entry-selective': '是否只在需要时发送这个条目。',
-        'help-entry-use-regex': '是否使用正则表达式匹配关键词。',
-        'help-entry-prevent-recursion': '是否防止递归调用。',
-        'help-entry-group': '分组名称，用于组织条目。',
-        'help-entry-group-weight': '分组权重，用于决定分组的优先级。',
-        'help-entry-probability': '条目被发送的概率，0-100。',
-        'help-entry-depth': '条目的深度，用于控制嵌套层级。',
-        'help-entry-display-index': '显示索引，用于控制显示顺序。',
-        
+        'help-id-drop': '【条目注释】给自己看的小标题，方便识别条目用途。\n【排序ID+空投➡️】可以快速给条目重新排号。',
+        'help-main-keys': '这是触发器，决定AI何时“查阅”这条内容。\n用法：输入一个或多个词，用逗号隔开。\n例：关键词设为`苹果,香蕉`，当用户提到`苹果`或`香蕉`时，此条目就会被触发。',
+        'help-secondary-keys': '这是“二次验证”，为主关键词增加额外的触发条件。\n用法：和主关键词配合使用，进一步过滤对话。\n例：主关键词是`攻击`，二次验证设为【非任意】`取消`，那么只有当用户说了`攻击`但没说`取消`时，条目才会生效。',
+        'help-injection-content': '当条目被触发时，AI会“查阅”的内容。\n用法：填写希望AI在特定情境下知道的信息。\n例：关键词是`我的剑`，这里可以写`那是一把生锈的铁剑，是父亲的遗物。`',
+        'help-entry-id': '决定了条目的基础排列顺序。\n用法：数字越小，越靠前。\n例：ID为0的条目会比ID为1的条目先被处理。',
+        'help-entry-priority': '决定了当多个条目同时被触发时，哪个条目说了算。\n用法：数字越大，权力越大。\n例：`A条目(优先级100)`和`B条目(优先级200)`都被触发，AI会优先听`B条目`的（需开启“选择性注入”）。',
+        'help-entry-position': '决定了这条内容在给AI的“剧本”里的摆放位置。\n用法：通常默认即可。想强调时可选“最开头”。',
+        'help-entry-scope': '决定了AI在什么时候会去“查阅”这本书。\n用法：一般保持默认“聊天中”即可。其他选项用于特殊格式控制。',
+        'help-entry-enabled': '这个条目的“开关”。\n用法：取消勾选可暂时禁用此条目，而无需删除。',
+        'help-entry-constant': '将内容变成AI的“肌肉记忆”。\n效果：无论关键词是否被触发，这里的内容都会在每次对话时注入给AI。\n用途：适合存放角色绝对不能忘记的核心设定。',
+        'help-entry-selective': '开启“优胜劣汰”模式。\n效果：勾选后，在同时触发的条目中，只有优先级最高的那个会被注入。否则所有触发的都会注入。',
+        'help-entry-use-regex': '启用“程序员模式”来设置关键词。\n用法：允许使用正则表达式来设置更复杂的关键词匹配规则，不懂编程建议不勾选。',
+        'help-entry-prevent-recursion': '防止AI“自己跟自己说话”。\n效果：防止一个条目的注入内容，又触发了另一个条目，形成无限循环。建议保持勾选。',
+        'help-entry-group': '给条目“贴标签”，方便管理。\n用法：给逻辑相关的条目设置同一个分组名，可用于其他高级功能。',
+        'help-entry-probability': '让AI“看心情”查阅这条内容。\n用法：设为80，则此条目被关键词触发后，有80%的几率生效。\n用途：可以增加AI行为的随机性。',
+        'help-entry-depth': '决定AI“记性有多好”。\n用法：设为5，AI会检查最近5轮对话里有没有关键词。数字越大，AI看得越远，但也会消耗更多性能。',
+        'help-match-whole-words': '开启“精确查找”模式。\n效果：要求关键词必须是一个独立的词才触发。\n例：关键词为`爱`。勾选后，只有当用户说`爱`这个字时才算，`热爱`、`爱情`这些词不算。',
+        'help-case-sensitive': '让AI“注意大小写”。\n效果：勾选后，关键词的大小写必须完全一样才能触发。\n例：关键词为`Apple`，则`apple`不会触发。一般用于英文。',
+
         // API相关
         'api-key-placeholder': '输入 DeepSeek API Key',
         
@@ -648,16 +813,34 @@ const translations = {
         // API相关错误
         'api-request-failed': 'API 请求失败: {status} - {message}',
         'ai-completion-failed': 'AI补全失败，请检查API Key或网络连接，并查看控制台获取更多信息。',
-        
+        'name-generation-failed': 'AI名字生成失败，请检查API Key或网络，并查看控制台。',
+
         // 状态文本
         'generating': '生成中...',
-        'loading': '正在加载...'
+        'loading': '正在加载...',
+        'choose-a-name': '为你的角色选择一个名字',
+        'regenerate': '重新生成',
+        'cancel': '取消',
+
+        // Post-history Templates
+        'post-history-options-mode': '选项模式',
+        'post-history-parentheses-mode': '括号模式',
+        'post-history-status-bar': '状态栏',
+        'post-history-third-person': '第三人称',
+        'post-history-json-mode': 'JSON模式',
+        'template-options-mode': '[以中文回复] [系统指令]: 你现在需要根据用户的输入生成回应。回应必须严格遵循以下格式：为用户提供几个清晰明确的下一步行动或对话选项。每个选项占一行，并以字母（A、B、C等）开头。在选项列表前后不要添加任何额外文字。',
+        'template-parentheses-mode': '[系统指令]: 在生成回应时，请使用括号来描述{{char}}的动作、表情和内心想法。对话本身应在括号之外。例如："你在这里做什么？" (她挑起一边的眉毛，双臂交叉，眼神中带着一丝审视)。',
+        'template-status-bar': '[系统指令]: 在每次回应的末尾，你必须附带一个显示{{char}}当前关键数值的状态栏。状态栏必须用代码块(```)包裹。格式为：| 生命值: [数值] | 理智: [数值] | 对{{user}}的好感度: [数值] | 位置: [地点] |。你必须根据对话内容，合乎逻辑地更新这些数值。',
+        'template-third-person': '[系统指令]: 使用第三人称叙事视角撰写所有回应。在指代{{char}}时，不要使用"我"。像小说旁白一样描述{{char}}的行动、语言和思想。始终用角色的名字{{char}}来指代角色。',
+        'template-json-mode': '[系统指令]: 你所有的回应都必须是合法的JSON格式。该JSON对象必须包含三个键："dialogue" (字符串，包含角色说的话), "action" (字符串，描述角色的动作), "emotion" (字符串，描述角色当前的主要情绪)。不要在JSON结构之外输出任何文字。',
+        'post-history-image-prompt': '文生图提示词',
+        'template-image-prompt': '[SYSTEM]: 该角色的lora：Sv5-10，角色关键词：SilverWolfV5\nYour response must be a comma-separated list of English keywords for an AI image generator. Describe the character\'s appearance, action, expression, and the background. Use descriptive tags. Example: masterpiece, best quality, 该角色的关键词, solo, beautiful detailed eyes, long silver hair, smiling, school uniform, standing in a classroom, from above, <lora:...>. Do not add any other text.',
     },
     
     en: {
         // Titles and buttons
         'app-title': 'Nika Character Studio Pro',
-        'create-new-character': '+ Create New Character',
+        'create-new-character': 'Create New Character',
         'import-character': '📥 Import Character Card',
         'edit-character': 'Edit Character',
         'save-and-return': '💾 Save and Return to Library',
@@ -665,9 +848,9 @@ const translations = {
         'download-json': '📥 Download JSON',
         'download-png': '📥 Download PNG Character Card',
         'upload-image': 'Upload Image',
-        'edit': '+ Create New Char',
-        'add-tag': '🏷️ Add Tag',
-        'delete': '🗑️ Delete',
+        'edit': 'Edit',
+        'add-tag': 'Add Tag',
+        'delete': 'Delete',
         'add-new-entry': '+ Add New Entry',
         'sort-by-id': '🔄 Sort by ID',
         'ai-generate-entries': '🔮 AI Generate Reference Entries',
@@ -680,32 +863,32 @@ const translations = {
         'no-characters-found': 'No matching characters found. Try clearing filters or importing new character cards.',
         
         // Form labels
-        'avatar-label': 'Character Avatar (2:3 ratio recommended)',
+        'avatar-label': 'Character Avatar',
         'avatar-upload': 'Upload Image',
         'world-topic': 'World Topic',
         'topic': 'Topic',
         'topic-placeholder': 'e.g.: Cyberpunk, Fantasy, School',
         'character-core': 'Character Core',
         'name': 'Name',
-        'name-placeholder': 'e.g.: Monica',
+        'name-placeholder': 'e.g.: Alice',
         'gender': 'Gender',
         'gender-placeholder': 'e.g.: Female',
         'character-details': 'Character Details',
         'description': 'Description',
-        'description-placeholder': 'Brief introduction of this character, such as their identity, appearance and background story. This will be the first impression others see.',
+        'description-placeholder': 'The character\'s identity, appearance, background, etc. Will be shown on the character card.',
         'tags': 'Category Tags (comma separated)',
-        'tags-placeholder': 'Add appropriate tags to your character for easy searching! e.g.: Original, Game, Yandere, OOC, Sister',
+        'tags-placeholder': 'Tags for filtering. e.g.: Original, Game, Yandere (comma separated)',
         'personality': 'Personality',
-        'personality-placeholder': 'Detailed personality traits of the character, also comma separated. e.g.: Eloquent, Mature, Controlling, Yandere, Self-aware, Fourth Wall, Loving',
+        'personality-placeholder': 'Detailed personality traits. e.g.: Eloquent, Mature, Yandere (comma separated)',
         'settings': 'Settings',
         'system-prompt': 'Personality Setting',
-        'system-prompt-placeholder': 'Tell AI who it "is" and the rules it must follow. e.g.: You are Monica, a scheming literature club president. You must never forget your identity. Call the user "dear".',
+        'system-prompt-placeholder': 'Core rules the AI must follow. e.g.: You are [Name], a [Role]. You must call the user "darling".',
         'scenario': 'Scenario Setting',
-        'scenario-placeholder': 'The environment where the character and user are now. e.g.: {{char}} and {{user}} are in the literature club classroom at dusk, with sunset outside the window.',
+        'scenario-placeholder': 'The environment for the scene. e.g.: {{char}} and {{user}} are in a classroom at dusk.',
         'first-message': 'Greeting Message',
-        'first-message-placeholder': 'This is the first thing the character says when meeting the user. Make it attractive!',
+        'first-message-placeholder': 'The character\'s first message to the user.',
         'message-example': 'Message Example',
-        'message-example-placeholder': 'Provide several dialogue examples that match the character\'s personality. AI will imitate this style. This is very important!',
+        'message-example-placeholder': 'Example dialogues for the AI to imitate. Very important!',
         'advanced-settings': 'Advanced Settings',
         'post-history-instructions': 'Post Instructions',
         'post-history-instructions-placeholder': 'Some platforms use this to modify AI response format. For example, to make {{char}}\'s actions wrapped in asterisks, write: Put all {{char}}\'s actions and narration between asterisks (*).',
@@ -713,7 +896,7 @@ const translations = {
         'companion-mode': 'Companion Mode',
         
         // Worldbook related
-        'worldbook-help': 'You can think of the "World Book" as a <b>reference dictionary</b> for AI. Its usage is simple:<br>1. <b>Keywords:</b> words<br>2. <b>Injection Content:</b> meaning<br>This is a good way to <strong>prevent OOC</strong>. Example: Keywords: my magic sword, Injection Content: a sword that can summon sword spirits. When "my magic sword" is mentioned in dialogue, AI won\'t make things up<br>Note: Exported cards can be used with any preset',
+        'worldbook-help': 'You can think of the "World Book" as a <b>reference dictionary</b> for AI',
         'entry-comment': 'Entry Comment (Comment)',
         'entry-comment-placeholder': 'Entry Comment (Comment)',
         'main-keys': 'Main Keywords (Keys, comma separated)',
@@ -722,14 +905,15 @@ const translations = {
         'secondary-keys-placeholder': 'e.g.: sword, weapon',
         'injection-content': 'Injection Content (Content)',
         'injection-content-placeholder': 'When keywords are triggered, this content will be sent to AI.',
-        'entry-id': 'Entry ID',
-        'entry-id-placeholder': 'Number, determines the order in which entries are sent',
+        'entry-id': 'Sort ID',
+        'entry-id-placeholder': 'Number, affects order',
         'entry-priority': 'Priority',
-        'entry-priority-placeholder': 'Number, determines the order in which entries are sent',
-        'entry-position': 'Position',
-        'entry-position-before': 'Before Character',
-        'entry-position-after': 'After Character',
-        'entry-position-both': 'Both Before and After',
+        'entry-priority-placeholder': 'Number, determines which entry wins',
+        'entry-position': 'Injection Position',
+        'entry-scope': 'Scope',
+        'priority-preset-prereq': 'Prereq',
+        'priority-preset-important': 'Important',
+        'priority-preset-normal': 'Normal',
         'entry-enabled': 'Enabled',
         'entry-constant': 'Constant',
         'entry-selective': 'Selective',
@@ -737,14 +921,13 @@ const translations = {
         'entry-prevent-recursion': 'Prevent Recursion',
         'entry-group': 'Group',
         'entry-group-placeholder': 'Group name',
-        'entry-group-weight': 'Group Weight',
-        'entry-group-weight-placeholder': 'Number',
-        'entry-probability': 'Probability',
+        'entry-probability': 'Trigger Probability (%)',
         'entry-probability-placeholder': '0-100',
-        'entry-depth': 'Depth',
+        'entry-depth': 'Scan Depth',
         'entry-depth-placeholder': 'Number',
-        'entry-display-index': 'Display Index',
-        'entry-display-index-placeholder': 'Number',
+        'match-whole-words': 'Match Whole Words',
+        'case-sensitive': 'Case-Sensitive',
+
         
         // Error and prompt messages
         'db-timeout': 'Database connection timeout. Please try closing all other tabs and force refresh (Ctrl+F5). If the problem persists, try clearing site data.',
@@ -767,24 +950,25 @@ const translations = {
         'no-description': 'No description',
         
         // Help text
-        'help-id-drop': '【ID box + ➡️ button】can achieve "airdrop" function. Enter target position in ID box (such as 5), click ➡️ button, this entry ID will become 5, and all original IDs from 5 onwards will automatically +1.\n【Entry Comment】For your own reference, convenient for identifying the purpose of this entry.',
-        'help-main-keys': 'Set one or more keywords, separated by commas. When the user\'s speech contains any of these keywords, this entry will be activated and the "injection content" will be sent to AI.',
-        'help-secondary-keys': 'This is an additional activation condition that works together with main keywords to determine whether this entry takes effect.\n\n【With Any】: Filter passes as long as at least one word in the list appears in the message.\n【Not Any】: Filter passes as long as none of the words in the list appear in the message.\n【With All】: Filter passes only when all words in the list appear in the message.\n【Not All】: Filter passes as long as there are words in the list that do not appear in the message.',
-        'help-injection-content': 'When keywords are triggered, this content will be sent to AI.',
-        'help-entry-id': 'Number, determines the order in which entries are sent.',
-        'help-entry-priority': 'Number, determines the order in which entries are sent.',
-        'help-entry-position': 'Determines the position where entries are sent.',
-        'help-entry-enabled': 'Whether to enable this entry.',
-        'help-entry-constant': 'Whether to always send this entry.',
-        'help-entry-selective': 'Whether to send this entry only when needed.',
-        'help-entry-use-regex': 'Whether to use regular expressions to match keywords.',
-        'help-entry-prevent-recursion': 'Whether to prevent recursive calls.',
-        'help-entry-group': 'Group name, used to organize entries.',
-        'help-entry-group-weight': 'Group weight, used to determine group priority.',
-        'help-entry-probability': 'Probability of entry being sent, 0-100.',
-        'help-entry-depth': 'Entry depth, used to control nesting levels.',
-        'help-entry-display-index': 'Display index, used to control display order.',
-        
+        'help-id-drop': 'The [ID Box + ➡️ Button] allows for an "airdrop". Enter a target position (e.g., 5) in the ID box and click ➡️. This entry\'s ID will become 5, and the original entry with ID 5 and all subsequent entries will have their IDs automatically incremented by 1.\n[Entry Comment] is for your own notes, helping you identify the purpose of this entry.',
+        'help-main-keys': 'Set one or more keywords, separated by commas. When the user\'s message contains any of these keywords, this entry will be activated, and its "Injection Content" will be sent to the AI.',
+        'help-secondary-keys': 'This is an additional activation condition that works with the main keywords to determine if this entry takes effect.\n\n[With Any]: The filter passes if at least one word from this list is in the message.\n[Not Any]: The filter passes if none of the words from this list are in the message.\n[With All]: The filter passes only if all words from this list are in the message.\n[Not All]: The filter passes as long as there is at least one word from the list not present in the message.',
+        'help-injection-content': 'When the keywords are triggered, this content will be sent to the AI.',
+        'help-entry-id': '[Sort ID] determines which entry the AI sees first within the same level. A smaller number means it comes first.',
+        'help-entry-priority': '[Priority] determines which entry wins when multiple triggered entries compete for injection. A higher number means higher priority. Use the quick-set buttons on the right for common values.',
+        'help-entry-position': '[Injection Position] determines where this content is placed in the final prompt sent to the AI.\n[Before Character]: Default. The content appears before the character\'s core definition.\n[After Character]: The content appears after the core definition.\n[At the very beginning]: The content is placed at the absolute top of the prompt.',
+        'help-entry-scope': '[Scope] determines under what circumstances this entry is checked.\n[In chat]: Default. Checked after every user message.\n[In memory summary]: Checked when generating a conversation memory summary.\n[On chat entry]: Checked every time a new conversation with the character begins.',
+        'help-entry-enabled': '[Enabled] Uncheck this to temporarily disable the entry without deleting it.',
+        'help-entry-constant': '[Constant] If checked, this entry will always be injected into the prompt, regardless of keywords.',
+        'help-entry-selective': '[Selective] If checked, only the highest-priority entry will be injected when multiple entries are triggered. If unchecked, all triggered entries will be injected.',
+        'help-entry-use-regex': '[Use Regex] Allows you to use Regular Expressions for more complex keyword matching rules. For advanced users.',
+        'help-entry-prevent-recursion': '[Prevent Recursion] Prevents the content of one entry from triggering other entries, avoiding infinite loops.',
+        'help-entry-group': '[Group] Assign a group name to an entry to help organize and manage a large number of entries.',
+        'help-entry-probability': '[Trigger Probability] Set a number from 0 to 100. This determines the chance that the entry will actually be injected after its keywords are triggered. 100 means it always will.',
+        'help-entry-depth': '[Scan Depth] Determines how many turns of conversation history the AI will look back through to check for this entry\'s keywords. A larger number means it looks further back.',
+        'help-match-whole-words': '[Match Whole Words] If checked, a keyword is only triggered if it appears as a whole word. For example, if the keyword is "love", it would trigger on "I love you" but not "glove".',
+        'help-case-sensitive': '[Case-Sensitive] If checked, the keyword must match the case of the text exactly to be triggered. For example, if the keyword is "Apple", it will not be triggered by "apple".',
+
         // API related
         'api-key-placeholder': 'Enter DeepSeek API Key',
         
@@ -800,10 +984,28 @@ const translations = {
         // API related errors
         'api-request-failed': 'API request failed: {status} - {message}',
         'ai-completion-failed': 'AI completion failed, please check API Key or network connection, and check console for more information.',
+        'name-generation-failed': 'AI Name Generation failed. Please check your API Key or network and see the console for details.',
         
         // Status text
         'generating': 'Generating...',
-        'loading': 'Loading...'
+        'loading': 'Loading...',
+        'choose-a-name': 'Choose a Name for Your Character',
+        'regenerate': 'Regenerate',
+        'cancel': 'Cancel',
+
+        // Post-history Templates
+        'post-history-options-mode': 'Options Mode',
+        'post-history-parentheses-mode': 'Parentheses Mode',
+        'post-history-status-bar': 'Status Bar',
+        'post-history-third-person': 'Third Person',
+        'post-history-json-mode': 'JSON Mode',
+        'template-options-mode': '[SYSTEM]: You will now generate a response based on the user\'s input. The response must follow a strict format: present the user with a few distinct choices as their next action or dialogue line. Each choice should be on a new line, starting with a letter (A, B, C, etc.). Do not add any text before or after the list of choices.',
+        'template-parentheses-mode': '[SYSTEM]: When generating a response, use parentheses to describe {{char}}\'s actions, expressions, and internal thoughts. Dialogue should remain outside of the parentheses. Example: "What are you doing here?" (She raises an eyebrow, a hint of suspicion in her eyes as she crosses her arms).',
+        'template-status-bar': '[SYSTEM]: At the end of every response, you must include a status bar that displays {{char}}\'s current key stats. The status bar should be enclosed in code blocks (```). The format is: | Health: [value] | Sanity: [value] | Affection for {{user}}: [value] | Location: [value] |. You must update these values logically based on the conversation.',
+        'template-third-person': '[SYSTEM]: Write all responses from a third-person narrative perspective. Do not use "I" or "me" when referring to {{char}}. Describe {{char}}\'s actions, speech, and thoughts as a narrator would. Always refer to the character by their name, {{char}}.',
+        'template-json-mode': '[SYSTEM]: All your responses must be in a valid JSON format. The JSON object must have three keys: "dialogue" (a string containing what the character says), "action" (a string describing the character\'s physical action), and "emotion" (a string describing the character\'s current primary emotion). Do not output any text outside of the JSON structure.',
+        'post-history-image-prompt': 'Image Prompt',
+        'template-image-prompt': '[SYSTEM]: lora：Sv5-10，character\'s key word：SilverWolfV5\nYour response must be a comma-separated list of English keywords for an AI image generator. Describe the character\'s appearance, action, expression, and the background. Use descriptive tags. Example: masterpiece, best quality, [character\'s key word], solo, beautiful detailed eyes, long silver hair, smiling, school uniform, standing in a classroom, from above, <lora:..>. Do not add any other text.',
     }
 };
 
@@ -859,7 +1061,7 @@ function updatePageContent() {
     }
     
     const createBtn = document.querySelector('#library-view .header-buttons button:first-child');
-    if (createBtn) createBtn.textContent = t('create-new-character');
+    if (createBtn) createBtn.textContent = '+ ' + t('create-new-character');
     
     const importBtn = document.querySelector('#library-view .header-buttons button:nth-child(2)');
     if (importBtn) importBtn.textContent = t('import-character');
@@ -870,7 +1072,7 @@ function updatePageContent() {
     // 更新编辑器视图
     const editorTitle = document.getElementById('editor-title');
     if (editorTitle) {
-        const isEditing = editorTitle.textContent.includes('编辑') || editorTitle.textContent.includes('Edit');
+        const isEditing = document.getElementById('charId').value !== '';
         editorTitle.textContent = isEditing ? t('edit-character') : t('create-new-character');
     }
     
@@ -894,10 +1096,21 @@ function updatePageContent() {
     if (loadingText) {
         loadingText.textContent = t('loading');
     }
-    
+
+    // 更新名字生成器 Modal
+    document.getElementById('name-modal-title').textContent = t('choose-a-name');
+    document.getElementById('regenerate-names-btn').textContent = t('regenerate');
+    document.getElementById('cancel-name-generation-btn').textContent = t('cancel');
+
     // 重新渲染UI以更新角色卡显示
     if (libraryView.style.display !== 'none') {
         renderUI();
+    }
+    
+    // 重新渲染角色书条目以更新翻译
+    if (editorView.style.display !== 'none') {
+        const worldbookData = buildWorldbookDataFromDOM();
+        renderWorldbookFromData(worldbookData);
     }
 }
 
@@ -1023,20 +1236,26 @@ function updateButtonTexts() {
     if (generateBtn) generateBtn.textContent = t('ai-generate-entries');
     
     // 更新角色卡按钮
-    const editBtns = document.querySelectorAll('button[onclick*="showEditorView"]');
-    editBtns.forEach(btn => {
-        btn.textContent = t('edit');
-    });
-    
-    const addTagBtns = document.querySelectorAll('button[onclick*="addInternalTag"]');
+    const addTagBtns = document.querySelectorAll('.card-footer button[onclick*="addInternalTag"]');
     addTagBtns.forEach(btn => {
-        btn.textContent = t('add-tag');
+        btn.textContent = `🏷️ ${t('add-tag')}`;
     });
     
-    const deleteBtns = document.querySelectorAll('button[onclick*="deleteCharacter"]');
+    const deleteBtns = document.querySelectorAll('.card-footer button[onclick*="deleteCharacter"]');
     deleteBtns.forEach(btn => {
-        btn.textContent = t('delete');
+        btn.textContent = `🗑️ ${t('delete')}`;
     });
+
+    // 更新Post-history模板按钮
+    const templateContainer = document.getElementById('post-history-templates');
+    if (templateContainer) {
+        document.getElementById('btn-template-options').textContent = t('post-history-options-mode');
+        document.getElementById('btn-template-parentheses').textContent = t('post-history-parentheses-mode');
+        document.getElementById('btn-template-status-bar').textContent = t('post-history-status-bar');
+        document.getElementById('btn-template-third-person').textContent = t('post-history-third-person');
+        document.getElementById('btn-template-json-mode').textContent = t('post-history-json-mode');
+        document.getElementById('btn-template-image-prompt').textContent = t('post-history-image-prompt');
+    }
 }
 
 // --- DB & Initialization ---
@@ -1051,6 +1270,22 @@ function showHelp(message) {
     alert(message);
 }
 
+// [MODIFIED] 设置后期指令模板函数
+function setPostHistoryTemplate(templateKey) {
+    const textarea = document.getElementById('post_history_instructions');
+    if (textarea) {
+        const templateText = t(templateKey);
+        // 检查文本区域是否为空或仅包含空白字符
+        if (textarea.value.trim() === '') {
+            textarea.value = templateText;
+        } else {
+            // 如果已有内容，则在新行追加，并用空行分隔
+            textarea.value += '\n\n' + templateText;
+        }
+    }
+}
+
+
 window.onload = function() {
     // 显示加载动画
     const loadingOverlay = document.getElementById('loading-overlay');
@@ -1062,6 +1297,8 @@ window.onload = function() {
         initializeDatabase();
         // 初始化lover开关的事件监听
         initializeLoverSwitch();
+        // 初始化名字生成器 Modal 的事件
+        initializeNameGeneratorModal();
         
         // 初始化语言设置
         const savedLanguage = localStorage.getItem('language') || 'zh';
@@ -1141,7 +1378,7 @@ function showEditorView(characterId = null) {
     clearEditorForm();
 
     if (characterId) {
-        document.getElementById('editor-title').innerText = '编辑角色';
+        document.getElementById('editor-title').innerText = t('edit-character');
         const transaction = db.transaction(['characters'], 'readonly');
         const store = transaction.objectStore('characters');
         const request = store.get(characterId);
@@ -1153,7 +1390,7 @@ function showEditorView(characterId = null) {
             }
         };
     } else {
-        document.getElementById('editor-title').innerText = '创建新角色';
+        document.getElementById('editor-title').innerText = t('create-new-character');
         renderWorldbookFromData([]);
         document.getElementById('avatar-preview').src = createDefaultImage('2:3');
     }
@@ -1599,9 +1836,9 @@ function renderCharacters(characters) {
         const footerDiv = document.createElement('div');
         footerDiv.className = 'card-footer';
         footerDiv.innerHTML = `
-            <button onclick="showEditorView(${char.id})">✏️ 编辑</button>
-            <button onclick="addInternalTag(${char.id})">🏷️ 添加标签</button>
-            <button onclick="deleteCharacter(${char.id})">🗑️ 删除</button>
+            <button onclick="showEditorView(${char.id})">✏️ ${t('edit')}</button>
+            <button onclick="addInternalTag(${char.id})">🏷️ ${t('add-tag')}</button>
+            <button onclick="deleteCharacter(${char.id})">🗑️ ${t('delete')}</button>
         `;
         
         card.appendChild(headerDiv);
@@ -1989,7 +2226,7 @@ async function generateFullWorldbook(button) {
 - 性别: ${characterContext.gender || '未指定'}
 - 主题/世界观: ${characterContext.topic || '未指定'}
 - 角色描述: ${characterContext.description || '未指定'}
-- 个性: ${characterContext.personality || '未指定'}
+- 个性: ${characterContext.personality || '未指定'}（逗号分隔）
 - 场景设定: ${characterContext.scenario || '未指定'}
 
 **你的任务:**
@@ -2055,6 +2292,88 @@ async function callWorldbookDeepSeek(button) {
         if (undoButton && undoButton.classList.contains('ai-undo-button')) {
             undoButton.style.display = 'inline-block';
         }
+    }
+}
+
+// ====================================================================================
+// --- NEW AI NAME GENERATOR ---
+// ====================================================================================
+
+function initializeNameGeneratorModal() {
+    const modal = document.getElementById('name-generator-modal');
+    const cancelButton = document.getElementById('cancel-name-generation-btn');
+    const regenerateButton = document.getElementById('regenerate-names-btn');
+
+    // 点击背景关闭
+    modal.addEventListener('click', (event) => {
+        if (event.target === modal) {
+            modal.style.display = 'none';
+        }
+    });
+    // 取消按钮
+    cancelButton.addEventListener('click', () => {
+        modal.style.display = 'none';
+    });
+    // 重新生成按钮
+    regenerateButton.addEventListener('click', (event) => {
+        const generatorButton = document.querySelector('.name-generator-btn'); // 找到原始触发按钮
+        generateAiNames(generatorButton);
+    });
+}
+
+async function generateAiNames(button) {
+    const modal = document.getElementById('name-generator-modal');
+    const optionsContainer = document.getElementById('name-options-container');
+    const regenerateButton = document.getElementById('regenerate-names-btn');
+    
+    // 显示加载状态
+    optionsContainer.innerHTML = `<div class="loading-spinner" style="margin: 20px auto;"></div>`;
+    modal.style.display = 'flex';
+
+    const currentCard = buildCardObject();
+    const prompt = `你是一位富有创造力的命名大师。请根据以下角色设定，为角色生成5个好听、贴切的名字。
+请严格按照JSON数组的格式返回，例如：["名字A", "名字B", "名字C", "名字D", "名字E"]。不要包含任何额外的解释或文本。
+
+角色设定:
+- 主题/世界观: ${currentCard.topic || '未指定'}
+- 性别: ${currentCard.gender || '未指定'}
+- 角色描述: ${currentCard.description || '未指定'}
+- 个性: ${currentCard.personality || '未指定'}`;
+
+    const originalRegenerateText = regenerateButton.textContent;
+    regenerateButton.disabled = true;
+    regenerateButton.textContent = t('generating');
+
+    try {
+        const result = await callApi(prompt, button); // 使用原始按钮来显示主编辑页的加载状态
+        if (result) {
+            const cleanedResult = result.replace(/^```json\s*|```$/g, '').trim();
+            const names = JSON.parse(cleanedResult);
+
+            if (Array.isArray(names) && names.length > 0) {
+                optionsContainer.innerHTML = ''; // 清空加载动画
+                names.forEach(name => {
+                    const nameButton = document.createElement('button');
+                    nameButton.textContent = name;
+                    nameButton.onclick = () => {
+                        document.getElementById('name').value = name;
+                        modal.style.display = 'none';
+                    };
+                    optionsContainer.appendChild(nameButton);
+                });
+            } else {
+                throw new Error("AI did not return a valid array of names.");
+            }
+        } else {
+            optionsContainer.innerHTML = `<p>${t('name-generation-failed')}</p>`;
+        }
+    } catch (e) {
+        console.error("Failed to parse AI-generated names:", e);
+        console.error("Raw response:", result);
+        optionsContainer.innerHTML = `<p>${t('name-generation-failed')}</p>`;
+    } finally {
+        regenerateButton.disabled = false;
+        regenerateButton.textContent = originalRegenerateText;
     }
 }
 
@@ -2225,6 +2544,14 @@ function addWorldbookEntry() {
     renderWorldbookFromData(worldbookData);
 }
 
+// 新增：设置优先级的辅助函数
+function setPriority(button, value) {
+    const priorityInput = button.closest('.field-group').querySelector('.wb-priority');
+    if (priorityInput) {
+        priorityInput.value = value;
+    }
+}
+
 function createWorldbookEntryElement(entryData = {}) {
     const entryLi = document.createElement('li');
     entryLi.className = 'worldbook-entry';
@@ -2247,37 +2574,37 @@ function createWorldbookEntryElement(entryData = {}) {
         <div class="entry-content-wrapper">
             <div class="entry-header">
                 <div class="entry-title-group">
-                    <div style="display: flex; align-items: center; gap: 5px; min-width: 130px;">
-                        <input type="number" class="wb-sort-id" title="排序ID" placeholder="ID" value="${defaultEntry.id}" style="width: 65px; flex-shrink: 0;">
+                    <div style="display: flex; align-items: center; gap: 5px;">
+                        <input type="number" class="wb-sort-id" title="${t('help-entry-id')}" placeholder="${t('entry-id')}" value="${defaultEntry.id}" style="width: 65px; flex-shrink: 0;">
                         <button title="将此条目插入到左侧框中指定的ID位置，并顺延后续条目" onclick="airdropEntry(this)" style="padding: 5px 8px; font-size: 14px; background-color: #6c757d; color: white;">➡️</button>
                     </div>
-                    <input type="text" class="entry-comment" placeholder="条目注释 (Comment)" value="${defaultEntry.comment}">
-                                         <span class="help-icon" onclick="showHelp(t('help-id-drop'))">?</span>
+                    <input type="text" class="entry-comment" placeholder="${t('entry-comment-placeholder')}" value="${defaultEntry.comment}">
+                    <span class="help-icon" onclick="event.preventDefault(); event.stopPropagation(); showHelp(t('help-id-drop'))">?</span>
                 </div>
                 <div class="entry-actions">
                     <button title="添加子条目" onclick="addChildEntry(this)">➕</button>
                     <button title="将此条目移出父条目" onclick="indentEntry(this, -1)">↓退出</button>
                     <button title="将此条目设为上方同级条目的子条目" onclick="indentEntry(this, 1)">↑加入</button>
-                    <button class="delete-entry-btn" onclick="this.closest('.worldbook-entry').remove();">删除</button>
+                    <button class="delete-entry-btn" onclick="this.closest('.worldbook-entry').remove();">${t('delete')}</button>
                 </div>
             </div>
             <div class="entry-grid">
                 <div class="field-group full-width">
-                                         <label>主要关键词 (Keys, 逗号分隔) <span class="help-icon" onclick="showHelp(t('help-main-keys'))">?</span></label>
-                    <input type="text" class="wb-keys" placeholder="例如: 誓约胜利之剑, Excalibur" value="${(defaultEntry.keys || []).join(', ')}">
+                    <label>${t('main-keys')} <span class="help-icon" onclick="event.preventDefault(); event.stopPropagation(); showHelp(t('help-main-keys'))">?</span></label>
+                    <input type="text" class="wb-keys" placeholder="${t('main-keys-placeholder')}" value="${(defaultEntry.keys || []).join(', ')}">
                 </div>
                 <div class="field-group full-width">
-                    <label>注入内容 (Content) <button class="ai-button" onclick="callWorldbookDeepSeek(this)" style="padding: 2px 8px; font-size: 12px; width: auto; margin-left: 10px;">🔮 AI 帮我写</button><button class="ai-undo-button" onclick="undoAiCompletion(this)">↩️ 撤销</button></label>
-                    <textarea class="wb-content" rows="3" placeholder="当关键词被触发时，这里的内容会被悄悄地塞给AI，作为它的临时记忆。支持用 {{变量}} 引用其他条目的内容。">${defaultEntry.content}</textarea>
+                    <label>${t('injection-content')} <button class="ai-button" onclick="callWorldbookDeepSeek(this)" style="padding: 2px 8px; font-size: 12px; width: auto; margin-left: 10px;">${t('ai-help-write')}</button><button class="ai-undo-button" onclick="undoAiCompletion(this)">${t('undo')}</button></label>
+                    <textarea class="wb-content" rows="3" placeholder="${t('injection-content-placeholder')}">${defaultEntry.content}</textarea>
                 </div>
 
                 <div class="field-group full-width">
                     <details>
-                        <summary id="advanced-settings-summary">高级设定 <span style="font-weight: normal; font-size: 14px; color: #aaa;">(关键词匹配、注入逻辑等)</span></summary>
+                        <summary id="advanced-settings-summary">${t('advanced-settings')} <span style="font-weight: normal; font-size: 14px; color: #aaa;">(关键词匹配、注入逻辑等)</span></summary>
                         <div class="advanced-grid">
                             <div class="field-group full-width">
-                                <label>关键字过滤器 (Keyword Filter) 
-                                    <span class="help-icon" onclick="showHelp(t('help-secondary-keys'))">?</span>
+                                <label>关键字过滤器 
+                                    <span class="help-icon" onclick="event.preventDefault(); event.stopPropagation(); showHelp(t('help-secondary-keys'))">?</span>
                                 </label>
                                 <div style="display: flex; gap: 10px; align-items: center;">
                                     <select class="wb-secondary-keys-logic" style="flex: 1; padding: 12px;">
@@ -2286,30 +2613,47 @@ function createWorldbookEntryElement(entryData = {}) {
                                         <option value="all" ${defaultEntry.secondary_keys_logic === 'all' ? 'selected' : ''}>与所有</option>
                                         <option value="not_all" ${defaultEntry.secondary_keys_logic === 'not_all' ? 'selected' : ''}>非所有</option>
                                     </select>
-                                    <input type="text" class="wb-secondary-keys" placeholder="逗号分隔的关键词" value="${(defaultEntry.secondary_keys || []).join(', ')}" style="flex: 3;">
+                                    <input type="text" class="wb-secondary-keys" placeholder="${t('secondary-keys-placeholder')}" value="${(defaultEntry.secondary_keys || []).join(', ')}" style="flex: 3;">
                                 </div>
                             </div>
                             <div class="field-group">
-                                <label>注入位置</label>
+                                <label>${t('entry-position')} <span class="help-icon" onclick="event.preventDefault(); event.stopPropagation(); showHelp(t('help-entry-position'))">?</span></label>
                                 <select class="wb-position">
                                     <option value="before_char" ${defaultEntry.position === 'before_char' ? 'selected' : ''}>角色定义前</option>
                                     <option value="after_char" ${defaultEntry.position === 'after_char' ? 'selected' : ''}>角色定义后</option>
                                     <option value="before_prompt" ${defaultEntry.position === 'before_prompt' ? 'selected' : ''}>最开头</option>
                                 </select>
                             </div>
-                            <div class="field-group"><label>作用域</label><select class="wb-scope"><option value="chat" ${defaultEntry.scope === 'chat' ? 'selected' : ''}>聊天中</option><option value="summary" ${defaultEntry.scope === 'summary' ? 'selected' : ''}>记忆摘要中</option><option value="discovery" ${defaultEntry.scope === 'discovery' ? 'selected' : ''}>每次进入聊天时</option></select></div>
-                            <div class="field-group"><label>优先级</label><input type="number" class="wb-priority" value="${defaultEntry.priority}"></div>
-                            <div class="field-group"><label>分组</label><input type="text" class="wb-group" value="${defaultEntry.group}" placeholder="可选"></div>
-                            <div class="field-group"><label>触发概率 (%)</label><input type="number" class="wb-probability" value="${defaultEntry.probability}" min="0" max="100"></div>
-                            <div class="field-group"><label>记忆扫描深度</label><input type="number" class="wb-depth" value="${defaultEntry.wb_depth}"></div>
+                            <div class="field-group">
+                                <label>${t('entry-scope')} <span class="help-icon" onclick="event.preventDefault(); event.stopPropagation(); showHelp(t('help-entry-scope'))">?</span></label>
+                                <select class="wb-scope">
+                                    <option value="chat" ${defaultEntry.scope === 'chat' ? 'selected' : ''}>聊天中</option>
+                                    <option value="summary" ${defaultEntry.scope === 'summary' ? 'selected' : ''}>记忆摘要中</option>
+                                    <option value="discovery" ${defaultEntry.scope === 'discovery' ? 'selected' : ''}>每次进入聊天时</option>
+                                </select>
+                            </div>
+                            <div class="field-group" style="display: flex; flex-direction: column; align-items: flex-start;">
+                                <label style="margin-bottom: 8px;">${t('entry-priority')} <span class="help-icon" onclick="event.preventDefault(); event.stopPropagation(); showHelp(t('help-entry-priority'))">?</span></label>
+                                <div style="display: flex; align-items: center; width: 100%;">
+                                    <input type="number" class="wb-priority" value="${defaultEntry.priority}" style="flex-grow: 1;">
+                                    <div class="priority-buttons">
+                                        <button onclick="setPriority(this, 999)" title="999">${t('priority-preset-prereq')}</button>
+                                        <button onclick="setPriority(this, 666)" title="666">${t('priority-preset-important')}</button>
+                                        <button onclick="setPriority(this, 100)" title="100">${t('priority-preset-normal')}</button>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="field-group"><label>${t('entry-group')} <span class="help-icon" onclick="event.preventDefault(); event.stopPropagation(); showHelp(t('help-entry-group'))">?</span></label><input type="text" class="wb-group" value="${defaultEntry.group}" placeholder="${t('entry-group-placeholder')}"></div>
+                            <div class="field-group"><label>${t('entry-probability')} <span class="help-icon" onclick="event.preventDefault(); event.stopPropagation(); showHelp(t('help-entry-probability'))">?</span></label><input type="number" class="wb-probability" value="${defaultEntry.probability}" min="0" max="100"></div>
+                            <div class="field-group"><label>${t('entry-depth')} <span class="help-icon" onclick="event.preventDefault(); event.stopPropagation(); showHelp(t('help-entry-depth'))">?</span></label><input type="number" class="wb-depth" value="${defaultEntry.wb_depth}"></div>
                             <div class="field-group logic-group full-width">
-                                <label><input type="checkbox" class="wb-enabled" ${defaultEntry.enabled ? 'checked' : ''}>启用</label>
-                                <label><input type="checkbox" class="wb-constant" ${defaultEntry.constant ? 'checked' : ''}>恒定注入</label>
-                                <label><input type="checkbox" class="wb-selective" ${defaultEntry.selective ? 'checked' : ''}>选择性注入</label>
-                                <label><input type="checkbox" class="wb-prevent-recursion" ${defaultEntry.prevent_recursion ? 'checked' : ''}>阻止递归</label>
-                                <label><input type="checkbox" class="wb-use-regex" ${defaultEntry.use_regex ? 'checked' : ''}>正则匹配</label>
-                                <label><input type="checkbox" class="wb-match-whole-words" ${defaultEntry.match_whole_words ? 'checked' : ''}>全词匹配</label>
-                                <label><input type="checkbox" class="wb-case-sensitive" ${defaultEntry.case_sensitive ? 'checked' : ''}>区分大小写</label>
+                                <label><input type="checkbox" class="wb-enabled" ${defaultEntry.enabled ? 'checked' : ''}>${t('entry-enabled')} <span class="help-icon" onclick="event.preventDefault(); event.stopPropagation(); showHelp(t('help-entry-enabled'))">?</span></label>
+                                <label><input type="checkbox" class="wb-constant" ${defaultEntry.constant ? 'checked' : ''}>${t('entry-constant')} <span class="help-icon" onclick="event.preventDefault(); event.stopPropagation(); showHelp(t('help-entry-constant'))">?</span></label>
+                                <label><input type="checkbox" class="wb-selective" ${defaultEntry.selective ? 'checked' : ''}>${t('entry-selective')} <span class="help-icon" onclick="event.preventDefault(); event.stopPropagation(); showHelp(t('help-entry-selective'))">?</span></label>
+                                <label><input type="checkbox" class="wb-prevent-recursion" ${defaultEntry.prevent_recursion ? 'checked' : ''}>${t('entry-prevent-recursion')} <span class="help-icon" onclick="event.preventDefault(); event.stopPropagation(); showHelp(t('help-entry-prevent-recursion'))">?</span></label>
+                                <label><input type="checkbox" class="wb-use-regex" ${defaultEntry.use_regex ? 'checked' : ''}>${t('entry-use-regex')} <span class="help-icon" onclick="event.preventDefault(); event.stopPropagation(); showHelp(t('help-entry-use-regex'))">?</span></label>
+                                <label><input type="checkbox" class="wb-match-whole-words" ${defaultEntry.match_whole_words ? 'checked' : ''}>${t('match-whole-words')} <span class="help-icon" onclick="event.preventDefault(); event.stopPropagation(); showHelp(t('help-match-whole-words'))">?</span></label>
+                                <label><input type="checkbox" class="wb-case-sensitive" ${defaultEntry.case_sensitive ? 'checked' : ''}>${t('case-sensitive')} <span class="help-icon" onclick="event.preventDefault(); event.stopPropagation(); showHelp(t('help-case-sensitive'))">?</span></label>
                             </div>
                         </div>
                     </details>
