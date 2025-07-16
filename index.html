@@ -726,7 +726,7 @@ const translations = {
         'companion-mode': '伴侣模式',
         
         // 世界书相关
-        'worldbook-help': '“世界书”是给AI的一部<b>参考字典</b>',
+        'worldbook-help': '“世界书”是给AI的一部<b>参考字典</b>。如果你只搓世界书，上面的信息只用填名字',
         'entry-comment': '条目注释',
         'entry-comment-placeholder': '条目注释',
         'main-keys': '词 ',
@@ -803,7 +803,10 @@ const translations = {
         
         // 默认值
         'imported-character': '从图片导入的角色',
-        
+        'imported-lorebook': '导入的世界书',
+        'lorebook-description': '从SillyTavern导入的世界书。',
+        'lorebook-tag': '世界书',
+
         // 确认对话框
         'confirm-overwrite-worldbook': '这将会覆盖当前所有的角色书条目，你确定吗？',
         
@@ -840,7 +843,7 @@ const translations = {
     en: {
         // Titles and buttons
         'app-title': 'Nika Character Studio Pro',
-        'create-new-character': 'Create New Character',
+        'create-new-character': 'Create New Character/Book',
         'import-character': '📥 Import Character Card',
         'edit-character': 'Edit Character',
         'save-and-return': '💾 Save and Return to Library',
@@ -896,7 +899,7 @@ const translations = {
         'companion-mode': 'Companion Mode',
         
         // Worldbook related
-        'worldbook-help': 'You can think of the "World Book" as a <b>reference dictionary</b> for AI',
+        'worldbook-help': 'You can think of the "World Book" as a <b>reference dictionary</b> for AI. If you only want the world book, you only need to fill in the name in the information above this',
         'entry-comment': 'Entry Comment (Comment)',
         'entry-comment-placeholder': 'Entry Comment (Comment)',
         'main-keys': 'Main Keywords (Keys, comma separated)',
@@ -974,6 +977,9 @@ const translations = {
         
         // Default values
         'imported-character': 'Character imported from image',
+        'imported-lorebook': 'Imported Lorebook',
+        'lorebook-description': 'A lorebook imported from SillyTavern.',
+        'lorebook-tag': 'lorebook',
         
         // Confirmation dialogs
         'confirm-overwrite-worldbook': 'This will overwrite all current worldbook entries. Are you sure?',
@@ -1285,6 +1291,64 @@ function setPostHistoryTemplate(templateKey) {
     }
 }
 
+/**
+ * [NEW] Converts a SillyTavern lorebook object into the application's internal format.
+ * @param {object} lorebook - The raw lorebook object from the imported JSON.
+ * @returns {Array} An array of worldbook entries in the internal format.
+ */
+function convertTavernLorebookToInternal(lorebook) {
+    const internalEntries = [];
+    const entriesSource = (lorebook.entries && typeof lorebook.entries === 'object' && !Array.isArray(lorebook.entries))
+        ? lorebook.entries
+        : (lorebook.extensions && lorebook.extensions.entries && typeof lorebook.extensions.entries === 'object' && !Array.isArray(lorebook.extensions.entries))
+            ? lorebook.extensions.entries
+            : null;
+
+    if (!entriesSource) {
+        console.warn("Could not find a valid Tavern-style 'entries' object in the provided file.");
+        return [];
+    }
+
+    const positionMap = {
+        0: 'before_prompt',
+        1: 'after_char',
+        2: 'before_char'
+    };
+
+    for (const key in entriesSource) {
+        const tavernEntry = entriesSource[key];
+        const internalEntry = {
+            id: tavernEntry.order || parseInt(key, 10) || 0,
+            keys: tavernEntry.keys || tavernEntry.key || [],
+            secondary_keys: tavernEntry.keysecondary || tavernEntry.secondary_keys || [],
+            comment: tavernEntry.name || tavernEntry.comment || '',
+            content: tavernEntry.content || '',
+            priority: tavernEntry.order || 100,
+            enabled: tavernEntry.disable !== undefined ? !tavernEntry.disable : (tavernEntry.enabled !== undefined ? tavernEntry.enabled : true),
+            constant: tavernEntry.constant || false,
+            selective: tavernEntry.selective || false,
+            prevent_recursion: tavernEntry.excludeRecursion || false,
+            position: positionMap[tavernEntry.position] || 'before_char',
+            secondary_keys_logic: 'any',
+            use_regex: tavernEntry.use_regex || false,
+            group: tavernEntry.group || '',
+            scope: 'chat',
+            probability: tavernEntry.probability !== undefined ? tavernEntry.probability : 100,
+            wb_depth: tavernEntry.depth || 4,
+            match_whole_words: tavernEntry.match_whole_words || false,
+            case_sensitive: tavernEntry.case_sensitive || false,
+            children: []
+        };
+        internalEntries.push(internalEntry);
+    }
+    
+    internalEntries.sort((a, b) => a.id - b.id);
+    internalEntries.forEach((entry, index) => {
+        entry.id = index;
+    });
+    return internalEntries;
+}
+
 
 window.onload = function() {
     // 显示加载动画
@@ -1483,17 +1547,24 @@ function importCharacter(event) {
     event.target.value = '';
 }
 
+/**
+ * [MODIFIED] Saves an imported character card or lorebook to the database.
+ * @param {object} originalCard - The parsed data from the imported file.
+ * @param {string|null} avatarBase64 - The base64-encoded avatar image, if any.
+ */
 function saveImportedCharacter(originalCard, avatarBase64 = null) {
     if (!checkDbReady()) return;
     
     let charDataForDb;
+
+    const isTavernLorebook = (originalCard.entries && typeof originalCard.entries === 'object' && !Array.isArray(originalCard.entries)) ||
+                             (originalCard.extensions && originalCard.extensions.entries && typeof originalCard.extensions.entries === 'object' && !Array.isArray(originalCard.extensions.entries));
 
     if (originalCard.spec === 'chara_card_v3' && originalCard.data) {
         const data = originalCard.data;
         const extensions = data.extensions || {};
         const book = data.character_book || {};
         
-        // 递归函数：将V3条目转换为内部格式
         function convertV3EntryToInternal(entry) {
             const entryExt = entry.extensions || {};
             const internalEntry = {
@@ -1521,7 +1592,6 @@ function saveImportedCharacter(originalCard, avatarBase64 = null) {
                 children: []
             };
             
-            // 递归处理子条目
             if (entry.children && entry.children.length > 0) {
                 internalEntry.children = entry.children.map(child => convertV3EntryToInternal(child));
             }
@@ -1563,6 +1633,27 @@ function saveImportedCharacter(originalCard, avatarBase64 = null) {
             post_history_instructions: data.post_history_instructions || '',
             worldbook: (data.character_book && Array.isArray(data.character_book.entries)) ? data.character_book.entries : [],
         };
+    } else if (isTavernLorebook) {
+        // Handle SillyTavern Lorebook JSON
+        console.log("Detected SillyTavern Lorebook format. Converting...");
+        const internalBookEntries = convertTavernLorebookToInternal(originalCard);
+
+        charDataForDb = {
+            name: originalCard.name || t('imported-lorebook'),
+            description: originalCard.description || t('lorebook-description'),
+            gender: '',
+            topic: '',
+            personality: '',
+            tags: [t('lorebook-tag')],
+            system_prompt: '',
+            scenario: '',
+            first_mes: '',
+            mes_example: '',
+            post_history_instructions: '',
+            worldbook: internalBookEntries,
+            isFavorite: false,
+        };
+        console.log("Conversion complete. Processed entries:", internalBookEntries.length);
     } else {
         charDataForDb = JSON.parse(JSON.stringify(originalCard));
         charDataForDb.tags = Array.isArray(charDataForDb.tags) ? charDataForDb.tags : (typeof charDataForDb.tags === 'string' ? charDataForDb.tags.split(/[,、，\s]+/).map(t => t.trim()).filter(Boolean) : []);
@@ -1584,10 +1675,10 @@ function saveImportedCharacter(originalCard, avatarBase64 = null) {
             renderUI();
         }
     };
-            addRequest.onerror = (e) => {
-            console.error(currentLanguage === 'zh' ? "保存导入角色失败:" : "Failed to save imported character:", e.target.error);
-            alert(t('save-import-failed'));
-        }
+    addRequest.onerror = (e) => {
+        console.error(currentLanguage === 'zh' ? "保存导入角色失败:" : "Failed to save imported character:", e.target.error);
+        alert(t('save-import-failed'));
+    }
 }
 
 
