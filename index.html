@@ -557,14 +557,12 @@
                 <button onclick="downloadCharacterAsPng()">📥 下载 PNG 角色卡</button>
                 <button class="secondary" onclick="showLibraryView()">🔙 返回 (不储存)</button>
             </div>
-
-          <h3 class="section-title" id="world-topic-title">世界话题</h3>
+          
+          <h3 class="section-title" id="character-info-title">角色信息</h3>
           <div class="field-group">
             <label for="topic">主题</label>
             <input id="topic" placeholder="例：赛博朋克, 奇幻, 校园" />
           </div>
-          
-          <h3 class="section-title" id="character-core-title">角色核心</h3>
           <div class="field-group">
               <div class="inline-group">
                   <div style="flex:3">
@@ -577,8 +575,6 @@
                   <div style="flex:1"><label for="gender">性别</label><input id="gender" placeholder="例：女" /></div>
               </div>
           </div>
-          
-          <h3 class="section-title" id="character-details-title">角色细节</h3>
           <div class="field-group">
             <label for="description">简介</label>
             <textarea id="description" rows="5" placeholder="角色的身份、外貌、背景故事等。会显示在角色卡上。"></textarea>
@@ -598,7 +594,7 @@
             <button class="ai-undo-button" onclick="undoAiCompletion(this)">↩️ 撤销</button>
           </div>
 
-          <h3 class="section-title" id="settings-title">设定</h3>
+          <h3 class="section-title" id="ai-settings-title">AI设定</h3>
            <div class="field-group">
             <label for="system_prompt">人格设定</label>
             <textarea id="system_prompt" rows="3" placeholder="AI必须遵守的核心设定。例：你是[名字]，一个[身份]。你必须称呼用户为“亲爱的”。"></textarea>
@@ -636,6 +632,14 @@
               <button id="btn-template-json-mode" onclick="setPostHistoryTemplate('template-json-mode')"></button>
               <button id="btn-template-image-prompt" onclick="setPostHistoryTemplate('template-image-prompt')"></button>
             </div>
+          </div>
+          <div class="field-group">
+            <label for="creator_notes">创作者笔记</label>
+            <textarea id="creator_notes" rows="2"></textarea>
+          </div>
+          <div class="field-group">
+            <label for="character_version">角色版本</label>
+            <input id="character_version" />
           </div>
 
           <div style="display: flex; justify-content: space-between; align-items: center;">
@@ -695,22 +699,20 @@ const translations = {
         // 表单标签
         'avatar-label': '角色头像',
         'avatar-upload': '上传图片',
-        'world-topic': '世界话题',
+        'character-info': '角色信息',
         'topic': '主题',
         'topic-placeholder': '例：赛博朋克, 奇幻, 校园',
-        'character-core': '角色核心',
         'name': '名字',
         'name-placeholder': '例：Monika',
         'gender': '性别',
         'gender-placeholder': '例：女',
-        'character-details': '角色细节',
         'description': '简介',
         'description-placeholder': '角色的身份、外貌、背景故事等。会显示在角色卡上。',
         'tags': '分类标签',
         'tags-placeholder': '为角色添加标签，方便查找。例：原创, 游戏, OOC',
         'personality': '个性',
         'personality-placeholder': '详细性格特质。例：善于言辞, 思想成熟, 病娇 (逗号分隔)',
-        'settings': '设定',
+        'ai-settings': 'AI设定',
         'system-prompt': '人格设定',
         'system-prompt-placeholder': 'AI必须遵守的核心设定。例：你是[名字]，一个[身份]。你必须称呼用户为“亲爱的”。',
         'scenario': '场景设定',
@@ -722,6 +724,10 @@ const translations = {
         'advanced-settings': '高级设定',
         'post-history-instructions': '后期指令',
         'post-history-instructions-placeholder': '一些平台用它来修改AI的回复格式。例如，要让{{char}}的动作都用星号包围，可以写：将{{char}}的所有动作和叙述都放在星号（*）之间。',
+        'creator-notes': '创作者笔记',
+        'creator-notes-placeholder': '给其他用户的留言或版本说明。',
+        'character-version': '角色版本',
+        'character-version-placeholder': '例如：1.0, 2.1.3',
         'world-knowledge-book': '世界/知识书',
         'companion-mode': '伴侣模式',
         
@@ -868,22 +874,20 @@ const translations = {
         // Form labels
         'avatar-label': 'Character Avatar',
         'avatar-upload': 'Upload Image',
-        'world-topic': 'World Topic',
+        'character-info': 'Character Information',
         'topic': 'Topic',
         'topic-placeholder': 'e.g.: Cyberpunk, Fantasy, School',
-        'character-core': 'Character Core',
         'name': 'Name',
         'name-placeholder': 'e.g.: Alice',
         'gender': 'Gender',
         'gender-placeholder': 'e.g.: Female',
-        'character-details': 'Character Details',
         'description': 'Description',
         'description-placeholder': 'The character\'s identity, appearance, background, etc. Will be shown on the character card.',
         'tags': 'Category Tags (comma separated)',
         'tags-placeholder': 'Tags for filtering. e.g.: Original, Game, Yandere (comma separated)',
         'personality': 'Personality',
         'personality-placeholder': 'Detailed personality traits. e.g.: Eloquent, Mature, Yandere (comma separated)',
-        'settings': 'Settings',
+        'ai-settings': 'AI Settings',
         'system-prompt': 'Personality Setting',
         'system-prompt-placeholder': 'Core rules the AI must follow. e.g.: You are [Name], a [Role]. You must call the user "darling".',
         'scenario': 'Scenario Setting',
@@ -895,6 +899,10 @@ const translations = {
         'advanced-settings': 'Advanced Settings',
         'post-history-instructions': 'Post Instructions',
         'post-history-instructions-placeholder': 'Some platforms use this to modify AI response format. For example, to make {{char}}\'s actions wrapped in asterisks, write: Put all {{char}}\'s actions and narration between asterisks (*).',
+        'creator-notes': 'Creator Notes',
+        'creator-notes-placeholder': 'Notes for other users or version info.',
+        'character-version': 'Character Version',
+        'character-version-placeholder': 'e.g.: 1.0, 2.1.3',
         'world-knowledge-book': 'World/Knowledge Book',
         'companion-mode': 'Companion Mode',
         
@@ -1125,10 +1133,8 @@ function updateFormLabels() {
     // 更新section标题
     const sectionTitles = {
         'avatar-operation-title': t('avatar-label'),
-        'world-topic-title': t('world-topic'),
-        'character-core-title': t('character-core'),
-        'character-details-title': t('character-details'),
-        'settings-title': t('settings'),
+        'character-info-title': t('character-info'),
+        'ai-settings-title': t('ai-settings'),
         'advanced-settings-title': t('advanced-settings'),
         'world-knowledge-book-title': t('world-knowledge-book')
     };
@@ -1152,7 +1158,9 @@ function updateFormLabels() {
         'scenario': t('scenario'),
         'first_mes': t('first-message'),
         'mes_example': t('message-example'),
-        'post_history_instructions': t('post-history-instructions')
+        'post_history_instructions': t('post-history-instructions'),
+        'creator_notes': t('creator-notes'),
+        'character_version': t('character-version'),
     };
     
     Object.keys(labels).forEach(id => {
@@ -1172,7 +1180,9 @@ function updateFormLabels() {
         'scenario': t('scenario-placeholder'),
         'first_mes': t('first-message-placeholder'),
         'mes_example': t('message-example-placeholder'),
-        'post_history_instructions': t('post-history-instructions-placeholder')
+        'post_history_instructions': t('post-history-instructions-placeholder'),
+        'creator_notes': t('creator-notes-placeholder'),
+        'character_version': t('character-version-placeholder'),
     };
     
     Object.keys(placeholders).forEach(id => {
@@ -1517,6 +1527,8 @@ function importCharacter(event) {
                             mes_example: '',
                             system_prompt: '',
                             post_history_instructions: '',
+                            creator_notes: '',
+                            character_version: '1.0',
                             tags: [],
                             character_book: { entries: [] }
                         }
@@ -1613,6 +1625,8 @@ function saveImportedCharacter(originalCard, avatarBase64 = null) {
             first_mes: data.first_mes || '',
             mes_example: data.mes_example || '',
             post_history_instructions: data.post_history_instructions || '',
+            creator_notes: data.creator_notes || '',
+            character_version: data.character_version || '',
             worldbook: internalBookEntries,
             isFavorite: extensions.fav || false,
         };
@@ -1631,6 +1645,8 @@ function saveImportedCharacter(originalCard, avatarBase64 = null) {
             first_mes: data.first_mes || '',
             mes_example: data.mes_example || '',
             post_history_instructions: data.post_history_instructions || '',
+            creator_notes: data.creatorcomment || '',
+            character_version: '', // v2 doesn't have this field
             worldbook: (data.character_book && Array.isArray(data.character_book.entries)) ? data.character_book.entries : [],
         };
     } else if (isTavernLorebook) {
@@ -1650,6 +1666,8 @@ function saveImportedCharacter(originalCard, avatarBase64 = null) {
             first_mes: '',
             mes_example: '',
             post_history_instructions: '',
+            creator_notes: '',
+            character_version: '',
             worldbook: internalBookEntries,
             isFavorite: false,
         };
@@ -1658,6 +1676,8 @@ function saveImportedCharacter(originalCard, avatarBase64 = null) {
         charDataForDb = JSON.parse(JSON.stringify(originalCard));
         charDataForDb.tags = Array.isArray(charDataForDb.tags) ? charDataForDb.tags : (typeof charDataForDb.tags === 'string' ? charDataForDb.tags.split(/[,、，\s]+/).map(t => t.trim()).filter(Boolean) : []);
         charDataForDb.personality = charDataForDb.personality || '';
+        charDataForDb.creator_notes = charDataForDb.creator_notes || '';
+        charDataForDb.character_version = charDataForDb.character_version || '';
         charDataForDb.worldbook = charDataForDb.worldbook || [];
     }
 
@@ -1949,7 +1969,7 @@ function toggleFilter(filterName, event) {
 
 // --- Editor Form Management ---
 function clearEditorForm() {
-    const fields = ['charId', 'name', 'description', 'personality', 'system_prompt', 'scenario', 'first_mes', 'mes_example', 'internalTags', 'isFavorite', 'originalCardData', 'topic', 'gender', 'tags', 'post_history_instructions'];
+    const fields = ['charId', 'name', 'description', 'personality', 'system_prompt', 'scenario', 'first_mes', 'mes_example', 'internalTags', 'isFavorite', 'originalCardData', 'topic', 'gender', 'tags', 'post_history_instructions', 'creator_notes', 'character_version'];
     fields.forEach(id => { 
         const el = document.getElementById(id);
         if (el) el.value = ''; 
@@ -1975,6 +1995,8 @@ function populateEditorForm(charData) {
     document.getElementById('first_mes').value = charData.first_mes || '';
     document.getElementById('mes_example').value = charData.mes_example || '';
     document.getElementById('post_history_instructions').value = charData.post_history_instructions || '';
+    document.getElementById('creator_notes').value = charData.creator_notes || '';
+    document.getElementById('character_version').value = charData.character_version || '';
     document.getElementById('internalTags').value = JSON.stringify(charData.internalTags || []);
     document.getElementById('isFavorite').value = charData.isFavorite || false;
     
@@ -2065,6 +2087,8 @@ function buildCardObject() {
         first_mes: document.getElementById('first_mes').value.trim(),
         mes_example: document.getElementById('mes_example').value.trim(),
         post_history_instructions: document.getElementById('post_history_instructions').value.trim(),
+        creator_notes: document.getElementById('creator_notes').value.trim(),
+        character_version: document.getElementById('character_version').value.trim(),
         internalTags: JSON.parse(document.getElementById('internalTags').value || '[]'),
         isFavorite: (document.getElementById('isFavorite').value === 'true'),
         avatar: avatarImageBase64 || document.getElementById('avatar-preview').src || null,
@@ -2141,12 +2165,12 @@ function buildV3Card(cardData) {
         scenario: cardData.scenario || '',
         first_mes: cardData.first_mes || '',
         mes_example: cardData.mes_example || '',
-        creator_notes: 'Created with Nika Character Studio',
+        creator_notes: cardData.creator_notes || 'Created with Nika Character Studio',
         system_prompt: cardData.system_prompt || '',
         post_history_instructions: cardData.post_history_instructions || '',
         tags: cardData.tags || [],
         creator: 'Nika Studio User',
-        character_version: '1.0',
+        character_version: cardData.character_version || '1.0',
         alternate_greetings: [],
         group_only_greetings: [],
         extensions: {
