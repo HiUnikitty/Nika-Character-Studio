@@ -193,6 +193,18 @@
     #editor-view .action-buttons button { width: 100%; padding: 12px; border-radius: 5px; background: var(--primary-color); color: white; font-size: 16px;}
     #editor-view .action-buttons button.secondary { background: #6c757d; }
     #editor-view .action-buttons button:hover { transform: translateY(-1px); box-shadow: 0 4px 8px rgba(0,0,0,0.2); opacity: 0.9; }
+    #complete-all-btn {
+        font-size: 14px;
+        padding: 4px 10px;
+        margin-left: 15px;
+        background-color: var(--ai-button-bg);
+        color: white;
+        border-radius: 5px;
+    }
+
+    #ai-guidance-modal {
+    z-index: 10001;
+    }
 
     /* --- 角色书 (Character Book) 专业样式 --- */
     .worldbook-list, .child-entries {
@@ -409,7 +421,7 @@
       transform: translateX(22px);
     }
     
-    /* --- 名字选择 Modal 样式 --- */
+    /* --- Modal 样式 (通用) --- */
     .modal-overlay {
         position: fixed;
         top: 0;
@@ -428,43 +440,137 @@
         padding: 25px;
         border-radius: 10px;
         width: 90%;
-        max-width: 400px;
-        text-align: center;
         box-shadow: 0 5px 25px rgba(0,0,0,0.5);
     }
     .modal-content h3 {
         color: var(--primary-color);
         margin-bottom: 20px;
+        text-align: center;
     }
-    .modal-content .name-options {
+    .modal-content .modal-actions {
         display: flex;
-        flex-direction: column;
+        justify-content: center;
         gap: 10px;
-        margin-bottom: 20px;
-    }
-    .modal-content .name-options button {
-        padding: 12px;
-        border-radius: 5px;
-        background: var(--input-bg);
-        color: var(--text-color);
-        border: 1px solid var(--input-border);
-    }
-    .modal-content .name-options button:hover {
-        background: var(--primary-color);
-        color: #fff;
+        margin-top: 20px;
     }
     .modal-content .modal-actions button {
         padding: 10px 20px;
         border-radius: 5px;
         margin: 0 5px;
+        min-width: 100px;
     }
-    .modal-content .modal-actions .regenerate-btn {
+    .modal-content .modal-actions .action-btn {
         background: var(--primary-color);
         color: #fff;
     }
     .modal-content .modal-actions .cancel-btn {
         background: #6c757d;
         color: #fff;
+    }
+
+
+    /* --- 名字选择 Modal 样式 --- */
+    #name-generator-modal .modal-content {
+        max-width: 400px;
+    }
+    #name-generator-modal .name-options {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        margin-bottom: 20px;
+    }
+    #name-generator-modal .name-options button {
+        width: 100%;
+        padding: 12px;
+        border-radius: 5px;
+        background: var(--input-bg);
+        color: var(--text-color);
+        border: 1px solid var(--input-border);
+    }
+    #name-generator-modal .name-options button:hover {
+        background: var(--primary-color);
+        color: #fff;
+    }
+    
+    /* --- Lorebook AI Modal --- */
+    #worldbook-ai-generator-modal .modal-content {
+        max-width: 800px;
+    }
+     #worldbook-ai-generator-modal .generation-type-selector {
+        display: flex;
+        justify-content: center;
+        gap: 10px;
+        margin-bottom: 20px;
+    }
+    #worldbook-ai-generator-modal #wb-ai-options-container {
+        text-align: left;
+        max-height: 60vh;
+        overflow-y: auto;
+        padding: 5px;
+        background: rgba(0,0,0,0.1);
+        border-radius: 5px;
+        min-height: 100px;
+    }
+    #worldbook-ai-generator-modal .generated-entry {
+        background: rgba(0,0,0,0.2);
+        border: 1px solid #444;
+        border-radius: 5px;
+        padding: 15px;
+        margin-bottom: 10px;
+    }
+    #worldbook-ai-generator-modal .generated-entry > label {
+        display: flex;
+        align-items: flex-start;
+        font-weight: normal;
+        cursor: pointer;
+    }
+    #worldbook-ai-generator-modal .generated-entry input[type="checkbox"] {
+        margin-right: 15px;
+        transform: scale(1.4);
+        margin-top: 5px;
+        flex-shrink: 0;
+    }
+    #worldbook-ai-generator-modal .entry-details h4 {
+        color: var(--primary-color);
+        margin-bottom: 5px;
+    }
+     #worldbook-ai-generator-modal .entry-details p {
+        font-size: 14px;
+        margin-bottom: 8px;
+        color: #ccc;
+        line-height: 1.5;
+    }
+    #worldbook-ai-generator-modal .entry-details p strong {
+        color: var(--text-color);
+    }
+    #worldbook-ai-generator-modal .entry-details .ai-entry-controls {
+        display: flex;
+        gap: 15px;
+        margin-top: 10px;
+        font-size: 14px;
+        align-items: center;
+    }
+    #worldbook-ai-generator-modal .entry-details .ai-entry-controls label {
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 5px;
+    }
+
+
+    /* --- Generic AI Guidance Modal --- */
+    #ai-guidance-modal .modal-content {
+        max-width: 500px;
+    }
+    #ai-guidance-input {
+        width: 100%;
+        min-height: 100px;
+        padding: 10px;
+        border-radius: 5px;
+        background: var(--input-bg);
+        color: var(--text-color);
+        border: 1px solid var(--input-border);
+        resize: vertical;
     }
 
 
@@ -501,8 +607,38 @@
           <div id="name-options-container" class="name-options">
               </div>
           <div class="modal-actions">
-              <button id="regenerate-names-btn" class="regenerate-btn">重新生成</button>
+              <button id="regenerate-names-btn" class="action-btn">重新生成</button>
               <button id="cancel-name-generation-btn" class="cancel-btn">取消</button>
+          </div>
+      </div>
+  </div>
+
+  <div id="ai-guidance-modal" class="modal-overlay">
+      <div class="modal-content">
+          <h3 id="ai-guidance-title">为AI提供指引</h3>
+          <textarea id="ai-guidance-input" rows="5" placeholder="在此输入你的具体要求、风格、关键词等... (可留空)"></textarea>
+          <div class="modal-actions">
+              <button id="ai-guidance-generate-btn" class="action-btn">生成</button>
+              <button id="ai-guidance-cancel-btn" class="cancel-btn">取消</button>
+          </div>
+      </div>
+  </div>
+
+  <div id="worldbook-ai-generator-modal" class="modal-overlay">
+      <div class="modal-content">
+          <h3 id="wb-ai-modal-title">AI 互动式角色书生成</h3>
+          <p class="help-text" style="text-align: center; margin-top: -15px; margin-bottom: 20px;" id="wb-ai-modal-desc">请选择要生成的条目类型：</p>
+          <div class="generation-type-selector">
+              <button data-type="worldview" class="action-btn">生成世界观</button>
+              <button data-type="main_plot" class="action-btn">生成主线剧情</button>
+              <button data-type="side_plot" class="action-btn">生成支线剧情</button>
+          </div>
+          <div id="wb-ai-options-container">
+              </div>
+          <div class="modal-actions">
+              <button id="wb-ai-inject-btn" style="display:none;" class="action-btn">注入选中条目</button>
+              <button id="wb-ai-regenerate-btn" style="display:none;" class="action-btn">再生成一套</button>
+              <button id="wb-ai-cancel-btn" class="cancel-btn">关闭</button>
           </div>
       </div>
   </div>
@@ -518,8 +654,8 @@
           </div>
         </div>
         <div class="header-buttons">
-          <button onclick="showEditorView()">+ 创建新角色</button>
-          <button onclick="document.getElementById('file-importer').click()">📥 导入角色卡</button>
+          <button onclick="showEditorView()">+ 创建新角色/书</button>
+          <button onclick="document.getElementById('file-importer').click()">📥 导入</button>
           <input type="file" id="file-importer" accept=".json,.png" onchange="importCharacter(event)" multiple />
         </div>
       </div>
@@ -555,10 +691,14 @@
                 <button onclick="saveCharacter()">💾 储存并返回角色库</button>
                 <button onclick="downloadCharacter()">📥 下载 JSON</button>
                 <button onclick="downloadCharacterAsPng()">📥 下载 PNG 角色卡</button>
+                <button onclick="downloadAsWorldbookFile()">📥 下载为世界书</button>
                 <button class="secondary" onclick="showLibraryView()">🔙 返回 (不储存)</button>
             </div>
           
-          <h3 class="section-title" id="character-info-title">角色信息</h3>
+          <div style="display:flex; justify-content: space-between; align-items: center;">
+            <h3 class="section-title" id="character-info-title">角色信息</h3>
+            <button id="complete-all-btn" onclick="aiCompleteAllFields(this)">🔮 一键补全所有</button>
+          </div>
           <div class="field-group">
             <label for="topic">主题</label>
             <input id="topic" placeholder="例：赛博朋克, 奇幻, 校园" />
@@ -615,7 +755,11 @@
           </div>
           <div class="field-group">
             <label for="mes_example">示例消息</label>
-            <textarea id="mes_example" rows="6" placeholder="提供几段对话范例，AI会模仿其风格。极为重要！"></textarea>
+            <textarea id="mes_example" rows="6" placeholder="提供几段对话范例，AI会模仿其风格。极为重要！
+例如：
+<START>（用于分隔每一段对话）
+{{user}}: 你好。
+{{char}}: (微笑着向你点头) 你好，{{user}}。找我有什么事吗？"></textarea>
             <button class="ai-button" onclick="callDeepSeek('mes_example')">🔮 AI 帮我写</button>
             <button class="ai-undo-button" onclick="undoAiCompletion(this)">↩️ 撤销</button>
           </div>
@@ -623,7 +767,7 @@
           <h3 class="section-title" id="advanced-settings-title">高级设定</h3>
            <div class="field-group">
             <label for="post_history_instructions">后期指令</label>
-            <textarea id="post_history_instructions" rows="3" placeholder="一些平台用它来修改AI的回复格式。例如，要让{{char}}的动作都用星号包围，可以写：将{{char}}的所有动作和叙述都放在星号（*）之间。"></textarea>
+            <textarea id="post_history_instructions" rows="3" placeholder="酒馆用它来修改AI的回复格式。例如，要让{{char}}的动作都用星号包围，可以写：将{{char}}的所有动作和叙述都放在星号（*）之间。"></textarea>
             <div class="template-buttons" id="post-history-templates">
               <button id="btn-template-options" onclick="setPostHistoryTemplate('template-options-mode')"></button>
               <button id="btn-template-parentheses" onclick="setPostHistoryTemplate('template-parentheses-mode')"></button>
@@ -643,8 +787,8 @@
           </div>
 
           <div style="display: flex; justify-content: space-between; align-items: center;">
-             <h3 class="section-title" id="world-knowledge-book-title">世界/知识书</h3>
-             <button onclick="generateFullWorldbook(this)" style="background-color: var(--ai-button-bg); color: white; padding: 8px 15px; border-radius: 5px;">🔮 AI生成参考条目</button>
+             <h3 class="section-title" id="world-knowledge-book-title">角色书/世界书</h3>
+             <button id="ai-lorebook-generator-btn" onclick="openWorldbookAiModal(this)" style="background-color: var(--ai-button-bg); color: white; padding: 8px 15px; border-radius: 5px;">🔮 AI生成参考条目</button>
           </div>
           <p class="help-text" id="worldbook-help-text">
               </p>
@@ -674,13 +818,14 @@ const translations = {
     zh: {
         // 标题和按钮
         'app-title': '妮卡角色工作室Pro',
-        'create-new-character': '创建新角色',
-        'import-character': '📥 导入角色卡',
+        'create-new-character': '创建新角色/书',
+        'import-character': '📥 导入',
         'edit-character': '编辑角色',
         'save-and-return': '💾 储存并返回角色库',
         'return-without-save': '🔙 返回 (不储存)',
         'download-json': '📥 下载 JSON',
         'download-png': '📥 下载 PNG 角色卡',
+        'download-lorebook': '📥 下载为世界书',
         'upload-image': '上传图片',
         'edit': '编辑',
         'add-tag': '添加标签',
@@ -691,6 +836,7 @@ const translations = {
         'ai-help-write': '🔮 AI 帮我写',
         'undo': '↩️ 撤销',
         'generate-companion': '🔮 生成虚拟伴侣',
+        'complete-all': '🔮 一键补全所有',
         
         // 标签过滤
         'tag-filter': '标签过滤',
@@ -720,23 +866,23 @@ const translations = {
         'first-message': '问候消息',
         'first-message-placeholder': '角色出场时说的第一句话。',
         'message-example': '示例消息',
-        'message-example-placeholder': '提供几段对话范例，AI会模仿其风格。极为重要！',
+        'message-example-placeholder': '提供几段对话范例，AI会模仿其风格。极为重要：\n<START>（用于分隔每一段对话）\n{{user}}: 你好。\n{{char}}: (微笑着向你点头) 你好，{{user}}。找我有什么事吗？',
         'advanced-settings': '高级设定',
         'post-history-instructions': '后期指令',
-        'post-history-instructions-placeholder': '一些平台用它来修改AI的回复格式。例如，要让{{char}}的动作都用星号包围，可以写：将{{char}}的所有动作和叙述都放在星号（*）之间。',
+        'post-history-instructions-placeholder': '酒馆用它来修改AI的回复格式。例如，要让{{char}}的动作都用星号包围，可以写：将{{char}}的所有动作和叙述都放在星号（*）之间。',
         'creator-notes': '创作者笔记',
         'creator-notes-placeholder': '给其他用户的留言或版本说明。',
         'character-version': '角色版本',
         'character-version-placeholder': '例如：1.0, 2.1.3',
-        'world-knowledge-book': '世界/知识书',
+        'world-knowledge-book': '角色书/世界书',
         'companion-mode': '伴侣模式',
         
         // 世界书相关
-        'worldbook-help': '“世界书”是给AI的一部<b>参考字典</b>。如果你只搓世界书，上面的信息只用填名字',
+        'worldbook-help': '“角色书”是给AI角色绑定的一部<b>参考词典和设定集</b>。如果你要世界书，上面的信息只用填名字',
         'entry-comment': '条目注释',
         'entry-comment-placeholder': '条目注释',
-        'main-keys': '词 ',
-        'main-keys-placeholder': '例如: 誓约胜利之剑, Excalibur',
+        'main-keys': '词条',
+        'main-keys-placeholder': '例如: 誓约胜利之剑, Excalibur 或者 世界设定剧情主线（要开启高级设定“恒定注入”）之类',
         'secondary-keys': '次要关键词',
         'secondary-keys-placeholder': '例如: 剑, 武器',
         'injection-content': '内容',
@@ -809,20 +955,27 @@ const translations = {
         
         // 默认值
         'imported-character': '从图片导入的角色',
-        'imported-lorebook': '导入的世界书',
-        'lorebook-description': '从SillyTavern导入的世界书。',
-        'lorebook-tag': '世界书',
+        'imported-lorebook': '导入的角色书',
+        'lorebook-description': '从SillyTavern导入的角色书。',
+        'lorebook-tag': '角色书',
 
         // 确认对话框
-        'confirm-overwrite-worldbook': '这将会覆盖当前所有的角色书条目，你确定吗？',
+        'confirm-overwrite-worldbook': '这会打开AI生成弹窗，但不会覆盖现有条目。你可以选择性注入新条目。继续吗？',
         
         // 成功消息
-        'worldbook-generated-success': '已成功生成并加载角色书参考条目！',
+        'worldbook-generated-success': '已成功生成角色书参考条目！请在弹窗中选择要注入的条目。',
+        'lorebook-injected-success': '{count}个条目已成功注入！',
+        'all-fields-completed': 'AI已补全所有字段！',
         
         // API相关错误
         'api-request-failed': 'API 请求失败: {status} - {message}',
         'ai-completion-failed': 'AI补全失败，请检查API Key或网络连接，并查看控制台获取更多信息。',
         'name-generation-failed': 'AI名字生成失败，请检查API Key或网络，并查看控制台。',
+        'ai-guidance-prompt': '请输入对AI的额外引导或要求 (可选):',
+        'ai-guidance-title': '为AI提供指引',
+        'ai-complete-all-guidance-title': '一键补全所有字段',
+        'ai-complete-all-guidance-placeholder': '请输入角色的核心概念、主题或关键词... (例：一个在赛博都市中追寻过去的失忆侦探)',
+
 
         // 状态文本
         'generating': '生成中...',
@@ -830,6 +983,7 @@ const translations = {
         'choose-a-name': '为你的角色选择一个名字',
         'regenerate': '重新生成',
         'cancel': '取消',
+        'generate': '生成',
 
         // Post-history Templates
         'post-history-options-mode': '选项模式',
@@ -844,18 +998,34 @@ const translations = {
         'template-json-mode': '[系统指令]: 你所有的回应都必须是合法的JSON格式。该JSON对象必须包含三个键："dialogue" (字符串，包含角色说的话), "action" (字符串，描述角色的动作), "emotion" (字符串，描述角色当前的主要情绪)。不要在JSON结构之外输出任何文字。',
         'post-history-image-prompt': '文生图提示词',
         'template-image-prompt': '[SYSTEM]: Lora名：Sv5-10，角色关键词：SilverWolfV5\nYour response must have a comma-separated list of English keywords before the text for an AI image generator. Describe the character\'s appearance, action, expression, and the background. Use descriptive tags，最后要换行. Example: masterpiece, best quality, 角色关键词, solo, beautiful detailed eyes, long silver hair, smiling, school uniform, standing in a classroom, from above, <lora:Lora名>',
+        
+        // AI Lorebook Modal
+        'wb-ai-modal-title': 'AI 互动式角色书生成',
+        'wb-ai-modal-desc': '请选择要生成的条目类型：',
+        'wb-ai-modal-desc-generating': 'AI正在生成一套{type}条目，请稍后...',
+        'wb-ai-modal-desc-generated': 'AI已为你生成一套{type}条目，请选择需要注入的条目。',
+        'wb-ai-inject-btn': '注入选中条目',
+        'wb-ai-regenerate-btn': '再生成一套',
+        'wb-ai-close-btn': '关闭',
+        'wb-ai-type-worldview': '世界观',
+        'wb-ai-type-main_plot': '主线剧情',
+        'wb-ai-type-side_plot': '支线剧情',
+        'wb-ai-gen-type-btn-worldview': '生成世界观',
+        'wb-ai-gen-type-btn-main-plot': '生成主线剧情',
+        'wb-ai-gen-type-btn-side-plot': '生成支线剧情',
     },
     
     en: {
         // Titles and buttons
         'app-title': 'Nika Character Studio Pro',
         'create-new-character': 'Create New Character/Book',
-        'import-character': '📥 Import Character Card',
+        'import-character': '📥 Import',
         'edit-character': 'Edit Character',
         'save-and-return': '💾 Save and Return to Library',
         'return-without-save': '🔙 Return (Don\'t Save)',
         'download-json': '📥 Download JSON',
         'download-png': '📥 Download PNG Character Card',
+        'download-lorebook': '📥 Download as Lorebook',
         'upload-image': 'Upload Image',
         'edit': 'Edit',
         'add-tag': 'Add Tag',
@@ -866,6 +1036,7 @@ const translations = {
         'ai-help-write': '🔮 AI Help Me Write',
         'undo': '↩️ Undo',
         'generate-companion': '🔮 Generate Virtual Companion',
+        'complete-all': '🔮 One-Click Complete All',
         
         // Tag filtering
         'tag-filter': 'Tag Filter',
@@ -898,16 +1069,16 @@ const translations = {
         'message-example-placeholder': 'Example dialogues for the AI to imitate. Very important!',
         'advanced-settings': 'Advanced Settings',
         'post-history-instructions': 'Post Instructions',
-        'post-history-instructions-placeholder': 'Some platforms use this to modify AI response format. For example, to make {{char}}\'s actions wrapped in asterisks, write: Put all {{char}}\'s actions and narration between asterisks (*).',
+        'post-history-instructions-placeholder': 'ST use this to modify AI response format. For example, to make {{char}}\'s actions wrapped in asterisks, write: Put all {{char}}\'s actions and narration between asterisks (*).',
         'creator-notes': 'Creator Notes',
         'creator-notes-placeholder': 'Notes for other users or version info.',
         'character-version': 'Character Version',
         'character-version-placeholder': 'e.g.: 1.0, 2.1.3',
-        'world-knowledge-book': 'World/Knowledge Book',
+        'world-knowledge-book': 'Character Book/Lore Book',
         'companion-mode': 'Companion Mode',
         
         // Worldbook related
-        'worldbook-help': 'You can think of the "World Book" as a <b>reference dictionary</b> for AI. If you only want the world book, you only need to fill in the name in the information above this',
+        'worldbook-help': 'You can think of the "Character Book" as a <b>setting reference</b> for the AI. If you only want the world book, you just need to fill in the name in the information above.',
         'entry-comment': 'Entry Comment (Comment)',
         'entry-comment-placeholder': 'Entry Comment (Comment)',
         'main-keys': 'Main Keywords (Keys, comma separated)',
@@ -978,7 +1149,7 @@ const translations = {
         'help-entry-probability': '[Trigger Probability] Set a number from 0 to 100. This determines the chance that the entry will actually be injected after its keywords are triggered. 100 means it always will.',
         'help-entry-depth': '[Scan Depth] Determines how many turns of conversation history the AI will look back through to check for this entry\'s keywords. A larger number means it looks further back.',
         'help-match-whole-words': '[Match Whole Words] If checked, a keyword is only triggered if it appears as a whole word. For example, if the keyword is "love", it would trigger on "I love you" but not "glove".',
-        'help-case-sensitive': '[Case-Sensitive] If checked, the keyword must match the case of the text exactly to be triggered. For example, if the keyword is "Apple", it will not be triggered by "apple".',
+        'case-sensitive': '[Case-Sensitive] If checked, the keyword must match the case of the text exactly to be triggered. For example, if the keyword is "Apple", it will not be triggered by "apple".',
 
         // API related
         'api-key-placeholder': 'Enter DeepSeek API Key',
@@ -990,15 +1161,22 @@ const translations = {
         'lorebook-tag': 'lorebook',
         
         // Confirmation dialogs
-        'confirm-overwrite-worldbook': 'This will overwrite all current worldbook entries. Are you sure?',
+        'confirm-overwrite-worldbook': 'This will open the AI generation modal, but will not overwrite existing entries. You can selectively inject new entries. Continue?',
         
         // Success messages
-        'worldbook-generated-success': 'Successfully generated and loaded worldbook reference entries!',
-        
+        'worldbook-generated-success': 'Successfully generated lorebook reference entries! Please select which entries to inject in the popup.',
+        'lorebook-injected-success': '{count} entries have been successfully injected!',
+        'all-fields-completed': 'AI has completed all fields!',
+
         // API related errors
         'api-request-failed': 'API request failed: {status} - {message}',
         'ai-completion-failed': 'AI completion failed, please check API Key or network connection, and check console for more information.',
         'name-generation-failed': 'AI Name Generation failed. Please check your API Key or network and see the console for details.',
+        'ai-guidance-prompt': 'Provide additional guidance for the AI (optional):',
+        'ai-guidance-title': 'Provide Guidance for AI',
+        'ai-complete-all-guidance-title': 'One-Click Complete All Fields',
+        'ai-complete-all-guidance-placeholder': 'Enter the core concept, theme, or keywords for your character... (e.g., An amnesiac detective searching for her past in a cyber city)',
+
         
         // Status text
         'generating': 'Generating...',
@@ -1006,6 +1184,7 @@ const translations = {
         'choose-a-name': 'Choose a Name for Your Character',
         'regenerate': 'Regenerate',
         'cancel': 'Cancel',
+        'generate': 'Generate',
 
         // Post-history Templates
         'post-history-options-mode': 'Options Mode',
@@ -1020,6 +1199,21 @@ const translations = {
         'template-json-mode': '[SYSTEM]: All your responses must be in a valid JSON format. The JSON object must have three keys: "dialogue" (a string containing what the character says), "action" (a string describing the character\'s physical action), and "emotion" (a string describing the character\'s current primary emotion). Do not output any text outside of the JSON structure.',
         'post-history-image-prompt': 'Image Prompt',
         'template-image-prompt': '[SYSTEM]: Lora name: Sv5-10, character keyword: SilverWolfV5\nYour response must have a comma-separated list of English keywords before the text for an AI image generator. Describe the character\'s appearance, action, expression, and the background.',
+    
+        // AI Lorebook Modal
+        'wb-ai-modal-title': 'Interactive AI Lore Book Generation',
+        'wb-ai-modal-desc': 'Please select the type of entries to generate:',
+        'wb-ai-modal-desc-generating': 'The AI is generating a set of {type} entries, please wait...',
+        'wb-ai-modal-desc-generated': 'The AI has generated a set of {type} entries. Please select the ones you want to inject.',
+        'wb-ai-inject-btn': 'Inject Selected',
+        'wb-ai-regenerate-btn': 'Regenerate Set',
+        'wb-ai-close-btn': 'Close',
+        'wb-ai-type-worldview': 'worldview',
+        'wb-ai-type-main_plot': 'main plot',
+        'wb-ai-type-side_plot': 'side plot',
+        'wb-ai-gen-type-btn-worldview': 'Generate Worldview',
+        'wb-ai-gen-type-btn-main-plot': 'Generate Main Plot',
+        'wb-ai-gen-type-btn-side-plot': 'Generate Side Plot',
     }
 };
 
@@ -1116,6 +1310,20 @@ function updatePageContent() {
     document.getElementById('regenerate-names-btn').textContent = t('regenerate');
     document.getElementById('cancel-name-generation-btn').textContent = t('cancel');
 
+    // 更新AI Guidance Modal
+    document.getElementById('ai-guidance-generate-btn').textContent = t('generate');
+    document.getElementById('ai-guidance-cancel-btn').textContent = t('cancel');
+    
+    // 更新角色书AI Modal
+    document.getElementById('wb-ai-modal-title').textContent = t('wb-ai-modal-title');
+    document.getElementById('wb-ai-modal-desc').textContent = t('wb-ai-modal-desc');
+    document.querySelector('.generation-type-selector button[data-type="worldview"]').textContent = t('wb-ai-gen-type-btn-worldview');
+    document.querySelector('.generation-type-selector button[data-type="main_plot"]').textContent = t('wb-ai-gen-type-btn-main-plot');
+    document.querySelector('.generation-type-selector button[data-type="side_plot"]').textContent = t('wb-ai-gen-type-btn-side-plot');
+    document.getElementById('wb-ai-inject-btn').textContent = t('wb-ai-inject-btn');
+    document.getElementById('wb-ai-regenerate-btn').textContent = t('wb-ai-regenerate-btn');
+    document.getElementById('wb-ai-cancel-btn').textContent = t('wb-ai-close-btn');
+
     // 重新渲染UI以更新角色卡显示
     if (libraryView.style.display !== 'none') {
         renderUI();
@@ -1142,7 +1350,10 @@ function updateFormLabels() {
     Object.keys(sectionTitles).forEach(id => {
         const element = document.getElementById(id);
         if (element) {
-            element.textContent = sectionTitles[id];
+            // Preserve child elements like buttons
+            const button = element.querySelector('button');
+            element.textContent = sectionTitles[id] + ' ';
+            if(button) element.appendChild(button);
         }
     });
     
@@ -1229,6 +1440,12 @@ function updateButtonTexts() {
     
     const downloadPngBtn = document.querySelector('button[onclick="downloadCharacterAsPng()"]');
     if (downloadPngBtn) downloadPngBtn.textContent = t('download-png');
+
+    const downloadLorebookBtn = document.querySelector('button[onclick="downloadAsWorldbookFile()"]');
+    if (downloadLorebookBtn) downloadLorebookBtn.textContent = t('download-lorebook');
+
+    const completeAllBtn = document.getElementById('complete-all-btn');
+    if(completeAllBtn) completeAllBtn.textContent = t('complete-all');
     
     // 更新AI按钮
     const aiButtons = document.querySelectorAll('.ai-button');
@@ -1369,10 +1586,10 @@ window.onload = function() {
     setTimeout(() => {
         loadApiKey();
         initializeDatabase();
-        // 初始化lover开关的事件监听
         initializeLoverSwitch();
-        // 初始化名字生成器 Modal 的事件
         initializeNameGeneratorModal();
+        initializeWorldbookAiModal();
+        initializeAiGuidanceModal();
         
         // 初始化语言设置
         const savedLanguage = localStorage.getItem('language') || 'zh';
@@ -1731,6 +1948,21 @@ async function downloadCharacterAsPng() {
     URL.revokeObjectURL(a.href);
 }
 
+function downloadAsWorldbookFile() {
+    if (!checkDbReady()) return;
+    const lorebookData = buildWorldbookExportObject();
+    const blob = new Blob([JSON.stringify(lorebookData, null, 2)], { type: 'application/json' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    let filename = 'lorebook';
+    if (lorebookData.originalData && lorebookData.originalData.name) {
+        filename = lorebookData.originalData.name.replace(`(${t('world-knowledge-book')}) `, '');
+    }
+    a.download = filename + '.json';
+    a.click();
+    URL.revokeObjectURL(a.href);
+}
+
 // --- CRUD Operations ---
 function saveCharacter() {
     if (!checkDbReady()) return;
@@ -1907,12 +2139,6 @@ function renderCharacters(characters) {
             imageToDisplay = createDefaultImage('2:3');
         }
         card.style.backgroundImage = `var(--card-overlay), url('${imageToDisplay}')`;
-        // 调试信息：输出头像数据状态
-        console.log(currentLanguage === 'zh' ? `角色 "${char.name}" 的头像数据:` : `Character "${char.name}" avatar data:`, {
-            hasAvatar: !!char.avatar,
-            avatarType: char.avatar ? (char.avatar.startsWith('data:') ? 'base64' : 'url') : 'none',
-            imageToDisplay: imageToDisplay.substring(0, 50) + '...'
-        });
         
         const headerDiv = document.createElement('div');
         const cardHeader = document.createElement('div');
@@ -2106,6 +2332,23 @@ function buildLiveExportCard() {
     return buildV3Card(currentCardState);
 }
 
+function hasWorldbookContent(entries) {
+    if (!entries || entries.length === 0) {
+        return false;
+    }
+    for (const entry of entries) {
+        if (entry.content && entry.content.trim() !== '') {
+            return true;
+        }
+        if (entry.children && entry.children.length > 0) {
+            if (hasWorldbookContent(entry.children)) {
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
 function buildV3Card(cardData) {
     // 递归函数：将条目及其子条目转换为V3格式
     function convertEntryToV3(entry) {
@@ -2157,6 +2400,7 @@ function buildV3Card(cardData) {
     }
     
     const v3BookEntries = (cardData.worldbook || []).map(entry => convertEntryToV3(entry));
+    const worldbookHasContent = hasWorldbookContent(cardData.worldbook);
 
     const dataObject = {
         name: cardData.name || '',
@@ -2179,14 +2423,14 @@ function buildV3Card(cardData) {
             world: cardData.topic || '',
             depth_prompt: { prompt: "", depth: 4, role: "system" }
         },
-        character_book: {
-            name: `(世界书) ${cardData.name || 'Character Book'}`,
+        character_book: worldbookHasContent ? {
+            name: `(${t('world-knowledge-book')}) ${cardData.name || 'Character Book'}`,
             description: `Character book for ${cardData.name}.`,
             scan_depth: 10,
             token_budget: 2048,
             recursive_scanning: false,
             entries: v3BookEntries,
-        },
+        } : undefined,
     };
 
     return {
@@ -2208,9 +2452,56 @@ function buildV3Card(cardData) {
     };
 }
 
+function buildWorldbookExportObject() {
+    const cardData = buildCardObject();
+    const v3Card = buildV3Card(cardData);
+
+    // This is the format SillyTavern uses for its lorebooks.
+    // The top-level `entries` is a dictionary keyed by a unique ID or index.
+    const lorebookEntries = {};
+    if (v3Card.data.character_book && v3Card.data.character_book.entries) {
+        v3Card.data.character_book.entries.forEach((entry, index) => {
+            const tavernEntry = {
+                uid: entry.id, // Or generate a new UID
+                key: entry.keys,
+                keysecondary: entry.secondary_keys,
+                comment: entry.comment,
+                content: entry.content,
+                constant: entry.constant,
+                selective: entry.selective,
+                selectiveLogic: 0, // Default value
+                addMemo: true, // Default value
+                order: entry.insertion_order,
+                position: 0, // Mapping back from position string would be needed
+                disable: !entry.enabled,
+                excludeRecursion: entry.extensions.prevent_recursion,
+                preventRecursion: entry.extensions.prevent_recursion,
+                probability: entry.extensions.probability,
+                useProbability: true,
+                depth: entry.extensions.depth,
+                displayIndex: index,
+                //... and other fields if necessary
+            };
+            lorebookEntries[index] = tavernEntry;
+        });
+    }
+
+    return {
+        entries: lorebookEntries,
+        originalData: v3Card.data.character_book || {
+             name: `(${t('world-knowledge-book')}) ${cardData.name || 'Character Book'}`,
+             description: `Character book for ${cardData.name}.`,
+             scan_depth: 10,
+             token_budget: 2048,
+             recursive_scanning: false,
+             entries: []
+        }
+    };
+}
+
 
 // ====================================================================================
-// --- LOVER & AI HELPER FUNCTIONS ---
+// --- AI HELPER FUNCTIONS ---
 // ====================================================================================
 
 function initializeLoverSwitch() {
@@ -2236,9 +2527,9 @@ function getLoverPromptPrefix() {
 
 // 新增: 撤销AI补全的功能
 function undoAiCompletion(undoButton) {
-    const container = undoButton.closest('.field-group');
+    const container = undoButton.closest('.field-group, .entry-grid');
     if (!container) return;
-
+    
     const targetElement = container.querySelector('textarea, input:not([type=file]):not([type=checkbox])');
     if (targetElement && targetElement.dataset.aiBackup !== undefined) {
         targetElement.value = targetElement.dataset.aiBackup;
@@ -2259,17 +2550,15 @@ async function callApi(prompt, button) {
     const finalPrompt = isLover ? getLoverPromptPrefix() + prompt : prompt;
 
     console.log(currentLanguage === 'zh' ? "发送给API的最终提示:" : "Final prompt being sent to API:", finalPrompt);
-
+    
     const originalText = button.textContent;
     button.disabled = true;
     button.textContent = t('generating');
 
-    // 隐藏对应的撤销按钮（如果它正显示）
     const undoButton = button.nextElementSibling;
     if (undoButton && undoButton.classList.contains('ai-undo-button')) {
         undoButton.style.display = 'none';
     }
-
 
     try {
         const response = await fetch("https://api.deepseek.com/chat/completions", {
@@ -2294,17 +2583,19 @@ async function callApi(prompt, button) {
         button.textContent = originalText;
     }
 }
+
 async function callDeepSeek(fieldId) {
     const button = event.target;
     const targetElement = document.getElementById(fieldId);
     if (!targetElement) return;
 
-    // 备份当前文本
     targetElement.dataset.aiBackup = targetElement.value;
-
-    const currentCard = buildCardObject();
+    
     const labelText = document.querySelector(`label[for='${fieldId}']`).innerText.replace(' (逗号分隔)','');
-    let prompt = `你是一位专业的角色设定师。请根据以下已经提供的角色信息，为我生成或补全【${labelText}】这一项。
+
+    getAiGuidance(t('ai-guidance-title') + `: ${labelText}`, async (userGuidance) => {
+        const currentCard = buildCardObject();
+        let prompt = `你是一位专业的角色设定师。请根据以下已经提供的角色信息，为我生成或补全【${labelText}】这一项。
 请直接返回最适合填入该项的内容，语言风格要自然，不要包含任何额外解释、标题或标签。
 
 已提供信息:
@@ -2317,72 +2608,36 @@ async function callDeepSeek(fieldId) {
 - 场景设定: ${currentCard.scenario || '未指定'}
 - 首次发言: ${currentCard.first_mes || '未指定'}
 - 范例对话: ${currentCard.mes_example || '未指定'}
+`;
 
-现在，请生成【${labelText}】的内容。`;
-    
-    const result = await callApi(prompt, button);
-    if (result) {
-        targetElement.value = result;
-        // 显示撤销按钮
-        const undoButton = button.nextElementSibling;
-        if (undoButton && undoButton.classList.contains('ai-undo-button')) {
-            undoButton.style.display = 'inline-block';
+        if (userGuidance) {
+            prompt += `\n用户的额外指令: ${userGuidance}\n`;
         }
-    }
-}
-async function generateFullWorldbook(button) {
-    if (!confirm(t('confirm-overwrite-worldbook'))) return;
-
-    const characterContext = buildCardObject();
-    let prompt = `你是一位专业的AI角色扮演角色书（Character Book）架构师。请分析以下角色设定，并为该角色创建3到5个最核心、最能增强角色扮演深度的角色书条目。
-
-**角色设定:**
-- 角色名: ${characterContext.name || '未指定'}
-- 性别: ${characterContext.gender || '未指定'}
-- 主题/世界观: ${characterContext.topic || '未指定'}
-- 角色描述: ${characterContext.description || '未指定'}
-- 个性: ${characterContext.personality || '未指定'}（逗号分隔）
-- 场景设定: ${characterContext.scenario || '未指定'}
-
-**你的任务:**
-1. 识别出角色背景中最重要的概念、人物、地点、物品或关键能力。
-2. 为这些概念创建角色书条目。
-3. **严格按照以下JSON格式返回你的答案，不要包含任何JSON格式之外的额外文字、解释或Markdown标记。**
-
-**JSON格式要求:**
-返回一个JSON数组，其中每个对象代表一个条目，且必须包含 "id" (数字), "keys" (字符串数组), "content" (字符串), 和 "comment" (字符串) 四个键。"id" 从0开始递增。`;
-
-    const result = await callApi(prompt, button);
-    if (result) {
-        try {
-            const cleanedResult = result.replace(/^```json\s*|```$/g, '');
-            const generatedEntries = JSON.parse(cleanedResult);
-            
-            if (Array.isArray(generatedEntries)) {
-                renderWorldbookFromData(generatedEntries);
-                alert(t('worldbook-generated-success'));
-            } else {
-                throw new Error(t('ai-return-not-array'));
+        prompt += `\n现在，请生成【${labelText}】的内容。`;
+        
+        const result = await callApi(prompt, button);
+        if (result) {
+            targetElement.value = result;
+            const undoButton = button.nextElementSibling;
+            if (undoButton && undoButton.classList.contains('ai-undo-button')) {
+                undoButton.style.display = 'inline-block';
             }
-        } catch (e) {
-            console.error(currentLanguage === 'zh' ? "解析AI返回的JSON失败:" : "Failed to parse AI returned JSON:", e);
-            console.error(currentLanguage === 'zh' ? "收到的原始数据:" : "Received raw data:", result);
-            alert(t('ai-parse-failed'));
         }
-    }
+    });
 }
+
 async function callWorldbookDeepSeek(button) {
     const currentEntryElement = button.closest('.worldbook-entry');
     const targetElement = currentEntryElement.querySelector('.wb-content');
     if (!targetElement) return;
 
-    // 备份当前文本
     targetElement.dataset.aiBackup = targetElement.value;
-
-    const characterContext = buildCardObject(); 
     const currentComment = currentEntryElement.querySelector('.entry-comment').value || '未命名条目';
-    const currentKeys = currentEntryElement.querySelector('.wb-keys').value;
-    let prompt = `你是一位专业的角色书（Character Book）内容填充专家。请基于以下提供的角色信息和角色书结构，为我撰写条目【${currentComment}】的"注入内容"。内容需要详细、富有想象力，并与角色设定保持高度一致。
+
+    getAiGuidance(t('ai-guidance-title') + `: ${currentComment}`, async (userGuidance) => {
+        const characterContext = buildCardObject(); 
+        const currentKeys = currentEntryElement.querySelector('.wb-keys').value;
+        let prompt = `你是一位专业的角色书（Character Book）内容填充专家。请基于以下提供的角色信息和角色书结构，为我撰写条目【${currentComment}】的"注入内容"。内容需要详细、富有想象力，并与角色设定保持高度一致。
 
 ---
 **角色核心设定:**
@@ -2393,45 +2648,70 @@ async function callWorldbookDeepSeek(button) {
 **角色书上下文:**
 - **当前条目标题 (Comment):** ${currentComment}
 - **当前条目主要关键词 (Keys):** ${currentKeys || '未指定'}
-
+`;
+        if (userGuidance) {
+            prompt += `\n**用户的额外指令:** ${userGuidance}\n`;
+        }
+        prompt += `
 ---
 **你的任务:**
 现在，请为条目【${currentComment}】生成详细的"注入内容"。
 **要求：** 直接返回内容本身，不要包含任何额外解释、标题或引用。`;
 
-    const result = await callApi(prompt, button);
-    if (result) {
-        targetElement.value = result;
-        // 显示撤销按钮
-        const undoButton = button.nextElementSibling;
-        if (undoButton && undoButton.classList.contains('ai-undo-button')) {
-            undoButton.style.display = 'inline-block';
+        const result = await callApi(prompt, button);
+        if (result) {
+            targetElement.value = result;
+            const undoButton = button.nextElementSibling;
+            if (undoButton && undoButton.classList.contains('ai-undo-button')) {
+                undoButton.style.display = 'inline-block';
+            }
         }
-    }
+    });
 }
 
 // ====================================================================================
-// --- NEW AI NAME GENERATOR ---
+// --- AI MODAL DIALOGS & GENERATORS ---
 // ====================================================================================
+
+function initializeAiGuidanceModal() {
+    const modal = document.getElementById('ai-guidance-modal');
+    const generateBtn = document.getElementById('ai-guidance-generate-btn');
+    const cancelBtn = document.getElementById('ai-guidance-cancel-btn');
+    
+    modal.onclick = (e) => { if (e.target === modal) modal.style.display = 'none'; };
+    cancelBtn.onclick = () => modal.style.display = 'none';
+}
+
+function getAiGuidance(title, callback, placeholder = '') {
+    const modal = document.getElementById('ai-guidance-modal');
+    const titleEl = document.getElementById('ai-guidance-title');
+    const inputEl = document.getElementById('ai-guidance-input');
+    const generateBtn = document.getElementById('ai-guidance-generate-btn');
+
+    titleEl.textContent = title;
+    inputEl.value = '';
+    inputEl.placeholder = placeholder || t('ai-guidance-prompt');
+    
+    generateBtn.onclick = () => {
+        modal.style.display = 'none';
+        callback(inputEl.value.trim());
+    };
+
+    modal.style.display = 'flex';
+    inputEl.focus();
+}
 
 function initializeNameGeneratorModal() {
     const modal = document.getElementById('name-generator-modal');
     const cancelButton = document.getElementById('cancel-name-generation-btn');
     const regenerateButton = document.getElementById('regenerate-names-btn');
 
-    // 点击背景关闭
     modal.addEventListener('click', (event) => {
-        if (event.target === modal) {
-            modal.style.display = 'none';
-        }
+        if (event.target === modal) modal.style.display = 'none';
     });
-    // 取消按钮
-    cancelButton.addEventListener('click', () => {
-        modal.style.display = 'none';
-    });
-    // 重新生成按钮
-    regenerateButton.addEventListener('click', (event) => {
-        const generatorButton = document.querySelector('.name-generator-btn'); // 找到原始触发按钮
+    cancelButton.addEventListener('click', () => modal.style.display = 'none');
+    regenerateButton.addEventListener('click', () => {
+        const generatorButton = document.querySelector('.name-generator-btn');
         generateAiNames(generatorButton);
     });
 }
@@ -2441,7 +2721,6 @@ async function generateAiNames(button) {
     const optionsContainer = document.getElementById('name-options-container');
     const regenerateButton = document.getElementById('regenerate-names-btn');
     
-    // 显示加载状态
     optionsContainer.innerHTML = `<div class="loading-spinner" style="margin: 20px auto;"></div>`;
     modal.style.display = 'flex';
 
@@ -2460,13 +2739,13 @@ async function generateAiNames(button) {
     regenerateButton.textContent = t('generating');
 
     try {
-        const result = await callApi(prompt, button); // 使用原始按钮来显示主编辑页的加载状态
+        const result = await callApi(prompt, button);
         if (result) {
             const cleanedResult = result.replace(/^```json\s*|```$/g, '').trim();
             const names = JSON.parse(cleanedResult);
 
             if (Array.isArray(names) && names.length > 0) {
-                optionsContainer.innerHTML = ''; // 清空加载动画
+                optionsContainer.innerHTML = '';
                 names.forEach(name => {
                     const nameButton = document.createElement('button');
                     nameButton.textContent = name;
@@ -2493,11 +2772,257 @@ async function generateAiNames(button) {
 }
 
 
+function initializeWorldbookAiModal() {
+    const modal = document.getElementById('worldbook-ai-generator-modal');
+    const injectBtn = document.getElementById('wb-ai-inject-btn');
+    const regenerateBtn = document.getElementById('wb-ai-regenerate-btn');
+    const cancelBtn = document.getElementById('wb-ai-cancel-btn');
+    const genTypeButtons = modal.querySelectorAll('.generation-type-selector button');
+
+    cancelBtn.onclick = () => modal.style.display = 'none';
+    modal.onclick = (e) => { if (e.target === modal) modal.style.display = 'none'; };
+    
+    genTypeButtons.forEach(button => {
+        button.onclick = () => {
+            const genType = button.dataset.type;
+            modal.dataset.lastGenType = genType; // Store for regeneration
+            const generatorButton = document.getElementById('ai-lorebook-generator-btn');
+            fetchWorldbookStoryNodes(generatorButton, genType);
+        };
+    });
+
+    regenerateBtn.onclick = () => {
+        const genType = modal.dataset.lastGenType;
+        if (genType) {
+            const generatorButton = document.getElementById('ai-lorebook-generator-btn');
+            fetchWorldbookStoryNodes(generatorButton, genType);
+        }
+    };
+
+    injectBtn.onclick = () => {
+        const container = document.getElementById('wb-ai-options-container');
+        const checked = container.querySelectorAll('input[type="checkbox"][data-entry]:checked');
+        const existingEntries = buildWorldbookDataFromDOM();
+        let maxId = existingEntries.length > 0 ? Math.max(...existingEntries.map(e => e.id)) : -1;
+
+        const newEntries = Array.from(checked).map(checkbox => {
+            const entryData = JSON.parse(checkbox.dataset.entry);
+            maxId++;
+            return {
+                ...entryData,
+                id: maxId,
+                children: [] 
+            };
+        });
+
+        if (newEntries.length > 0) {
+            renderWorldbookFromData(existingEntries.concat(newEntries));
+            alert(t('lorebook-injected-success', {count: newEntries.length}));
+        }
+        modal.style.display = 'none';
+    };
+}
+
+function openWorldbookAiModal(button) {
+    const modal = document.getElementById('worldbook-ai-generator-modal');
+    const desc = document.getElementById('wb-ai-modal-desc');
+    const optionsContainer = document.getElementById('wb-ai-options-container');
+    const injectBtn = document.getElementById('wb-ai-inject-btn');
+    const regenerateBtn = document.getElementById('wb-ai-regenerate-btn');
+    
+    // Reset modal state
+    desc.textContent = t('wb-ai-modal-desc');
+    optionsContainer.innerHTML = '';
+    injectBtn.style.display = 'none';
+    regenerateBtn.style.display = 'none';
+    
+    modal.style.display = 'flex';
+}
+
+async function fetchWorldbookStoryNodes(button, generationType) {
+    const modal = document.getElementById('worldbook-ai-generator-modal');
+    const container = document.getElementById('wb-ai-options-container');
+    const desc = document.getElementById('wb-ai-modal-desc');
+    const injectBtn = document.getElementById('wb-ai-inject-btn');
+    const regenerateBtn = document.getElementById('wb-ai-regenerate-btn');
+
+    const typeName = t(`wb-ai-type-${generationType}`);
+    desc.textContent = t('wb-ai-modal-desc-generating', {type: typeName});
+    container.innerHTML = `<div class="loading-spinner" style="margin: 20px auto;"></div>`;
+    injectBtn.style.display = 'none';
+    regenerateBtn.style.display = 'none';
+    
+    const characterContext = buildCardObject();
+    
+    let prompt;
+    switch (generationType) {
+        case 'worldview':
+            prompt = `你是一位世界构建专家。请分析以下角色设定，并为该角色创建3-5个核心的【世界观】条目。这些条目应该描述重要的地点、组织、概念或技术。`;
+            break;
+        case 'main_plot':
+            prompt = `你是一位剧情设计师。请分析以下角色设定，并为该角色创建一套包含1个主线目标和2-3个步骤的【主线剧情】条目。`;
+            break;
+        case 'side_plot':
+            prompt = `你是一位故事创作者。请分析以下角色设定，并为该角色创建一套包含2-3个相关条目的【支线剧情】。`;
+            break;
+    }
+
+    prompt += `
+**角色设定:**
+- 角色名: ${characterContext.name || '未指定'}
+- 主题/世界观: ${characterContext.topic || '未指定'}
+- 角色描述: ${characterContext.description || '未指定'}
+
+**你的任务:**
+**严格按照以下JSON格式返回你的答案，不要包含任何JSON格式之外的额外文字、解释或Markdown标记。**
+返回一个JSON数组，其中每个对象代表一个条目，且必须包含以下键:
+- "comment": (字符串) 条目注释/标题。
+- "keys": (字符串数组) 相关的触发关键词。
+- "content": (字符串) 条目的详细内容。
+- "priority": (数字) 优先级，越大越重要 (普通=100, 重要=200, 核心=1000)。
+- "constant": (布尔值) 是否为恒定注入。对于基础世界观、角色核心设定等应为 true，对于具体事件或地点等应为 false。
+`;
+
+    getAiGuidance(t('ai-guidance-title'), async (userGuidance) => {
+        let finalPrompt = prompt;
+        if (userGuidance) {
+            finalPrompt += `\n**用户的额外指令:** ${userGuidance}\n`;
+        }
+
+        const result = await callApi(finalPrompt, button);
+        try {
+            if (result) {
+                const cleanedResult = result.replace(/^```json\s*|```$/g, '');
+                const generatedEntries = JSON.parse(cleanedResult);
+
+                if (Array.isArray(generatedEntries)) {
+                    desc.textContent = t('wb-ai-modal-desc-generated', {type: typeName});
+                    container.innerHTML = ''; // Clear spinner
+                    injectBtn.style.display = 'inline-block';
+                    regenerateBtn.style.display = 'inline-block';
+
+                    generatedEntries.forEach((entry) => {
+                        const entryData = {
+                            comment: entry.comment || '无题',
+                            keys: entry.keys || [],
+                            content: entry.content || '无内容',
+                            priority: entry.priority || 100,
+                            constant: entry.constant || false, // Capture the new field
+                            enabled: true, 
+                            selective: true, 
+                            position: 'before_char', 
+                            wb_depth: 4,
+                        };
+
+                        const entryDiv = document.createElement('div');
+                        entryDiv.className = 'generated-entry';
+                        
+                        // Main selection checkbox
+                        // ================== BUG FIX START ==================
+                        const mainCheckboxId = `main-check-id-${Math.random().toString(36).slice(2)}`;
+                        // =================== BUG FIX END ===================
+
+                        entryDiv.innerHTML = `
+                            <label for="${mainCheckboxId}">
+                                <input type="checkbox" id="${mainCheckboxId}" checked data-entry='${JSON.stringify(entryData)}'>
+                                <div class="entry-details">
+                                    <h4>${entry.comment || '无题'}</h4>
+                                    <p><strong>触发词:</strong> ${(entry.keys || []).join(', ')}</p>
+                                    <p><strong>内容:</strong> ${entry.content || '无内容'}</p>
+                                    <div class="ai-entry-controls">
+                                        <span><strong>建议优先级:</strong> ${entry.priority || 100}</span>
+                                        <label>
+                                            <input type="checkbox" class="wb-ai-constant-toggle" ${entry.constant ? 'checked' : ''}>
+                                            ${t('entry-constant')}
+                                        </label>
+                                    </div>
+                                </div>
+                            </label>
+                        `;
+                        container.appendChild(entryDiv);
+                        
+                        // Add event listener to the new constant toggle
+                        const constantToggle = entryDiv.querySelector('.wb-ai-constant-toggle');
+                        const mainCheckbox = entryDiv.querySelector(`#${mainCheckboxId}`);
+                        
+                        constantToggle.addEventListener('change', (e) => {
+                            const currentData = JSON.parse(mainCheckbox.dataset.entry);
+                            currentData.constant = e.target.checked;
+                            mainCheckbox.dataset.entry = JSON.stringify(currentData);
+                        });
+                    });
+                } else { throw new Error(t('ai-return-not-array')); }
+            }
+        } catch (e) {
+            console.error("解析AI返回的JSON失败:", e, "收到的原始数据:", result);
+            container.innerHTML = `<p>${t('ai-parse-failed')}</p>`;
+            alert(t('ai-parse-failed'));
+        }
+    });
+}
+
+
+async function aiCompleteAllFields(button) {
+    getAiGuidance(t('ai-complete-all-guidance-title'), async (userGuidance) => {
+        if (!userGuidance) {
+            alert(t('ai-complete-all-guidance-placeholder'));
+            return;
+        }
+
+        const currentCard = buildCardObject();
+        const fieldsToComplete = ["description", "personality", "tags", "system_prompt", "scenario", "first_mes", "mes_example"];
+
+        fieldsToComplete.forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.dataset.aiBackup = el.value;
+        });
+
+        const prompt = `你是一位顶级的角色设计师。根据用户提供的核心概念，以及已有的角色信息，为角色生成一个完整的设定档案。
+---
+**用户核心概念:** ${userGuidance}
+---
+**已有信息 (留空则由你创造):**
+- 角色名: ${currentCard.name || ''}
+- 主题: ${currentCard.topic || ''}
+- 性别: ${currentCard.gender || ''}
+---
+**你的任务:**
+请为以下字段生成内容，并**严格以一个单一的JSON对象格式返回**，不要包含任何解释或Markdown标记。
+字段包括: "${fieldsToComplete.join('", "')}"
+- 对于 "tags" 和 "personality" 字段, 请返回一个由逗号分隔的字符串。
+- 对于 "mes_example", 请生成一段包含{{user}}和{{char}}的简短对话，并以"<START>"分隔每一段对话。
+`;
+        const result = await callApi(prompt, button);
+        if (result) {
+            try {
+                const cleanedResult = result.replace(/^```json\s*|```$/g, '');
+                const data = JSON.parse(cleanedResult);
+
+                fieldsToComplete.forEach(id => {
+                    if (data[id]) {
+                        const el = document.getElementById(id);
+                        if (el) {
+                            el.value = data[id];
+                            const undoBtn = el.nextElementSibling?.nextElementSibling;
+                            if (undoBtn && undoBtn.classList.contains('ai-undo-button')) {
+                                undoBtn.style.display = 'inline-block';
+                            }
+                        }
+                    }
+                });
+                alert(t('all-fields-completed'));
+            } catch (e) {
+                console.error("解析AI返回的JSON失败:", e, "收到的原始数据:", result);
+                alert(t('ai-parse-failed'));
+            }
+        }
+    }, t('ai-complete-all-guidance-placeholder'));
+}
+
 // ====================================================================================
-// --- REFACTORED WORLD BOOK MANAGEMENT (DATA-DRIVEN APPROACH) ---
+// --- LORE BOOK MANAGEMENT (DATA-DRIVEN) ---
 // ====================================================================================
 
-// [新功能] 新增的辅助函数，用于在数据结构中查找条目
 function findEntryRecursive(list, elementToFind, parent = null) {
     for (let i = 0; i < list.length; i++) {
         const item = list[i];
@@ -2750,10 +3275,10 @@ function createWorldbookEntryElement(entryData = {}) {
                             <div class="field-group" style="display: flex; flex-direction: column; align-items: flex-start;">
                                 <label style="margin-bottom: 8px;">${t('entry-priority')} <span class="help-icon" onclick="event.preventDefault(); event.stopPropagation(); showHelp(t('help-entry-priority'))">?</span></label>
                                 <div style="display: flex; align-items: center; width: 100%;">
-                                    <input type="number" class="wb-priority" value="${defaultEntry.priority}" style="flex-grow: 1;">
+                                    <input type="number" class="wb-priority" value="${defaultEntry.priority}" step="100" style="flex-grow: 1;">
                                     <div class="priority-buttons">
-                                        <button onclick="setPriority(this, 999)" title="999">${t('priority-preset-prereq')}</button>
-                                        <button onclick="setPriority(this, 666)" title="666">${t('priority-preset-important')}</button>
+                                        <button onclick="setPriority(this, 1000)" title="1000">${t('priority-preset-prereq')}</button>
+                                        <button onclick="setPriority(this, 200)" title="200">${t('priority-preset-important')}</button>
                                         <button onclick="setPriority(this, 100)" title="100">${t('priority-preset-normal')}</button>
                                     </div>
                                 </div>
@@ -2802,7 +3327,6 @@ function addChildEntry(button) {
     renderWorldbookFromData(worldbookData);
 }
 
-// [已修复] 替换为修复后的函数
 function indentEntry(button, direction) {
     const worldbookData = buildWorldbookDataFromDOM();
     const currentEntryElement = button.closest('.worldbook-entry');
@@ -2842,7 +3366,6 @@ function indentEntry(button, direction) {
         }
     }
 
-    // 从修改后的数据结构，重新渲染整个角色书UI
     renderWorldbookFromData(worldbookData);
 }
 
