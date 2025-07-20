@@ -468,6 +468,38 @@
         color: #fff;
     }
 
+    /* --- API 设置 Modal 样式 --- */
+    #api-settings-modal .modal-content {
+        max-width: 600px;
+    }
+    #api-settings-modal .api-provider-options {
+        display: none; /* 默认隐藏所有配置区 */
+        border-top: 1px solid #444;
+        margin-top: 15px;
+        padding-top: 15px;
+    }
+    #api-settings-modal .api-provider-options.active {
+        display: block; /* 显示当前选中的配置区 */
+    }
+    #api-settings-modal .field-group {
+        margin-bottom: 15px;
+    }
+    #api-settings-modal label {
+        display: block;
+        font-weight: bold;
+        margin-bottom: 5px;
+        color: var(--text-color);
+    }
+    #api-settings-modal input, #api-settings-modal select {
+        width: 100%;
+        padding: 10px;
+        border: 1px solid var(--input-border);
+        border-radius: 5px;
+        background: var(--input-bg);
+        color: var(--text-color);
+        font-size: 15px;
+    }
+
 
     /* --- 名字选择 Modal 样式 --- */
     #name-generator-modal .modal-content {
@@ -601,6 +633,82 @@
     </div>
   </div>
 
+  <div id="api-settings-modal" class="modal-overlay">
+    <div class="modal-content">
+        <h3 id="api-modal-title">API 设置</h3>
+        <div class="field-group">
+            <label for="api-provider-selector">选择服务商</label>
+            <select id="api-provider-selector">
+                <option value="deepseek">DeepSeek</option>
+                <option value="gemini">Gemini (官方，需魔法)</option>
+                <option value="gemini-proxy">Gemini (中转代理)</option>
+                <option value="tavern">自定义</option>
+            </select>
+        </div>
+
+        <div id="deepseek-options" class="api-provider-options active">
+            <h4>DeepSeek 设置</h4>
+            <div class="field-group">
+                <label for="deepseek-api-key">API Key</label>
+                <input type="password" id="deepseek-api-key" placeholder="输入你的 DeepSeek API Key">
+            </div>
+        </div>
+
+        <div id="gemini-options" class="api-provider-options">
+            <h4>Gemini (官方) 设置</h4>
+            <div class="field-group">
+                <label for="gemini-api-key">API Key</label>
+                <input type="password" id="gemini-api-key" placeholder="输入你的 Google AI Studio API Key">
+            </div>
+            <div class="field-group">
+                <label for="gemini-model">选择模型</label>
+                <select id="gemini-model">
+                    <option value="gemini-2.5-flash">Gemini 2.5 Flash</option>
+                    <option value="gemini-2.5-pro">Gemini 2.5 Pro</option>
+                </select>
+            </div>
+        </div>
+
+        <div id="gemini-proxy-options" class="api-provider-options">
+            <h4>Gemini (中转代理) 设置</h4>
+            <div class="field-group">
+                <label for="gemini-proxy-endpoint">代理 Endpoint URL</label>
+                <input type="text" id="gemini-proxy-endpoint" placeholder="例如: https://mydomain.com/v1beta/models">
+            </div>
+            <div class="field-group">
+                <label for="gemini-proxy-api-key">API Key</label>
+                <input type="password" id="gemini-proxy-api-key" placeholder="输入你的 Google AI Studio API Key">
+            </div>
+            <div class="field-group">
+                <label for="gemini-proxy-model">选择模型</label>
+                <select id="gemini-proxy-model">
+                    <option value="gemini-2.5-flash">Gemini 2.5 Flash</option>
+                    <option value="gemini-2.5-pro">Gemini 2.5 Pro</option>
+                </select>
+            </div>
+            <p class="help-text">用于连接 Cloudflare Worker 等自定义反向代理。Endpoint URL 应为不包含模型名称的完整路径。</p>
+        </div>
+
+        <div id="tavern-options" class="api-provider-options">
+            <h4>自定义设置</h4>
+            <div class="field-group">
+                <label for="tavern-api-endpoint">API Endpoint URL</label>
+                <input type="text" id="tavern-api-endpoint" placeholder="例如: http://127.0.0.1:5000/v1/chat/completions">
+            </div>
+            <div class="field-group">
+                <label for="tavern-api-key">API Key (可选)</label>
+                <input type="password" id="tavern-api-key" placeholder="如果需要，输入 API Key">
+            </div>
+            <p class="help-text">用于连接本地或远程的、兼容 OpenAI/SillyTavern 格式的 API。</p>
+        </div>
+
+        <div class="modal-actions">
+            <button id="save-api-settings-btn" class="action-btn">保存</button>
+            <button id="cancel-api-settings-btn" class="cancel-btn">取消</button>
+        </div>
+    </div>
+  </div>
+
   <div id="name-generator-modal" class="modal-overlay">
       <div class="modal-content">
           <h3 id="name-modal-title">为你的角色选择一个名字</h3>
@@ -626,7 +734,7 @@
 
   <div id="worldbook-ai-generator-modal" class="modal-overlay">
       <div class="modal-content">
-          <h3 id="wb-ai-modal-title">AI 互动式角色书生成</h3>
+          <h3 id="wb-ai-modal-title">角色书生成</h3>
           <p class="help-text" style="text-align: center; margin-top: -15px; margin-bottom: 20px;" id="wb-ai-modal-desc">请选择要生成的条目类型：</p>
           <div class="generation-type-selector">
               <button data-type="worldview" class="action-btn">生成世界观</button>
@@ -671,7 +779,7 @@
     <div class="editor-container">
       <div class="editor-header">
         <h1 id="editor-title">创建新角色</h1>
-        <input id="apiKey" placeholder="输入 DeepSeek API Key" style="padding:6px 12px;border-radius:5px;border:1px solid #ccc;width:280px;background:#fff;color:#333;" oninput="localStorage.setItem('deepseekApiKey', this.value)" />
+        <button onclick="openApiSettingsModal()" style="background: var(--secondary-color); color: white; padding: 8px 15px; border-radius: 5px;">⚙️ API 设置</button>
       </div>
       <div class="editor-body">
         <div class="panel-content">
@@ -697,7 +805,11 @@
           
           <div style="display:flex; justify-content: space-between; align-items: center;">
             <h3 class="section-title" id="character-info-title">角色信息</h3>
-            <button id="complete-all-btn" onclick="aiCompleteAllFields(this)">🔮 一键补全所有</button>
+            <div>
+                <button id="translate-all-btn" onclick="translateAllFields(this)" style="background-color: #e67e22; color: white; padding: 5px 15px; border-radius: 5px; margin-right: 10px;">🌐 一键翻译</button>
+                <button id="undo-translate-btn" style="display: none; background-color: #d35400; color: white; padding: 8px 15px; border-radius: 5px; margin-right: 10px;" onclick="undoTranslateAllFields(this)">撤销翻译</button>
+                <button id="complete-all-btn" onclick="aiCompleteAllFields(this)">🔮 一键补全所有</button>
+            </div>
           </div>
           <div class="field-group">
             <label for="topic">主题</label>
@@ -757,7 +869,7 @@
             <label for="mes_example">示例消息</label>
             <textarea id="mes_example" rows="6" placeholder="提供几段对话范例，AI会模仿其风格。极为重要！
 例如：
-<START>（用于分隔每一段对话）
+<START>（用于每次对话的开头）
 {{user}}: 你好。
 {{char}}: (微笑着向你点头) 你好，{{user}}。找我有什么事吗？"></textarea>
             <button class="ai-button" onclick="callDeepSeek('mes_example')">🔮 AI 帮我写</button>
@@ -837,6 +949,8 @@ const translations = {
         'undo': '↩️ 撤销',
         'generate-companion': '🔮 生成虚拟伴侣',
         'complete-all': '🔮 一键补全所有',
+        'translate-all': '🌐 一键翻译',
+        'undo-translation': '撤销翻译',
         
         // 标签过滤
         'tag-filter': '标签过滤',
@@ -866,7 +980,7 @@ const translations = {
         'first-message': '问候消息',
         'first-message-placeholder': '角色出场时说的第一句话。',
         'message-example': '示例消息',
-        'message-example-placeholder': '提供几段对话范例，AI会模仿其风格。极为重要：\n<START>（用于分隔每一段对话）\n{{user}}: 你好。\n{{char}}: (微笑着向你点头) 你好，{{user}}。找我有什么事吗？',
+        'message-example-placeholder': '提供几段对话范例，AI会模仿其风格。极为重要：\n<START>（每回对话都以<START>开头）\n{{user}}: 你好。\n{{char}}: (微笑着向你点头) 你好，{{user}}。找我有什么事吗？',
         'advanced-settings': '高级设定',
         'post-history-instructions': '后期指令',
         'post-history-instructions-placeholder': '酒馆用它来修改AI的回复格式。例如，要让{{char}}的动作都用星号包围，可以写：将{{char}}的所有动作和叙述都放在星号（*）之间。',
@@ -1000,7 +1114,7 @@ const translations = {
         'template-image-prompt': '[SYSTEM]: Lora名：Sv5-10，角色关键词：SilverWolfV5\nYour response must have a comma-separated list of English keywords before the text for an AI image generator. Describe the character\'s appearance, action, expression, and the background. Use descriptive tags，最后要换行. Example: masterpiece, best quality, 角色关键词, solo, beautiful detailed eyes, long silver hair, smiling, school uniform, standing in a classroom, from above, <lora:Lora名>',
         
         // AI Lorebook Modal
-        'wb-ai-modal-title': 'AI 互动式角色书生成',
+        'wb-ai-modal-title': '角色书生成',
         'wb-ai-modal-desc': '请选择要生成的条目类型：',
         'wb-ai-modal-desc-generating': 'AI正在生成一套{type}条目，请稍后...',
         'wb-ai-modal-desc-generated': 'AI已为你生成一套{type}条目，请选择需要注入的条目。',
@@ -1037,6 +1151,8 @@ const translations = {
         'undo': '↩️ Undo',
         'generate-companion': '🔮 Generate Virtual Companion',
         'complete-all': '🔮 One-Click Complete All',
+        'translate-all': '🌐 One-click Translate',
+        'undo-translation': 'Undo Translation',
         
         // Tag filtering
         'tag-filter': 'Tag Filter',
@@ -1446,6 +1562,11 @@ function updateButtonTexts() {
 
     const completeAllBtn = document.getElementById('complete-all-btn');
     if(completeAllBtn) completeAllBtn.textContent = t('complete-all');
+
+    const translateAllBtn = document.getElementById('translate-all-btn');
+    if(translateAllBtn) translateAllBtn.textContent = t('translate-all');
+    const undoTranslateBtn = document.getElementById('undo-translate-btn');
+    if(undoTranslateBtn) undoTranslateBtn.textContent = t('undo-translation');
     
     // 更新AI按钮
     const aiButtons = document.querySelectorAll('.ai-button');
@@ -1490,6 +1611,231 @@ function updateButtonTexts() {
         document.getElementById('btn-template-image-prompt').textContent = t('post-history-image-prompt');
     }
 }
+
+// --- 全局翻译功能 ---
+let originalFieldsData = null; // 用于存储翻译前的数据
+
+async function translateAllFields(button) {
+    const apiSettings = loadApiSettings();
+    const provider = apiSettings.provider;
+    const key = apiSettings[provider]?.apiKey;
+    const endpoint = apiSettings[provider]?.endpoint;
+
+    if (!provider || (provider !== 'custom' && !key) || (provider === 'custom' && !endpoint)) {
+        alert('请先在 API 设置中配置您的服务商。');
+        openApiSettingsModal();
+        return;
+    }
+
+    const fromLang = currentLanguage === 'zh' ? 'English' : 'Chinese';
+    const toLang = currentLanguage === 'zh' ? 'Chinese' : 'English';
+
+    // 1. 收集所有需要翻译的文本
+    const fieldsToTranslate = [
+        'topic', 'name', 'gender', 'description', 'tags', 'personality',
+        'system_prompt', 'scenario', 'first_mes', 'mes_example',
+        'post_history_instructions', 'creator_notes'
+    ];
+
+    let textObject = {};
+    originalFieldsData = { fields: {}, worldbook: [] };
+
+    fieldsToTranslate.forEach(id => {
+        const el = document.getElementById(id);
+        if (el && el.value.trim()) {
+            textObject[id] = el.value;
+            originalFieldsData.fields[id] = el.value;
+        }
+    });
+
+    const worldbookEntries = buildWorldbookDataFromDOM();
+    originalFieldsData.worldbook = JSON.parse(JSON.stringify(cleanWorldbookForStorage(worldbookEntries))); // Deep copy for undo
+
+    let wbTextObject = [];
+    worldbookEntries.forEach((entry, index) => {
+        const entryTexts = {
+            comment: entry.comment,
+            keys: entry.keys.join(', '),
+            content: entry.content
+        };
+        if (entryTexts.comment || entryTexts.keys || entryTexts.content) {
+            wbTextObject.push({ index: index, ...entryTexts });
+        }
+    });
+
+    if (Object.keys(textObject).length === 0 && wbTextObject.length === 0) {
+        alert('没有需要翻译的内容。');
+        return;
+    }
+
+    // 2. 构建Prompt
+    let prompt = `You are an expert translator. Translate the following JSON object's string values from ${fromLang} to ${toLang}.
+Maintain the original JSON structure and keys. For keys like "tags" or "keys", translate each item in the comma-separated string individually.
+Do not translate special placeholders like {{user}} or {{char}} or "<START>".
+
+Translate this data:
+${JSON.stringify({ fields: textObject, worldbook: wbTextObject }, null, 2)}
+`;
+
+    // 3. 调用API
+    const originalText = button.textContent;
+    button.disabled = true;
+    button.textContent = t('generating');
+    const loadingOverlay = document.getElementById('loading-overlay');
+    loadingOverlay.style.display = 'flex';
+
+    try {
+        const result = await callApi(prompt, button);
+        if (result) {
+            const cleanedResult = result.replace(/^```json\s*|```$/g, '').trim();
+            const translatedData = JSON.parse(cleanedResult);
+
+            // 4. 应用翻译结果
+            if (translatedData.fields) {
+                for (const id in translatedData.fields) {
+                    const el = document.getElementById(id);
+                    if (el) {
+                        el.value = translatedData.fields[id];
+                    }
+                }
+            }
+
+            if (translatedData.worldbook) {
+                translatedData.worldbook.forEach(item => {
+                    const entry = worldbookEntries[item.index];
+                    if (entry && entry.element) {
+                        if (item.comment) entry.element.querySelector('.entry-comment').value = item.comment;
+                        if (item.keys) entry.element.querySelector('.wb-keys').value = item.keys;
+                        if (item.content) entry.element.querySelector('.wb-content').value = item.content;
+                    }
+                });
+            }
+
+            // 显示撤销按钮
+            document.getElementById('undo-translate-btn').style.display = 'inline-block';
+        }
+    } catch (e) {
+        console.error("Translation failed:", e, "Raw response:", result);
+        alert('翻译失败，请检查控制台获取详情。');
+        originalFieldsData = null; // 清除备份
+    } finally {
+        button.disabled = false;
+        button.textContent = originalText;
+        loadingOverlay.style.display = 'none';
+    }
+}
+
+function undoTranslateAllFields(button) {
+    if (!originalFieldsData) {
+        alert('没有可撤销的翻译。');
+        return;
+    }
+
+    // 恢复普通字段
+    for (const id in originalFieldsData.fields) {
+        const el = document.getElementById(id);
+        if (el) {
+            el.value = originalFieldsData.fields[id];
+        }
+    }
+
+    // 恢复世界书
+    if (originalFieldsData.worldbook) {
+        renderWorldbookFromData(originalFieldsData.worldbook);
+    }
+
+    // 清理
+    originalFieldsData = null;
+    button.style.display = 'none';
+}
+
+// --- API Settings ---
+function openApiSettingsModal() {
+    const modal = document.getElementById('api-settings-modal');
+    loadApiSettings(); // Load current settings when opening
+    modal.style.display = 'flex';
+}
+
+function initializeApiSettingsModal() {
+    const modal = document.getElementById('api-settings-modal');
+    const selector = document.getElementById('api-provider-selector');
+    const saveBtn = document.getElementById('save-api-settings-btn');
+    const cancelBtn = document.getElementById('cancel-api-settings-btn');
+
+    selector.addEventListener('change', () => {
+        document.querySelectorAll('.api-provider-options').forEach(el => el.classList.remove('active'));
+        const selectedProvider = selector.value;
+        document.getElementById(`${selectedProvider}-options`).classList.add('active');
+    });
+
+    cancelBtn.onclick = () => modal.style.display = 'none';
+    modal.onclick = (e) => { if (e.target === modal) modal.style.display = 'none'; };
+
+    saveBtn.onclick = () => {
+        const settings = {
+            provider: document.getElementById('api-provider-selector').value,
+            deepseek: {
+                apiKey: document.getElementById('deepseek-api-key').value.trim()
+            },
+            gemini: {
+                apiKey: document.getElementById('gemini-api-key').value.trim(),
+                model: document.getElementById('gemini-model').value
+            },
+            'gemini-proxy': {
+                endpoint: document.getElementById('gemini-proxy-endpoint').value.trim(),
+                apiKey: document.getElementById('gemini-proxy-api-key').value.trim(),
+                model: document.getElementById('gemini-proxy-model').value
+            },
+            tavern: {
+                endpoint: document.getElementById('tavern-api-endpoint').value.trim(),
+                apiKey: document.getElementById('tavern-api-key').value.trim()
+            }
+        };
+        localStorage.setItem('apiSettings', JSON.stringify(settings));
+        alert('API 设置已保存！');
+        modal.style.display = 'none';
+    };
+}
+
+function loadApiSettings() {
+    const settings = JSON.parse(localStorage.getItem('apiSettings')) || {
+        provider: 'deepseek',
+        deepseek: { apiKey: '' },
+        gemini: { apiKey: '', model: 'gemini-2.5-flash' },
+        'gemini-proxy': { endpoint: '', apiKey: '', model: 'gemini-2.5-flash' },
+        tavern: { endpoint: '', apiKey: '' }
+    };
+
+    // Migrate old "custom" settings if they exist
+    if (settings.custom) {
+        if (settings.custom.endpoint && (settings.custom.endpoint.includes('gemini') || settings.custom.endpoint.includes(':generateContent'))) {
+            settings['gemini-proxy'] = { ...settings.custom };
+            settings.provider = 'gemini-proxy';
+        } else {
+            settings.tavern = { ...settings.custom };
+            settings.provider = 'tavern';
+        }
+        delete settings.custom;
+        // Save migrated settings back to localStorage
+        localStorage.setItem('apiSettings', JSON.stringify(settings));
+    }
+
+
+    document.getElementById('api-provider-selector').value = settings.provider;
+    document.getElementById('deepseek-api-key').value = settings.deepseek?.apiKey || '';
+    document.getElementById('gemini-api-key').value = settings.gemini?.apiKey || '';
+    document.getElementById('gemini-model').value = settings.gemini?.model || 'gemini-2.5-flash';
+    document.getElementById('gemini-proxy-endpoint').value = settings['gemini-proxy']?.endpoint || '';
+    document.getElementById('gemini-proxy-api-key').value = settings['gemini-proxy']?.apiKey || '';
+    document.getElementById('gemini-proxy-model').value = settings['gemini-proxy']?.model || 'gemini-2.5-flash';
+    document.getElementById('tavern-api-endpoint').value = settings.tavern?.endpoint || '';
+    document.getElementById('tavern-api-key').value = settings.tavern?.apiKey || '';
+
+    // Trigger change to show correct options
+    document.getElementById('api-provider-selector').dispatchEvent(new Event('change'));
+    return settings;
+}
+
 
 // --- DB & Initialization ---
 let db;
@@ -1584,7 +1930,8 @@ window.onload = function() {
     
     // 延迟初始化，给用户看到加载动画的时间
     setTimeout(() => {
-        loadApiKey();
+        initializeApiSettingsModal();
+        loadApiSettings();
         initializeDatabase();
         initializeLoverSwitch();
         initializeNameGeneratorModal();
@@ -1646,12 +1993,6 @@ function checkDbReady() {
     return true;
 }
 
-function loadApiKey() {
-    const savedKey = localStorage.getItem('deepseekApiKey');
-    if (savedKey) {
-        document.getElementById('apiKey').value = savedKey;
-    }
-}
 
 // --- View Management ---
 function showLibraryView() {
@@ -2540,17 +2881,15 @@ function undoAiCompletion(undoButton) {
 
 
 async function callApi(prompt, button) {
-    const apiKey = document.getElementById('apiKey').value.trim();
-    if (!apiKey) {
-        alert(t('api-key-placeholder'));
-        return null;
-    }
+    const apiSettings = loadApiSettings();
+    const provider = apiSettings.provider;
 
     const isLover = document.getElementById('lover-switch').checked;
     const finalPrompt = isLover ? getLoverPromptPrefix() + prompt : prompt;
 
-    console.log(currentLanguage === 'zh' ? "发送给API的最终提示:" : "Final prompt being sent to API:", finalPrompt);
-    
+    console.log(`Using API provider: ${provider}`);
+    console.log("Final prompt being sent to API:", finalPrompt);
+
     const originalText = button.textContent;
     button.disabled = true;
     button.textContent = t('generating');
@@ -2560,23 +2899,117 @@ async function callApi(prompt, button) {
         undoButton.style.display = 'none';
     }
 
+    let requestUrl, requestOptions;
+
     try {
-        const response = await fetch("https://api.deepseek.com/chat/completions", {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
-            body: JSON.stringify({ model: "deepseek-chat", messages: [{ "role": "user", "content": finalPrompt }] })
-        });
+    const geminiBody = {
+        contents: [{ parts: [{ text: finalPrompt }] }],
+        generationConfig: { temperature: 0.7, topK: 1, topP: 1, maxOutputTokens: 8192 }
+    };
+
+        switch (provider) {
+            case 'deepseek':
+                if (!apiSettings.deepseek.apiKey) throw new Error('DeepSeek API Key is missing.');
+                requestUrl = "https://api.deepseek.com/chat/completions";
+                requestOptions = {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiSettings.deepseek.apiKey}` },
+                    body: JSON.stringify({ model: "deepseek-chat", messages: [{ "role": "user", "content": finalPrompt }] })
+                };
+                break;
+
+            case 'gemini':
+                if (!apiSettings.gemini.apiKey) throw new Error('Gemini API Key is missing.');
+                const geminiModel = apiSettings.gemini.model || 'gemini-2.5-flash';
+                requestUrl = `https://generativelanguage.googleapis.com/v1beta/models/${geminiModel}:generateContent?key=${apiSettings.gemini.apiKey}`;
+                requestOptions = {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(geminiBody)
+                };
+                break;
+            
+            case 'gemini-proxy':
+                if (!apiSettings['gemini-proxy'].endpoint) throw new Error('Gemini Proxy Endpoint is missing.');
+                if (!apiSettings['gemini-proxy'].apiKey) throw new Error('Gemini API Key for proxy is missing.');
+                
+                let proxyBaseUrl = apiSettings['gemini-proxy'].endpoint;
+                if (!proxyBaseUrl.startsWith('http')) proxyBaseUrl = 'https://' + proxyBaseUrl;
+                // remove trailing slash if present
+                if (proxyBaseUrl.endsWith('/')) {
+                    proxyBaseUrl = proxyBaseUrl.slice(0, -1);
+                }
+
+                const geminiProxyModel = apiSettings['gemini-proxy'].model || 'gemini-2.5-flash';
+                requestUrl = `${proxyBaseUrl}/${geminiProxyModel}:generateContent?key=${apiSettings['gemini-proxy'].apiKey}`;
+                requestOptions = {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' }, // No Authorization header
+                    body: JSON.stringify(geminiBody)
+                };
+                break;
+
+            case 'tavern':
+                if (!apiSettings.tavern.endpoint) throw new Error('Tavern API Endpoint is missing.');
+                
+                let tavernEndpoint = apiSettings.tavern.endpoint;
+                if (!tavernEndpoint.startsWith('http')) tavernEndpoint = 'https://' + tavernEndpoint;
+                requestUrl = tavernEndpoint;
+
+                const tavernHeaders = { 'Content-Type': 'application/json' };
+                if (apiSettings.tavern.apiKey) {
+                    tavernHeaders['Authorization'] = `Bearer ${apiSettings.tavern.apiKey}`;
+                }
+                requestOptions = {
+                    method: 'POST',
+                    headers: tavernHeaders,
+                    body: JSON.stringify({
+                        model: "custom-model",
+                        messages: [{ "role": "user", "content": finalPrompt }],
+                        stream: false
+                    })
+                };
+                break;
+
+            default:
+                throw new Error(`Unknown API provider: ${provider}`);
+        }
+
+        const response = await fetch(requestUrl, requestOptions);
 
         if (!response.ok) {
-            const errorBody = await response.json();
-            throw new Error(t('api-request-failed', { status: response.statusText, message: errorBody.error.message }));
+            const errorBody = await response.text();
+            let errorMessage = errorBody;
+            try {
+                const errorJson = JSON.parse(errorBody);
+                errorMessage = errorJson.error?.message || JSON.stringify(errorJson);
+            } catch (e) { /* Ignore if not JSON */ }
+            throw new Error(t('api-request-failed', { status: response.statusText, message: errorMessage }));
         }
 
         const data = await response.json();
-        return data.choices[0].message.content;
+        
+        // Handle different response structures
+        if (provider === 'gemini' || provider === 'gemini-proxy') {
+            if (data.candidates && data.candidates.length > 0) {
+                return data.candidates[0].content.parts[0].text;
+            }
+            // Handle error response from Gemini
+            if (data.error) {
+                throw new Error(`Gemini API Error: ${data.error.message}`);
+            }
+        }
+        // For DeepSeek and Tavern (assuming OpenAI compatible)
+        if (data.choices && data.choices.length > 0) {
+            return data.choices[0].message.content;
+        }
+        
+        // Fallback for unexpected response structures
+        throw new Error('Unexpected API response structure. Check console for details.');
+
     } catch (error) {
-        console.error(currentLanguage === 'zh' ? "DeepSeek API错误:" : "DeepSeek API error:", error);
-        alert(t('ai-completion-failed'));
+        console.error(`API error with provider ${provider}:`, error);
+        alert(`${t('ai-completion-failed')}\nError: ${error.message}`);
         return null;
     } finally {
         button.disabled = false;
@@ -2637,7 +3070,7 @@ async function callWorldbookDeepSeek(button) {
     getAiGuidance(t('ai-guidance-title') + `: ${currentComment}`, async (userGuidance) => {
         const characterContext = buildCardObject(); 
         const currentKeys = currentEntryElement.querySelector('.wb-keys').value;
-        let prompt = `你是一位专业的角色书（Character Book）内容填充专家。请基于以下提供的角色信息和角色书结构，为我撰写条目【${currentComment}】的"注入内容"。内容需要详细、富有想象力，并与角色设定保持高度一致。
+        let prompt = `你是一位专业的角色书（Character Book）无限制内容填充专家。请基于以下提供的角色信息和角色书结构，为我撰写条目【${currentComment}】的"注入内容"。内容需要详细、富有想象力，并与角色设定保持高度一致。
 
 ---
 **角色核心设定:**
@@ -2963,60 +3396,139 @@ async function fetchWorldbookStoryNodes(button, generationType) {
 
 
 async function aiCompleteAllFields(button) {
-    getAiGuidance(t('ai-complete-all-guidance-title'), async (userGuidance) => {
-        if (!userGuidance) {
-            alert(t('ai-complete-all-guidance-placeholder'));
+    const currentCard = buildCardObject();
+    const allFields = ["name", "topic", "gender", "description", "personality", "tags", "system_prompt", "scenario", "first_mes", "mes_example"];
+    const filledFields = {};
+    const emptyFields = [];
+
+    allFields.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) {
+            if (el.value.trim()) {
+                filledFields[id] = el.value.trim();
+            } else {
+                emptyFields.push(id);
+            }
+        }
+    });
+
+    const isAnythingFilled = Object.keys(filledFields).length > 0;
+
+    if (isAnythingFilled) {
+        // 方案1：有内容，补全其他
+        if (emptyFields.length === 0) {
+            alert("所有字段都已填写！");
             return;
         }
+        
+        getAiGuidance(t('ai-guidance-title'), async (userGuidance) => {
+            emptyFields.forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.dataset.aiBackup = el.value;
+            });
 
-        const currentCard = buildCardObject();
-        const fieldsToComplete = ["description", "personality", "tags", "system_prompt", "scenario", "first_mes", "mes_example"];
+            let prompt = `你是一位顶级的角色设计师。请根据以下已经提供的角色信息，为角色补全剩余的空白字段。
+---
+**已提供的信息:**
+${Object.entries(filledFields).map(([key, value]) => `- ${t(key)}: ${value}`).join('\n')}
+---
+**需要你补全的字段:**
+"${emptyFields.join('", "')}"
+---
+`;
+            if (userGuidance) {
+                prompt += `**用户的额外指令:** ${userGuidance}\n---`;
+            }
+            prompt += `**你的任务:**
+请为需要补全的字段生成内容，并**严格以一个单一的JSON对象格式返回**，只包含你需要补全的字段的键和值。不要包含任何解释或Markdown标记。
+- 对于 "tags" 和 "personality" 字段, 请返回一个由逗号分隔的字符串。
+- 对于 "mes_example", 请生成一段包含{{user}}和{{char}}的对话示例，对话开始另起一行以<START>开头。例如：
+<START>（每次对话的开头都需要这样标记）
 
-        fieldsToComplete.forEach(id => {
-            const el = document.getElementById(id);
-            if (el) el.dataset.aiBackup = el.value;
-        });
+{{user}}: 你好。
+{{char}}: (微笑着向你点头) 你好，{{user}}。找我有什么事吗？
 
-        const prompt = `你是一位顶级的角色设计师。根据用户提供的核心概念，以及已有的角色信息，为角色生成一个完整的设定档案。
+`;
+            const result = await callApi(prompt, button);
+            if (result) {
+                try {
+                    const cleanedResult = result.replace(/^```json\s*|```$/g, '');
+                    const data = JSON.parse(cleanedResult);
+
+                    emptyFields.forEach(id => {
+                        if (data[id]) {
+                            const el = document.getElementById(id);
+                            if (el) {
+                                el.value = data[id];
+                                const undoBtn = el.closest('.field-group').querySelector('.ai-undo-button');
+                                if (undoBtn) {
+                                    undoBtn.style.display = 'inline-block';
+                                }
+                            }
+                        }
+                    });
+                    alert(t('all-fields-completed'));
+                } catch (e) {
+                    console.error("解析AI返回的JSON失败:", e, "收到的原始数据:", result);
+                    alert(t('ai-parse-failed'));
+                }
+            }
+        }, t('ai-guidance-prompt'));
+
+    } else {
+        // 方案2：全空，按原逻辑执行
+        getAiGuidance(t('ai-complete-all-guidance-title'), async (userGuidance) => {
+            if (!userGuidance) {
+                alert(t('ai-complete-all-guidance-placeholder'));
+                return;
+            }
+
+            const fieldsToComplete = ["description", "personality", "tags", "system_prompt", "scenario", "first_mes", "mes_example", "name", "topic", "gender"];
+            fieldsToComplete.forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.dataset.aiBackup = el.value;
+            });
+
+            const prompt = `你是一位顶级的角色设计师。根据用户提供的核心概念，为角色生成一个完整的设定档案。
 ---
 **用户核心概念:** ${userGuidance}
 ---
-**已有信息 (留空则由你创造):**
-- 角色名: ${currentCard.name || ''}
-- 主题: ${currentCard.topic || ''}
-- 性别: ${currentCard.gender || ''}
----
 **你的任务:**
-请为以下字段生成内容，并**严格以一个单一的JSON对象格式返回**，不要包含任何解释或Markdown标记。
+请为以下所有字段生成内容，并**严格以一个单一的JSON对象格式返回**，不要包含任何解释或Markdown标记。
 字段包括: "${fieldsToComplete.join('", "')}"
 - 对于 "tags" 和 "personality" 字段, 请返回一个由逗号分隔的字符串。
-- 对于 "mes_example", 请生成一段包含{{user}}和{{char}}的简短对话，并以"<START>"分隔每一段对话。
-`;
-        const result = await callApi(prompt, button);
-        if (result) {
-            try {
-                const cleanedResult = result.replace(/^```json\s*|```$/g, '');
-                const data = JSON.parse(cleanedResult);
+- 对于 "mes_example", 请生成一段包含{{user}}和{{char}}的对话示例，对话开始另起一行以<START>开头。例如：
+<START>（每次对话的开头都需要这样标记）
 
-                fieldsToComplete.forEach(id => {
-                    if (data[id]) {
-                        const el = document.getElementById(id);
-                        if (el) {
-                            el.value = data[id];
-                            const undoBtn = el.nextElementSibling?.nextElementSibling;
-                            if (undoBtn && undoBtn.classList.contains('ai-undo-button')) {
-                                undoBtn.style.display = 'inline-block';
+{{user}}: 你好。
+{{char}}: (微笑着向你点头) 你好，{{user}}。找我有什么事吗？
+`;
+            const result = await callApi(prompt, button);
+            if (result) {
+                try {
+                    const cleanedResult = result.replace(/^```json\s*|```$/g, '');
+                    const data = JSON.parse(cleanedResult);
+
+                    fieldsToComplete.forEach(id => {
+                        if (data[id]) {
+                            const el = document.getElementById(id);
+                            if (el) {
+                                el.value = data[id];
+                                const undoBtn = el.closest('.field-group').querySelector('.ai-undo-button');
+                                if (undoBtn) {
+                                    undoBtn.style.display = 'inline-block';
+                                }
                             }
                         }
-                    }
-                });
-                alert(t('all-fields-completed'));
-            } catch (e) {
-                console.error("解析AI返回的JSON失败:", e, "收到的原始数据:", result);
-                alert(t('ai-parse-failed'));
+                    });
+                    alert(t('all-fields-completed'));
+                } catch (e) {
+                    console.error("解析AI返回的JSON失败:", e, "收到的原始数据:", result);
+                    alert(t('ai-parse-failed'));
+                }
             }
-        }
-    }, t('ai-complete-all-guidance-placeholder'));
+        }, t('ai-complete-all-guidance-placeholder'));
+    }
 }
 
 // ====================================================================================
