@@ -45,7 +45,7 @@ An elegant AI character card management system designed for ST character creatio
 - 可选：DeepSeek API密钥（用于AI功能）
 
 ### 使用步骤
-1. 下载项目文件
+1. 下载项目文件（Code --> Download Zip --> 解压）
 2. 在浏览器中打开 `index.html`
 3. 开始创建和管理你的角色卡
 
@@ -169,7 +169,7 @@ An elegant AI character card management system designed specifically for ST char
 - Optional: DeepSeek API key (for AI features)
 
 ### Usage Steps
-1. Download project files
+1. Download project files (Code --> Download Zip)
 2. Open `index.html` in browser
 3. Start creating and managing your character cards
 
