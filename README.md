@@ -28,7 +28,7 @@ An elegant AI character card management system designed for ST character creatio
 - **世界书生成**: AI自动生成角色书条目
 
 ### 界面设计
-- **现代化UI**: 深色主题，界面优雅美观
+- **现代化UI**: 酒馆主色调
 - **响应式设计**: 支持桌面和移动设备
 - **中文界面**: 完全中文化的用户界面
 
@@ -62,7 +62,7 @@ An elegant AI character card management system designed for ST character creatio
 - AI自动生成角色书条目
 - 完整的导入/导出支持
 
-## 一键翻译
+### 一键翻译
 - 通过api翻译所有条目，英文卡一键转中文卡
 
 ### 伴侣模式
@@ -160,9 +160,9 @@ An elegant AI character card management system designed specifically for ST char
 - **World Book Generation**: AI automatic generation of character book entries
 
 ### Interface Design
-- **Modern UI**: Dark theme with elegant and beautiful interface
+- **Modern UI**: Dark theme with ST-like interface
 - **Responsive Design**: Supports desktop and mobile devices
-- **Chinese Interface**: Fully localized Chinese user interface
+- **Chinese Interface**: Localized user interface
 
 ## Quick Start
 
