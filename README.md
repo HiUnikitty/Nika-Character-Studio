@@ -22,7 +22,7 @@ An elegant AI character card management system designed for ST character creatio
 - **JSON/PNG导出**: 导出角色卡为JSON或PNG格式
 
 ### AI辅助
-- **DeepSeek集成**: 智能内容生成
+- **DeepSeek、Gemini等集成**: 智能内容生成
 - **一键补全**: AI协助生成角色描述、性格、对话示例等
 - **伴侣模式**: 专门为虚拟伴侣角色设计的AI补全功能
 - **世界书生成**: AI自动生成角色书条目
@@ -42,7 +42,7 @@ An elegant AI character card management system designed for ST character creatio
 
 ### 环境要求
 - 现代浏览器（开启隐私模式会影响本地库的存储）
-- 可选：DeepSeek API密钥（用于AI功能）
+- 可选：API密钥（用于AI功能）
 
 ### 使用步骤
 1. 下载项目文件（Code --> Download Zip --> 解压）
@@ -61,6 +61,9 @@ An elegant AI character card management system designed for ST character creatio
 - 子条目功能，可创建复杂的知识体系
 - AI自动生成角色书条目
 - 完整的导入/导出支持
+
+## 一键翻译
+- 通过api翻译所有条目，英文卡一键转中文卡
 
 ### 伴侣模式
 - 专门的虚拟伴侣角色AI补全功能
@@ -151,7 +154,7 @@ An elegant AI character card management system designed specifically for ST char
 - **JSON/PNG Export**: Export character cards in JSON or PNG format
 
 ### AI Assistance
-- **DeepSeek Integration**: Intelligent content generation
+- **Gemini Integration**: Intelligent content generation
 - **One-click Completion**: AI-assisted generation of character descriptions, personality, dialogue examples, etc.
 - **Companion Mode**: AI completion function specifically designed for virtual companion characters
 - **World Book Generation**: AI automatic generation of character book entries
