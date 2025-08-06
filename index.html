@@ -139,13 +139,28 @@
         flex: 1;
         overflow: hidden;
         min-height: 0;
+        display: flex;
+        flex-direction: column;
     }
     #library-view .character-card:hover { transform: translateY(-5px); border-color: var(--primary-color); }
     #library-view .card-header { display: flex; justify-content: space-between; align-items: flex-start; }
     #library-view .card-header h2 { font-size: 20px; color: var(--text-color); margin-bottom: 5px; text-shadow: 0 1px 3px rgba(0,0,0,0.8); }
     #library-view .favorite-btn { background: none; color: #aaa; font-size: 24px; padding: 0; text-shadow: 0 1px 3px rgba(0,0,0,0.8); }
     #library-view .favorite-btn.favorited { color: #f1c40f; }
-    #library-view .card-description { font-size: 14px; color: #ccc; margin-bottom: 15px; flex-grow: 1; white-space: pre-wrap; max-height: 100px; overflow: hidden; text-overflow: ellipsis; text-shadow: 0 1px 2px rgba(0,0,0,0.7); }
+    #library-view .card-description {
+        font-size: 14px;
+        color: #ccc;
+        margin-bottom: 15px;
+        flex-grow: 1;
+        white-space: pre-wrap;
+        overflow: hidden;
+        text-shadow: 0 1px 2px rgba(0,0,0,0.7);
+        display: -webkit-box;
+        -webkit-box-orient: vertical;
+        -webkit-line-clamp: 4; /* 可以调整行数 */
+        line-height: 1.4em;
+        max-height: calc(1.4em * 4); /* 兼容性回退 */
+    }
     #library-view .card-footer { display: flex; gap: 8px; flex-wrap: wrap; }
     #library-view .card-footer button { flex-grow: 1; background: rgba(0,0,0,0.4); backdrop-filter: blur(5px); color: white; border: 1px solid var(--label-color); padding: 8px 10px; border-radius: 5px; }
     #library-view .card-footer button:hover { background-color: var(--primary-color); }
@@ -621,6 +636,15 @@
         .worldbook-entry details .advanced-grid {
             grid-template-columns: 1fr; /* Mobile Fix: Force single column for advanced settings */
         }
+
+        /* --- Mobile Input Zoom & Resize Improvement --- */
+        #editor-view .field-group input, 
+        #editor-view .field-group textarea, 
+        #editor-view .field-group select {
+            /* Using 16px font size is a common technique to prevent automatic page zoom on focus in mobile browsers, especially iOS Safari. */
+            /* This provides a smoother experience without disabling user-initiated pinch-to-zoom. */
+            font-size: 16px;
+        }
     }
   </style>
 </head>
@@ -699,7 +723,7 @@
                 <label for="tavern-api-key">API Key (可选)</label>
                 <input type="password" id="tavern-api-key" placeholder="如果需要，输入 API Key">
             </div>
-            <p class="help-text">用于连接本地或远程的、兼容 OpenAI/SillyTavern 格式的 API。</p>
+            <p class="help-text">用于连接本地或远程的、兼容 OpenAI格式/本地部署的 API。</p>
         </div>
 
         <div class="modal-actions">
@@ -940,6 +964,7 @@ const translations = {
         'download-lorebook': '📥 下载为世界书',
         'upload-image': '上传图片',
         'edit': '编辑',
+        'export': '导出',
         'add-tag': '添加标签',
         'delete': '删除',
         'add-new-entry': '+ 添加新条目',
@@ -1142,6 +1167,7 @@ const translations = {
         'download-lorebook': '📥 Download as Lorebook',
         'upload-image': 'Upload Image',
         'edit': 'Edit',
+        'export': 'Export',
         'add-tag': 'Add Tag',
         'delete': 'Delete',
         'add-new-entry': '+ Add New Entry',
@@ -1837,6 +1863,33 @@ function loadApiSettings() {
 }
 
 
+// --- Mobile Textarea Auto-Resize ---
+function autoResizeTextarea(textarea) {
+    // Temporarily reset height to allow the scrollHeight to be calculated correctly.
+    textarea.style.height = 'auto';
+    
+    const maxHeight = window.innerHeight / 2; // Max height is half the viewport height.
+    const scrollHeight = textarea.scrollHeight;
+    
+    // Set height to the calculated scroll height, but not exceeding the max height.
+    textarea.style.height = Math.min(scrollHeight, maxHeight) + 'px';
+}
+
+function setupTextareaAutoResize() {
+    // Use event delegation on the editor's scrolling body for efficiency, especially with dynamic worldbook entries.
+    const editorBody = document.querySelector('#editor-view .editor-body');
+    if (!editorBody) return;
+
+    const resizeHandler = (event) => {
+        if (event.target.tagName === 'TEXTAREA') {
+            autoResizeTextarea(event.target);
+        }
+    };
+    
+    editorBody.addEventListener('focusin', resizeHandler);
+    editorBody.addEventListener('input', resizeHandler);
+}
+
 // --- DB & Initialization ---
 let db;
 let activeFilters = new Set();
@@ -1928,23 +1981,19 @@ window.onload = function() {
     const loadingOverlay = document.getElementById('loading-overlay');
     loadingOverlay.style.display = 'flex';
     
-    // 延迟初始化，给用户看到加载动画的时间
-    setTimeout(() => {
-        initializeApiSettingsModal();
-        loadApiSettings();
-        initializeDatabase();
-        initializeLoverSwitch();
-        initializeNameGeneratorModal();
-        initializeWorldbookAiModal();
-        initializeAiGuidanceModal();
-        
-        // 初始化语言设置
-        const savedLanguage = localStorage.getItem('language') || 'zh';
-        switchLanguage(savedLanguage);
-        
-        // 隐藏加载动画
-        loadingOverlay.style.display = 'none';
-    }, 1000);
+    // 优化：移除不必要的延迟，让应用更快启动
+    initializeApiSettingsModal();
+    loadApiSettings();
+    initializeDatabase(); // initializeDatabase will call showLibraryView, which hides the overlay
+    initializeLoverSwitch();
+    initializeNameGeneratorModal();
+    initializeWorldbookAiModal();
+    initializeAiGuidanceModal();
+    setupTextareaAutoResize(); // Initialize textarea resizing for mobile
+    
+    // 初始化语言设置
+    const savedLanguage = localStorage.getItem('language') || 'zh';
+    switchLanguage(savedLanguage);
 };
 
 function initializeDatabase() {
@@ -2000,6 +2049,8 @@ function showLibraryView() {
     editorView.style.display = 'none';
     libraryView.style.display = 'block';
     renderUI();
+    // 优化：在UI渲染后隐藏加载动画
+    document.getElementById('loading-overlay').style.display = 'none';
 }
 
 function showEditorView(characterId = null) {
@@ -2344,6 +2395,135 @@ function saveCharacter() {
         };
 }
 
+function isPureLorebook(char) {
+    // It must have a worldbook to be considered a lorebook.
+    if (!char.worldbook || char.worldbook.length === 0) {
+        return false;
+    }
+
+    // List of fields that MUST be empty for it to be a "pure" lorebook.
+    const mustBeEmptyFields = [
+        'gender', 
+        'topic', 
+        'description', 
+        'personality', 
+        'system_prompt', 
+        'scenario', 
+        'first_mes', 
+        'mes_example', 
+        'post_history_instructions'
+    ];
+
+    for (const field of mustBeEmptyFields) {
+        const value = char[field];
+        if (value && typeof value === 'string' && value.trim() !== '') {
+            return false; // If any of these string fields have content, it's not a pure lorebook.
+        }
+    }
+
+    // The 'tags' field must also be empty, but we can allow the default 'lorebook' tag.
+    if (char.tags && Array.isArray(char.tags) && char.tags.length > 0) {
+        const filteredTags = char.tags.filter(tag => tag !== t('lorebook-tag'));
+        if (filteredTags.length > 0) {
+            return false;
+        }
+    }
+
+    return true;
+}
+
+function buildWorldbookExportObjectFromData(cardData) {
+    const v3Card = buildV3Card(cardData);
+
+    // This is the format SillyTavern uses for its lorebooks.
+    const lorebookEntries = {};
+    if (v3Card.data.character_book && v3Card.data.character_book.entries) {
+        v3Card.data.character_book.entries.forEach((entry, index) => {
+            const tavernEntry = {
+                uid: entry.id,
+                key: entry.keys,
+                keysecondary: entry.secondary_keys,
+                comment: entry.comment,
+                content: entry.content,
+                constant: entry.constant,
+                selective: entry.selective,
+                selectiveLogic: 0,
+                addMemo: true,
+                order: entry.insertion_order,
+                position: 0,
+                disable: !entry.enabled,
+                excludeRecursion: entry.extensions.prevent_recursion,
+                preventRecursion: entry.extensions.prevent_recursion,
+                probability: entry.extensions.probability,
+                useProbability: true,
+                depth: entry.extensions.depth,
+                displayIndex: index,
+            };
+            lorebookEntries[index] = tavernEntry;
+        });
+    }
+
+    return {
+        entries: lorebookEntries,
+        originalData: v3Card.data.character_book || {
+             name: `(${t('world-knowledge-book')}) ${cardData.name || 'Character Book'}`,
+             description: cardData.creator_notes || `Character book for ${cardData.name}.`,
+             scan_depth: 10,
+             token_budget: 2048,
+             recursive_scanning: false,
+             entries: []
+        }
+    };
+}
+
+async function exportCharacter(id) {
+    if (!checkDbReady()) return;
+    const transaction = db.transaction(['characters'], 'readonly');
+    const store = transaction.objectStore('characters');
+    const request = store.get(id);
+
+    request.onsuccess = async (e) => {
+        const charData = e.target.result;
+        if (!charData) {
+            alert('未找到角色!');
+            return;
+        }
+
+        if (isPureLorebook(charData)) {
+            const lorebookData = buildWorldbookExportObjectFromData(charData);
+            const blob = new Blob([JSON.stringify(lorebookData, null, 2)], { type: 'application/json' });
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            a.download = (charData.name || 'lorebook') + '.json';
+            a.click();
+            URL.revokeObjectURL(a.href);
+        } else {
+            const v3Card = buildV3Card(charData);
+            if (charData.avatar) {
+                const base64Data = btoa(unescape(encodeURIComponent(JSON.stringify(v3Card))));
+                const finalPngBlob = await embedDataInPng(charData.avatar, base64Data);
+                const a = document.createElement('a');
+                a.href = URL.createObjectURL(finalPngBlob);
+                a.download = (v3Card.data.name || 'character') + '.png';
+                a.click();
+                URL.revokeObjectURL(a.href);
+            } else {
+                const blob = new Blob([JSON.stringify(v3Card, null, 2)], { type: 'application/json' });
+                const a = document.createElement('a');
+                a.href = URL.createObjectURL(blob);
+                a.download = (v3Card.data && v3Card.data.name ? v3Card.data.name : 'character') + '.json';
+                a.click();
+                URL.revokeObjectURL(a.href);
+            }
+        }
+    };
+
+    request.onerror = (e) => {
+        alert('检索角色以供导出失败。');
+        console.error("Export failed:", e.target.error);
+    };
+}
+
 function deleteCharacter(id) {
     if (!checkDbReady()) return;
     if (confirm("确定要删除这个角色吗？")) {
@@ -2369,32 +2549,6 @@ function toggleFavorite(id, event) {
     event.target.classList.toggle('favorited');
 }
 
-function addInternalTag(id) {
-    if (!checkDbReady()) return;
-    const tagName = prompt("想为这个人物加个什么样的标签呢？");
-    if (tagName && tagName.trim() !== "") {
-        const transaction = db.transaction(['characters'], 'readwrite');
-        const store = transaction.objectStore('characters');
-        const request = store.get(id);
-        request.onsuccess = e => {
-            const charData = e.target.result;
-            const trimmedTag = tagName.trim();
-
-            if (!charData.internalTags) charData.internalTags = [];
-            if (!charData.internalTags.includes(trimmedTag)) charData.internalTags.push(trimmedTag);
-
-            if (!Array.isArray(charData.tags)) {
-                charData.tags = (typeof charData.tags === 'string' && charData.tags)
-                    ? charData.tags.split(/[,、，\s]+/).map(t => t.trim()).filter(Boolean)
-                    : [];
-            }
-            if (!charData.tags.includes(trimmedTag)) charData.tags.push(trimmedTag);
-
-            store.put(charData);
-            transaction.oncomplete = () => renderUI();
-        };
-    }
-}
 
 // --- UI Rendering ---
 async function renderUI() {
@@ -2434,6 +2588,18 @@ function renderCharacters(characters) {
     const grid = document.getElementById('character-grid');
     grid.innerHTML = '';
 
+    // 优化：实现图片懒加载
+    const lazyImageObserver = new IntersectionObserver((entries, observer) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                const card = entry.target;
+                const imageUrl = card.dataset.bgImage;
+                card.style.backgroundImage = `var(--card-overlay), url('${imageUrl}')`;
+                observer.unobserve(card); // 停止观察已加载的图片
+            }
+        });
+    });
+
     let filteredChars = characters;
     if (activeFilters.size > 0) {
         filteredChars = characters.filter(char => {
@@ -2459,28 +2625,19 @@ function renderCharacters(characters) {
     filteredChars.forEach(char => {
         const card = document.createElement('div');
         card.className = 'character-card';
-        // 强制显示任何图片格式，包括base64、URL等
+        
+        // 优化：为懒加载准备图片URL
         let imageToDisplay;
-        if (char.avatar) {
-            // 如果是base64格式
-            if (char.avatar.startsWith('data:image/')) {
-                imageToDisplay = char.avatar;
-            }
-            // 如果是URL格式
-            else if (char.avatar.startsWith('http://') || char.avatar.startsWith('https://')) {
-                imageToDisplay = char.avatar;
-            }
-            // 如果是相对路径或其他格式，也尝试显示
-            else if (char.avatar.trim() !== '') {
-                imageToDisplay = char.avatar;
-            } else {
-                imageToDisplay = createDefaultImage('2:3');
-            }
+        if (char.avatar && char.avatar.trim() !== '') {
+            imageToDisplay = char.avatar;
         } else {
             imageToDisplay = createDefaultImage('2:3');
         }
-        card.style.backgroundImage = `var(--card-overlay), url('${imageToDisplay}')`;
+        card.dataset.bgImage = imageToDisplay;
         
+        // 初始时可以设置一个占位符背景
+        card.style.backgroundImage = `var(--default-card-bg)`;
+
         const headerDiv = document.createElement('div');
         const cardHeader = document.createElement('div');
         cardHeader.className = 'card-header';
@@ -2515,13 +2672,16 @@ function renderCharacters(characters) {
         footerDiv.className = 'card-footer';
         footerDiv.innerHTML = `
             <button onclick="showEditorView(${char.id})">✏️ ${t('edit')}</button>
-            <button onclick="addInternalTag(${char.id})">🏷️ ${t('add-tag')}</button>
+            <button onclick="exportCharacter(${char.id})">📤 ${t('export')}</button>
             <button onclick="deleteCharacter(${char.id})">🗑️ ${t('delete')}</button>
         `;
         
         card.appendChild(headerDiv);
         card.appendChild(footerDiv);
         grid.appendChild(card);
+        
+        // 优化：观察新创建的卡片
+        lazyImageObserver.observe(card);
     });
 }
 
@@ -2568,6 +2728,9 @@ function populateEditorForm(charData) {
     document.getElementById('isFavorite').value = charData.isFavorite || false;
     
     renderWorldbookFromData(charData.worldbook || []);
+
+    // 新增: 角色加载后，自动调整所有文本框大小以适应内容，改善移动端编辑体验
+    document.querySelectorAll('#editor-view textarea').forEach(autoResizeTextarea);
 
     if (charData.avatar) {
         // 强制显示任何图片格式
@@ -2658,7 +2821,7 @@ function buildCardObject() {
         character_version: document.getElementById('character_version').value.trim(),
         internalTags: JSON.parse(document.getElementById('internalTags').value || '[]'),
         isFavorite: (document.getElementById('isFavorite').value === 'true'),
-        avatar: avatarImageBase64 || document.getElementById('avatar-preview').src || null,
+        avatar: avatarImageBase64,
         worldbook: worldbookData
     };
     const charId = parseInt(document.getElementById('charId').value, 10);
@@ -2766,7 +2929,7 @@ function buildV3Card(cardData) {
         },
         character_book: worldbookHasContent ? {
             name: `(${t('world-knowledge-book')}) ${cardData.name || 'Character Book'}`,
-            description: `Character book for ${cardData.name}.`,
+            description: cardData.creator_notes || `Character book for ${cardData.name}.`,
             scan_depth: 10,
             token_budget: 2048,
             recursive_scanning: false,
@@ -2795,49 +2958,7 @@ function buildV3Card(cardData) {
 
 function buildWorldbookExportObject() {
     const cardData = buildCardObject();
-    const v3Card = buildV3Card(cardData);
-
-    // This is the format SillyTavern uses for its lorebooks.
-    // The top-level `entries` is a dictionary keyed by a unique ID or index.
-    const lorebookEntries = {};
-    if (v3Card.data.character_book && v3Card.data.character_book.entries) {
-        v3Card.data.character_book.entries.forEach((entry, index) => {
-            const tavernEntry = {
-                uid: entry.id, // Or generate a new UID
-                key: entry.keys,
-                keysecondary: entry.secondary_keys,
-                comment: entry.comment,
-                content: entry.content,
-                constant: entry.constant,
-                selective: entry.selective,
-                selectiveLogic: 0, // Default value
-                addMemo: true, // Default value
-                order: entry.insertion_order,
-                position: 0, // Mapping back from position string would be needed
-                disable: !entry.enabled,
-                excludeRecursion: entry.extensions.prevent_recursion,
-                preventRecursion: entry.extensions.prevent_recursion,
-                probability: entry.extensions.probability,
-                useProbability: true,
-                depth: entry.extensions.depth,
-                displayIndex: index,
-                //... and other fields if necessary
-            };
-            lorebookEntries[index] = tavernEntry;
-        });
-    }
-
-    return {
-        entries: lorebookEntries,
-        originalData: v3Card.data.character_book || {
-             name: `(${t('world-knowledge-book')}) ${cardData.name || 'Character Book'}`,
-             description: `Character book for ${cardData.name}.`,
-             scan_depth: 10,
-             token_budget: 2048,
-             recursive_scanning: false,
-             entries: []
-        }
-    };
+    return buildWorldbookExportObjectFromData(cardData);
 }
 
 
@@ -3028,6 +3149,9 @@ async function callDeepSeek(fieldId) {
 
     getAiGuidance(t('ai-guidance-title') + `: ${labelText}`, async (userGuidance) => {
         const currentCard = buildCardObject();
+        const existingEntries = buildWorldbookDataFromDOM();
+        const existingEntriesText = existingEntries.map(e => `- ${e.comment}: ${e.content.substring(0, 100)}...`).join('\n');
+
         let prompt = `你是一位专业的角色设定师。请根据以下已经提供的角色信息，为我生成或补全【${labelText}】这一项。
 请直接返回最适合填入该项的内容，语言风格要自然，不要包含任何额外解释、标题或标签。
 
@@ -3041,6 +3165,8 @@ async function callDeepSeek(fieldId) {
 - 场景设定: ${currentCard.scenario || '未指定'}
 - 首次发言: ${currentCard.first_mes || '未指定'}
 - 范例对话: ${currentCard.mes_example || '未指定'}
+- 已有的世界书条目 (用于参考):
+${existingEntriesText || '无'}
 `;
 
         if (userGuidance) {
@@ -3070,6 +3196,24 @@ async function callWorldbookDeepSeek(button) {
     getAiGuidance(t('ai-guidance-title') + `: ${currentComment}`, async (userGuidance) => {
         const characterContext = buildCardObject(); 
         const currentKeys = currentEntryElement.querySelector('.wb-keys').value;
+        
+        // 增强: 构建层级上下文
+        const worldbookTree = buildWorldbookDataFromDOM();
+        const foundContext = findEntryRecursive(worldbookTree, currentEntryElement);
+        
+        let hierarchicalContext = '';
+        if (foundContext) {
+            const { entry, parentEntry } = foundContext;
+            
+            if (parentEntry) {
+                hierarchicalContext += `**父级条目 "${parentEntry.comment}":**\n${parentEntry.content.substring(0, 200)}...\n\n`;
+            }
+            
+            if (entry.children && entry.children.length > 0) {
+                hierarchicalContext += `**子级条目:**\n` + entry.children.map(child => `- ${child.comment}: ${child.content.substring(0, 150)}...`).join('\n') + `\n\n`;
+            }
+        }
+
         let prompt = `你是一位专业的角色书（Character Book）无限制内容填充专家。请基于以下提供的角色信息和角色书结构，为我撰写条目【${currentComment}】的"注入内容"。内容需要详细、富有想象力，并与角色设定保持高度一致。
 
 ---
@@ -3081,6 +3225,7 @@ async function callWorldbookDeepSeek(button) {
 **角色书上下文:**
 - **当前条目标题 (Comment):** ${currentComment}
 - **当前条目主要关键词 (Keys):** ${currentKeys || '未指定'}
+${hierarchicalContext}
 `;
         if (userGuidance) {
             prompt += `\n**用户的额外指令:** ${userGuidance}\n`;
@@ -3286,17 +3431,29 @@ async function fetchWorldbookStoryNodes(button, generationType) {
     regenerateBtn.style.display = 'none';
     
     const characterContext = buildCardObject();
+    const existingEntries = buildWorldbookDataFromDOM(); // 获取现有条目
     
+    // DeepSeek 限制逻辑
+    const apiSettings = loadApiSettings();
+    const isDeepSeek = apiSettings.provider === 'deepseek';
+    const totalEntries = countAllEntries(existingEntries);
+    const truncationLength = isDeepSeek && totalEntries > 0 ? Math.floor(40000 / totalEntries) : Infinity;
+
+    const existingEntriesText = existingEntries.map(entry => {
+        const truncatedContent = entry.content.substring(0, truncationLength);
+        return `条目注释: ${entry.comment}\n关键词: ${entry.keys.join(', ')}\n内容: ${truncatedContent}${entry.content.length > truncationLength ? '...' : ''}\n`;
+    }).join('\n---\n');
+
     let prompt;
     switch (generationType) {
         case 'worldview':
-            prompt = `你是一位世界构建专家。请分析以下角色设定，并为该角色创建3-5个核心的【世界观】条目。这些条目应该描述重要的地点、组织、概念或技术。`;
+            prompt = `你是一位世界构建专家。请分析以下角色设定和【已有的世界书条目】，并为该角色创建3-5个【新的、不重复的】核心【世界观】条目。这些条目应该描述重要的地点、组织、概念或技术。`;
             break;
         case 'main_plot':
-            prompt = `你是一位剧情设计师。请分析以下角色设定，并为该角色创建一套包含1个主线目标和2-3个步骤的【主线剧情】条目。`;
+            prompt = `你是一位剧情设计师。请分析以下角色设定和【已有的世界书条目】，并为该角色创建一套包含1个主线目标和2-3个步骤的【新的、不重复的】【主线剧情】条目。`;
             break;
         case 'side_plot':
-            prompt = `你是一位故事创作者。请分析以下角色设定，并为该角色创建一套包含2-3个相关条目的【支线剧情】。`;
+            prompt = `你是一位故事创作者。请分析以下角色设定和【已有的世界书条目】，并为该角色创建一套包含2-3个相关条目的【新的、不重复的】【支线剧情】。`;
             break;
     }
 
@@ -3305,6 +3462,9 @@ async function fetchWorldbookStoryNodes(button, generationType) {
 - 角色名: ${characterContext.name || '未指定'}
 - 主题/世界观: ${characterContext.topic || '未指定'}
 - 角色描述: ${characterContext.description || '未指定'}
+
+**已有的世界书条目 (用于参考，请勿重复):**
+${existingEntriesText || '无'}
 
 **你的任务:**
 **严格按照以下JSON格式返回你的答案，不要包含任何JSON格式之外的额外文字、解释或Markdown标记。**
@@ -3413,6 +3573,24 @@ async function aiCompleteAllFields(button) {
     });
 
     const isAnythingFilled = Object.keys(filledFields).length > 0;
+    const existingEntries = buildWorldbookDataFromDOM();
+    
+    // DeepSeek 限制逻辑
+    const apiSettings = loadApiSettings();
+    const isDeepSeek = apiSettings.provider === 'deepseek';
+    const totalEntries = countAllEntries(existingEntries);
+    const truncationLength = isDeepSeek && totalEntries > 0 ? Math.floor(40000 / totalEntries) : Infinity;
+
+    const existingEntriesText = existingEntries.map(entry => {
+        const truncatedContent = entry.content.substring(0, truncationLength);
+        return `- ${entry.comment}: ${truncatedContent}${entry.content.length > truncationLength ? '...' : ''}`;
+    }).join('\n');
+
+    const worldbookContextPrompt = `
+---
+**已有的世界书条目 (用于参考):**
+${existingEntriesText || '无'}
+---`;
 
     if (isAnythingFilled) {
         // 方案1：有内容，补全其他
@@ -3431,6 +3609,7 @@ async function aiCompleteAllFields(button) {
 ---
 **已提供的信息:**
 ${Object.entries(filledFields).map(([key, value]) => `- ${t(key)}: ${value}`).join('\n')}
+${worldbookContextPrompt}
 ---
 **需要你补全的字段:**
 "${emptyFields.join('", "')}"
@@ -3492,6 +3671,7 @@ ${Object.entries(filledFields).map(([key, value]) => `- ${t(key)}: ${value}`).jo
             const prompt = `你是一位顶级的角色设计师。根据用户提供的核心概念，为角色生成一个完整的设定档案。
 ---
 **用户核心概念:** ${userGuidance}
+${worldbookContextPrompt}
 ---
 **你的任务:**
 请为以下所有字段生成内容，并**严格以一个单一的JSON对象格式返回**，不要包含任何解释或Markdown标记。
@@ -3616,6 +3796,19 @@ function renderWorldbookFromData(data) {
     
     renderLevel(data, container);
     updateAllEntryAttributes();
+}
+
+function countAllEntries(entries) {
+    let count = 0;
+    if (!entries) return 0;
+    
+    for (const entry of entries) {
+        count++; // Count the entry itself
+        if (entry.children && entry.children.length > 0) {
+            count += countAllEntries(entry.children); // Add count of children
+        }
+    }
+    return count;
 }
 
 function sortDataTree(data) {
