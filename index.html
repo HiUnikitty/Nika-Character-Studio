@@ -666,12 +666,12 @@
                 <option value="deepseek">DeepSeek</option>
                 <option value="gemini">Gemini (直链，需魔法)</option>
                 <option value="gemini-proxy">Gemini (中转代理)</option>
-                <option value="tavern">自定义</option>
+                <option value="local">本地大模型</option>
+                <option value="tavern">自定义 (兼容OpenAI)</option>
             </select>
         </div>
 
         <div id="deepseek-options" class="api-provider-options active">
-            <h4>DeepSeek 设置</h4>
             <div class="field-group">
                 <label for="deepseek-api-key">API Key</label>
                 <input type="password" id="deepseek-api-key" placeholder="输入你的 DeepSeek API Key">
@@ -679,7 +679,6 @@
         </div>
 
         <div id="gemini-options" class="api-provider-options">
-            <h4>Gemini 设置</h4>
             <div class="field-group">
                 <label for="gemini-api-key">API Key</label>
                 <input type="password" id="gemini-api-key" placeholder="输入你的 Google AI Studio API Key">
@@ -694,7 +693,6 @@
         </div>
 
         <div id="gemini-proxy-options" class="api-provider-options">
-            <h4>Gemini (中转代理) 设置</h4>
             <div class="field-group">
                 <label for="gemini-proxy-endpoint">代理 Endpoint URL</label>
                 <input type="text" id="gemini-proxy-endpoint" placeholder="例如: https://mydomain.com/v1beta/models">
@@ -713,17 +711,28 @@
             <p class="help-text">用于连接 Cloudflare Worker 等自定义反向代理。Endpoint URL 应为不包含模型名称的完整路径。</p>
         </div>
 
+        <div id="local-options" class="api-provider-options">
+            <div class="field-group">
+                <label for="local-api-endpoint">API URL</label>
+                <input type="text" id="local-api-endpoint" placeholder="例如: http://localhost:1234/v1">
+            </div>
+            <p class="help-text">用于连接本地部署的、兼容OpenAI API标准的大语言模型，例如 LM Studio, Ollama 等。通常不需要API Key，模型名称可任意填写或留空。</p>
+        </div>
+
         <div id="tavern-options" class="api-provider-options">
-            <h4>自定义设置</h4>
             <div class="field-group">
-                <label for="tavern-api-endpoint">API Endpoint URL</label>
-                <input type="text" id="tavern-api-endpoint" placeholder="例如: http://127.0.0.1:5000/v1/chat/completions">
+                <label for="tavern-api-endpoint">API URL</label>
+                <input type="text" id="tavern-api-endpoint" placeholder="http://api.xxx.com/v1">
             </div>
             <div class="field-group">
-                <label for="tavern-api-key">API Key (可选)</label>
-                <input type="password" id="tavern-api-key" placeholder="如果需要，输入 API Key">
+                <label for="tavern-api-key">API Key</label>
+                <input type="password" id="tavern-api-key" placeholder="输入 API Key">
             </div>
-            <p class="help-text">用于连接本地或远程的、兼容 OpenAI格式/本地部署的 API。</p>
+            <div class="field-group">
+                <label for="tavern-model">模型名称</label>
+                <input type="text" id="tavern-model" placeholder="例如: gpt-3.5-turbo">
+            </div>
+            <p class="help-text">用于连接远程的、兼容OpenAI格式的API服务。</p>
         </div>
 
         <div class="modal-actions">
@@ -1812,10 +1821,14 @@ function initializeApiSettingsModal() {
                 apiKey: document.getElementById('gemini-proxy-api-key').value.trim(),
                 model: document.getElementById('gemini-proxy-model').value
             },
-            tavern: {
-                endpoint: document.getElementById('tavern-api-endpoint').value.trim(),
-                apiKey: document.getElementById('tavern-api-key').value.trim()
-            }
+        tavern: {
+            endpoint: document.getElementById('tavern-api-endpoint').value.trim(),
+            apiKey: document.getElementById('tavern-api-key').value.trim(),
+            model: document.getElementById('tavern-model').value.trim() || ''   // new field
+        },
+        local: {
+            endpoint: document.getElementById('local-api-endpoint').value.trim()
+        }
         };
         localStorage.setItem('apiSettings', JSON.stringify(settings));
         alert('API 设置已保存！');
@@ -1829,7 +1842,8 @@ function loadApiSettings() {
         deepseek: { apiKey: '' },
         gemini: { apiKey: '', model: 'gemini-2.5-flash' },
         'gemini-proxy': { endpoint: '', apiKey: '', model: 'gemini-2.5-flash' },
-        tavern: { endpoint: '', apiKey: '' }
+        tavern: { endpoint: '', apiKey: '' },
+        local: { endpoint: '' }
     };
 
     // Migrate old "custom" settings if they exist
@@ -1854,8 +1868,10 @@ function loadApiSettings() {
     document.getElementById('gemini-proxy-endpoint').value = settings['gemini-proxy']?.endpoint || '';
     document.getElementById('gemini-proxy-api-key').value = settings['gemini-proxy']?.apiKey || '';
     document.getElementById('gemini-proxy-model').value = settings['gemini-proxy']?.model || 'gemini-2.5-flash';
-    document.getElementById('tavern-api-endpoint').value = settings.tavern?.endpoint || '';
-    document.getElementById('tavern-api-key').value = settings.tavern?.apiKey || '';
+        document.getElementById('tavern-api-endpoint').value = settings.tavern?.endpoint || '';
+        document.getElementById('tavern-api-key').value = settings.tavern?.apiKey || '';
+        document.getElementById('tavern-model').value = settings.tavern?.model || '';
+        document.getElementById('local-api-endpoint').value = settings.local?.endpoint || '';
 
     // Trigger change to show correct options
     document.getElementById('api-provider-selector').dispatchEvent(new Event('change'));
@@ -3098,27 +3114,40 @@ async function callApi(prompt, button) {
                 };
                 break;
 
-            case 'tavern':
-                if (!apiSettings.tavern.endpoint) throw new Error('Tavern API Endpoint is missing.');
-                
-                let tavernEndpoint = apiSettings.tavern.endpoint;
-                if (!tavernEndpoint.startsWith('http')) tavernEndpoint = 'https://' + tavernEndpoint;
-                requestUrl = tavernEndpoint;
+        case 'local':
+        case 'tavern':
+            const isLocal = provider === 'local';
+            const providerSettings = apiSettings[provider];
+            const endpoint = providerSettings.endpoint;
 
-                const tavernHeaders = { 'Content-Type': 'application/json' };
-                if (apiSettings.tavern.apiKey) {
-                    tavernHeaders['Authorization'] = `Bearer ${apiSettings.tavern.apiKey}`;
-                }
-                requestOptions = {
-                    method: 'POST',
-                    headers: tavernHeaders,
-                    body: JSON.stringify({
-                        model: "custom-model",
-                        messages: [{ "role": "user", "content": finalPrompt }],
-                        stream: false
-                    })
-                };
-                break;
+            if (!endpoint) throw new Error(`API Endpoint for ${provider} is missing.`);
+
+            let finalEndpoint = endpoint;
+            if (finalEndpoint.endsWith('/v1')) {
+                finalEndpoint += '/chat/completions';
+            }
+            if (!finalEndpoint.startsWith('http')) {
+                // Local endpoints are http, not https
+                finalEndpoint = (isLocal ? 'http://' : 'https://') + finalEndpoint;
+            }
+            requestUrl = finalEndpoint;
+
+            const headers = { 'Content-Type': 'application/json' };
+            // Only add auth header for tavern if key exists
+            if (!isLocal && providerSettings.apiKey) {
+                headers['Authorization'] = `Bearer ${providerSettings.apiKey}`;
+            }
+
+            requestOptions = {
+                method: 'POST',
+                headers: headers,
+                body: JSON.stringify({
+                    model: providerSettings.model || 'local-model', // For local, model name is often ignored
+                    messages: [{ "role": "user", "content": finalPrompt }],
+                    stream: false
+                })
+            };
+            break;
 
             default:
                 throw new Error(`Unknown API provider: ${provider}`);
