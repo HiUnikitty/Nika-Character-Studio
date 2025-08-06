@@ -2961,6 +2961,34 @@ function buildWorldbookExportObject() {
     return buildWorldbookExportObjectFromData(cardData);
 }
 
+function injectEntry(entry) {
+  const userPromptTextarea = document.getElementById('user_prompt');
+  const comment = entry.comment;
+  const content = entry.content;
+  let newText;
+
+  if (content.trim().length > 0) {
+    newText = `[${comment}：${content}]`;
+  } else {
+    newText = `[${comment}]`;
+  }
+
+  // 获取光标位置
+  const startPos = userPromptTextarea.selectionStart;
+  const endPos = userPromptTextarea.selectionEnd;
+
+  // 插入文本
+  const textBefore = userPromptTextarea.value.substring(0, startPos);
+  const textAfter = userPromptTextarea.value.substring(endPos, userPromptTextarea.value.length);
+  userPromptTextarea.value = textBefore + newText + textAfter;
+
+  // 恢复光标位置
+  userPromptTextarea.selectionStart = startPos + newText.length;
+  userPromptTextarea.selectionEnd = startPos + newText.length;
+
+  // 聚焦到文本框
+  userPromptTextarea.focus();
+}
 
 // ====================================================================================
 // --- AI HELPER FUNCTIONS ---
