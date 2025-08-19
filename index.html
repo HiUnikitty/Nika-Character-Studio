@@ -2515,14 +2515,32 @@ async function exportCharacter(id) {
             URL.revokeObjectURL(a.href);
         } else {
             const v3Card = buildV3Card(charData);
-            if (charData.avatar) {
-                const base64Data = btoa(unescape(encodeURIComponent(JSON.stringify(v3Card))));
-                const finalPngBlob = await embedDataInPng(charData.avatar, base64Data);
-                const a = document.createElement('a');
-                a.href = URL.createObjectURL(finalPngBlob);
-                a.download = (v3Card.data.name || 'character') + '.png';
-                a.click();
-                URL.revokeObjectURL(a.href);
+            // 检查头像是否有效（不为空且不是无效值）
+            const hasValidAvatar = charData.avatar && 
+                                 charData.avatar.trim() !== '' && 
+                                 charData.avatar !== 'none' && 
+                                 charData.avatar !== 'null' && 
+                                 charData.avatar !== 'undefined';
+            
+            if (hasValidAvatar) {
+                try {
+                    const base64Data = btoa(unescape(encodeURIComponent(JSON.stringify(v3Card))));
+                    const finalPngBlob = await embedDataInPng(charData.avatar, base64Data);
+                    const a = document.createElement('a');
+                    a.href = URL.createObjectURL(finalPngBlob);
+                    a.download = (v3Card.data.name || 'character') + '.png';
+                    a.click();
+                    URL.revokeObjectURL(a.href);
+                } catch (error) {
+                    console.error('PNG导出失败，回退到JSON:', error);
+                    // 如果PNG导出失败，回退到JSON导出
+                    const blob = new Blob([JSON.stringify(v3Card, null, 2)], { type: 'application/json' });
+                    const a = document.createElement('a');
+                    a.href = URL.createObjectURL(blob);
+                    a.download = (v3Card.data && v3Card.data.name ? v3Card.data.name : 'character') + '.json';
+                    a.click();
+                    URL.revokeObjectURL(a.href);
+                }
             } else {
                 const blob = new Blob([JSON.stringify(v3Card, null, 2)], { type: 'application/json' });
                 const a = document.createElement('a');
