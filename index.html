@@ -118,6 +118,20 @@
     #library-view .tag.type-special { background-color: var(--secondary-color); border-color: var(--primary-color); }
     #library-view .tag:hover { opacity: 0.8; }
     #library-view .tag.active { box-shadow: 0 0 8px 2px var(--primary-color); transform: scale(1.05); }
+    
+    /* --- 资源获取渠道区域样式 --- */
+    #library-view .resource-area { background: rgba(0,0,0,0.15); padding: 20px; border-radius: 10px; margin-bottom: 25px; border: 1px solid rgba(255,255,255,0.1); }
+    #library-view .resource-area h3 { margin-bottom: 20px; color: var(--text-color); font-size: 20px; text-align: center; text-shadow: 0 0 5px var(--primary-color); }
+    #library-view .resource-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; }
+    #library-view .resource-category { background: rgba(0,0,0,0.3); padding: 15px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.05); transition: all 0.3s ease; }
+    #library-view .resource-category:hover { border-color: var(--primary-color); box-shadow: 0 0 10px rgba(230, 126, 34, 0.3); transform: translateY(-2px); }
+    #library-view .resource-category h4 { margin-bottom: 15px; color: var(--primary-color); font-size: 16px; text-align: center; border-bottom: 1px solid rgba(230, 126, 34, 0.3); padding-bottom: 8px; }
+    #library-view .resource-links { display: flex; flex-direction: column; gap: 8px; }
+    #library-view .resource-link { display: flex; align-items: center; gap: 10px; padding: 8px 12px; background: rgba(255,255,255,0.05); border-radius: 6px; color: var(--text-color); text-decoration: none; transition: all 0.2s ease; border: 1px solid transparent; }
+    #library-view .resource-link:hover { background: rgba(230, 126, 34, 0.1); border-color: var(--primary-color); color: white; transform: translateX(5px); }
+    #library-view .resource-icon { font-size: 18px; width: 24px; text-align: center; }
+    #library-view .resource-name { font-size: 14px; font-weight: 500; }
+    
     #library-view .character-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px; }
 
     #library-view .character-card {
@@ -804,7 +818,92 @@
         <h3>标签过滤</h3>
         <div id="tag-container" class="tag-group"></div>
       </div>
+      
       <div id="character-grid" class="character-grid"></div>
+      <br>
+      <!-- 资源获取渠道区域 -->
+      <div class="resource-area">
+        <h3 id="resource-title">📦 资源箱</h3>
+        <div class="resource-grid">
+          <!-- 英文卡资源 -->
+          <div class="resource-category">
+            <h4 id="english-cards-title">🌍 英文卡资源</h4>
+            <div class="resource-links">
+              <a href="https://chub.ai/" target="_blank" class="resource-link">
+                <span class="resource-icon">🎭</span>
+                <span class="resource-name">Chub.ai</span>
+              </a>
+              <a href="https://character-tavern.com/" target="_blank" class="resource-link">
+                <span class="resource-icon">🍺</span>
+                <span class="resource-name">Character Tavern</span>
+              </a>
+              <a href="https://soulkyn.com/" target="_blank" class="resource-link">
+                <span class="resource-icon">💫</span>
+                <span class="resource-name">Soulkyn</span>
+              </a>
+              <a href="https://aicharactercards.com" target="_blank" class="resource-link">
+                <span class="resource-icon">🃏</span>
+                <span class="resource-name">AI Character Cards</span>
+              </a>
+              <a href="https://janitorai.com" target="_blank" class="resource-link">
+                <span class="resource-icon">🤖</span>
+                <span class="resource-name">JanitorAI</span>
+              </a>
+              <a href="https://pygmalion.chat" target="_blank" class="resource-link">
+                <span class="resource-icon">🏛️</span>
+                <span class="resource-name">Pygmalion</span>
+              </a>
+              <a href="https://realm.risuai.net" target="_blank" class="resource-link">
+                <span class="resource-icon">🌟</span>
+                <span class="resource-name">RisuAI Realm</span>
+              </a>
+            </div>
+          </div>
+          
+
+          
+          <!-- 社区资源 -->
+          <div class="resource-category">
+            <h4 id="community-title">💬 社区资源</h4>
+            <div class="resource-links">
+              <a href="https://discord.com/invite/odysseia" target="_blank" class="resource-link">
+                <span class="resource-icon">🧠</span>
+                <span class="resource-name">类脑社区</span>
+              </a>
+              <a href="https://discord.com/invite/elysianhorizon" target="_blank" class="resource-link">
+                <span class="resource-icon">🌅</span>
+                <span class="resource-name">旅程社区</span>
+              </a>
+            </div>
+          </div>
+          
+          <!-- 预设资源 -->
+          <div class="resource-category">
+            <h4 id="presets-title">⚙️ 预设资源</h4>
+            <div class="resource-links">
+              <a href="https://share.weiyun.com/sqHAyK2L" target="_blank" class="resource-link">
+                <span class="resource-icon">💎</span>
+                <span class="resource-name">Gemini 推荐</span>
+              </a>
+              <a href="https://share.weiyun.com/p94ZyMU7" target="_blank" class="resource-link">
+                <span class="resource-icon">🔍</span>
+                <span class="resource-name">DeepSeek 推荐</span>
+              </a>
+            </div>
+          </div>
+          
+          <!-- 教程资源 -->
+          <div class="resource-category">
+            <h4 id="tutorials-title">📖 教程资源</h4>
+            <div class="resource-links">
+              <a href="https://stagedog.github.io/%E9%9D%92%E7%A9%BA%E8%8E%89/%E5%B7%A5%E5%85%B7%E7%BB%8F%E9%AA%8C/%E5%AE%9E%E6%97%B6%E7%BC%96%E5%86%99%E5%89%8D%E7%AB%AF%E7%95%8C%E9%9D%A2%E6%88%96%E8%84%9A%E6%9C%AC/%E7%8E%AF%E5%A2%83%E5%87%86%E5%A4%87/" target="_blank" class="resource-link">
+                <span class="resource-icon">🎨</span>
+                <span class="resource-name">Cursor 前端美化教程</span>
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -1030,7 +1129,7 @@ const translations = {
         'entry-comment': '条目注释',
         'entry-comment-placeholder': '条目注释',
         'main-keys': '词条',
-        'main-keys-placeholder': '例如: 誓约胜利之剑, Excalibur 或者 世界设定剧情主线（要开启高级设定“恒定注入”）之类',
+        'main-keys-placeholder': '例如: 誓约胜利之剑, Excalibur 或者 世界设定等等（需开启高级设定-恒定注入）',
         'secondary-keys': '次要关键词',
         'secondary-keys-placeholder': '例如: 剑, 武器',
         'injection-content': '内容',
@@ -2652,7 +2751,28 @@ function renderCharacters(characters) {
     }
 
     if (filteredChars.length === 0) {
-        grid.innerHTML = `<p style="grid-column: 1 / -1; text-align: center;">${t('no-characters-found')}</p>`;
+        grid.innerHTML = `
+                <div class="create-character-placeholder" style="grid-column: 1 / -1; display: flex; justify-content: center; align-items: center; min-height: 200px;">
+                    <button class="create-character-btn" onclick="createNewCharacter()" style="
+                        width: 150px;
+                        height: 150px;
+                        border: 2px dashed #ccc;
+                        background: transparent;
+                        border-radius: 8px;
+                        cursor: pointer;
+                        display: flex;
+                        flex-direction: column;
+                        align-items: center;
+                        justify-content: center;
+                        font-size: 48px;
+                        color: #999;
+                        transition: all 0.3s ease;
+                    " onmouseover="this.style.borderColor='#e67e22'; this.style.color='#e67e22';" onmouseout="this.style.borderColor='#ccc'; this.style.color='#999';">
+                        <div>+</div>
+                        <div style="font-size: 14px; margin-top: 8px;">${t('create-new-character')}</div>
+                    </button>
+                </div>
+            `;
         return;
     }
 
@@ -4317,6 +4437,11 @@ async function extractDataFromPng(arrayBuffer) {
         i += 12 + length;
     }
     throw new Error('在PNG中未找到角色数据。');
+}
+
+// 创建新角色函数，与顶部按钮功能相同
+function createNewCharacter() {
+    showEditorView();
 }
 
 </script>
