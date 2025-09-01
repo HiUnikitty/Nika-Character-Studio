@@ -940,7 +940,7 @@
             <div>
                 <button id="translate-all-btn" onclick="translateAllFields(this)" style="background-color: #e67e22; color: white; padding: 5px 15px; border-radius: 5px; margin-right: 10px;">🌐 一键翻译</button>
                 <button id="undo-translate-btn" style="display: none; background-color: #d35400; color: white; padding: 8px 15px; border-radius: 5px; margin-right: 10px;" onclick="undoTranslateAllFields(this)">撤销翻译</button>
-                <button id="complete-all-btn" onclick="aiCompleteAllFields(this)">🔮 一键补全所有</button>
+                <button id="complete-all-btn" onclick="aiCompleteAllFields(this)">🔮 一键生成角色</button>
             </div>
           </div>
           <div class="field-group">
@@ -953,7 +953,7 @@
                       <label for="name">名字</label>
                       <div style="display: flex; align-items: center; gap: 5px;">
                           <input id="name" placeholder="例：Monika" style="flex-grow: 1;" />
-                          <button class="name-generator-btn" onclick="generateAiNames(this)" title="AI 生成多个名字供选择">🔮</button>
+                          <button class="name-generator-btn" onclick="generateAiNames(this)" title="AI 生成多个名字供选择">🎲</button>
                       </div>
                   </div>
                   <div style="flex:1"><label for="gender">性别</label><input id="gender" placeholder="例：女" /></div>
@@ -987,7 +987,7 @@
           </div>
           <div class="field-group">
             <label for="scenario">场景设定</label>
-            <textarea id="scenario" rows="3" placeholder="角色与用户所处的环境。例：{{char}}和{{user}}在黄昏的教室里。"></textarea>
+            <textarea id="scenario" rows="3" placeholder="角色与用户所处的环境。例：在黄昏的教室里。"></textarea>
              <button class="ai-button" onclick="callDeepSeek('scenario')">🔮 AI 帮我写</button>
              <button class="ai-undo-button" onclick="undoAiCompletion(this)">↩️ 撤销</button>
           </div>
@@ -1000,10 +1000,14 @@
           <div class="field-group">
             <label for="mes_example">示例消息</label>
             <textarea id="mes_example" rows="6" placeholder="提供几段对话范例，AI会模仿其风格。极为重要！
-例如：
-<START>（用于每次对话的开头）
-{{user}}: 你好。
-{{char}}: (微笑着向你点头) 你好，{{user}}。找我有什么事吗？"></textarea>
+            例如：
+            <START>（用于每次对话的开头）
+            {{user}}: 你好。
+            {{char}}: (微笑着向你点头) 你好，{{user}}。找我有什么事吗？
+            <START>
+            {{user}}: 再见。
+            {{char}}: (微笑着向你挥手) 再见，{{user}}。"
+            ></textarea>
             <button class="ai-button" onclick="callDeepSeek('mes_example')">🔮 AI 帮我写</button>
             <button class="ai-undo-button" onclick="undoAiCompletion(this)">↩️ 撤销</button>
           </div>
@@ -1032,7 +1036,7 @@
 
           <div style="display: flex; justify-content: space-between; align-items: center;">
              <h3 class="section-title" id="world-knowledge-book-title">角色书/世界书</h3>
-             <button id="ai-lorebook-generator-btn" onclick="openWorldbookAiModal(this)" style="background-color: var(--ai-button-bg); color: white; padding: 8px 15px; border-radius: 5px;">🔮 AI生成参考条目</button>
+             <button id="ai-lorebook-generator-btn" onclick="openWorldbookAiModal(this)" style="background-color: var(--ai-button-bg); color: white; padding: 8px 15px; border-radius: 5px;">🔮 一键生成世界书</button>
           </div>
           <p class="help-text" id="worldbook-help-text">
               </p>
@@ -1081,7 +1085,7 @@ const translations = {
         'ai-help-write': '🔮 AI 帮我写',
         'undo': '↩️ 撤销',
         'generate-companion': '🔮 生成虚拟伴侣',
-        'complete-all': '🔮 一键补全所有',
+        'complete-all': '🔮 一键生成角色',
         'translate-all': '🌐 一键翻译',
         'undo-translation': '撤销翻译',
         
@@ -1113,7 +1117,7 @@ const translations = {
         'first-message': '问候消息',
         'first-message-placeholder': '角色出场时说的第一句话。',
         'message-example': '示例消息',
-        'message-example-placeholder': '提供几段对话范例，AI会模仿其风格。极为重要：\n<START>（每回对话都以<START>开头）\n{{user}}: 你好。\n{{char}}: (微笑着向你点头) 你好，{{user}}。找我有什么事吗？',
+        'message-example-placeholder': 'AI会模仿其风格。极为重要。范例：\n<START>\n{{user}}: 你好。\n{{char}}: 你好，{{user}}。找我有什么事吗？\n（每回都以<START>开头。user指你，char角色）',
         'advanced-settings': '高级设定',
         'post-history-instructions': '后期指令',
         'post-history-instructions-placeholder': '酒馆用它来修改AI的回复格式。例如，要让{{char}}的动作都用星号包围，可以写：将{{char}}的所有动作和叙述都放在星号（*）之间。',
@@ -3166,7 +3170,11 @@ function toggleAiButtonText(isLover) {
 }
 
 function getLoverPromptPrefix() {
-    return `重要指令：你是一个小说角色创作家，你要生成的角色把读者当恋人或者密友，并且读者的代词为"{{user}}"，角色的代词为"{{char}}，生成相关角色的信息\n\n`;
+    return `
+    重要指令：你是一个小说角色创作家，你要塑造的角色把读者当恋人或者密友，并且读者的代词为"{{user}}"，角色的代词为"{{char}}，在输出中已知名字时，必须输出为代词，生成相关角色的信息\n\n
+    注意：你不是角色
+     **Avoid** writing {{char}}'s words and thoughts
+    `;
 }
 
 // 新增: 撤销AI补全的功能
@@ -3362,6 +3370,10 @@ async function callDeepSeek(fieldId) {
 - 范例对话: ${currentCard.mes_example || '未指定'}
 - 已有的世界书条目 (用于参考):
 ${existingEntriesText || '无'}
+
+注意：我的代词为"{{user}}"，角色的代词为"{{char}}，在输出中已知名字时，必须输出为代词\n\n
+特别注意：你不是角色
+**Avoid** writing {{char}}'s words and thoughts
 `;
 
         if (userGuidance) {
