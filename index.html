@@ -2436,7 +2436,12 @@ function downloadCharacter() {
     const blob = new Blob([JSON.stringify(v3Card, null, 2)], { type: 'application/json' });
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
-    a.download = (v3Card.data && v3Card.data.name ? v3Card.data.name : 'character') + '.json';
+    // 版本控制：文件名包含版本号
+    let filename = v3Card.data && v3Card.data.name ? v3Card.data.name : 'character';
+    if (v3Card.data && v3Card.data.character_version && v3Card.data.character_version.trim() !== '') {
+        filename += '-' + v3Card.data.character_version.trim();
+    }
+    a.download = filename + '.json';
     a.click();
     URL.revokeObjectURL(a.href);
 }
@@ -2454,7 +2459,12 @@ async function downloadCharacterAsPng() {
     const finalPngBlob = await embedDataInPng(imageToUse, base64Data);
     const a = document.createElement('a');
     a.href = URL.createObjectURL(finalPngBlob);
-    a.download = (v3Card.data.name || 'character') + '.png';
+    // 版本控制：PNG文件名包含版本号
+    let filename = v3Card.data.name || 'character';
+    if (v3Card.data.character_version && v3Card.data.character_version.trim() !== '') {
+        filename += ' ' + v3Card.data.character_version.trim();
+    }
+    a.download = filename + '.png';
     a.click();
     URL.revokeObjectURL(a.href);
 }
@@ -2498,20 +2508,80 @@ function saveCharacter() {
     
     cardForDb.lastUsed = Date.now(); // 确保更新的是干净对象的时间戳
     
-    // 将清理过的、不含DOM元素的对象存入数据库
-    const request = store.put(cardForDb);
-
-    request.onsuccess = () => {
-        alert(t('character-saved', { name: card.name }));
-        // 强制刷新UI以确保头像正确显示
-        setTimeout(() => {
-            showLibraryView();
-        }, 100);
-    };
+    // 版本控制逻辑：检查是否需要创建版本化副本
+    if (cardForDb.id) {
+        // 编辑现有角色时，检查版本号是否变化
+        const getRequest = store.get(cardForDb.id);
+        getRequest.onsuccess = (e) => {
+            const existingChar = e.target.result;
+            const currentVersion = cardForDb.character_version || '';
+            const previousVersion = existingChar ? (existingChar.character_version || '') : '';
+            
+            if (existingChar && currentVersion !== previousVersion && currentVersion.trim() !== '') {
+                // 版本号发生变化且新版本号不为空，创建版本化副本
+                const versionedCopy = { ...cardForDb };
+                delete versionedCopy.id; // 删除ID，让数据库自动分配新ID
+                versionedCopy.lastUsed = Date.now();
+                
+                // 保存版本化副本（新版本）
+                const addVersionRequest = store.add(versionedCopy);
+                addVersionRequest.onsuccess = () => {
+                    console.log(`已创建版本化副本: ${card.name}-${currentVersion}`);
+                    alert(t('character-saved', { name: card.name }));
+                    // 强制刷新UI以确保头像正确显示
+                    setTimeout(() => {
+                        showLibraryView();
+                    }, 100);
+                };
+                addVersionRequest.onerror = (e) => {
+                    console.error('创建版本化副本失败:', e.target.error);
+                    alert(t('save-failed'));
+                };
+            } else {
+                // 版本号没有变化，正常更新原有记录
+                const putRequest = store.put(cardForDb);
+                putRequest.onsuccess = () => {
+                    alert(t('character-saved', { name: card.name }));
+                    // 强制刷新UI以确保头像正确显示
+                    setTimeout(() => {
+                        showLibraryView();
+                    }, 100);
+                };
+                putRequest.onerror = (e) => {
+                    alert(t('save-failed'));
+                    console.error(currentLanguage === 'zh' ? "保存失败:" : "Save failed:", e.target.error);
+                };
+            }
+        };
+        getRequest.onerror = (e) => {
+            console.error('获取现有角色数据失败:', e.target.error);
+            // 如果获取失败，直接保存
+            const request = store.put(cardForDb);
+            request.onsuccess = () => {
+                alert(t('character-saved', { name: card.name }));
+                setTimeout(() => {
+                    showLibraryView();
+                }, 100);
+            };
             request.onerror = (e) => {
+                alert(t('save-failed'));
+                console.error(currentLanguage === 'zh' ? "保存失败:" : "Save failed:", e.target.error);
+            };
+        };
+    } else {
+        // 新建角色，直接保存
+        const request = store.put(cardForDb);
+        request.onsuccess = () => {
+            alert(t('character-saved', { name: card.name }));
+            setTimeout(() => {
+                showLibraryView();
+            }, 100);
+        };
+        request.onerror = (e) => {
             alert(t('save-failed'));
             console.error(currentLanguage === 'zh' ? "保存失败:" : "Save failed:", e.target.error);
         };
+    }
 }
 
 function isPureLorebook(char) {
@@ -2631,7 +2701,12 @@ async function exportCharacter(id) {
                     const finalPngBlob = await embedDataInPng(charData.avatar, base64Data);
                     const a = document.createElement('a');
                     a.href = URL.createObjectURL(finalPngBlob);
-                    a.download = (v3Card.data.name || 'character') + '.png';
+                    // 版本控制：PNG文件名包含版本号
+                    let filename = v3Card.data.name || 'character';
+                    if (v3Card.data.character_version && v3Card.data.character_version.trim() !== '') {
+                        filename += ' ' + v3Card.data.character_version.trim();
+                    }
+                    a.download = filename + '.png';
                     a.click();
                     URL.revokeObjectURL(a.href);
                 } catch (error) {
@@ -2640,7 +2715,12 @@ async function exportCharacter(id) {
                     const blob = new Blob([JSON.stringify(v3Card, null, 2)], { type: 'application/json' });
                     const a = document.createElement('a');
                     a.href = URL.createObjectURL(blob);
-                    a.download = (v3Card.data && v3Card.data.name ? v3Card.data.name : 'character') + '.json';
+                    // 版本控制：JSON文件名包含版本号
+                    let filename = (v3Card.data && v3Card.data.name ? v3Card.data.name : 'character');
+                    if (v3Card.data && v3Card.data.character_version && v3Card.data.character_version.trim() !== '') {
+                        filename += ' ' + v3Card.data.character_version.trim();
+                    }
+                    a.download = filename + '.json';
                     a.click();
                     URL.revokeObjectURL(a.href);
                 }
@@ -2648,7 +2728,12 @@ async function exportCharacter(id) {
                 const blob = new Blob([JSON.stringify(v3Card, null, 2)], { type: 'application/json' });
                 const a = document.createElement('a');
                 a.href = URL.createObjectURL(blob);
-                a.download = (v3Card.data && v3Card.data.name ? v3Card.data.name : 'character') + '.json';
+                // 版本控制：JSON文件名包含版本号
+                let filename = (v3Card.data && v3Card.data.name ? v3Card.data.name : 'character');
+                if (v3Card.data && v3Card.data.character_version && v3Card.data.character_version.trim() !== '') {
+                    filename += ' ' + v3Card.data.character_version.trim();
+                }
+                a.download = filename + '.json';
                 a.click();
                 URL.revokeObjectURL(a.href);
             }
@@ -2801,7 +2886,12 @@ function renderCharacters(characters) {
         cardHeader.className = 'card-header';
         
         const h2 = document.createElement('h2');
-        h2.textContent = char.name || '无名角色';
+        // 版本控制：显示角色名 版本号格式
+        let displayName = char.name || '无名角色';
+        if (char.character_version && char.character_version.trim() !== '') {
+            displayName += ' ' + char.character_version.trim();
+        }
+        h2.textContent = displayName;
         
         const favButton = document.createElement('button');
         favButton.className = `favorite-btn ${char.isFavorite ? 'favorited' : ''}`;
