@@ -1696,7 +1696,7 @@
           'personality-placeholder': '详细性格特质。',
           'ai-settings': 'AI设定',
           'system-prompt': '系统设定',
-          'system-prompt-placeholder': '小预设，聊天时会次次直接作为头部发给AI。\n\n注意：导入并使用预设会使其完全失效',
+          'system-prompt-placeholder': '小预设，聊天时会次次直接作为头部发给AI。\n\n注意：导入并使用预设或填问候、示例消息会使其失效',
           scenario: '环境设定',
           'scenario-placeholder': '角色与用户所处的环境与互动内容，很重要',
           'first-message': '问候消息',
@@ -2069,7 +2069,7 @@
           'template-parentheses-mode':
             '[SYSTEM]: When generating a response, use parentheses to describe {{char}}\'s actions, expressions, and internal thoughts. Dialogue should remain outside of the parentheses. Example: "What are you doing here?" (She raises an eyebrow, a hint of suspicion in her eyes as she crosses her arms).',
           'template-status-bar':
-            "[SYSTEM]: At the end of every response, you must include a status bar that displays {{char}}'s current key stats. The status bar should be enclosed in code blocks (```). The format is: | Health: [value] | Sanity: [value] | Affection for {{user}}: [value] | Location: [value] |. You must update these values logically based on the conversation.",
+            "[SYSTEM]: At the end of every response, you must include a status bar that displays {{char}}'s current key stats. The status bar should be enclosed in code blocks tree `. The format is: | Health: [value] | Sanity: [value] | Affection for {{user}}: [value] | Location: [value] |. You must update these values logically based on the conversation.",
           'template-third-person':
             '[SYSTEM]: Write all responses from a third-person narrative perspective. Do not use "I" or "me" when referring to {{char}}. Describe {{char}}\'s actions, speech, and thoughts as a narrator would. Always refer to the character by their name, {{char}}.',
           'template-json-mode':
@@ -2711,7 +2711,7 @@ ${JSON.stringify({ fields: textObject, worldbook: wbTextObject }, null, 2)}
         'game-style': {
           name: '美观状态栏',
           content:
-            '[系统指令]: 结合历史聊天记录和{{user}}发送的消息输出美化过的对话完整三合一html代码，包含详细状态栏,代码不能超过100行，必须用代码块(```)包裹，每次只能输出代码',
+            '[系统指令]: 结合历史聊天记录和{{user}}发送的消息输出美化过的对话完整三合一html代码，包含详细状态栏,代码不能超过100行，必须用代码块三个`包裹，每次只能输出代码',
         },
         'options-mode': {
           name: '选项模式',
@@ -2752,7 +2752,7 @@ ${JSON.stringify({ fields: textObject, worldbook: wbTextObject }, null, 2)}
 
       // 从系统设定中解析指令
       function parseInstructionsFromSystemPrompt(systemPrompt) {
-        const regex = /\n\n<(\w+模式|状态栏|指令)>([\s\S]*?)<\/(\w+模式|状态栏|指令)>/g;
+        const regex = /\n\n《([^\u300b]+)》指令([\s\S]*?)《\/\1》/g;
         const instructions = [];
         let match;
 
@@ -2775,18 +2775,13 @@ ${JSON.stringify({ fields: textObject, worldbook: wbTextObject }, null, 2)}
       function embedInstructionsInSystemPrompt(systemPrompt, instructions) {
         // 先移除现有的指令标签（包含前面的两个换行符）
         let cleanSystemPrompt = systemPrompt
-          .replace(/\n\n<(\w+模式|状态栏|指令)>[\s\S]*?<\/(\w+模式|状态栏|指令)>/g, '')
+          .replace(/\n\n《[^\u300b]+》指令[\s\S]*?《\/[^\u300b]+》/g, '')
           .trim();
 
-        // 添加新的指令，确保HTML内容不会污染页面
+        // 添加新的指令，保持原始内容不转义
         const instructionTags = instructions.map(inst => {
-          // 检查指令内容是否包含HTML标签
-          let content = inst.content;
-          if (/<[^>]+>/.test(content)) {
-            // 如果包含HTML标签，将其包装在代码块中以防止渲染
-            content = content.replace(/</g, '&lt;').replace(/>/g, '&gt;');
-          }
-          return `<${inst.name}>${content}</${inst.name}>`;
+          // 使用新的标签格式
+          return `《${inst.name}》指令${inst.content}《/${inst.name}》`;
         }).join('\n\n');
 
         if (instructionTags) {
@@ -2818,6 +2813,7 @@ ${JSON.stringify({ fields: textObject, worldbook: wbTextObject }, null, 2)}
         card.className = 'instruction-card';
         card.dataset.instructionId = instruction.id;
 
+        // 暂时无法同步删除
         card.innerHTML = `
         <div class="instruction-header">
             <div class="instruction-name">${instruction.name}</div>
@@ -2848,6 +2844,14 @@ ${JSON.stringify({ fields: textObject, worldbook: wbTextObject }, null, 2)}
       // 删除指令
       function deleteInstruction(instructionId) {
         if (confirm('确定要删除这个指令吗？')) {
+          // 找到要删除的指令
+          const instructionToDelete = instructionsData.find(inst => inst.id == instructionId);
+          if (instructionToDelete) {
+            // 从系统设定中精准删除该指令
+            deleteInstructionFromSystemPrompt(instructionToDelete.name);
+          }
+          
+          // 从数据中删除指令
           instructionsData = instructionsData.filter(inst => inst.id != instructionId);
           renderInstructionCards();
           updateSystemPromptWithInstructions();
@@ -2875,6 +2879,22 @@ ${JSON.stringify({ fields: textObject, worldbook: wbTextObject }, null, 2)}
         const enabledInstructions = instructionsData.filter(inst => inst.enabled);
         const instructionText = enabledInstructions.map(inst => inst.content).join('\n\n');
         textarea.value = instructionText;
+      }
+
+      // 从系统设定中精准删除指定指令
+      function deleteInstructionFromSystemPrompt(instructionName) {
+        const systemPromptTextarea = document.getElementById('system_prompt');
+        if (systemPromptTextarea) {
+          const currentSystemPrompt = systemPromptTextarea.value;
+          // 使用新的标签格式进行精准匹配并删除指定指令
+          const escapedName = instructionName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+          const regex = new RegExp(`\\n\\n《${escapedName}》指令[\\s\\S]*?《\/${escapedName}》`, 'g');
+          const newSystemPrompt = currentSystemPrompt.replace(regex, '');
+          systemPromptTextarea.value = newSystemPrompt;
+          
+          // 触发input事件以更新指令列表显示
+          systemPromptTextarea.dispatchEvent(new Event('input'));
+        }
       }
 
       // 更新系统设定中的指令
@@ -2941,7 +2961,7 @@ ${JSON.stringify({ fields: textObject, worldbook: wbTextObject }, null, 2)}
                     <button onclick="closeInstructionModal()" style="background: #6c757d; color: white; padding: 8px 15px; border: none; border-radius: 5px; cursor: pointer;">取消</button>
                     <button onclick="saveInstruction(${
                       isEdit ? instruction.id : 'null'
-                    })" style="background: #FF9800; color: white; padding: 8px 15px; border: none; border-radius: 5px; cursor: pointer;">保存</button>
+                    })" style="background: #FF9800; color: white; padding: 8px 15px; border: none; border-radius: 5px; cursor: pointer;">加入设定</button>
                 </div>
             </div>
         </div>
@@ -3069,15 +3089,42 @@ ${JSON.stringify({ fields: textObject, worldbook: wbTextObject }, null, 2)}
         const name = nameInput.value.trim();
         const content = contentInput.value.trim();
 
-        if (!name || !content) {
-          alert('请填写指令名称和内容');
+        if (!name && !content) {
+          alert('请填写指令名称和内容！\n\n💡 提示：\n• 指令名称：给指令起个名字，如"状态栏"、"对话模式"等\n• 指令内容：具体的指令内容');
+          return;
+        }
+        
+        if (!name) {
+          alert('请填写指令名称！\n\n💡 指令名称示例：\n• 状态栏\n• 对话模式\n• 角色指令\n• 情感模式\n\n指令名称用于在系统设定中生成 <指令名称></指令名称> 标签');
+          // 自动聚焦到名称输入框
+          nameInput.focus();
+          nameInput.style.border = '2px solid #ff4444';
+          setTimeout(() => {
+            nameInput.style.border = '';
+          }, 3000);
+          return;
+        }
+        
+        if (!content) {
+          alert('请填写指令内容！\n\n指令内容不能为空');
+          contentInput.focus();
+          contentInput.style.border = '2px solid #ff4444';
+          setTimeout(() => {
+            contentInput.style.border = '';
+          }, 3000);
           return;
         }
 
         if (instructionId) {
-          // 编辑现有指令
+          // 编辑现有指令 - 先删除旧指令再添加新指令以精准更新
           const instruction = instructionsData.find(inst => inst.id == instructionId);
           if (instruction) {
+            const oldName = instruction.name;
+            // 如果名称改变了，需要先从系统设定中删除旧指令
+            if (oldName !== name) {
+              deleteInstructionFromSystemPrompt(oldName);
+            }
+            // 更新指令数据
             instruction.name = name;
             instruction.content = content;
           }
@@ -3112,16 +3159,22 @@ ${JSON.stringify({ fields: textObject, worldbook: wbTextObject }, null, 2)}
         }
       }
 
-      // 初始化指令系统
-      function initializeInstructionSystem() {
-        // 从系统设定中解析现有指令
+      // 刷新指令系统显示
+      function refreshInstructionSystem() {
         const systemPromptTextarea = document.getElementById('system_prompt');
         if (systemPromptTextarea && systemPromptTextarea.value) {
           instructionsData = parseInstructionsFromSystemPrompt(systemPromptTextarea.value);
           renderInstructionCards();
         }
+      }
+
+      // 初始化指令系统
+      function initializeInstructionSystem() {
+        // 从系统设定中解析现有指令
+        refreshInstructionSystem();
 
         // 监听系统设定变化
+        const systemPromptTextarea = document.getElementById('system_prompt');
         if (systemPromptTextarea) {
           systemPromptTextarea.addEventListener('input', function () {
             const newInstructions = parseInstructionsFromSystemPrompt(this.value);
@@ -3130,6 +3183,11 @@ ${JSON.stringify({ fields: textObject, worldbook: wbTextObject }, null, 2)}
               renderInstructionCards();
             }
           });
+          
+          // 移除focus事件监听，避免点击系统设定框时清空指令列表
+          // systemPromptTextarea.addEventListener('focus', function () {
+          //   refreshInstructionSystem();
+          // });
         }
       }
 
@@ -4345,7 +4403,7 @@ ${currentContent}
             instruction:
               '[系统指令]: 结合历史聊天记录和{{user}}发送的消息输出美化过的对话完整三合一html代码，包含详细状态栏,代码不能超过' +
               lines +
-              '行，必须用代码块(```)包裹，每次只能输出代码，必须按照现代简约风格生成，使用渐变背景和圆角气泡设计。',
+              '行，必须用代码块三个`包裹，每次只能输出代码，必须按照现代简约风格生成，使用渐变背景和圆角气泡设计。',
           },
           {
             name: '深色主题风格',
@@ -4385,7 +4443,7 @@ ${currentContent}
             instruction:
               '[系统指令]: 结合历史聊天记录和{{user}}发送的消息输出美化过的对话完整三合一html代码，包含详细状态栏,代码不能超过' +
               lines +
-              '行，必须用代码块(```)包裹，每次只能输出代码，必须按照深色主题风格生成，使用终端风格的设计和绿色高亮。',
+              '行，必须用代码块三个`包裹，每次只能输出代码，必须按照深色主题风格生成，使用终端风格的设计和绿色高亮。',
           },
           {
             name: '卡片式布局',
@@ -4433,7 +4491,7 @@ ${currentContent}
             instruction:
               '[系统指令]: 结合历史聊天记录和{{user}}发送的消息输出美化过的对话完整三合一html代码，包含详细状态栏,代码不能超过' +
               lines +
-              '行，必须用代码块(```)包裹，每次只能输出代码，必须按照卡片式布局风格生成，使用卡片阴影和渐变色设计。',
+              '行，必须用代码块三个`包裹，每次只能输出代码，必须按照卡片式布局风格生成，使用卡片阴影和渐变色设计。',
           },
           {
             name: '聊天气泡风格',
@@ -4476,7 +4534,7 @@ ${currentContent}
             instruction:
               '[系统指令]: 结合历史聊天记录和{{user}}发送的消息输出美化过的对话完整三合一html代码，包含详细状态栏,代码不能超过' +
               lines +
-              '行，必须用代码块(```)包裹，每次只能输出代码，必须按照聊天气泡风格生成，使用圆角气泡和渐变背景设计。',
+              '行，必须用代码块三个`包裹，每次只能输出代码，必须按照聊天气泡风格生成，使用圆角气泡和渐变背景设计。',
           },
           {
             name: '极简商务风格',
@@ -4523,7 +4581,7 @@ ${currentContent}
             instruction:
               '[系统指令]: 结合历史聊天记录和{{user}}发送的消息输出美化过的对话完整三合一html代码，包含详细状态栏,代码不能超过' +
               lines +
-              '行，必须用代码块(```)包裹，每次只能输出代码，必须按照极简商务风格生成，使用简洁的线条和专业的配色方案。',
+              '行，必须用代码块三个`包裹，每次只能输出代码，必须按照极简商务风格生成，使用简洁的线条和专业的配色方案。',
           },
         ];
 
