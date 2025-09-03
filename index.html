@@ -1523,7 +1523,7 @@
             <h3 class="section-title" id="ai-settings-title">AI设定 </h3>
             <div class="field-group">
               <label for="system_prompt">系统设定</label>
-              <textarea id="system_prompt" rows="3" placeholder="和预设一个等级"></textarea>
+              <textarea id="system_prompt" rows="3" placeholder="轻量预设，搭配default预设快速前端美化"></textarea>
               <button class="ai-button" onclick="callDeepSeek('system_prompt')">🔮 AI 帮我写</button>
               <button class="ai-undo-button" onclick="undoAiCompletion(this)" >↩️ 撤销</button>
             </div>
@@ -1670,7 +1670,7 @@
           'personality-placeholder': '详细性格特质',
           'ai-settings': 'AI设定',
           'system-prompt': '系统设定',
-          'system-prompt-placeholder': '和预设一个等级',
+          'system-prompt-placeholder': '和预设一个级别',
           scenario: '环境设定',
           'scenario-placeholder': '角色所处的环境',
           'first-message': '问候消息',
@@ -2896,9 +2896,9 @@ ${JSON.stringify({ fields: textObject, worldbook: wbTextObject }, null, 2)}
                     <div style="display: flex; align-items: center; justify-content: space-between; color: white;">
                         <div style="display: flex; align-items: center; gap: 8px;">
                             <span style="font-size: 16px;">💡</span>
-                            <span style="font-size: 14px; font-weight: 500;">请先在酒馆安装酒馆助手，并开启预设的Main Prompt开关</span>
+                            <span style="font-size: 14px; font-weight: 500;">安装酒馆助手，并开启(简洁)预设的Main Prompt开关。</span>
                         </div>
-                        <button onclick="showTutorialModal()" style="background: #007bff; color: white; padding: 6px 12px; border: none; border-radius: 4px; cursor: pointer; font-size: 12px; white-space: nowrap;">📖 快速教程</button>
+                        <button onclick="showTutorialModal()" style="background: #007bff; color: white; padding: 6px 12px; border: none; border-radius: 4px; cursor: pointer; font-size: 12px; white-space: nowrap;">📖 小白教程</button>
                     </div>
                 </div>
                 <div style="margin-bottom: 20px;">
@@ -3934,14 +3934,12 @@ ${code}
                 <div style="margin-top: 20px;">
                     <h4 style="margin: 0 0 10px 0; color: var(--text-color); font-size: 14px;">快速选项：</h4>
                     <div style="display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 20px;">
-                        <button onclick="addInstructionQuickOption('优化指令逻辑和表达')" style="background: #e3f2fd; color: #1976d2; padding: 6px 12px; border: 1px solid #1976d2; border-radius: 15px; cursor: pointer; font-size: 12px;">🧠 优化逻辑</button>
-                        <button onclick="addInstructionQuickOption('添加更多输出格式要求')" style="background: #f3e5f5; color: #7b1fa2; padding: 6px 12px; border: 1px solid #7b1fa2; border-radius: 15px; cursor: pointer; font-size: 12px;">📝 格式要求</button>
+                        <button onclick="addInstructionQuickOption('优化指令逻辑和表达')" style="background: #e3f2fd; color: #1976d2; padding: 6px 12px; border: 1px solid #1976d2; border-radius: 15px; cursor: pointer; font-size: 12px;">✨ 优化逻辑</button>
                         <button onclick="addInstructionQuickOption('这个html无法渲染，请改良')" style="background: #e8f5e8; color: #388e3c; padding: 6px 12px; border: 1px solid #388e3c; border-radius: 15px; cursor: pointer; font-size: 12px;">🔄 改良错误</button>
-                        <button onclick="addInstructionQuickOption('添加创意和个性化要求')" style="background: #fff3e0; color: #f57c00; padding: 6px 12px; border: 1px solid #f57c00; border-radius: 15px; cursor: pointer; font-size: 12px;">🎨 创意化</button>
                     </div>
                 </div>
                 <div style="display: flex; gap: 10px; justify-content: center;">
-                    <button onclick="executeInstructionAIModify()" style="background: #ff6b35; color: white; padding: 12px 24px; border: none; border-radius: 5px; cursor: pointer; font-size: 14px;">🤖 AI帮我改</button>
+                    <button onclick="executeInstructionAIModify()" style="background: #ff6b35; color: white; padding: 12px 24px; border: none; border-radius: 5px; cursor: pointer; font-size: 14px;">AI帮我改</button>
                     <button onclick="closeInstructionAIModifyModal()" style="background: #6c757d; color: white; padding: 12px 24px; border: none; border-radius: 5px; cursor: pointer; font-size: 14px;">取消</button>
                 </div>
             </div>
