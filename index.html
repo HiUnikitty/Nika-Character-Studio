@@ -727,8 +727,8 @@
         padding: 10px;
         font-size: 14px;
         color: var(--text-color);
-        height: 50vh;
-        max-height: 100vh;
+        height: auto;
+        max-height: 50vh;
         overflow-y: auto;
         white-space: pre-wrap;
         resize: vertical;
@@ -2651,7 +2651,7 @@ ${JSON.stringify({ fields: textObject, worldbook: wbTextObject }, null, 2)}
         'game-style': {
           name: '美化状态栏（随机样式）',
           content:
-            '[系统指令]: 结合历史聊天记录和{{user}}发送的消息输出美化过的对话完整三合一html代码，包含详细状态栏,代码不能超过100行，必须用代码块(\`\`\`)包裹，每次只能输出代码',
+            '[系统指令]: 结合历史聊天记录和{{user}}发送的消息输出美化过的对话完整三合一html代码，包含详细状态栏,代码不能超过100行，必须包含<body></body>部分，必须用代码块(\`\`\`)包裹，每次只能输出代码',
         },
         'options-mode': {
           name: '选项模式',
@@ -3903,7 +3903,7 @@ ${code}
         // 生成AI修改指令
         const instructionTextarea = document.querySelector('#instruction-content-input');
         if (instructionTextarea) {
-          const aiModifyInstruction = `[系统指令]: 基于以下现有的HTML代码，按照用户要求进行修改：${modifyRequest}。请保持原有样式的基础结构，只修改和添加必要的部分，输出完整的修改后的HTML代码，必须用代码块(\`\`\`)包裹：
+          const aiModifyInstruction = `[系统指令]: 基于以下现有的HTML代码，按照用户要求进行修改：${modifyRequest}。请保持原有样式的基础结构，只修改和添加必要的部分，输出完整的修改后的HTML代码，必须包含<body></body>部分，必须用代码块(\`\`\`)包裹：
 
 现有代码：
 \`\`\`${code}\`\`\`
@@ -4204,7 +4204,7 @@ ${currentContent}
         // 自动修改指令内容为系统指令格式，包含完整的生成代码
         const instructionTextarea = document.querySelector('#instruction-content-input');
         if (instructionTextarea) {
-          const newInstruction = `[系统指令]: 结合历史聊天记录和{{user}}发送的消息输出美化过的对话完整三合一html代码，必须用代码块(\`\`\`)包裹，每次只能输出代码，必须按照如下样式生成：
+          const newInstruction = `[系统指令]: 结合历史聊天记录和{{user}}发送的消息输出美化过的对话完整三合一html代码，必须包含<body></body>部分，必须用代码块(\`\`\`)包裹，每次只能输出代码，必须按照如下格式生成，可丰富话数与内容：
 \`\`\`${finalCode}\`\`\``;
           instructionTextarea.value = newInstruction;
         }
@@ -4351,7 +4351,7 @@ ${currentContent}
             instruction:
               '[系统指令]: 结合历史聊天记录和{{user}}发送的消息输出美化过的对话完整三合一html代码，包含详细状态栏,代码不能超过' +
               lines +
-              '行，必须用代码块(\`\`\`)包裹，每次只能输出代码，必须按照现代简约风格生成，使用渐变背景和圆角气泡设计。',
+              '行，必须包含<body></body>部分，必须用代码块(\`\`\`)包裹，每次只能输出代码，必须按照现代简约风格生成，使用渐变背景和圆角气泡设计。',
           },
           {
             name: '深色主题风格',
@@ -4391,7 +4391,7 @@ ${currentContent}
             instruction:
               '[系统指令]: 结合历史聊天记录和{{user}}发送的消息输出美化过的对话完整三合一html代码，包含详细状态栏,代码不能超过' +
               lines +
-              '行，必须用代码块(\`\`\`)包裹，每次只能输出代码，必须按照深色主题风格生成，使用终端风格的设计和绿色高亮。',
+              '行，必须包含<body></body>部分，必须用代码块(\`\`\`)包裹，每次只能输出代码，必须按照深色主题风格生成，使用终端风格的设计和绿色高亮。',
           },
           {
             name: '卡片式布局',
@@ -4439,7 +4439,7 @@ ${currentContent}
             instruction:
               '[系统指令]: 结合历史聊天记录和{{user}}发送的消息输出美化过的对话完整三合一html代码，包含详细状态栏,代码不能超过' +
               lines +
-              '行，必须用代码块(\`\`\`)包裹，每次只能输出代码，必须按照卡片式布局风格生成，使用卡片阴影和渐变色设计。',
+              '行，必须包含<body></body>部分，必须用代码块(\`\`\`)包裹，每次只能输出代码，必须按照卡片式布局风格生成，使用卡片阴影和渐变色设计。',
           },
           {
             name: '聊天气泡风格',
@@ -4482,7 +4482,7 @@ ${currentContent}
             instruction:
               '[系统指令]: 结合历史聊天记录和{{user}}发送的消息输出美化过的对话完整三合一html代码，包含详细状态栏,代码不能超过' +
               lines +
-              '行，必须用代码块(\`\`\`)包裹，每次只能输出代码，必须按照聊天气泡风格生成，使用圆角气泡和渐变背景设计。',
+              '行，必须包含<body></body>部分，必须用代码块(\`\`\`)包裹，每次只能输出代码，必须按照聊天气泡风格生成，使用圆角气泡和渐变背景设计。',
           },
           {
             name: '极简商务风格',
@@ -4529,7 +4529,7 @@ ${currentContent}
             instruction:
               '[系统指令]: 结合历史聊天记录和{{user}}发送的消息输出美化过的对话完整三合一html代码，包含详细状态栏,代码不能超过' +
               lines +
-              '行，必须用代码块(\`\`\`)包裹，每次只能输出代码，必须按照极简商务风格生成，使用简洁的线条和专业的配色方案。',
+              '行，必须包含<body></body>部分，必须用代码块(\`\`\`)包裹，每次只能输出代码，必须按照极简商务风格生成，使用简洁的线条和专业的配色方案。',
           },
         ];
 
