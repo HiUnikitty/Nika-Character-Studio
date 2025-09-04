@@ -41,11 +41,27 @@
         padding: 0;
         box-sizing: border-box;
         font-family: 'Segoe UI', 'Microsoft YaHei', sans-serif;
-        scrollbar-width: none;
-        -ms-overflow-style: none;
       }
-      *::-webkit-scrollbar {
-        display: none;
+      
+      /* --- 滑动条样式 --- */
+      ::-webkit-scrollbar {
+        width: 8px;
+        height: 8px;
+      }
+      ::-webkit-scrollbar-track {
+        background: rgba(0, 0, 0, 0.2);
+        border-radius: 10px;
+      }
+      ::-webkit-scrollbar-thumb {
+        background: #888;
+        border-radius: 10px;
+      }
+      ::-webkit-scrollbar-thumb:hover {
+        background: #666;
+      }
+      * {
+        scrollbar-width: thin;
+        scrollbar-color: #888 rgba(0, 0, 0, 0.2);
       }
       body {
         background: var(--dark-bg);
@@ -1555,7 +1571,7 @@
                 </div>
               </div>
               <!-- 隐藏的原始textarea，用于兼容性 -->
-              <textarea id="post_history_instructions" style="display: none" placeholder="酒馆用它来修改AI的回复格式。例如，要让{{char}}的动作都用星号包围，可以写：将{{char}}的所有动作和叙述都放在星号（*）之间。"></textarea>
+              <textarea id="post_history_instructions_hidden" style="display: none" placeholder="酒馆用它来修改AI的回复格式。例如，要让{{char}}的动作都用星号包围，可以写：将{{char}}的所有动作和叙述都放在星号（*）之间。"></textarea>
             </div>
             <div class="field-group">
               <label for="scenario">环境设定</label>
@@ -1569,15 +1585,17 @@
               <button class="ai-button" onclick="callDeepSeek('first_mes')">🔮 AI 帮我写</button>
               <button class="ai-undo-button" onclick="undoAiCompletion(this)" >↩️ 撤销</button>
             </div>
+
             <div class="field-group">
               <label for="mes_example">示例消息</label>
-              <textarea id="mes_example" rows="6" placeholder="AI的小说会模仿。例如：
-{{user}}: (看)
-{{char}}: 特别优美的环境描写"></textarea>
+              <textarea id="mes_example" rows="6" placeholder="AI会模仿的对话，一般没用"></textarea>
               <button class="ai-button" onclick="callDeepSeek('mes_example')">🔮 AI 帮我写</button>
               <button class="ai-undo-button" onclick="undoAiCompletion(this)" >↩️ 撤销</button>
             </div>
-
+            <div class="field-group">
+              <label for="post_history_instructions">额外要求</label>
+              <textarea id="post_history_instructions" rows="3" placeholder="例如：说中文，字数800。要开启预设的 Post-History Instructions"></textarea>
+            </div>
             <h3 class="section-title" id="advanced-settings-title">卡片信息 </h3>
             <div class="field-group">
               <label for="tags">分类标签</label>
@@ -1677,11 +1695,11 @@
           'first-message-placeholder': '角色的第一句话',
           'message-example': '示例消息',
           'message-example-placeholder':
-            'AI的小说会模仿。例如：\n{{user}}: (看)\n{{char}}: 特别优美的环境描写',
+          'AI会模仿，但复杂上下文无用。例如：\n{{user}}: (看)\n{{char}}: 特别优美的环境描写',
           'advanced-settings': '卡片信息',
-          'post-history-instructions': '后期指令',
+          'post-history-instructions': '额外要求',
           'post-history-instructions-placeholder':
-            '酒馆用它来修改AI的回复格式。例如，要让{{char}}的动作都用星号包围，可以写：将{{char}}的所有动作和叙述都放在星号（*）之间。',
+          '例如：说中文，字数800\n注意不能关闭预设的 Post-History Instructions',
           'creator-notes': '备注',
           'creator-notes-placeholder': '作者的名字',
           'character-version': '版本',
@@ -2823,7 +2841,13 @@ ${JSON.stringify({ fields: textObject, worldbook: wbTextObject }, null, 2)}
         const textarea = document.getElementById('post_history_instructions');
         const enabledInstructions = instructionsData.filter(inst => inst.enabled);
         const instructionText = enabledInstructions.map(inst => inst.content).join('\n\n');
-        textarea.value = instructionText;
+        
+        // 只有当textarea为空或者只包含之前的指令内容时，才更新内容
+        // 这样可以保留用户手动输入的内容
+        if (!textarea.value.trim() || textarea.value === textarea.dataset.lastInstructionText) {
+          textarea.value = instructionText;
+          textarea.dataset.lastInstructionText = instructionText;
+        }
       }
 
       // 从系统设定中精准删除指定指令
@@ -5612,7 +5636,11 @@ ${currentContent}
         document.getElementById('scenario').value = charData.scenario || '';
         document.getElementById('first_mes').value = charData.first_mes || '';
         document.getElementById('mes_example').value = charData.mes_example || '';
-        document.getElementById('post_history_instructions').value = charData.post_history_instructions || '';
+        const postHistoryTextarea = document.getElementById('post_history_instructions');
+        postHistoryTextarea.value = charData.post_history_instructions || '';
+        // 标记这是用户保存的内容，防止被指令系统覆盖
+        postHistoryTextarea.dataset.lastInstructionText = '';
+        
         document.getElementById('creator_notes').value = charData.creator_notes || '';
         document.getElementById('character_version').value = charData.character_version || '';
         document.getElementById('internalTags').value = JSON.stringify(charData.internalTags || []);
@@ -5860,6 +5888,7 @@ ${currentContent}
           first_mes: dataObject.first_mes,
           mes_example: dataObject.mes_example,
           creatorcomment: dataObject.creator_notes,
+          post_history_instructions: dataObject.post_history_instructions,
           tags: dataObject.tags,
           create_date: new Date().toISOString(),
           avatar: 'none',
