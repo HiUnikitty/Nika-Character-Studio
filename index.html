@@ -1629,7 +1629,8 @@
                 </label>
               </div>
               <button onclick="addWorldbookEntry()" class="secondary" style="background-color: #e67e22; flex-grow: 1">+ 补充世界书</button>
-              <button onclick="sortWorldbookEntries()" class="secondary" style="flex-grow: 1">按ID大小排序</button>
+              <button onclick="sortWorldbookEntriesByPriority()" class="secondary" style="flex-grow: 1">按优先级刷新ID</button>
+              <button onclick="sortWorldbookEntries()" class="secondary" style="flex-grow: 1">按ID排序</button>
             </div>
           </div>
         </div>
@@ -1658,7 +1659,7 @@
           'add-tag': '添加标签',
           delete: '删除',
           'add-new-entry': '+ 补充世界书',
-          'sort-by-id': '按ID大小排序',
+          'sort-by-id': '按ID排序',
           'ai-generate-entries': '🔮 AI生成参考条目',
           'ai-help-write': '🔮 AI 帮我写',
           undo: '↩️ 撤销',
@@ -4753,6 +4754,9 @@ ${currentContent}
       function showEditorView(characterId = null) {
         if (!checkDbReady()) return;
 
+        // 显示加载圈
+        document.getElementById('loading-overlay').style.display = 'flex';
+        
         libraryView.style.display = 'none';
         editorView.style.display = 'flex';
         clearEditorForm();
@@ -5720,6 +5724,9 @@ ${currentContent}
         }
         document.querySelectorAll('.ai-undo-button').forEach(btn => (btn.style.display = 'none'));
         document.querySelector('#editor-view .editor-body').scrollTop = 0;
+        
+        // 隐藏加载圈
+        document.getElementById('loading-overlay').style.display = 'none';
       }
 
       document.getElementById('avatar-input').addEventListener('change', function (event) {
@@ -5863,7 +5870,7 @@ ${currentContent}
               display_index: entry.display_index || 0,
               probability: entry.probability === undefined ? 100 : entry.probability,
               useProbability: true,
-              depth: entry.position === 4 ? (entry.depth !== undefined ? entry.depth : 4) : undefined,
+              depth: entry.depth !== undefined && entry.depth !== null ? entry.depth : undefined,
               selectiveLogic: 0,
               group: entry.group || '',
               group_override: entry.group_override || false,
@@ -6864,7 +6871,7 @@ ${worldbookContextPrompt}
           match_whole_words: element.querySelector('.wb-match-whole-words') ? element.querySelector('.wb-match-whole-words').checked : true,
           case_sensitive: element.querySelector('.wb-case-sensitive') ? element.querySelector('.wb-case-sensitive').checked : false,
           probability: parseInt(element.querySelector('.wb-probability').value, 10),
-          depth: element.querySelector('.wb-depth') ? parseInt(element.querySelector('.wb-depth').value, 10) || 4 : null,
+          depth: element.querySelector('.wb-depth') ? (element.querySelector('.wb-depth').value !== '' ? parseInt(element.querySelector('.wb-depth').value, 10) : null) : null,
           scan_depth: element.querySelector('.wb-scan-depth').value ? parseInt(element.querySelector('.wb-scan-depth').value, 10) : null,
           group_override: element.querySelector('.wb-group-override') ? element.querySelector('.wb-group-override').checked : false,
           group_weight: element.querySelector('.wb-group-weight') ? parseInt(element.querySelector('.wb-group-weight').value, 10) || 100 : 100,
@@ -6932,11 +6939,47 @@ ${worldbookContextPrompt}
         });
       }
 
+      function sortDataTreeByPriority(data) {
+        data.sort((a, b) => {
+          // 参考SillyTavern的priority排序逻辑
+          
+          // 1. 主排序：按状态分组 (constant=0, normal=1, disabled=2)
+          const aState = (a.enabled === false) ? 2 : (a.constant ? 0 : 1);
+          const bState = (b.enabled === false) ? 2 : (b.constant ? 0 : 1);
+          if (aState !== bState) {
+            return aState - bState;
+          }
+          
+          // 2. 二级排序：按order/priority降序 (数值大的在前)
+          const aOrder = a.priority || 100;
+          const bOrder = b.priority || 100;  
+          if (aOrder !== bOrder) {
+            return bOrder - aOrder;
+          }
+          
+          // 3. 三级排序：按ID升序
+          return (a.id || 0) - (b.id || 0);
+        });
+        
+        data.forEach(entry => {
+          if (entry.children && entry.children.length > 0) {
+            sortDataTreeByPriority(entry.children);
+          }
+        });
+      }
+
       function sortWorldbookEntries() {
         const worldbookData = buildWorldbookDataFromDOM();
         sortDataTree(worldbookData);
         renderWorldbookFromData(worldbookData);
         alert('条目已按ID重新排列！');
+      }
+
+      function sortWorldbookEntriesByPriority() {
+        const worldbookData = buildWorldbookDataFromDOM();
+        sortDataTreeByPriority(worldbookData);
+        renderWorldbookFromData(worldbookData);
+        alert('条目已按优先级重新排列！');
       }
 
       function airdropEntry(button) {
