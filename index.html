@@ -4781,6 +4781,8 @@ ${currentContent}
           updatePostHistoryInstructions();
           renderWorldbookFromData([]);
           document.getElementById('avatar-preview').src = createDefaultImage('2:3');
+          // 隐藏加载圈
+          document.getElementById('loading-overlay').style.display = 'none';
         }
         // 确保每次进入编辑器时，按钮文本都根据开关状态刷新
         toggleAiButtonText(document.getElementById('lover-switch').checked);
