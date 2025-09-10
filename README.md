@@ -10,7 +10,7 @@ An elegant AI character card management system designed for ST character creatio
 
 ## 📢 反馈与交流
 
-**百度贴吧**: [自制了一个全中文的编卡器，支持AI补全【sillytavern吧】_百度贴吧](https://tieba.baidu.com/p/8123456789)
+**百度贴吧**: [自制了一个全中文的编卡器，支持AI补全 ](https://tieba.baidu.com/p/8123456789)
 - 欢迎在贴吧分享使用体验
 - 反馈问题和建议
 - 与其他用户交流编卡心得
@@ -22,24 +22,39 @@ An elegant AI character card management system designed for ST character creatio
 
 ## 主要功能
 
-### 角色管理
-- **创建/编辑角色**: 完整的角色信息录入，包括头像、基本信息、性格设定等
-- **角色库**: 网格布局展示，支持收藏和标签筛选
-- **世界书系统**: 高级角色书功能，支持层级结构和AI生成
-
-### 导入导出
-- **多格式导入**: 支持JSON、PNG角色卡，以及所有图片格式（PNG、JPG、WEBP、GIF、BMP）
-- **自动转换**: 所有图片自动转换为PNG格式存储
-- **JSON/PNG导出**: 导出角色卡为JSON或PNG格式
-
 ### AI辅助
 - **多API集成**: 支持DeepSeek、Gemini、本地大模型和自定义OpenAI兼容API
 - **一键补全**: AI协助生成角色描述、性格、对话示例等
-- **伴侣模式**: 专门为虚拟伴侣角色设计的AI补全功能
-- **世界书生成**: AI自动生成角色书条目
+- **AI前端美化**: 智能生成多种HTML对话界面样式，支持实时预览和定制
 - **名字生成器**: AI生成多个角色名字供选择
 - **一键翻译**: 将英文角色卡一键翻译为中文
+- **世界书生成**: AI自动生成角色书条目
 - **智能指引**: 为AI提供具体要求和风格指导
+
+### 🆕 AI前端美化系统
+- **一键生成**: AI自动生成多种精美的HTML对话界面样式
+- **批量生成**: 可选择生成3-8个不同风格的样式方案
+- **实时预览**: 在新窗口中预览生成的HTML效果
+- **智能定制**: 支持自定义要求（深色主题、聊天气泡、动画效果等）
+- **一键注入**: 直接将选中的样式代码注入到指令输入框
+
+### 一键翻译功能
+- **智能翻译**: 将英文角色卡的所有字段一键翻译为中文
+- **撤销支持**: 支持撤销翻译操作，恢复原始内容
+
+### 世界书系统
+- 支持层级结构的角色书条目，可创建复杂的知识体系
+- AI自动生成角色书条目
+
+### 角色管理
+- **角色库**: 网格布局展示，支持收藏和标签筛选
+
+### 伴侣模式
+- 实验性功能，生成更符合伴侣角色的内容
+
+### 数据兼容性
+- 多格式导入: 支持JSON、PNG角色卡，以及所有封面图片格式（PNG、JPG、WEBP、GIF、BMP）
+- 完全兼容V2和V3角色卡格式
 
 ### 界面设计
 - **现代化UI**: 酒馆主色调
@@ -63,42 +78,6 @@ An elegant AI character card management system designed for ST character creatio
 2. 在浏览器中打开 `index.html`
 3. 开始创建和管理你的角色卡
 
-## V3 Pro 新特性
-
-### 图片格式支持
-- 支持所有图片格式上传（PNG、JPG、JPEG、WEBP、GIF、BMP）
-- 自动转换为PNG格式存储
-- 导出时统一使用PNG格式
-
-### 世界书系统
-- 支持层级结构的角色书条目
-- 子条目功能，可创建复杂的知识体系
-- AI自动生成角色书条目
-- 完整的导入/导出支持
-
-### 一键翻译
-- 通过API翻译所有条目，英文卡一键转中文卡
-
-### 伴侣模式
-- 专门的虚拟伴侣角色AI补全功能
-- 一键切换伴侣模式，AI生成更符合伴侣角色的内容
-- 智能调整生成策略，让角色更贴近伴侣设定
-
-### 名字生成器 🆕
-- **AI生成名字**: 为角色智能生成多个候选名字
-- **快速选择**: 一键选择喜欢的名字并应用到角色
-
-### 一键翻译功能 🆕
-- **智能翻译**: 将英文角色卡的所有字段一键翻译为中文
-- **撤销支持**: 支持撤销翻译操作，恢复原始内容
-
-### 加入后期指令词条
-- 可以为输出自定义格式，如括号里面描写动作，外面发言
-
-### 数据兼容性
-- 完全兼容V2和V3角色卡格式
-- 支持子条目的导入和导出
-- 递归处理嵌套结构
 
 ## 技术特性
 
@@ -114,40 +93,26 @@ An elegant AI character card management system designed for ST character creatio
 ### 基本操作
 1. **创建角色**: 点击"创建新角色"
 2. **编辑角色**: 在角色库中点击"编辑"
-3. **导入角色**: 支持JSON、PNG和图片文件
-4. **导出角色**: JSON或PNG格式
+3. **导入角色**: 支持JSON、PNG
+4. **导出角色**: 推荐首页导出，方便日后更改
 
 ### AI功能
 1. 在API设置中选择AI服务提供商（DeepSeek、Gemini、本地大模型或自定义）
 2. 输入对应的API密钥或服务地址
-3. 点击"🔮 AI 帮我写"按钮
-4. AI智能生成相关内容
-5. 使用名字生成器为角色生成候选名字
-6. 使用一键翻译功能转换英文角色卡
-
-### 伴侣模式
-1. 在编辑器中开启"伴侣模式"开关
-2. AI按钮文本会变为"生成虚拟伴侣"
-3. 生成的内容会更符合伴侣角色设定
-
-### 世界书功能
-1. 点击"AI生成参考条目"自动生成
-2. 手动添加条目和子条目
-3. 设置关键词和注入内容
+3. 点击"🔮 一键生成角色"按钮 生成角色卡
+4. 点击"🔮 一键生成世界书"按钮 生成世界书
+5. 点击"🔮 AI 帮我写"按钮 改良角色卡
 
 ## 常见问题
 
 **Q: 支持哪些图片格式？**
 A: 支持PNG、JPG、JPEG、WEBP、GIF、BMP等所有常见格式，会自动转换为PNG存储。
 
-**Q: 这个版本世界书子条目会丢失吗？**
-A: 不会，V3 Pro版本完全支持子条目的导入、导出和显示。
-
 **Q: 数据安全吗？**
 A: 所有数据存储在本地浏览器中，不会上传到任何服务器。
 
 **Q: 伴侣模式是什么？**
-A: 伴侣模式是专门为虚拟伴侣角色设计的AI补全功能，开启后AI会生成更符合伴侣设定的内容，让角色更贴近伴侣关系。
+A: 伴侣模式是专门为虚拟伴侣角色设计的AI补全功能，开启后AI会生成更符合伴侣设定的内容，基本没怎么用，以后想变为活人模式之类的，生成互动感更强的卡。
 
 ## 许可证
 
@@ -168,6 +133,47 @@ A: 伴侣模式是专门为虚拟伴侣角色设计的AI补全功能，开启后
 
 An elegant AI character card management system designed specifically for ST character creation and management.
 
+## 🆕 Core Features
+
+### AI Frontend Beautification System ⭐
+- **One-click Generation**: AI automatically generates multiple exquisite HTML dialogue interface styles
+- **Batch Generation**: Choose to generate 3-8 different style schemes
+- **Real-time Preview**: Preview generated HTML effects in new windows
+- **Smart Customization**: Support custom requirements (dark theme, chat bubbles, animation effects, etc.)
+- **One-click Injection**: Directly inject selected style code into instruction input box
+- **Line Control**: Set HTML code line limits (50-150 lines)
+
+### Name Generator
+- **AI Smart Generation**: Generate multiple candidate names for characters
+- **Quick Selection**: One-click selection and application to characters
+
+### One-click Translation
+- **Smart Translation**: Translate Chinese character cards to English with all fields
+- **Undo Support**: Support undo translation operations, restore original content
+
+### Complete Image Format Support
+- Support all image format uploads (PNG, JPG, JPEG, WEBP, GIF, BMP)
+- Automatic conversion to PNG format for storage
+- Unified PNG format for exports
+
+### World Book System
+- Support hierarchical character book entries
+- Sub-entry functionality for complex knowledge systems
+- AI automatic generation of character book entries
+- Complete import/export support
+
+### Companion Mode
+- Specialized AI completion for virtual companion characters
+- One-click switch to companion mode with AI-generated content more suitable for companion characters
+- Intelligent generation strategy adjustment for more companion-like character settings
+
+### Data Compatibility
+- Fully compatible with V2 and V3 character card formats
+- Support sub-entry import and export
+- Recursive processing of nested structures
+
+---
+
 ## Main Features
 
 ### Character Management
@@ -183,10 +189,10 @@ An elegant AI character card management system designed specifically for ST char
 ### AI Assistance
 - **Multi-API Integration**: Support for DeepSeek, Gemini, local models, and custom OpenAI-compatible APIs
 - **One-click Completion**: AI-assisted generation of character descriptions, personality, dialogue examples, etc.
-- **Companion Mode**: AI completion function specifically designed for virtual companion characters
-- **World Book Generation**: AI automatic generation of character book entries
+- **AI Frontend Beautification**: Intelligently generate multiple HTML dialogue interface styles with real-time preview and customization
 - **Name Generator**: AI generates multiple character name options for selection
 - **One-click Translation**: Translate Chinese character cards to English with one click
+- **World Book Generation**: AI automatic generation of character book entries
 - **Smart Guidance**: Provide specific requirements and style guidance for AI
 
 ### Interface Design
@@ -266,9 +272,6 @@ An elegant AI character card management system designed specifically for ST char
 
 **Q: What image formats are supported?**
 A: Supports all common formats including PNG, JPG, JPEG, WEBP, GIF, BMP, automatically converted to PNG for storage.
-
-**Q: Will world book sub-entries be lost in this version?**
-A: No, V3 Pro version fully supports sub-entry import, export and display.
 
 **Q: Is data secure?**
 A: All data is stored locally in the browser and will not be uploaded to any server.
