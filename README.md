@@ -4,6 +4,17 @@
 
 An elegant AI character card management system designed for ST character creation and management.
 
+## 🌐 在线体验
+
+**在线网站**: [妮卡角色工作室Pro](https://your-website-url.com) - 无需下载，直接使用
+
+## 📢 反馈与交流
+
+**百度贴吧**: [自制了一个全中文的编卡器，支持AI补全【sillytavern吧】_百度贴吧](https://tieba.baidu.com/p/8123456789)
+- 欢迎在贴吧分享使用体验
+- 反馈问题和建议
+- 与其他用户交流编卡心得
+
 > **多语言支持**: This document is available in Chinese and English.
 > [Jump to English Version](#english-version)
 
@@ -22,10 +33,13 @@ An elegant AI character card management system designed for ST character creatio
 - **JSON/PNG导出**: 导出角色卡为JSON或PNG格式
 
 ### AI辅助
-- **DeepSeek、Gemini等集成**: 智能内容生成
+- **多API集成**: 支持DeepSeek、Gemini、本地大模型和自定义OpenAI兼容API
 - **一键补全**: AI协助生成角色描述、性格、对话示例等
 - **伴侣模式**: 专门为虚拟伴侣角色设计的AI补全功能
 - **世界书生成**: AI自动生成角色书条目
+- **名字生成器**: AI生成多个角色名字供选择
+- **一键翻译**: 将英文角色卡一键翻译为中文
+- **智能指引**: 为AI提供具体要求和风格指导
 
 ### 界面设计
 - **现代化UI**: 酒馆主色调
@@ -63,12 +77,20 @@ An elegant AI character card management system designed for ST character creatio
 - 完整的导入/导出支持
 
 ### 一键翻译
-- 通过api翻译所有条目，英文卡一键转中文卡
+- 通过API翻译所有条目，英文卡一键转中文卡
 
 ### 伴侣模式
 - 专门的虚拟伴侣角色AI补全功能
 - 一键切换伴侣模式，AI生成更符合伴侣角色的内容
 - 智能调整生成策略，让角色更贴近伴侣设定
+
+### 名字生成器 🆕
+- **AI生成名字**: 为角色智能生成多个候选名字
+- **快速选择**: 一键选择喜欢的名字并应用到角色
+
+### 一键翻译功能 🆕
+- **智能翻译**: 将英文角色卡的所有字段一键翻译为中文
+- **撤销支持**: 支持撤销翻译操作，恢复原始内容
 
 ### 加入后期指令词条
 - 可以为输出自定义格式，如括号里面描写动作，外面发言
@@ -83,7 +105,9 @@ An elegant AI character card management system designed for ST character creatio
 - **纯前端实现**: HTML/CSS/JavaScript，无需构建工具
 - **本地存储**: IndexedDB数据库，数据安全可靠
 - **图片处理**: Canvas API，支持多格式转换
-- **AI集成**: DeepSeek API，智能内容生成
+- **多AI集成**: 支持DeepSeek、Gemini、本地大模型和OpenAI兼容API
+- **响应式设计**: 适配桌面和移动设备
+- **多语言支持**: 中英文界面切换
 
 ## 使用指南
 
@@ -94,9 +118,12 @@ An elegant AI character card management system designed for ST character creatio
 4. **导出角色**: JSON或PNG格式
 
 ### AI功能
-1. 输入DeepSeek API密钥
-2. 点击"AI 帮我写"按钮
-3. AI智能生成相关内容
+1. 在API设置中选择AI服务提供商（DeepSeek、Gemini、本地大模型或自定义）
+2. 输入对应的API密钥或服务地址
+3. 点击"🔮 AI 帮我写"按钮
+4. AI智能生成相关内容
+5. 使用名字生成器为角色生成候选名字
+6. 使用一键翻译功能转换英文角色卡
 
 ### 伴侣模式
 1. 在编辑器中开启"伴侣模式"开关
@@ -154,10 +181,13 @@ An elegant AI character card management system designed specifically for ST char
 - **JSON/PNG Export**: Export character cards in JSON or PNG format
 
 ### AI Assistance
-- **Gemini Integration**: Intelligent content generation
+- **Multi-API Integration**: Support for DeepSeek, Gemini, local models, and custom OpenAI-compatible APIs
 - **One-click Completion**: AI-assisted generation of character descriptions, personality, dialogue examples, etc.
 - **Companion Mode**: AI completion function specifically designed for virtual companion characters
 - **World Book Generation**: AI automatic generation of character book entries
+- **Name Generator**: AI generates multiple character name options for selection
+- **One-click Translation**: Translate Chinese character cards to English with one click
+- **Smart Guidance**: Provide specific requirements and style guidance for AI
 
 ### Interface Design
 - **Modern UI**: Dark theme with ST-like interface
@@ -169,7 +199,7 @@ An elegant AI character card management system designed specifically for ST char
 ### Requirements
 - Modern browser (Chrome, Firefox, Safari, Edge)
 - JavaScript and IndexedDB support
-- Optional: DeepSeek API key (for AI features)
+- Optional: AI API key (DeepSeek, Gemini, or custom OpenAI-compatible service for AI features)
 
 ### Usage Steps
 1. Download project files (Code --> Download Zip)
@@ -256,3 +286,4 @@ This project uses a custom license with all rights reserved. Commercial use is n
 ---
 
 Start creating your own characters! 
+
