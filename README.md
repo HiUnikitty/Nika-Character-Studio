@@ -78,18 +78,6 @@ An elegant AI character card management system designed for ST character creatio
 2. 在浏览器中打开 `index.html`
 3. 开始创建和管理你的角色卡
 
-
-## 技术特性
-
-- **纯前端实现**: HTML/CSS/JavaScript，无需构建工具
-- **本地存储**: IndexedDB数据库，数据安全可靠
-- **图片处理**: Canvas API，支持多格式转换
-- **多AI集成**: 支持DeepSeek、Gemini、本地大模型和OpenAI兼容API
-- **响应式设计**: 适配桌面和移动设备
-- **多语言支持**: 中英文界面切换
-
-## 使用指南
-
 ### 基本操作
 1. **创建角色**: 点击"创建新角色"
 2. **编辑角色**: 在角色库中点击"编辑"
@@ -102,6 +90,15 @@ An elegant AI character card management system designed for ST character creatio
 3. 点击"🔮 一键生成角色"按钮 生成角色卡
 4. 点击"🔮 一键生成世界书"按钮 生成世界书
 5. 点击"🔮 AI 帮我写"按钮 改良角色卡
+
+## 技术特性
+
+- **纯前端实现**: HTML/CSS/JavaScript，无需构建工具
+- **本地存储**: IndexedDB数据库，数据安全可靠
+- **图片处理**: Canvas API，支持多格式转换
+- **多AI集成**: 支持DeepSeek、Gemini、本地大模型和OpenAI兼容API
+- **响应式设计**: 适配桌面和移动设备
+- **多语言支持**: 中英文界面切换
 
 ## 常见问题
 
@@ -176,15 +173,11 @@ An elegant AI character card management system designed specifically for ST char
 
 ## Main Features
 
-### Character Management
-- **Create/Edit Characters**: Complete character information entry, including avatars, basic information, personality settings, etc.
-- **Character Library**: Grid layout display with favorites and tag filtering
-- **World Book System**: Advanced character book functionality with hierarchical structure and AI generation
-
-### Import/Export
-- **Multi-format Import**: Supports JSON, PNG character cards, and all image formats (PNG, JPG, WEBP, GIF, BMP)
-- **Auto Conversion**: All images automatically converted to PNG format for storage
-- **JSON/PNG Export**: Export character cards in JSON or PNG format
+### World Book System
+- Supports hierarchical character book entries
+- Sub-entry functionality for complex knowledge systems
+- AI automatic generation of character book entries
+- Complete import/export support
 
 ### AI Assistance
 - **Multi-API Integration**: Support for DeepSeek, Gemini, local models, and custom OpenAI-compatible APIs
@@ -194,6 +187,11 @@ An elegant AI character card management system designed specifically for ST char
 - **One-click Translation**: Translate Chinese character cards to English with one click
 - **World Book Generation**: AI automatic generation of character book entries
 - **Smart Guidance**: Provide specific requirements and style guidance for AI
+
+### Character Management
+- **Create/Edit Characters**: Complete character information entry, including avatars, basic information, personality settings, etc.
+- **Character Library**: Grid layout display with favorites and tag filtering
+- **World Book System**: Advanced character book functionality with hierarchical structure and AI generation
 
 ### Interface Design
 - **Modern UI**: Dark theme with ST-like interface
@@ -211,41 +209,6 @@ An elegant AI character card management system designed specifically for ST char
 1. Download project files (Code --> Download Zip)
 2. Open `index.html` in browser
 3. Start creating and managing your character cards
-
-## V3 Pro New Features
-
-### Image Format Support
-- Supports all image format uploads (PNG, JPG, JPEG, WEBP, GIF, BMP)
-- Automatic conversion to PNG format for storage
-- Unified PNG format for exports
-
-### World Book System
-- Supports hierarchical character book entries
-- Sub-entry functionality for complex knowledge systems
-- AI automatic generation of character book entries
-- Complete import/export support
-
-### Companion Mode
-- Specialized AI completion for virtual companion characters
-- One-click switch to companion mode with AI-generated content more suitable for companion characters
-- Intelligent generation strategy adjustment for more companion-like character settings
-
-### Add post instruction entries
-- You can customize the output format, such as describing actions in brackets and speaking outside
-
-### Data Compatibility
-- Fully compatible with V2 and V3 character card formats
-- Supports sub-entry import and export
-- Recursive processing of nested structures
-
-## Technical Features
-
-- **Pure Frontend Implementation**: HTML/CSS/JavaScript, no build tools required
-- **Local Storage**: IndexedDB database for secure and reliable data storage
-- **Image Processing**: Canvas API with multi-format conversion support
-- **AI Integration**: DeepSeek API for intelligent content generation
-
-## User Guide
 
 ### Basic Operations
 1. **Create Character**: Click "Create New Character"
@@ -289,4 +252,5 @@ This project uses a custom license with all rights reserved. Commercial use is n
 ---
 
 Start creating your own characters! 
+
 
