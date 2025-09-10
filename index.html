@@ -1555,7 +1555,7 @@
                 <button class="delete-btn" onclick="deleteInstruction('1756898745475.5337')">删除</button>
             </div>
         </div>
-        <div class="instruction-content">[系统指令]: 在生成回应时，请使用括号来描述{{char}}的动作、表情和内心想法。对话本身应在括号之外。例如："你在这里做什么？" (她挑起一边的眉毛，双臂交叉，眼神中带着一丝审视)。</div>
+        <div class="instruction-content">[系统指令]: 在生成回应时，请使用括号来描述{{char}}的动作、表情，星号包裹内心想法。对话本身应在括号之外被""包围。例如："你在这里做什么？" *奇怪，他怎么在这里？* (她挑起眉毛，双臂交叉)。</div>
     </div><div class="instruction-card" data-instruction-id="1756898751755.6323">
         <div class="instruction-header">
             <div class="instruction-name">简易状态栏</div>
@@ -1629,7 +1629,7 @@
                 </label>
               </div>
               <button onclick="addWorldbookEntry()" class="secondary" style="background-color: #e67e22; flex-grow: 1">+ 补充世界书</button>
-              <button onclick="sortWorldbookEntriesByPriority()" class="secondary" style="flex-grow: 1">🔁刷新</button>
+              <button onclick="sortWorldbookEntriesByPriority()" class="secondary" style="flex-grow: 1">按优先级刷新ID</button>
               <button onclick="sortWorldbookEntries()" class="secondary" style="flex-grow: 1">按ID排序</button>
             </div>
           </div>
@@ -2670,22 +2670,32 @@ ${JSON.stringify({ fields: textObject, worldbook: wbTextObject }, null, 2)}
         'game-style': {
           name: '美化状态栏（随机样式）',
           content:
-            '[系统指令]: 结合历史聊天记录和{{user}}发送的消息输出美化过的对话完整三合一html代码，包含详细状态栏,代码不能超过100行，必须包含<body></body>部分，必须用代码块(\`\`\`)包裹，每次只能输出代码',
+            '[系统指令]: 紧接着，结合下文角色与{{user}}的聊天记录，写出美化过的对话完整三合一html代码，包含详细状态栏,代码不能超过100行，必须包含<body></body>部分，必须用代码块(\`\`\`)包裹',
         },
         'options-mode': {
           name: '选项模式',
           content:
-            '[以中文回复] [系统指令]: 你现在需要根据用户的输入生成回应。回应必须严格遵循以下格式：为用户提供几个清晰明确的下一步行动或对话选项。每个选项占一行，并以字母（A、B、C等）开头。在选项列表前后不要添加任何额外文字。',
+            `
+            [系统指令]: 紧接着，结合下文角色与{{user}}的聊天记录，写出几个{{user}}下一步行动或对话的选项。每个选项的风格从这里面选择，不要输出风格名称；
+            [NSFW,搞笑,合理,浪漫或者善良,小概率打破第四面墙]
+            格式：
+            >\`\`\`
+            A:
+            B:
+            C:
+            D:
+            >\`\`\`
+            `,
         },
         'parentheses-mode': {
           name: '括号模式',
           content:
-            '[系统指令]: 在生成回应时，请使用括号来描述{{char}}的动作、表情和内心想法。对话本身应在括号之外。例如："你在这里做什么？" (她挑起一边的眉毛，双臂交叉，眼神中带着一丝审视)。',
+            '[系统指令]: 续写时，请使用括号来描述{{char}}的动作、表情和内心想法。对话本身应在括号之外。例如："你在这里做什么？" (她挑起一边的眉毛，双臂交叉，眼神中带着一丝审视)。',
         },
         'status-bar': {
           name: '简易状态栏',
           content:
-            '[系统指令]: 在每次回应的末尾，你必须包含一个显示{{char}}当前关键状态的状态栏。状态栏应该用代码块((\`\`\`))包围。格式为：| 健康: [数值] | 理智: [数值] | 对{{user}}的好感: [数值] | 位置: [当前位置] |',
+            '[系统指令]: 紧接着，结合下文角色与{{user}}的聊天记录，写出一个显示{{char}}当前关键状态的状态栏。状态栏应该用代码块((\`\`\`))包围。格式为：| 内心独白: [想法] | 对{{user}}的好感: [数值/100] | 位置: [当前位置] |',
         },
         'third-person': {
           name: '第三人称',
@@ -2712,7 +2722,7 @@ ${JSON.stringify({ fields: textObject, worldbook: wbTextObject }, null, 2)}
           content:
             `
             [系统指令]: 在每次回应的末尾，你必须包含一个显示{{char}}当前关键状态的状态栏。状态栏应该用代码块(>\`\`\`)包围。格式为：
->\`\`\`json
+>\`\`\`
 2025-某天-星期一12:20
 姓名:...
 好感度:0/100
@@ -3336,7 +3346,7 @@ ${JSON.stringify({ fields: textObject, worldbook: wbTextObject }, null, 2)}
             
             <div style="margin-top: 20px; text-align: right;">
                 <button id="generate-beautify-btn" style="background: #FF9800; color: white; padding: 8px 16px; border: none; border-radius: 5px; cursor: pointer; margin-right: 10px;">🎨 开始生成</button>
-                <button id="cancel-beautify-btn" style="background: #6c757d; color: white; padding: 8px 16px; border: none; border-radius: 5px; cursor: pointer;">取消</button>
+                <button id="cancel-beautify-btn" style="background: #6c757d; color: white; padding: 8px 16px; border: none; border-radius: 5px; cursor: pointer;">取消 | 返回</button>
             </div>
         </div>
     `;
@@ -3673,7 +3683,7 @@ ${JSON.stringify({ fields: textObject, worldbook: wbTextObject }, null, 2)}
                     <div class="style-buttons" style="display: flex; flex-wrap: wrap; gap: 5px;">
                         <button onclick="previewStyle(${index})" style="background: #FF9800; color: white; padding: 5px 10px; border: none; border-radius: 3px; cursor: pointer; font-size: 12px;">👁️ 预览</button>
                         <button onclick="handleAIModify(${index})" style="background-color: var(--ai-button-bg); color: white; padding: 5px 10px; border: none; border-radius: 3px; cursor: pointer; font-size: 12px;">🔮 AI改</button>
-                        <button onclick="injectStyleCode(${index})" style="background: #28a745; color: white; padding: 5px 10px; border: none; border-radius: 3px; cursor: pointer; font-size: 12px;">💉 注入</button>
+                        <button onclick="directInject(${index})" style="background: #28a745; color: white; padding: 5px 10px; border: none; border-radius: 3px; cursor: pointer; font-size: 12px;">💉 注入</button>
                     </div>
                 </div>
                 <div style="max-height: 300px; overflow-y: auto; padding: 15px;">
@@ -3706,49 +3716,53 @@ ${JSON.stringify({ fields: textObject, worldbook: wbTextObject }, null, 2)}
         previewWindow.document.close();
       }
 
-      // 注入样式代码
-      function injectStyleCode(index) {
+
+      // 直接注入代码（简化版）
+      function directInject(index) {
         const code = window[`generatedStyle_${index}`];
         if (!code) {
           alert('样式代码不存在');
           return;
         }
 
-        // 显示注入选择弹窗
-        showInjectModal(code, index);
-      }
-
-      // 显示注入选择弹窗
-      function showInjectModal(code, index) {
-        // 创建弹窗HTML
-        const modalHTML = `
-        <div id="inject-modal" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 10000; display: flex; justify-content: center; align-items: center;">
-            <div style="background: var(--bg-color); padding: 30px; border-radius: 10px; box-shadow: 0 10px 30px rgba(0,0,0,0.3); max-width: 500px; width: 90%;">
-                <h3 style="margin: 0 0 20px 0; color: var(--text-color); text-align: center;">💉 选择注入位置</h3>
-                <p style="margin: 0 0 25px 0; color: var(--text-color); text-align: center; opacity: 0.8;">请选择美化界面应该出现在哪里：</p>
-                <div style="display: flex; flex-direction: column; gap: 15px;">
-                    <button onclick="handleInject('beginning', ${index})" style="background-color: var(--ai-button-bg); color: white; padding: 12px 20px; border: none; border-radius: 5px; cursor: pointer; font-size: 14px;">最开始</button>
-                    <button onclick="handleInject('end', ${index})" style="background-color: var(--ai-button-bg); color: white; padding: 12px 20px; border: none; border-radius: 5px; cursor: pointer; font-size: 14px;">最后</button>
-                    <button onclick="handleInject('only', ${index})" style="background-color: var(--ai-button-bg); color: white; padding: 12px 20px; border: none; border-radius: 5px; cursor: pointer; font-size: 14px;">只显示这个</button>
-                </div>
-                <div style="text-align: center; margin-top: 20px;">
-                    <button onclick="closeInjectModal()" style="background: #6c757d; color: white; padding: 8px 16px; border: none; border-radius: 3px; cursor: pointer;">取消</button>
-                </div>
-            </div>
-        </div>
-    `;
-
-        // 添加弹窗到页面
-        document.body.insertAdjacentHTML('beforeend', modalHTML);
-      }
-
-      // 关闭注入弹窗
-      function closeInjectModal() {
-        const modal = document.getElementById('inject-modal');
-        if (modal) {
-          modal.remove();
+        // 自动修改指令内容为系统指令格式
+        const instructionTextarea = document.querySelector('#instruction-content-input');
+        if (instructionTextarea) {
+          const newInstruction = `[系统指令]: 结合历史聊天记录和{{user}}发送的消息输出美化过的对话完整三合一html代码，必须包含<body></body>部分，必须用代码块(\`\`\`)包裹，每次只能输出代码，必须按照如下格式生成，可丰富话数与内容：
+\`\`\`${code}\`\`\``;
+          instructionTextarea.value = newInstruction;
         }
+
+        // 复制代码到剪贴板
+        navigator.clipboard
+          .writeText(code)
+          .then(() => {
+            // 显示成功提示
+            const button = event.target;
+            const originalText = button.textContent;
+            button.textContent = '✅ 已注入';
+            button.style.background = '#4CAF50';
+
+            setTimeout(() => {
+              button.textContent = originalText;
+              button.style.background = 'var(--ai-button-bg)';
+            }, 2000);
+
+            alert('✅ 指令输入框已更新，代码已复制到剪贴板，请下滑返回');
+          })
+          .catch(err => {
+            console.error('注入失败:', err);
+            // 降级方案：选择文本
+            const textArea = document.createElement('textarea');
+            textArea.value = code;
+            document.body.appendChild(textArea);
+            textArea.select();
+            document.execCommand('copy');
+            document.body.removeChild(textArea);
+            alert('代码已加入到"指令内容"中，同时备份到了剪切板，请下滑返回');
+          });
       }
+
 
       // 存储撤销数据
       let undoData = {
@@ -4307,272 +4321,6 @@ ${currentContent}
           default:
             return '#6c757d';
         }
-      }
-
-      function generateMockBeautifiedStyles(count, lines, requirements) {
-        const resultsDiv = document.getElementById('beautify-results');
-        const styles = [];
-
-        // 生成多个不同风格的HTML样式
-        for (let i = 1; i <= count; i++) {
-          const style = generateSingleMockStyle(i, lines, requirements);
-          styles.push(style);
-        }
-
-        let html =
-          '<h4 style="color: var(--text-color); margin-bottom: 15px;">🎉 生成完成！请预览并选择您喜欢的样式：</h4>';
-
-        styles.forEach((style, index) => {
-          html += `
-            <div style="border: 1px solid var(--input-border); border-radius: 8px; margin-bottom: 15px; overflow: hidden;">
-                <div style="background: var(--secondary-bg); padding: 10px; border-bottom: 1px solid var(--input-border);">
-                    <h5 style="margin: 0; color: var(--text-color);">样式 ${index + 1}: ${style.name}</h5>
-                </div>
-                <div style="padding: 10px;">
-                    <div style="background: #f8f9fa; border: 1px solid #dee2e6; border-radius: 5px; padding: 10px; margin-bottom: 10px; max-height: 300px; overflow-y: auto;">
-                        <iframe srcdoc="${style.html.replace(
-                          /"/g,
-                          '&quot;',
-                        )}" style="width: 100%; height: 250px; border: none; border-radius: 3px;"></iframe>
-                    </div>
-                    <div style="text-align: right;">
-                        <button onclick="saveStyleAsTemplate('${style.name}', \`${
-            style.instruction
-          }\`)" style="background: #28a745; color: white; padding: 5px 10px; border: none; border-radius: 3px; cursor: pointer; margin-right: 5px;">💾 保存为模板</button>
-                        <button onclick="applyStyleToCurrentInstruction(\`${
-                          style.instruction
-                        }\`)" style="background: #007bff; color: white; padding: 5px 10px; border: none; border-radius: 3px; cursor: pointer;">✅ 应用到当前指令</button>
-                    </div>
-                </div>
-            </div>
-        `;
-        });
-
-        resultsDiv.innerHTML = html;
-      }
-
-      function generateSingleMockStyle(index, lines, requirements) {
-        const styles = [
-          {
-            name: '现代简约风格',
-            html: `<!DOCTYPE html>
-<html>
-<head>
-    <meta charset="UTF-8">
-    <title>现代简约对话</title>
-    <style>
-        .chat-wrapper { font-family: 'Segoe UI', sans-serif; margin: 0; padding: 20px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; }
-        .chat-container { max-width: 600px; margin: 0 auto; background: white; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.2); overflow: hidden; }
-        .chat-header { background: #4a5568; color: white; padding: 15px; text-align: center; font-weight: bold; }
-        .chat-messages { padding: 20px; height: 400px; overflow-y: auto; }
-        .message { margin-bottom: 15px; display: flex; }
-        .user-message { justify-content: flex-end; }
-        .bot-message { justify-content: flex-start; }
-        .message-bubble { max-width: 70%; padding: 12px 16px; border-radius: 18px; }
-        .user-message .message-bubble { background: #667eea; color: white; }
-        .bot-message .message-bubble { background: #f1f3f4; color: #333; }
-        .status-bar { background: #f8f9fa; padding: 10px; text-align: center; font-size: 12px; color: #666; }
-    </style>
-</head>
-<body>
-    <div class="chat-wrapper">
-        <div class="chat-container">
-        <div class="chat-header">AI助手对话</div>
-        <div class="chat-messages">
-            <div class="message bot-message"><div class="message-bubble">你好！我是你的AI助手，有什么可以帮助你的吗？</div></div>
-            <div class="message user-message"><div class="message-bubble">请帮我写一个简单的网页</div></div>
-            <div class="message bot-message"><div class="message-bubble">当然可以！我来为你创建一个美观的网页模板。</div></div>
-        </div>
-        <div class="status-bar">在线 • 响应时间: 0.5s • 模型: GPT-4</div>
-    </div>
-</body>
-</html>`,
-            instruction:
-              '[系统指令]: 结合历史聊天记录和{{user}}发送的消息输出美化过的对话完整三合一html代码，包含详细状态栏,代码不能超过' +
-              lines +
-              '行，必须包含<body></body>部分，必须用代码块(\`\`\`)包裹，每次只能输出代码，必须按照现代简约风格生成，使用渐变背景和圆角气泡设计。',
-          },
-          {
-            name: '深色主题风格',
-            html: `<!DOCTYPE html>
-<html>
-<head>
-    <meta charset="UTF-8">
-    <title>深色主题对话</title>
-    <style>
-        .chat-wrapper { font-family: 'Monaco', monospace; margin: 0; padding: 20px; background: #1a1a1a; color: #e0e0e0; min-height: 100vh; }
-        .chat-container { max-width: 700px; margin: 0 auto; background: #2d2d2d; border-radius: 10px; border: 1px solid #444; }
-        .chat-header { background: #333; color: #00ff88; padding: 15px; font-weight: bold; border-bottom: 1px solid #444; }
-        .chat-messages { padding: 20px; height: 400px; overflow-y: auto; background: #1e1e1e; }
-        .message { margin-bottom: 15px; }
-        .user-message { text-align: right; }
-        .bot-message { text-align: left; }
-        .message-content { display: inline-block; max-width: 70%; padding: 10px 15px; border-radius: 8px; }
-        .user-message .message-content { background: #0066cc; color: white; }
-        .bot-message .message-content { background: #333; color: #e0e0e0; border: 1px solid #555; }
-        .status-bar { background: #333; padding: 10px; text-align: center; font-size: 11px; color: #888; border-top: 1px solid #444; }
-    </style>
-</head>
-<body>
-    <div class="chat-wrapper">
-        <div class="chat-container">
-            <div class="chat-header">🤖 Terminal Chat v2.0</div>
-        <div class="chat-messages">
-            <div class="message bot-message"><div class="message-content">> 系统已启动，准备接收指令...</div></div>
-            <div class="message user-message"><div class="message-content">$ help</div></div>
-            <div class="message bot-message"><div class="message-content">> 可用命令: create, modify, analyze, help</div></div>
-        </div>
-        <div class="status-bar">连接状态: 已连接 | 延迟: 12ms | 会话ID: #A7B9C2</div>
-        </div>
-    </div>
-</body>
-</html>`,
-            instruction:
-              '[系统指令]: 结合历史聊天记录和{{user}}发送的消息输出美化过的对话完整三合一html代码，包含详细状态栏,代码不能超过' +
-              lines +
-              '行，必须包含<body></body>部分，必须用代码块(\`\`\`)包裹，每次只能输出代码，必须按照深色主题风格生成，使用终端风格的设计和绿色高亮。',
-          },
-          {
-            name: '卡片式布局',
-            html: `<!DOCTYPE html>
-<html>
-<head>
-    <meta charset="UTF-8">
-    <title>卡片式对话</title>
-    <style>
-        .chat-wrapper { font-family: 'Arial', sans-serif; margin: 0; padding: 20px; background: #f0f2f5; min-height: 100vh; }
-        .chat-container { max-width: 800px; margin: 0 auto; }
-        .chat-header { background: white; padding: 20px; border-radius: 15px 15px 0 0; box-shadow: 0 2px 10px rgba(0,0,0,0.1); text-align: center; font-size: 18px; font-weight: bold; color: #333; }
-        .chat-messages { background: white; padding: 20px; min-height: 400px; }
-        .message-card { background: #f8f9fa; margin-bottom: 15px; padding: 15px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
-        .user-card { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; margin-left: 20%; }
-        .bot-card { background: #ffffff; border: 1px solid #e9ecef; margin-right: 20%; }
-        .message-header { font-size: 12px; opacity: 0.7; margin-bottom: 8px; }
-        .message-body { font-size: 14px; line-height: 1.5; }
-        .status-bar { background: white; padding: 15px; border-radius: 0 0 15px 15px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); text-align: center; font-size: 12px; color: #666; }
-    </style>
-</head>
-<body>
-    <div class="chat-wrapper">
-        <div class="chat-container">
-            <div class="chat-header">💬 智能对话助手</div>
-        <div class="chat-messages">
-            <div class="message-card bot-card">
-                <div class="message-header">AI助手 • 刚刚</div>
-                <div class="message-body">欢迎使用智能对话系统！我可以帮助您解决各种问题。</div>
-            </div>
-            <div class="message-card user-card">
-                <div class="message-header">用户 • 刚刚</div>
-                <div class="message-body">你能帮我设计一个网站吗？</div>
-            </div>
-            <div class="message-card bot-card">
-                <div class="message-header">AI助手 • 刚刚</div>
-                <div class="message-body">当然可以！我很乐意帮您设计网站。请告诉我您的具体需求。</div>
-            </div>
-        </div>
-        <div class="status-bar">🟢 在线 | 消息已加密 | 最后活动: 刚刚</div>
-        </div>
-    </div>
-</body>
-</html>`,
-            instruction:
-              '[系统指令]: 结合历史聊天记录和{{user}}发送的消息输出美化过的对话完整三合一html代码，包含详细状态栏,代码不能超过' +
-              lines +
-              '行，必须包含<body></body>部分，必须用代码块(\`\`\`)包裹，每次只能输出代码，必须按照卡片式布局风格生成，使用卡片阴影和渐变色设计。',
-          },
-          {
-            name: '聊天气泡风格',
-            html: `<!DOCTYPE html>
-<html>
-<head>
-    <meta charset="UTF-8">
-    <title>聊天气泡对话</title>
-    <style>
-        .chat-wrapper { font-family: 'Helvetica Neue', sans-serif; margin: 0; padding: 20px; background: linear-gradient(to bottom, #e3f2fd, #bbdefb); min-height: 100vh; }
-        .chat-container { max-width: 600px; margin: 0 auto; background: white; border-radius: 20px; overflow: hidden; box-shadow: 0 15px 35px rgba(0,0,0,0.1); }
-        .chat-header { background: linear-gradient(135deg, #2196f3, #21cbf3); color: white; padding: 20px; text-align: center; font-weight: bold; }
-        .chat-messages { padding: 20px; height: 400px; overflow-y: auto; background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="2" fill="%23f0f0f0"/></svg>') repeat; }
-        .message { margin-bottom: 20px; display: flex; align-items: flex-end; }
-        .user-message { justify-content: flex-end; }
-        .bot-message { justify-content: flex-start; }
-        .bubble { max-width: 75%; padding: 12px 18px; border-radius: 20px; position: relative; }
-        .user-bubble { background: #2196f3; color: white; border-bottom-right-radius: 5px; }
-        .bot-bubble { background: #f1f3f4; color: #333; border-bottom-left-radius: 5px; }
-        .bubble::after { content: ''; position: absolute; bottom: 0; width: 0; height: 0; }
-        .user-bubble::after { right: -8px; border-left: 8px solid #2196f3; border-bottom: 8px solid transparent; }
-        .bot-bubble::after { left: -8px; border-right: 8px solid #f1f3f4; border-bottom: 8px solid transparent; }
-        .status-bar { background: #f8f9fa; padding: 12px; text-align: center; font-size: 12px; color: #666; }
-    </style>
-</head>
-<body>
-    <div class="chat-wrapper">
-        <div class="chat-container">
-            <div class="chat-header">💭 智能聊天</div>
-        <div class="chat-messages">
-            <div class="message bot-message"><div class="bubble bot-bubble">你好！我是你的智能助手 🤖</div></div>
-            <div class="message user-message"><div class="bubble user-bubble">嗨！能帮我做些什么吗？</div></div>
-            <div class="message bot-message"><div class="bubble bot-bubble">当然可以！我可以帮你写代码、回答问题、创作内容等等 ✨</div></div>
-        </div>
-        <div class="status-bar">💚 在线 • 正在输入... • 已读回执已开启</div>
-        </div>
-    </div>
-</body>
-</html>`,
-            instruction:
-              '[系统指令]: 结合历史聊天记录和{{user}}发送的消息输出美化过的对话完整三合一html代码，包含详细状态栏,代码不能超过' +
-              lines +
-              '行，必须包含<body></body>部分，必须用代码块(\`\`\`)包裹，每次只能输出代码，必须按照聊天气泡风格生成，使用圆角气泡和渐变背景设计。',
-          },
-          {
-            name: '极简商务风格',
-            html: `<!DOCTYPE html>
-<html>
-<head>
-    <meta charset="UTF-8">
-    <title>商务对话</title>
-    <style>
-        .chat-wrapper { font-family: 'Roboto', sans-serif; margin: 0; padding: 30px; background: #fafafa; min-height: 100vh; }
-        .chat-container { max-width: 900px; margin: 0 auto; background: white; border: 1px solid #e0e0e0; }
-        .chat-header { background: #263238; color: white; padding: 25px; font-size: 16px; font-weight: 300; letter-spacing: 1px; }
-        .chat-messages { padding: 30px; min-height: 400px; }
-        .message-row { margin-bottom: 25px; }
-        .message-label { font-size: 11px; color: #757575; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; }
-        .message-content { padding: 15px 20px; border-left: 3px solid #2196f3; background: #f8f9fa; font-size: 14px; line-height: 1.6; }
-        .user-row .message-content { border-left-color: #ff5722; background: #fff3e0; }
-        .status-bar { background: #eceff1; padding: 15px 25px; font-size: 11px; color: #546e7a; text-transform: uppercase; letter-spacing: 0.5px; }
-    </style>
-</head>
-<body>
-    <div class="chat-wrapper">
-        <div class="chat-container">
-            <div class="chat-header">BUSINESS INTELLIGENCE ASSISTANT</div>
-        <div class="chat-messages">
-            <div class="message-row">
-                <div class="message-label">System</div>
-                <div class="message-content">Welcome to the Business Intelligence Assistant. How may I assist you today?</div>
-            </div>
-            <div class="message-row user-row">
-                <div class="message-label">User Query</div>
-                <div class="message-content">Please analyze our Q3 performance metrics and provide insights.</div>
-            </div>
-            <div class="message-row">
-                <div class="message-label">AI Response</div>
-                <div class="message-content">I'll analyze your Q3 performance data and provide comprehensive insights with actionable recommendations.</div>
-            </div>
-        </div>
-        <div class="status-bar">Status: Active | Session: #BIA-2024-001 | Security: Encrypted</div>
-        </div>
-    </div>
-</body>
-</html>`,
-            instruction:
-              '[系统指令]: 结合历史聊天记录和{{user}}发送的消息输出美化过的对话完整三合一html代码，包含详细状态栏,代码不能超过' +
-              lines +
-              '行，必须包含<body></body>部分，必须用代码块(\`\`\`)包裹，每次只能输出代码，必须按照极简商务风格生成，使用简洁的线条和专业的配色方案。',
-          },
-        ];
-
-        return styles[(index - 1) % styles.length];
       }
 
       function saveStyleAsTemplate(styleName, instruction) {
