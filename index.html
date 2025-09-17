@@ -747,8 +747,193 @@
         max-height: 50vh;
         overflow-y: auto;
         white-space: pre-wrap;
+      }
+
+      /* 全局修改模态框样式 */
+      .entries-container {
+        max-height: 300px;
+        overflow-y: auto;
+        border: 1px solid var(--input-border);
+        border-radius: 5px;
+        padding: 10px;
+        background: rgba(0, 0, 0, 0.05);
+      }
+
+      .entry-item {
+        display: flex;
+        align-items: flex-start;
+        gap: 10px;
+        padding: 10px;
+        margin-bottom: 10px;
+        border: 1px solid var(--input-border);
+        border-radius: 5px;
+        background: var(--card-bg);
+        transition: all 0.3s ease;
+      }
+
+      .entry-item.disabled {
+        opacity: 0.5;
+        background: rgba(0, 0, 0, 0.1);
+      }
+
+      .entry-item:hover:not(.disabled) {
+        border-color: var(--primary-color);
+        transform: translateY(-1px);
+      }
+
+      .entry-checkbox {
+        margin-top: 2px;
+      }
+
+      .entry-details {
+        flex: 1;
+        min-width: 0;
+      }
+
+      .entry-title {
+        font-weight: bold;
+        color: var(--text-color);
+        margin-bottom: 5px;
+        display: flex;
+        align-items: center;
+        gap: 5px;
+      }
+
+      .entry-id {
+        background: var(--primary-color);
+        color: white;
+        padding: 2px 6px;
+        border-radius: 3px;
+        font-size: 12px;
+        font-weight: bold;
+      }
+
+      .entry-keys {
+        color: #f39c12;
+        font-size: 12px;
+        margin-bottom: 5px;
+      }
+
+      .entry-content-preview {
+        color: var(--text-color);
+        font-size: 13px;
+        line-height: 1.4;
+        max-height: 60px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        display: -webkit-box;
+        -webkit-line-clamp: 3;
+        -webkit-box-orient: vertical;
+      }
+
+      .entry-meta {
+        display: flex;
+        gap: 10px;
+        margin-top: 8px;
+        font-size: 11px;
+        color: #888;
+      }
+
+      .entry-meta span {
+        background: rgba(0, 0, 0, 0.2);
+        padding: 2px 6px;
+        border-radius: 3px;
+      }
+
+      .character-field-item {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 8px;
+        margin-bottom: 8px;
+        border: 1px solid var(--input-border);
+        border-radius: 5px;
+        background: var(--card-bg);
+      }
+
+      .character-field-item.disabled {
+        opacity: 0.5;
+        background: rgba(0, 0, 0, 0.1);
+      }
+
+      .field-name {
+        font-weight: bold;
+        color: var(--text-color);
+        min-width: 80px;
+      }
+
+      .field-preview {
+        flex: 1;
+        color: var(--text-color);
+        font-size: 13px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      /* 统一控件样式 */
+      .uniform-btn {
+        background: var(--card-bg);
+        color: var(--text-color);
+        border: 1px solid var(--input-border);
+        padding: 8px 16px;
+        border-radius: 5px;
+        cursor: pointer;
+        font-size: 14px;
+        transition: all 0.2s ease;
+      }
+
+      .uniform-btn:hover {
+        background: var(--primary-color);
+        color: white;
+        border-color: var(--primary-color);
+      }
+
+      .uniform-select {
+        background: var(--card-bg);
+        color: var(--text-color);
+        border: 1px solid var(--input-border);
+        padding: 6px 10px;
+        border-radius: 5px;
+        font-size: 14px;
+        min-width: 120px;
+      }
+
+      .uniform-select option {
+        background: #444;
+        color: var(--text-color);
+      }
+
+      .uniform-input {
+        background: var(--card-bg);
+        color: var(--text-color);
+        border: 1px solid var(--input-border);
+        padding: 6px 10px;
+        border-radius: 5px;
+        font-size: 14px;
+      }
+
+      .uniform-textarea {
+        background: var(--card-bg);
+        color: var(--text-color);
+        border: 1px solid var(--input-border);
+        padding: 10px;
+        border-radius: 5px;
+        font-size: 14px;
+        font-family: inherit;
         resize: vertical;
-        min-height: 100px;
+      }
+
+      .filter-item {
+        display: flex;
+        flex-direction: column;
+        gap: 5px;
+      }
+
+      .filter-item label {
+        font-size: 13px;
+        color: var(--text-color);
+        font-weight: 500;
       }
 
       .instruction-toggle {
@@ -1020,6 +1205,11 @@
       #api-settings-modal .api-provider-options.active {
         display: block; /* 显示当前选中的配置区 */
       }
+      #api-settings-modal .connection-type-settings {
+        margin-top: 15px;
+        padding-top: 15px;
+        border-top: 1px solid #555;
+      }
       #api-settings-modal .field-group {
         margin-bottom: 15px;
       }
@@ -1225,9 +1415,9 @@
           <select id="api-provider-selector">
             <option value="deepseek">DeepSeek</option>
             <option value="gemini">Gemini (直链，需魔法)</option>
-            <option value="gemini-proxy">Gemini (中转代理)</option>
-            <option value="local">本地大模型</option>
-            <option value="tavern">自定义 (兼容OpenAI)</option>
+            <option value="gemini-proxy">Gemini (中转站)</option>
+            <option value="local">本地大模型（bat启动用这个）</option>
+            <option value="tavern">CLI反代 / 自定义</option>
           </select>
         </div>
 
@@ -1283,18 +1473,61 @@
 
         <div id="tavern-options" class="api-provider-options">
           <div class="field-group">
-            <label for="tavern-api-endpoint">API URL</label>
-            <input type="text" id="tavern-api-endpoint" placeholder="http://api.xxx.com/v1">
+            <label for="tavern-connection-type">连接类型</label>
+            <select id="tavern-connection-type">
+              <option value="direct">自定义API</option>
+              <option value="reverse-proxy">CLI反代</option>
+            </select>
           </div>
-          <div class="field-group">
-            <label for="tavern-api-key">API Key</label>
-            <input type="password" id="tavern-api-key" placeholder="输入 API Key">
+          
+          <!-- 直连API设置 -->
+          <div id="tavern-direct-settings" class="connection-type-settings">
+            <div class="field-group">
+              <label for="tavern-api-endpoint">API URL</label>
+              <input type="text" id="tavern-api-endpoint" placeholder="http://api.xxx.com/v1">
+            </div>
+            <div class="field-group">
+              <label for="tavern-api-key">API Key</label>
+              <input type="password" id="tavern-api-key" placeholder="输入 API Key">
+            </div>
+            <div class="field-group">
+              <label for="tavern-model">模型名称</label>
+              <input type="text" id="tavern-model" placeholder="例如: gpt-3.5-turbo">
+            </div>
+            <p class="help-text">用于连接远程的、兼容OpenAI格式的API服务。</p>
           </div>
-          <div class="field-group">
-            <label for="tavern-model">模型名称</label>
-            <input type="text" id="tavern-model" placeholder="例如: gpt-3.5-turbo">
+          
+          <!-- 反向代理设置 -->
+          <div id="tavern-proxy-settings" class="connection-type-settings" style="display: none;">
+            <div class="field-group">
+              <label for="tavern-proxy-url">代理服务器 URL</label>
+              <input type="text" id="tavern-proxy-url" placeholder="https://gcli2api-xxxx.onrender.com/v1">
+              <p class="help-text" style="margin-top: 5px; font-size: 12px; color: #888;">
+                不起作用？在末尾添加 /v1 试试！/chat/completions 后缀将自动添加。
+              </p>
+            </div>
+            <div class="field-group">
+              <label for="tavern-proxy-password">代理密码</label>
+              <input type="password" id="tavern-proxy-password" placeholder="123456">
+              <p class="help-text" style="margin-top: 5px; font-size: 12px; color: #888;">
+                将用作代理的密码，而不是 API 密钥。
+              </p>
+            </div>
+            <div class="field-group">
+              <label for="tavern-proxy-model">模型名称</label>
+              <div style="display: flex; gap: 8px; align-items: center;">
+                <select id="tavern-proxy-model" style="flex: 1;">
+                  <option value="">请选择模型...</option>
+                  <option value="gemini-2.5-pro">gemini-2.5-pro</option>
+                  <option value="gemini-2.5-pro-preview-06-05">gemini-2.5-pro-preview-06-05</option>
+                </select>
+                <button type="button" id="refresh-proxy-models-btn" style="background: var(--primary-color); color: white; padding: 8px 12px; border: none; border-radius: 4px; cursor: pointer; white-space: nowrap;">
+                  刷新
+                </button>
+              </div>
+            </div>
+            <p class="help-text">通过反向代理连接到API服务，适用于Render等的CLI反代</p>
           </div>
-          <p class="help-text">用于连接远程的、兼容OpenAI格式的API服务。</p>
         </div>
 
         <div class="modal-actions">
@@ -1331,15 +1564,138 @@
         <h3 id="wb-ai-modal-title">角色书生成</h3>
         <p class="help-text" style="text-align: center; margin-top: -15px; margin-bottom: 20px" id="wb-ai-modal-desc">请选择要生成的条目类型：</p>
         <div class="generation-type-selector">
-          <button data-type="worldview" class="action-btn">生成世界观</button>
-          <button data-type="main_plot" class="action-btn">生成主线剧情</button>
-          <button data-type="side_plot" class="action-btn">生成支线剧情</button>
+          <button data-type="worldview" class="uniform-btn">生成世界观</button>
+          <button data-type="main_plot" class="uniform-btn">生成主线剧情</button>
+          <button data-type="side_plot" class="uniform-btn">生成支线剧情</button>
         </div>
         <div id="wb-ai-options-container"></div>
         <div class="modal-actions">
           <button id="wb-ai-inject-btn" style="display: none" class="action-btn">注入选中条目</button>
           <button id="wb-ai-regenerate-btn" style="display: none" class="action-btn">再生成一套</button>
           <button id="wb-ai-cancel-btn" class="cancel-btn">关闭</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- AI 全局修改模态框 -->
+    <div id="global-edit-modal" class="modal-overlay">
+      <div class="modal-content" style="max-width: 900px; max-height: 90vh; overflow-y: auto;">
+        <h3>🔮 AI 全局修改</h3>
+        
+        <!-- 快速选择区域 -->
+        <div class="quick-select-area" style="margin-bottom: 20px; padding: 15px; background: rgba(0,0,0,0.1); border-radius: 8px;">
+          <h4>快速选择：</h4>
+          <div class="button-group" style="display: flex; gap: 10px; margin-top: 10px;">
+            <button class="uniform-btn" onclick="selectAllWorldbook()">所有世界书</button>
+            <button class="uniform-btn" onclick="selectAllCharacterCards()">所有角色卡</button>
+            <button class="uniform-btn" onclick="showCustomFilter()">自定义</button>
+          </div>
+        </div>
+
+        <!-- 自定义筛选区域 -->
+        <div id="custom-filter-area" style="display: none; margin-bottom: 20px; padding: 15px; background: rgba(0,0,0,0.1); border-radius: 8px;">
+          <h4>自定义筛选：</h4>
+          <div class="filter-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 10px;">
+            <div class="filter-item">
+              <label>优先级筛选：</label>
+              <div style="display: flex; gap: 5px; align-items: center;">
+                <select id="priority-filter" class="uniform-select">
+                  <option value="all">全部</option>
+                  <option value="above">大于等于</option>
+                  <option value="below">小于等于</option>
+                </select>
+                <input type="number" id="priority-value" placeholder="优先级值" class="uniform-input" style="width: 80px;">
+              </div>
+            </div>
+            <div class="filter-item">
+              <label>恒定注入：</label>
+              <select id="constant-filter" class="uniform-select">
+                <option value="all">全部</option>
+                <option value="true">仅恒定</option>
+                <option value="false">仅非恒定</option>
+              </select>
+            </div>
+            <div class="filter-item">
+              <label>注入位置：</label>
+              <select id="position-filter" class="uniform-select">
+                <option value="all">全部位置</option>
+                <option value="before_char">角色前</option>
+                <option value="after_char">角色后</option>
+              </select>
+            </div>
+            <div class="filter-item">
+              <button class="uniform-btn" onclick="applyCustomFilter()">应用筛选</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- 历史回溯区域 -->
+        <div class="history-area" style="margin-bottom: 20px; padding: 15px; background: rgba(0,0,0,0.1); border-radius: 8px;">
+          <h4>历史回溯：</h4>
+          <div class="history-controls" style="display: flex; gap: 10px; align-items: center; margin-top: 10px;">
+            <label>存档点个数：</label>
+            <input type="number" id="history-count" value="5" min="1" max="20" class="uniform-input" style="width: 60px;">
+            <select id="history-select" class="uniform-select" style="flex: 1;">
+              <option value="">选择历史版本...</option>
+            </select>
+            <button class="uniform-btn" onclick="loadHistoryVersion()">回溯</button>
+          </div>
+        </div>
+
+        <!-- 内容区域 -->
+        <div class="content-sections">
+          <!-- 核心区域 -->
+          <div class="section-core" style="margin-bottom: 20px;">
+            <h4 style="color: #e74c3c; display: flex; align-items: center; gap: 10px;">
+              <input type="checkbox" id="select-all-core" onchange="toggleSectionSelection('core-entries', this.checked)">
+              🔥 核心 (恒定注入)
+            </h4>
+            <div id="core-entries" class="entries-container"></div>
+          </div>
+
+          <!-- 详细区域 -->
+          <div class="section-detailed" style="margin-bottom: 20px;">
+            <h4 style="color: #f39c12; display: flex; align-items: center; gap: 10px;">
+              <input type="checkbox" id="select-all-detailed" onchange="toggleSectionSelection('detailed-entries', this.checked)">
+              📋 详细 (高优先级)
+            </h4>
+            <div id="detailed-entries" class="entries-container"></div>
+          </div>
+
+          <!-- 其他区域 -->
+          <div class="section-other" style="margin-bottom: 20px;">
+            <h4 style="color: #95a5a6; display: flex; align-items: center; gap: 10px;">
+              <input type="checkbox" id="select-all-other" onchange="toggleSectionSelection('other-entries', this.checked)">
+              📄 其他
+            </h4>
+            <div id="other-entries" class="entries-container"></div>
+          </div>
+
+          <hr style="margin: 30px 0; border: 1px solid #444;">
+
+          <!-- 角色信息区域 -->
+          <div class="section-character" style="margin-bottom: 20px;">
+            <h4 style="color: #3498db; display: flex; align-items: center; gap: 10px;">
+              <input type="checkbox" id="select-all-character" onchange="toggleSectionSelection('character-entries', this.checked)">
+              👤 角色信息
+            </h4>
+            <div id="character-entries" class="entries-container"></div>
+          </div>
+        </div>
+
+        <!-- 指令输入区域 -->
+        <div class="instruction-area" style="margin: 20px 0; padding: 15px; background: var(--card-bg); border: 1px solid var(--input-border); border-radius: 8px;">
+          <h4>修改指令：</h4>
+          <textarea id="global-instruction" rows="4" placeholder="输入你的修改指令，支持使用 @id 引用特定条目，例如：@1 @3 请将这两个条目的语调改为更正式的风格" class="uniform-textarea" style="width: 100%; margin-top: 10px;"></textarea>
+          <div style="margin-top: 10px; font-size: 12px; color: #888;">
+            提示：使用 @id 可以引用特定条目，如 @1 @5 表示引用ID为1和5的条目
+          </div>
+        </div>
+
+        <!-- 操作按钮 -->
+        <div class="modal-actions">
+          <button id="global-edit-execute-btn" class="action-btn" onclick="executeGlobalEdit()">🔮 执行修改</button>
+          <button id="global-edit-cancel-btn" class="cancel-btn" onclick="closeGlobalEditModal()">关闭</button>
         </div>
       </div>
     </div>
@@ -1564,7 +1920,7 @@
                 <button class="delete-btn" onclick="deleteInstruction('1756898751755.6323')">删除</button>
             </div>
         </div>
-        <div class="instruction-content">[系统指令]: 在每次回应的末尾，你必须包含一个显示{{char}}当前关键状态的状态栏。状态栏应该用代码块((```))包围。格式为：| 健康: [数值] | 理智: [数值] | 对{{user}}的好感: [数值] | 位置: [当前位置] |</div>
+        <div class="instruction-content">[系统指令]: 在每次回应的末尾，你必须包含一个当前角色的关键状态的状态栏。状态栏应该用代码块((```))包围。格式为：| 健康: [数值] | 理智: [数值] | 对{{user}}的好感: [数值] | 位置: [当前位置] |</div>
     </div><div class="instruction-card add-instruction" onclick="addNewInstruction()">
                   <div class="add-icon">+</div>
                   <div class="add-text">系统指令 · 状态栏 · 美化</div>
@@ -1614,9 +1970,14 @@
 
             <div style="display: flex; justify-content: space-between; align-items: center">
               <h3 class="section-title" id="world-knowledge-book-title">世界书 </h3>
-              <button id="ai-lorebook-generator-btn" onclick="openWorldbookAiModal(this)" style="background-color: var(--ai-button-bg); color: white; padding: 8px 15px; border-radius: 5px">
-                🔮 一键生成世界书
-              </button>
+              <div style="display: flex; gap: 10px;">
+                <button id="ai-global-edit-btn" onclick="openGlobalEditModal(this)" style="background-color: var(--ai-button-bg); color: white; padding: 8px 15px; border-radius: 5px">
+                  🔮 AI 全局改
+                </button>
+                <button id="ai-lorebook-generator-btn" onclick="openWorldbookAiModal(this)" style="background-color: var(--ai-button-bg); color: white; padding: 8px 15px; border-radius: 5px">
+                  🔮 一键生成世界书
+                </button>
+              </div>
             </div>
             <p class="help-text" id="worldbook-help-text">“角色书”是给AI角色绑定的一部<b>参考词典和设定集</b>。如果你要世界书，上面的信息只用填名字</p>
             <ul id="worldbook-entries-container" class="worldbook-list"></ul>
@@ -1629,7 +1990,7 @@
                 </label>
               </div>
               <button onclick="addWorldbookEntry()" class="secondary" style="background-color: #e67e22; flex-grow: 1">+ 补充世界书</button>
-              <button onclick="sortWorldbookEntriesByPriority()" class="secondary" style="flex-grow: 1">按优先级刷新ID</button>
+              <button onclick="sortWorldbookEntriesByPriority()" class="secondary" style="flex-grow: 1">按优先级排序</button>
               <button onclick="sortWorldbookEntries()" class="secondary" style="flex-grow: 1">按ID排序</button>
             </div>
           </div>
@@ -2358,7 +2719,8 @@
         const key = apiSettings[provider]?.apiKey;
         const endpoint = apiSettings[provider]?.endpoint;
 
-        if (!provider || (provider !== 'custom' && !key) || (provider === 'custom' && !endpoint)) {
+        // 使用统一的API配置检查函数
+        if (!checkApiConfiguration(apiSettings)) {
           alert('请先在 API 设置中配置您的服务商。');
           openApiSettingsModal();
           return;
@@ -2513,23 +2875,48 @@ ${JSON.stringify({ fields: textObject, worldbook: wbTextObject }, null, 2)}
         const selector = document.getElementById('api-provider-selector');
         const saveBtn = document.getElementById('save-api-settings-btn');
         const cancelBtn = document.getElementById('cancel-api-settings-btn');
+        const tavernConnectionType = document.getElementById('tavern-connection-type');
 
-        // 创建事件处理函数
-        apiProviderChangeHandler = function () {
-          document.querySelectorAll('.api-provider-options').forEach(el => el.classList.remove('active'));
-          const selectedProvider = selector.value;
-          const targetElement = document.getElementById(`${selectedProvider}-options`);
-          if (targetElement) {
-            targetElement.classList.add('active');
+        // Show/hide options based on provider selection
+        selector.onchange = () => {
+          document.querySelectorAll('.api-provider-options').forEach(opt => opt.classList.remove('active'));
+          const selected = selector.value;
+          const targetOption = document.getElementById(`${selected}-options`);
+          if (targetOption) {
+            targetOption.classList.add('active');
           }
         };
 
-        // 绑定事件
-        selector.addEventListener('change', apiProviderChangeHandler);
+        // Handle tavern connection type switching
+        if (tavernConnectionType) {
+          tavernConnectionType.onchange = () => {
+            const connectionType = tavernConnectionType.value;
+            const directSettings = document.getElementById('tavern-direct-settings');
+            const proxySettings = document.getElementById('tavern-proxy-settings');
+            
+            if (connectionType === 'reverse-proxy') {
+              directSettings.style.display = 'none';
+              proxySettings.style.display = 'block';
+            } else {
+              directSettings.style.display = 'block';
+              proxySettings.style.display = 'none';
+            }
+          };
+        }
 
-        cancelBtn.onclick = () => (modal.style.display = 'none');
-        modal.onclick = e => {
-          if (e.target === modal) modal.style.display = 'none';
+        // Handle refresh models button
+        const refreshModelsBtn = document.getElementById('refresh-proxy-models-btn');
+        if (refreshModelsBtn) {
+          refreshModelsBtn.onclick = async () => {
+            await refreshProxyModels();
+          };
+        }
+
+        // Initialize with first option
+        selector.dispatchEvent(new Event('change'));
+
+        cancelBtn.onclick = () => {
+          modal.style.display = 'none';
         };
 
         saveBtn.onclick = () => {
@@ -2549,9 +2936,13 @@ ${JSON.stringify({ fields: textObject, worldbook: wbTextObject }, null, 2)}
               model: document.getElementById('gemini-proxy-model').value,
             },
             tavern: {
+              connectionType: document.getElementById('tavern-connection-type').value,
               endpoint: document.getElementById('tavern-api-endpoint').value.trim(),
               apiKey: document.getElementById('tavern-api-key').value.trim(),
-              model: document.getElementById('tavern-model').value.trim() || '', // new field
+              model: document.getElementById('tavern-model').value.trim() || '',
+              proxyUrl: document.getElementById('tavern-proxy-url').value.trim(),
+              proxyPassword: document.getElementById('tavern-proxy-password').value.trim(),
+              proxyModel: document.getElementById('tavern-proxy-model').value.trim() || '',
             },
             local: {
               endpoint: document.getElementById('local-api-endpoint').value.trim(),
@@ -2569,7 +2960,15 @@ ${JSON.stringify({ fields: textObject, worldbook: wbTextObject }, null, 2)}
           deepseek: { apiKey: '' },
           gemini: { apiKey: '', model: 'gemini-2.5-flash' },
           'gemini-proxy': { endpoint: '', apiKey: '', model: 'gemini-2.5-flash' },
-          tavern: { endpoint: '', apiKey: '' },
+          tavern: { 
+            connectionType: 'direct',
+            endpoint: '', 
+            apiKey: '', 
+            model: '',
+            proxyUrl: '',
+            proxyPassword: '',
+            proxyModel: ''
+          },
           local: { endpoint: '' },
         };
 
@@ -2597,14 +2996,134 @@ ${JSON.stringify({ fields: textObject, worldbook: wbTextObject }, null, 2)}
         document.getElementById('gemini-proxy-endpoint').value = settings['gemini-proxy']?.endpoint || '';
         document.getElementById('gemini-proxy-api-key').value = settings['gemini-proxy']?.apiKey || '';
         document.getElementById('gemini-proxy-model').value = settings['gemini-proxy']?.model || 'gemini-2.5-flash';
+        
+        // Load tavern settings including connection type and proxy settings
+        document.getElementById('tavern-connection-type').value = settings.tavern?.connectionType || 'direct';
         document.getElementById('tavern-api-endpoint').value = settings.tavern?.endpoint || '';
         document.getElementById('tavern-api-key').value = settings.tavern?.apiKey || '';
         document.getElementById('tavern-model').value = settings.tavern?.model || '';
+        document.getElementById('tavern-proxy-url').value = settings.tavern?.proxyUrl || '';
+        document.getElementById('tavern-proxy-password').value = settings.tavern?.proxyPassword || '';
+        document.getElementById('tavern-proxy-model').value = settings.tavern?.proxyModel || '';
         document.getElementById('local-api-endpoint').value = settings.local?.endpoint || '';
+        
+        // Trigger tavern connection type change to show correct settings
+        const tavernConnectionType = document.getElementById('tavern-connection-type');
+        if (tavernConnectionType) {
+          tavernConnectionType.dispatchEvent(new Event('change'));
+        }
 
         // Trigger change to show correct options
         document.getElementById('api-provider-selector').dispatchEvent(new Event('change'));
         return settings;
+      }
+
+      // --- Refresh Proxy Models Function ---
+      async function refreshProxyModels() {
+        const refreshBtn = document.getElementById('refresh-proxy-models-btn');
+        const modelSelect = document.getElementById('tavern-proxy-model');
+        const proxyUrl = document.getElementById('tavern-proxy-url').value.trim();
+        const proxyPassword = document.getElementById('tavern-proxy-password').value.trim();
+
+        if (!proxyUrl) {
+          alert('请先输入代理服务器 URL');
+          return;
+        }
+
+        if (!proxyPassword) {
+          alert('请先输入代理密码');
+          return;
+        }
+
+        const originalText = refreshBtn.textContent;
+        refreshBtn.disabled = true;
+        refreshBtn.textContent = '获取中...';
+
+        try {
+          // 构建模型列表请求URL
+          let modelsUrl = proxyUrl;
+          if (!modelsUrl.startsWith('http')) {
+            modelsUrl = 'https://' + modelsUrl;
+          }
+          
+          // 移除末尾的斜杠
+          if (modelsUrl.endsWith('/')) {
+            modelsUrl = modelsUrl.slice(0, -1);
+          }
+          
+          // 添加 /models 端点
+          if (modelsUrl.endsWith('/v1')) {
+            modelsUrl += '/models';
+          } else {
+            modelsUrl += '/v1/models';
+          }
+
+          console.log('Fetching models from:', modelsUrl);
+
+          const response = await fetch(modelsUrl, {
+            method: 'GET',
+            headers: {
+              'Authorization': `Bearer ${proxyPassword}`,
+              'Content-Type': 'application/json'
+            }
+          });
+
+          if (!response.ok) {
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+          }
+
+          const data = await response.json();
+          console.log('Models response:', data);
+
+          // 解析模型列表
+          let models = [];
+          if (data.data && Array.isArray(data.data)) {
+            // OpenAI 格式
+            models = data.data.map(model => ({
+              id: model.id,
+              name: model.id
+            }));
+          } else if (Array.isArray(data)) {
+            // 简单数组格式
+            models = data.map(model => ({
+              id: typeof model === 'string' ? model : model.id,
+              name: typeof model === 'string' ? model : (model.name || model.id)
+            }));
+          } else {
+            throw new Error('无法解析模型列表格式');
+          }
+
+          if (models.length === 0) {
+            throw new Error('未找到可用模型');
+          }
+
+          // 保存当前选中的模型
+          const currentValue = modelSelect.value;
+
+          // 清空并重新填充模型选择框
+          modelSelect.innerHTML = '<option value="">请选择模型...</option>';
+          
+          models.forEach(model => {
+            const option = document.createElement('option');
+            option.value = model.id;
+            option.textContent = model.name;
+            modelSelect.appendChild(option);
+          });
+
+          // 恢复之前选中的模型（如果还存在）
+          if (currentValue && models.some(m => m.id === currentValue)) {
+            modelSelect.value = currentValue;
+          }
+
+          alert(`成功获取 ${models.length} 个模型`);
+
+        } catch (error) {
+          console.error('获取模型列表失败:', error);
+          alert(`获取模型列表失败: ${error.message}`);
+        } finally {
+          refreshBtn.disabled = false;
+          refreshBtn.textContent = originalText;
+        }
       }
 
       // --- Mobile Textarea Auto-Resize ---
@@ -2663,7 +3182,6 @@ ${JSON.stringify({ fields: textObject, worldbook: wbTextObject }, null, 2)}
 
       // [NEW] 指令管理系统
       let instructionsData = [];
-      let tavernHelperInstalled = null; // null=未询问, true=已安装, false=未安装
 
       // 预设指令模板
       const instructionTemplates = {
@@ -2690,12 +3208,12 @@ ${JSON.stringify({ fields: textObject, worldbook: wbTextObject }, null, 2)}
         'parentheses-mode': {
           name: '括号模式',
           content:
-            '[系统指令]: 续写时，请使用括号来描述{{char}}的动作、表情和内心想法。对话本身应在括号之外。例如："你在这里做什么？" (她挑起一边的眉毛，双臂交叉，眼神中带着一丝审视)。',
+            '[系统指令]: 续写时，请使用括号来描述当前角色的动作、表情和内心想法。对话本身应在括号之外。例如："你在这里做什么？" (她挑起一边的眉毛，双臂交叉，眼神中带着一丝审视)。',
         },
         'status-bar': {
           name: '简易状态栏',
           content:
-            '[系统指令]: 紧接着，结合下文角色与{{user}}的聊天记录，写出一个显示{{char}}当前关键状态的状态栏。状态栏应该用代码块((\`\`\`))包围。格式为：| 内心独白: [想法] | 对{{user}}的好感: [数值/100] | 位置: [当前位置] |',
+            '[系统指令]: 紧接着，结合下文角色与{{user}}的聊天记录，写出一个显示当前角色关键状态的状态栏。状态栏应该用代码块((\`\`\`))包围。格式为：| 内心独白: [想法] | 对{{user}}的好感: [数值/100] | 位置: [当前位置] |',
         },
         'third-person': {
           name: '第三人称',
@@ -2721,7 +3239,7 @@ ${JSON.stringify({ fields: textObject, worldbook: wbTextObject }, null, 2)}
           name: '简易状态栏-竖向',
           content:
             `
-            [系统指令]: 在每次回应的末尾，你必须包含一个显示{{char}}当前关键状态的状态栏。状态栏应该用代码块(>\`\`\`)包围。格式为：
+            [系统指令]: 在每次回应的末尾，你必须包含一个显示当前角色关键状态的状态栏。状态栏应该用代码块(>\`\`\`)包围。格式为：
 >\`\`\`
 2025-某天-星期一12:20
 姓名:...
@@ -3218,11 +3736,13 @@ ${JSON.stringify({ fields: textObject, worldbook: wbTextObject }, null, 2)}
           loadCustomTemplates();
 
           // 加载酒馆助手状态
-          loadTavernHelperStatus().then(savedStatus => {
-            if (savedStatus !== null) {
-              tavernHelperInstalled = savedStatus;
-            }
-          });
+          // 临时禁用酒馆助手状态检查，避免未定义函数错误
+          // loadTavernHelperStatus().then(savedStatus => {
+          //   if (savedStatus !== null) {
+          //     tavernHelperInstalled = savedStatus;
+          //   }
+          // });
+          tavernHelperInstalled = true; // 默认设为已安装
         };
 
         request.onerror = event => {
@@ -5854,14 +6374,49 @@ ${currentContent}
             case 'tavern':
               const isLocal = provider === 'local';
               const providerSettings = apiSettings[provider];
-              const endpoint = providerSettings.endpoint;
-
-              if (!endpoint) throw new Error(`API Endpoint for ${provider} is missing.`);
+              
+              // Handle reverse proxy mode for tavern
+              const isReverseProxy = !isLocal && providerSettings.connectionType === 'reverse-proxy';
+              
+              let endpoint, apiKey, model;
+              
+              if (isReverseProxy) {
+                // Use reverse proxy settings
+                endpoint = providerSettings.proxyUrl;
+                apiKey = providerSettings.proxyPassword; // Use proxy password instead of API key
+                model = providerSettings.proxyModel || 'gpt-3.5-turbo';
+                
+                if (!endpoint) throw new Error('代理服务器 URL 未设置');
+                if (!apiKey) throw new Error('代理密码未设置');
+              } else {
+                // Use direct connection settings
+                endpoint = providerSettings.endpoint;
+                apiKey = providerSettings.apiKey;
+                model = providerSettings.model || (isLocal ? 'local-model' : 'gpt-3.5-turbo');
+                
+                if (!endpoint) throw new Error(`API Endpoint for ${provider} is missing.`);
+              }
 
               let finalEndpoint = endpoint;
-              if (finalEndpoint.endsWith('/v1')) {
-                finalEndpoint += '/chat/completions';
+              
+              // Auto-append /chat/completions for reverse proxy if not present
+              if (isReverseProxy) {
+                if (!finalEndpoint.includes('/chat/completions')) {
+                  if (finalEndpoint.endsWith('/v1')) {
+                    finalEndpoint += '/chat/completions';
+                  } else if (finalEndpoint.endsWith('/')) {
+                    finalEndpoint += 'chat/completions';
+                  } else {
+                    finalEndpoint += '/chat/completions';
+                  }
+                }
+              } else {
+                // Original logic for direct connections
+                if (finalEndpoint.endsWith('/v1')) {
+                  finalEndpoint += '/chat/completions';
+                }
               }
+              
               if (!finalEndpoint.startsWith('http')) {
                 // Local endpoints are http, not https
                 finalEndpoint = (isLocal ? 'http://' : 'https://') + finalEndpoint;
@@ -5869,16 +6424,21 @@ ${currentContent}
               requestUrl = finalEndpoint;
 
               const headers = { 'Content-Type': 'application/json' };
-              // Only add auth header for tavern if key exists
-              if (!isLocal && providerSettings.apiKey) {
-                headers['Authorization'] = `Bearer ${providerSettings.apiKey}`;
+              
+              // Add authorization header
+              if (isReverseProxy) {
+                // For reverse proxy, use proxy password as Bearer token
+                headers['Authorization'] = `Bearer ${apiKey}`;
+              } else if (!isLocal && apiKey) {
+                // For direct tavern connection, use API key
+                headers['Authorization'] = `Bearer ${apiKey}`;
               }
 
               requestOptions = {
                 method: 'POST',
                 headers: headers,
                 body: JSON.stringify({
-                  model: providerSettings.model || 'local-model', // For local, model name is often ignored
+                  model: model,
                   messages: [{ role: 'user', content: finalPrompt }],
                   stream: false,
                 }),
@@ -5907,21 +6467,47 @@ ${currentContent}
 
           // Handle different response structures
           if (provider === 'gemini' || provider === 'gemini-proxy') {
-            if (data.candidates && data.candidates.length > 0) {
-              return data.candidates[0].content.parts[0].text;
-            }
-            // Handle error response from Gemini
+            // Handle error response from Gemini first
             if (data.error) {
               throw new Error(`Gemini API Error: ${data.error.message}`);
             }
+            
+            if (data.candidates && data.candidates.length > 0) {
+              const candidate = data.candidates[0];
+              console.log('Candidate structure:', candidate);
+              
+              if (candidate.content && candidate.content.parts && candidate.content.parts.length > 0) {
+                return candidate.content.parts[0].text;
+              }
+              
+              // Check if it's a different structure (some Gemini responses have text directly)
+              if (candidate.text) {
+                return candidate.text;
+              }
+              
+              // Check if content is at a different level
+              if (candidate.output) {
+                return candidate.output;
+              }
+            }
+            
+            // Log the actual response for debugging
+            console.error('Unexpected Gemini response structure:', data);
+            console.error('First candidate:', data.candidates?.[0]);
+            throw new Error('Gemini API返回了意外的响应结构，请检查控制台日志');
           }
+          
           // For DeepSeek and Tavern (assuming OpenAI compatible)
           if (data.choices && data.choices.length > 0) {
-            return data.choices[0].message.content;
+            const choice = data.choices[0];
+            if (choice.message && choice.message.content) {
+              return choice.message.content;
+            }
           }
 
-          // Fallback for unexpected response structures
-          throw new Error('Unexpected API response structure. Check console for details.');
+          // Log the actual response for debugging
+          console.error('Unexpected API response structure:', data);
+          throw new Error('API返回了意外的响应结构，请检查控制台日志');
         } catch (error) {
           console.error(`API error with provider ${provider}:`, error);
           alert(`${t('ai-completion-failed')}\nError: ${error.message}`);
@@ -6188,19 +6774,24 @@ ${hierarchicalContext}
 
         injectBtn.onclick = () => {
           const container = document.getElementById('wb-ai-options-container');
-          const checked = container.querySelectorAll('input[type="checkbox"][data-entry]:checked');
+          const checked = container.querySelectorAll('input[type="checkbox"]:checked');
           const existingEntries = buildWorldbookDataFromDOM();
           let maxId = existingEntries.length > 0 ? Math.max(...existingEntries.map(e => e.id)) : -1;
 
           const newEntries = Array.from(checked).map(checkbox => {
-            const entryData = JSON.parse(checkbox.dataset.entry);
+            // 使用新的JavaScript属性存储方式获取数据
+            const entryData = checkbox._entryData;
+            if (!entryData) {
+              return null;
+            }
+            
             maxId++;
             return {
               ...entryData,
               id: maxId,
               children: [],
             };
-          });
+          }).filter(entry => entry !== null);
 
           if (newEntries.length > 0) {
             renderWorldbookFromData(existingEntries.concat(newEntries));
@@ -6298,8 +6889,37 @@ ${existingEntriesText || '无'}
           const result = await callApi(finalPrompt, button);
           try {
             if (result) {
-              const cleanedResult = result.replace(/^```json\s*|```$/g, '');
-              const generatedEntries = JSON.parse(cleanedResult);
+              let cleanedResult = result.replace(/^```json\s*|```$/g, '');
+              
+              // 处理本地模型返回的完整API响应格式
+              let generatedEntries;
+              try {
+                // 首先尝试直接解析
+                generatedEntries = JSON.parse(cleanedResult);
+              } catch (e) {
+                console.log('直接解析失败，尝试提取嵌套JSON...');
+                try {
+                  // 如果是完整的API响应，提取content字段
+                  const apiResponse = JSON.parse(cleanedResult);
+                  if (apiResponse.choices && apiResponse.choices[0] && apiResponse.choices[0].message) {
+                    const content = apiResponse.choices[0].message.content;
+                    // 从content中提取JSON
+                    const jsonMatch = content.match(/```json\s*([\s\S]*?)\s*```/);
+                    if (jsonMatch) {
+                      generatedEntries = JSON.parse(jsonMatch[1]);
+                    } else {
+                      // 尝试直接解析content
+                      generatedEntries = JSON.parse(content);
+                    }
+                  } else {
+                    throw new Error('无法识别的API响应格式');
+                  }
+                } catch (e2) {
+                  console.error('JSON解析失败:', e2);
+                  console.error('原始数据:', cleanedResult.substring(0, 500));
+                  throw e2;
+                }
+              }
 
               if (Array.isArray(generatedEntries)) {
                 desc.textContent = t('wb-ai-modal-desc-generated', { type: typeName });
@@ -6330,9 +6950,7 @@ ${existingEntriesText || '无'}
 
                   entryDiv.innerHTML = `
                             <label for="${mainCheckboxId}">
-                                <input type="checkbox" id="${mainCheckboxId}" checked data-entry='${JSON.stringify(
-                    entryData,
-                  )}'>
+                                <input type="checkbox" id="${mainCheckboxId}" checked>
                                 <div class="entry-details">
                                     <h4>${entry.comment || '无题'}</h4>
                                     <p><strong>触发词:</strong> ${(entry.keys || []).join(', ')}</p>
@@ -6351,14 +6969,16 @@ ${existingEntriesText || '无'}
                         `;
                   container.appendChild(entryDiv);
 
+                  // 获取checkbox元素并设置数据
+                  const mainCheckbox = entryDiv.querySelector(`#${mainCheckboxId}`);
+                  // 使用JavaScript属性而不是HTML属性来存储JSON数据，避免截断
+                  mainCheckbox._entryData = entryData;
+
                   // Add event listener to the new constant toggle
                   const constantToggle = entryDiv.querySelector('.wb-ai-constant-toggle');
-                  const mainCheckbox = entryDiv.querySelector(`#${mainCheckboxId}`);
 
                   constantToggle.addEventListener('change', e => {
-                    const currentData = JSON.parse(mainCheckbox.dataset.entry);
-                    currentData.constant = e.target.checked;
-                    mainCheckbox.dataset.entry = JSON.stringify(currentData);
+                    mainCheckbox._entryData.constant = e.target.checked;
                   });
                 });
               } else {
@@ -6469,8 +7089,27 @@ ${worldbookContextPrompt}
               const result = await callApi(prompt, button);
               if (result) {
                 try {
-                  const cleanedResult = result.replace(/^```json\s*|```$/g, '');
-                  const data = JSON.parse(cleanedResult);
+                  let cleanedResult = result.replace(/^```json\s*|```$/g, '');
+                  
+                  // 处理本地模型返回的完整API响应格式
+                  let data;
+                  try {
+                    data = JSON.parse(cleanedResult);
+                  } catch (e) {
+                    // 如果是完整的API响应，提取content字段
+                    const apiResponse = JSON.parse(cleanedResult);
+                    if (apiResponse.choices && apiResponse.choices[0] && apiResponse.choices[0].message) {
+                      const content = apiResponse.choices[0].message.content;
+                      const jsonMatch = content.match(/```json\s*([\s\S]*?)\s*```/);
+                      if (jsonMatch) {
+                        data = JSON.parse(jsonMatch[1]);
+                      } else {
+                        data = JSON.parse(content);
+                      }
+                    } else {
+                      throw e;
+                    }
+                  }
 
                   emptyFields.forEach(id => {
                     if (data[id]) {
@@ -6541,8 +7180,27 @@ ${worldbookContextPrompt}
               const result = await callApi(prompt, button);
               if (result) {
                 try {
-                  const cleanedResult = result.replace(/^```json\s*|```$/g, '');
-                  const data = JSON.parse(cleanedResult);
+                  let cleanedResult = result.replace(/^```json\s*|```$/g, '');
+                  
+                  // 处理本地模型返回的完整API响应格式
+                  let data;
+                  try {
+                    data = JSON.parse(cleanedResult);
+                  } catch (e) {
+                    // 如果是完整的API响应，提取content字段
+                    const apiResponse = JSON.parse(cleanedResult);
+                    if (apiResponse.choices && apiResponse.choices[0] && apiResponse.choices[0].message) {
+                      const content = apiResponse.choices[0].message.content;
+                      const jsonMatch = content.match(/```json\s*([\s\S]*?)\s*```/);
+                      if (jsonMatch) {
+                        data = JSON.parse(jsonMatch[1]);
+                      } else {
+                        data = JSON.parse(content);
+                      }
+                    } else {
+                      throw e;
+                    }
+                  }
 
                   fieldsToComplete.forEach(id => {
                     if (data[id]) {
@@ -7337,7 +7995,675 @@ ${worldbookContextPrompt}
       function loadTutorialImages() {
         const tutorialModal = document.getElementById('tutorialModal');
         const lazyImages = tutorialModal.querySelectorAll('img[data-lazy-src]');
+      }
+
+      // ==================== AI 全局修改功能 ====================
+      
+      // 全局修改历史记录
+      let globalEditHistory = [];
+      let currentHistoryIndex = -1;
+
+      // 修复JSON格式问题
+      function fixJsonFormat(jsonString) {
+        let fixed = jsonString;
         
+        // 修复未转义的换行符和制表符
+        fixed = fixed.replace(/(?<!\\)\n/g, '\\n');
+        fixed = fixed.replace(/(?<!\\)\r/g, '\\r');
+        fixed = fixed.replace(/(?<!\\)\t/g, '\\t');
+        
+        // 修复未转义的引号（在字符串内部）
+        // 这个正则表达式尝试匹配字符串值中的未转义引号
+        fixed = fixed.replace(/"([^"\\]*)(?<!\\)"([^"\\]*?)(?<!\\)"([^"\\]*?)"/g, (match, p1, p2, p3) => {
+          // 如果中间部分包含引号，转义它们
+          const escapedMiddle = p2.replace(/"/g, '\\"');
+          return `"${p1}${escapedMiddle}${p3}"`;
+        });
+        
+        // 修复控制字符
+        fixed = fixed.replace(/[\u0000-\u001F\u007F-\u009F]/g, '');
+        
+        // 修复可能的尾随逗号
+        fixed = fixed.replace(/,(\s*[}\]])/g, '$1');
+        
+        // 修复可能的多余空白
+        fixed = fixed.trim();
+        
+        return fixed;
+      }
+
+      // 打开全局修改模态框
+      function openGlobalEditModal(button) {
+        const modal = document.getElementById('global-edit-modal');
+        modal.style.display = 'flex';
+        
+        // 初始化界面
+        initializeGlobalEditModal();
+      }
+
+      // 关闭全局修改模态框
+      function closeGlobalEditModal() {
+        const modal = document.getElementById('global-edit-modal');
+        modal.style.display = 'none';
+      }
+
+      // 初始化全局修改模态框
+      function initializeGlobalEditModal() {
+        // 重置筛选区域
+        document.getElementById('custom-filter-area').style.display = 'none';
+        
+        // 加载所有条目
+        loadAllEntries();
+        
+        // 更新历史记录选择器
+        updateHistorySelector();
+      }
+
+      // 加载所有条目
+      function loadAllEntries() {
+        const worldbookEntries = buildWorldbookDataFromDOM();
+        const characterData = buildCardObject();
+        
+        // 按优先级和类型分类条目
+        categorizeEntries(worldbookEntries, characterData);
+      }
+
+      // 分类条目
+      function categorizeEntries(worldbookEntries, characterData) {
+        // 清空所有容器
+        document.getElementById('core-entries').innerHTML = '';
+        document.getElementById('detailed-entries').innerHTML = '';
+        document.getElementById('other-entries').innerHTML = '';
+        document.getElementById('character-entries').innerHTML = '';
+
+        // 按优先级排序世界书条目
+        worldbookEntries.sort((a, b) => (b.priority || 100) - (a.priority || 100));
+
+        // 分类世界书条目
+        worldbookEntries.forEach(entry => {
+          if (entry.constant) {
+            addEntryToContainer('core-entries', entry, 'worldbook');
+          } else if ((entry.priority || 100) > 100) {
+            addEntryToContainer('detailed-entries', entry, 'worldbook');
+          } else {
+            addEntryToContainer('other-entries', entry, 'worldbook');
+          }
+        });
+
+        // 添加角色信息条目
+        const characterFields = [
+          'name', 'description', 'personality', 'scenario', 
+          'first_mes', 'mes_example', 'system_prompt', 'post_history_instructions'
+        ];
+        
+        characterFields.forEach(field => {
+          if (characterData[field] && characterData[field].trim()) {
+            addCharacterFieldToContainer('character-entries', field, characterData[field]);
+          }
+        });
+      }
+
+      // 添加条目到容器
+      function addEntryToContainer(containerId, entry, type) {
+        const container = document.getElementById(containerId);
+        const entryDiv = document.createElement('div');
+        entryDiv.className = 'entry-item';
+        entryDiv.dataset.entryId = entry.id;
+        entryDiv.dataset.entryType = type;
+
+        const keys = Array.isArray(entry.keys) ? entry.keys.join(', ') : entry.keys || '';
+        const content = entry.content || '';
+        const position = entry.position === 'after_char' ? '角色后' : '角色前';
+        
+        entryDiv.innerHTML = `
+          <input type="checkbox" class="entry-checkbox" checked>
+          <div class="entry-details">
+            <div class="entry-title">
+              <span class="entry-id">ID:${entry.id}</span>
+              ${entry.comment || '无标题'}
+            </div>
+            <div class="entry-keys">触发词: ${keys}</div>
+            <div class="entry-content-preview">${content}</div>
+            <div class="entry-meta">
+              <span>优先级: ${entry.priority || 100}</span>
+              <span>位置: ${position}</span>
+              <span>恒定: ${entry.constant ? '是' : '否'}</span>
+            </div>
+          </div>
+        `;
+
+        container.appendChild(entryDiv);
+      }
+
+      // 添加角色字段到容器
+      function addCharacterFieldToContainer(containerId, fieldName, fieldValue) {
+        const container = document.getElementById(containerId);
+        const fieldDiv = document.createElement('div');
+        fieldDiv.className = 'character-field-item';
+        fieldDiv.dataset.fieldName = fieldName;
+        fieldDiv.dataset.fieldType = 'character';
+
+        const fieldDisplayName = getFieldDisplayName(fieldName);
+        const preview = fieldValue.length > 100 ? fieldValue.substring(0, 100) + '...' : fieldValue;
+
+        fieldDiv.innerHTML = `
+          <input type="checkbox" class="entry-checkbox" checked>
+          <div class="field-name">${fieldDisplayName}</div>
+          <div class="field-preview">${preview}</div>
+        `;
+
+        container.appendChild(fieldDiv);
+      }
+
+      // 获取字段显示名称
+      function getFieldDisplayName(fieldName) {
+        const fieldNames = {
+          'name': '角色名',
+          'description': '角色描述',
+          'personality': '性格',
+          'scenario': '场景',
+          'first_mes': '第一条消息',
+          'mes_example': '对话示例',
+          'system_prompt': '系统提示',
+          'post_history_instructions': '历史后指令'
+        };
+        return fieldNames[fieldName] || fieldName;
+      }
+
+      // 快速选择功能
+      function selectAllWorldbook() {
+        const worldbookContainers = ['core-entries', 'detailed-entries', 'other-entries'];
+        worldbookContainers.forEach(containerId => {
+          const checkboxes = document.querySelectorAll(`#${containerId} .entry-checkbox`);
+          checkboxes.forEach(cb => cb.checked = true);
+        });
+        
+        // 取消选择角色卡
+        const characterCheckboxes = document.querySelectorAll('#character-entries .entry-checkbox');
+        characterCheckboxes.forEach(cb => cb.checked = false);
+      }
+
+      function selectAllCharacterCards() {
+        const characterCheckboxes = document.querySelectorAll('#character-entries .entry-checkbox');
+        characterCheckboxes.forEach(cb => cb.checked = true);
+        
+        // 取消选择世界书
+        const worldbookContainers = ['core-entries', 'detailed-entries', 'other-entries'];
+        worldbookContainers.forEach(containerId => {
+          const checkboxes = document.querySelectorAll(`#${containerId} .entry-checkbox`);
+          checkboxes.forEach(cb => cb.checked = false);
+        });
+      }
+
+      function showCustomFilter() {
+        const filterArea = document.getElementById('custom-filter-area');
+        filterArea.style.display = filterArea.style.display === 'none' ? 'block' : 'none';
+      }
+
+      // 应用自定义筛选
+      function applyCustomFilter() {
+        const priorityFilter = document.getElementById('priority-filter').value;
+        const priorityValue = parseInt(document.getElementById('priority-value').value) || 0;
+        const constantFilter = document.getElementById('constant-filter').value;
+        const positionFilter = document.getElementById('position-filter').value;
+
+        // 获取所有世界书条目
+        const allEntries = document.querySelectorAll('.entry-item[data-entry-type="worldbook"]');
+        
+        allEntries.forEach(entryDiv => {
+          const checkbox = entryDiv.querySelector('.entry-checkbox');
+          const metaSpans = entryDiv.querySelectorAll('.entry-meta span');
+          
+          let priority = 100;
+          let constant = false;
+          let position = 'before_char';
+          
+          // 解析元数据
+          metaSpans.forEach(span => {
+            const text = span.textContent;
+            if (text.includes('优先级:')) {
+              priority = parseInt(text.split(':')[1].trim()) || 100;
+            } else if (text.includes('恒定:')) {
+              constant = text.includes('是');
+            } else if (text.includes('位置:')) {
+              position = text.includes('角色后') ? 'after_char' : 'before_char';
+            }
+          });
+
+          // 应用筛选条件
+          let shouldSelect = true;
+
+          if (priorityFilter === 'above' && priority < priorityValue) shouldSelect = false;
+          if (priorityFilter === 'below' && priority > priorityValue) shouldSelect = false;
+          if (constantFilter === 'true' && !constant) shouldSelect = false;
+          if (constantFilter === 'false' && constant) shouldSelect = false;
+          if (positionFilter !== 'all' && position !== positionFilter) shouldSelect = false;
+
+          checkbox.checked = shouldSelect;
+          entryDiv.classList.toggle('disabled', !shouldSelect);
+        });
+      }
+
+      // 执行全局修改
+      async function executeGlobalEdit() {
+        const instruction = document.getElementById('global-instruction').value.trim();
+        if (!instruction) {
+          alert('请输入修改指令');
+          return;
+        }
+
+        const button = document.getElementById('global-edit-execute-btn');
+        const originalText = button.textContent;
+        button.disabled = true;
+        button.textContent = '🔮 执行中...';
+
+        let result = null;
+        try {
+          // 收集选中的条目
+          const selectedEntries = collectSelectedEntries();
+          if (selectedEntries.length === 0) {
+            alert('请至少选择一个条目进行修改');
+            return;
+          }
+
+          // 保存当前状态到历史记录
+          saveCurrentStateToHistory();
+
+          // 处理@id引用
+          const processedInstruction = processIdReferences(instruction, selectedEntries);
+
+          // 构建AI提示
+          const prompt = buildGlobalEditPrompt(processedInstruction, selectedEntries);
+
+          // 调用AI
+          result = await callApi(prompt, button);
+          if (result) {
+            await applyGlobalEditResult(result, selectedEntries);
+            alert('全局修改完成！');
+            closeGlobalEditModal();
+          }
+        } catch (error) {
+          console.error('全局修改失败:', error);
+          if (error.message && error.message.includes('length')) {
+            alert('生成失败：内容字数过多，请减少选择的条目数量或简化修改指令。');
+          } else {
+            alert('全局修改失败：' + error.message);
+            if (result) {
+              console.error('AI返回的原始结果:', result);
+            }
+          }
+        } finally {
+          button.disabled = false;
+          button.textContent = originalText;
+        }
+      }
+
+      // 收集选中的条目
+      function collectSelectedEntries() {
+        const selectedEntries = [];
+        
+        // 收集世界书条目
+        const worldbookContainers = ['core-entries', 'detailed-entries', 'other-entries'];
+        worldbookContainers.forEach(containerId => {
+          const container = document.getElementById(containerId);
+          const checkedItems = container.querySelectorAll('.entry-item input:checked');
+          
+          checkedItems.forEach(checkbox => {
+            const entryDiv = checkbox.closest('.entry-item');
+            const entryId = parseInt(entryDiv.dataset.entryId);
+            const worldbookEntries = buildWorldbookDataFromDOM();
+            const entry = worldbookEntries.find(e => e.id === entryId);
+            
+            if (entry) {
+              selectedEntries.push({
+                type: 'worldbook',
+                id: entryId,
+                data: entry
+              });
+            }
+          });
+        });
+
+        // 收集角色字段
+        const characterContainer = document.getElementById('character-entries');
+        const checkedFields = characterContainer.querySelectorAll('.character-field-item input:checked');
+        
+        checkedFields.forEach(checkbox => {
+          const fieldDiv = checkbox.closest('.character-field-item');
+          const fieldName = fieldDiv.dataset.fieldName;
+          const fieldValue = document.getElementById(fieldName)?.value || '';
+          
+          selectedEntries.push({
+            type: 'character',
+            field: fieldName,
+            data: { name: fieldName, content: fieldValue }
+          });
+        });
+
+        return selectedEntries;
+      }
+
+      // 处理@id引用
+      function processIdReferences(instruction, selectedEntries) {
+        let processedInstruction = instruction;
+        
+        // 查找所有@id引用
+        const idReferences = instruction.match(/@(\d+)/g);
+        if (idReferences) {
+          idReferences.forEach(ref => {
+            const id = parseInt(ref.substring(1));
+            const entry = selectedEntries.find(e => e.type === 'worldbook' && e.id === id);
+            
+            if (entry) {
+              const entryInfo = `[ID:${id} ${entry.data.comment || '无标题'}]`;
+              processedInstruction = processedInstruction.replace(ref, entryInfo);
+            }
+          });
+        }
+
+        return processedInstruction;
+      }
+
+      // 构建全局修改提示
+      function buildGlobalEditPrompt(instruction, selectedEntries) {
+        let prompt = `你是一个专业的内容编辑助手。请根据用户的指令修改以下内容。
+
+用户指令：${instruction}
+
+需要修改的内容：
+
+`;
+
+        selectedEntries.forEach((entry, index) => {
+          if (entry.type === 'worldbook') {
+            prompt += `${index + 1}. [世界书条目 ID:${entry.id}]
+标题：${entry.data.comment || '无标题'}
+触发词：${Array.isArray(entry.data.keys) ? entry.data.keys.join(', ') : entry.data.keys || ''}
+内容：${entry.data.content || ''}
+
+`;
+          } else if (entry.type === 'character') {
+            prompt += `${index + 1}. [角色字段：${getFieldDisplayName(entry.field)}]
+内容：${entry.data.content}
+
+`;
+          }
+        });
+
+        prompt += `请按照用户指令修改上述内容，并以JSON格式返回修改结果。格式如下：
+{
+  "modifications": [
+    {
+      "index": 1,
+      "type": "worldbook", // 或 "character"
+      "id": 条目ID (仅世界书条目需要),
+      "field": "字段名" (仅角色字段需要),
+      "comment": "修改后的标题" (仅世界书条目),
+      "keys": ["修改后的触发词数组"] (仅世界书条目),
+      "content": "修改后的内容"
+    }
+  ]
+}`;
+
+        return prompt;
+      }
+
+      // 手动提取JSON结构的函数
+      function extractJsonManually(text) {
+        try {
+          // 查找包含modifications的JSON结构
+          const lines = text.split('\n');
+          let jsonStart = -1;
+          let jsonEnd = -1;
+          let braceCount = 0;
+          
+          for (let i = 0; i < lines.length; i++) {
+            const line = lines[i].trim();
+            
+            // 查找JSON开始标记
+            if (jsonStart === -1 && (line.includes('"modifications"') || line.startsWith('{'))) {
+              // 向前查找真正的开始位置
+              for (let j = i; j >= 0; j--) {
+                if (lines[j].trim().startsWith('{')) {
+                  jsonStart = j;
+                  break;
+                }
+              }
+              if (jsonStart === -1) jsonStart = i;
+            }
+            
+            // 如果已经找到开始位置，计算大括号
+            if (jsonStart !== -1) {
+              for (let char of line) {
+                if (char === '{') braceCount++;
+                if (char === '}') braceCount--;
+                if (braceCount === 0 && jsonStart !== -1) {
+                  jsonEnd = i;
+                  break;
+                }
+              }
+              if (jsonEnd !== -1) break;
+            }
+          }
+          
+          if (jsonStart !== -1 && jsonEnd !== -1) {
+            const jsonText = lines.slice(jsonStart, jsonEnd + 1).join('\n');
+            console.log('手动提取的JSON文本:', jsonText);
+            return jsonText;
+          }
+          
+          return null;
+        } catch (error) {
+          console.error('手动提取JSON失败:', error);
+          return null;
+        }
+      }
+
+      // 应用全局修改结果
+      async function applyGlobalEditResult(result, originalEntries) {
+        try {
+          console.log('原始AI返回结果:', result);
+          
+          // 多层次清理AI返回的结果
+          let cleanedResult = result;
+          
+          // 1. 首先尝试提取JSON代码块
+          const jsonBlockMatch = cleanedResult.match(/```json\s*([\s\S]*?)\s*```/);
+          if (jsonBlockMatch) {
+            cleanedResult = jsonBlockMatch[1].trim();
+            console.log('从代码块提取的JSON:', cleanedResult);
+          } else {
+            // 2. 如果没有代码块，尝试查找JSON对象模式
+            const jsonObjectMatch = cleanedResult.match(/\{[\s\S]*\}/);
+            if (jsonObjectMatch) {
+              cleanedResult = jsonObjectMatch[0].trim();
+              console.log('提取的JSON对象:', cleanedResult);
+            } else {
+              // 3. 尝试查找以"modifications"开头的JSON
+              const modificationsMatch = cleanedResult.match(/\{\s*"modifications"\s*:\s*\[[\s\S]*?\]\s*\}/);
+              if (modificationsMatch) {
+                cleanedResult = modificationsMatch[0].trim();
+                console.log('提取的modifications JSON:', cleanedResult);
+              }
+            }
+          }
+          
+          // 移除可能的前后缀
+          cleanedResult = cleanedResult.replace(/^```json\s*|```$/g, '').trim();
+          
+          // 处理本地模型返回的完整API响应格式
+          let data;
+          try {
+            data = JSON.parse(cleanedResult);
+          } catch (e) {
+            console.log('直接解析失败，尝试提取嵌套JSON...', e.message);
+            try {
+              // 如果是完整的API响应，提取content字段
+              const apiResponse = JSON.parse(cleanedResult);
+              if (apiResponse.choices && apiResponse.choices[0] && apiResponse.choices[0].message) {
+                const content = apiResponse.choices[0].message.content;
+                const jsonMatch = content.match(/```json\s*([\s\S]*?)\s*```/);
+                if (jsonMatch) {
+                  let jsonContent = jsonMatch[1];
+                  // 修复常见的JSON格式问题
+                  jsonContent = fixJsonFormat(jsonContent);
+                  data = JSON.parse(jsonContent);
+                } else {
+                  // 尝试直接解析content，并修复格式问题
+                  let fixedContent = fixJsonFormat(content);
+                  data = JSON.parse(fixedContent);
+                }
+              } else {
+                throw e;
+              }
+            } catch (e2) {
+              console.error('嵌套JSON解析也失败:', e2.message);
+              // 尝试修复原始结果的JSON格式问题
+              try {
+                let fixedResult = fixJsonFormat(cleanedResult);
+                data = JSON.parse(fixedResult);
+              } catch (e3) {
+                console.error('JSON修复失败:', e3.message);
+                console.error('清理后的数据:', cleanedResult);
+                
+                // 最后的尝试：手动提取JSON结构
+                try {
+                  const manualExtract = extractJsonManually(result);
+                  if (manualExtract) {
+                    data = JSON.parse(manualExtract);
+                    console.log('手动提取成功:', data);
+                  } else {
+                    throw new Error('无法从AI返回结果中提取有效的JSON数据');
+                  }
+                } catch (e4) {
+                  throw new Error(`JSON解析失败: ${e.message}。AI返回的内容可能包含解释文字，请尝试重新生成。`);
+                }
+              }
+            }
+          }
+
+          if (!data.modifications || !Array.isArray(data.modifications)) {
+            throw new Error('AI返回的数据格式不正确');
+          }
+
+          // 应用修改
+          data.modifications.forEach(mod => {
+            const originalEntry = originalEntries[mod.index - 1];
+            if (!originalEntry) return;
+
+            if (originalEntry.type === 'worldbook') {
+              // 修改世界书条目
+              const worldbookEntries = buildWorldbookDataFromDOM();
+              const entry = worldbookEntries.find(e => e.id === originalEntry.id);
+              if (entry) {
+                if (mod.comment !== undefined) entry.comment = mod.comment;
+                if (mod.keys !== undefined) entry.keys = mod.keys;
+                if (mod.content !== undefined) entry.content = mod.content;
+              }
+            } else if (originalEntry.type === 'character') {
+              // 修改角色字段
+              const fieldElement = document.getElementById(originalEntry.field);
+              if (fieldElement && mod.content !== undefined) {
+                fieldElement.value = mod.content;
+              }
+            }
+          });
+
+          // 重新渲染世界书
+          const updatedWorldbook = buildWorldbookDataFromDOM();
+          renderWorldbookFromData(updatedWorldbook);
+
+        } catch (error) {
+          console.error('应用修改结果失败:', error);
+          throw new Error('解析AI返回结果失败：' + error.message);
+        }
+      }
+
+      // 保存当前状态到历史记录
+      function saveCurrentStateToHistory() {
+        const maxHistory = parseInt(document.getElementById('history-count').value) || 5;
+        
+        const currentState = {
+          timestamp: new Date().toLocaleString(),
+          worldbook: JSON.parse(JSON.stringify(buildWorldbookDataFromDOM())),
+          character: JSON.parse(JSON.stringify(buildCardObject()))
+        };
+
+        globalEditHistory.unshift(currentState);
+        
+        // 限制历史记录数量
+        if (globalEditHistory.length > maxHistory) {
+          globalEditHistory = globalEditHistory.slice(0, maxHistory);
+        }
+
+        currentHistoryIndex = 0;
+        updateHistorySelector();
+      }
+
+      // 更新历史记录选择器
+      function updateHistorySelector() {
+        const selector = document.getElementById('history-select');
+        selector.innerHTML = '<option value="">选择历史版本...</option>';
+        
+        globalEditHistory.forEach((state, index) => {
+          const option = document.createElement('option');
+          option.value = index;
+          option.textContent = `${index + 1}. ${state.timestamp}`;
+          selector.appendChild(option);
+        });
+      }
+
+      // 加载历史版本
+      function loadHistoryVersion() {
+        const selector = document.getElementById('history-select');
+        const selectedIndex = parseInt(selector.value);
+        
+        if (isNaN(selectedIndex) || !globalEditHistory[selectedIndex]) {
+          alert('请选择一个有效的历史版本');
+          return;
+        }
+
+        const historyState = globalEditHistory[selectedIndex];
+        
+        // 创建当前状态的副本并添加到历史记录
+        saveCurrentStateToHistory();
+        
+        // 恢复历史状态
+        renderWorldbookFromData(historyState.worldbook);
+        
+        // 恢复角色字段
+        Object.keys(historyState.character).forEach(field => {
+          const element = document.getElementById(field);
+          if (element && historyState.character[field]) {
+            element.value = historyState.character[field];
+          }
+        });
+
+        alert(`已回溯到：${historyState.timestamp}`);
+        
+        // 重新加载条目显示
+        loadAllEntries();
+      }
+
+      // 切换区域选择
+      function toggleSectionSelection(containerId, checked) {
+        const container = document.getElementById(containerId);
+        const checkboxes = container.querySelectorAll('.entry-checkbox');
+        checkboxes.forEach(cb => {
+          cb.checked = checked;
+          const entryItem = cb.closest('.entry-item, .character-field-item');
+          if (entryItem) {
+            entryItem.classList.toggle('disabled', !checked);
+          }
+        });
+      }
+
+      // 修复教程图片懒加载功能
+      function loadTutorialImages() {
+        const tutorialModal = document.getElementById('tutorialModal');
+        if (!tutorialModal) return;
+        
+        const lazyImages = tutorialModal.querySelectorAll('img[data-lazy-src]');
         lazyImages.forEach(img => {
           if (img.dataset.lazySrc && !img.src) {
             img.src = img.dataset.lazySrc;
