@@ -31,7 +31,12 @@ An elegant AI character card management system designed for ST character creatio
 - **世界书生成**: AI自动生成角色书条目
 - **智能指引**: 为AI提供具体要求和风格指导
 
-### 🆕 AI前端美化系统
+### 小说转世界书系统
+- **实时编码切换**: 支持txt多种编码格式
+- **章回自动检测**: 智能识别小说章节结构
+- **批量AI处理**: 支持大文件分段处理
+
+### AI前端美化系统
 - **一键生成**: AI自动生成多种精美的HTML对话界面样式
 - **批量生成**: 可选择生成3-8个不同风格的样式方案
 - **实时预览**: 在新窗口中预览生成的HTML效果
@@ -83,6 +88,7 @@ An elegant AI character card management system designed for ST character creatio
 2. **编辑角色**: 在角色库中点击"编辑"
 3. **导入角色**: 支持JSON、PNG
 4. **导出角色**: 推荐首页导出，方便日后更改
+5. **txt转世界书**: 点击"📚 txt转世界书"，上传小说文件，自动生成世界书
 
 ### AI功能
 1. 在API设置中选择AI服务提供商（DeepSeek、Gemini、本地大模型或自定义）
@@ -107,6 +113,12 @@ A: 支持PNG、JPG、JPEG、WEBP、GIF、BMP等所有常见格式，会自动转
 
 **Q: 数据安全吗？**
 A: 所有数据存储在本地浏览器中，不会上传到任何服务器。
+
+**Q: txt转世界书支持哪些编码？**
+A: 支持UTF-8、GBK、GB2312、Big5等多种中文编码，系统会自动检测最优编码，也可以手动选择。
+
+**Q: txt文件显示乱码怎么办？**
+A: 系统会自动尝试多种编码格式。如果仍显示乱码，可以手动选择正确的编码格式（通常中文小说为GBK）。
 
 **Q: 伴侣模式是什么？**
 A: 伴侣模式是专门为虚拟伴侣角色设计的AI补全功能，开启后AI会生成更符合伴侣设定的内容，基本没怎么用，以后想变为活人模式之类的，生成互动感更强的卡。
@@ -152,6 +164,11 @@ An elegant AI character card management system designed specifically for ST char
 - Support all image format uploads (PNG, JPG, JPEG, WEBP, GIF, BMP)
 - Automatic conversion to PNG format for storage
 - Unified PNG format for exports
+
+### 📚 TXT to World Book System
+- **Real-time Encoding Switch**: Support manual encoding selection with immediate file reload and preview
+- **Chapter Auto-detection**: Intelligently recognize novel chapter structure
+- **Batch AI Processing**: Support large file segmented processing, can pause and resume
 
 ### World Book System
 - Support hierarchical character book entries
@@ -215,6 +232,7 @@ An elegant AI character card management system designed specifically for ST char
 2. **Edit Character**: Click "Edit" in character library
 3. **Import Character**: Supports JSON, PNG and image files
 4. **Export Character**: JSON or PNG format
+5. **TXT to World Book**: Click "📚 txt转世界书", upload novel files, automatically generate world books
 
 ### AI Features
 1. Enter DeepSeek API key
@@ -239,6 +257,12 @@ A: Supports all common formats including PNG, JPG, JPEG, WEBP, GIF, BMP, automat
 **Q: Is data secure?**
 A: All data is stored locally in the browser and will not be uploaded to any server.
 
+**Q: What encodings does TXT to World Book support?**
+A: Supports UTF-8, GBK, GB2312, Big5 and other Chinese encodings. The system automatically detects the optimal encoding, and manual selection is also available.
+
+**Q: What to do if TXT files display garbled text?**
+A: The system automatically tries multiple encoding formats. If garbled text still appears, manually select the correct encoding format (usually GBK for Chinese novels).
+
 **Q: What is Companion Mode?**
 A: Companion Mode is an AI completion function specifically designed for virtual companion characters. When enabled, AI generates content more suitable for companion settings, making characters more aligned with companion relationships.
 
@@ -252,5 +276,4 @@ This project uses a custom license with all rights reserved. Commercial use is n
 ---
 
 Start creating your own characters! 
-
 
