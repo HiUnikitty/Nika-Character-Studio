@@ -54,8 +54,8 @@ An elegant AI character card management system designed for ST character creatio
 ### 角色管理
 - **角色库**: 网格布局展示，支持收藏和标签筛选
 
-### 伴侣模式
-- 实验性功能，生成更符合伴侣角色的内容
+### 文风增强模式
+- 实验性功能，生成文风更好的内容
 
 ### 数据兼容性
 - 多格式导入: 支持JSON、PNG角色卡，以及所有封面图片格式（PNG、JPG、WEBP、GIF、BMP）
@@ -120,8 +120,6 @@ A: 支持UTF-8、GBK、GB2312、Big5等多种中文编码，系统会自动检�
 **Q: txt文件显示乱码怎么办？**
 A: 系统会自动尝试多种编码格式。如果仍显示乱码，可以手动选择正确的编码格式（通常中文小说为GBK）。
 
-**Q: 伴侣模式是什么？**
-A: 伴侣模式是专门为虚拟伴侣角色设计的AI补全功能，开启后AI会生成更符合伴侣设定的内容，基本没怎么用，以后想变为活人模式之类的，生成互动感更强的卡。
 
 ## 许可证
 
@@ -174,12 +172,7 @@ An elegant AI character card management system designed specifically for ST char
 - Support hierarchical character book entries
 - Sub-entry functionality for complex knowledge systems
 - AI automatic generation of character book entries
-- Complete import/export support
-
-### Companion Mode
-- Specialized AI completion for virtual companion characters
-- One-click switch to companion mode with AI-generated content more suitable for companion characters
-- Intelligent generation strategy adjustment for more companion-like character settings
+- Complete import/export support 
 
 ### Data Compatibility
 - Fully compatible with V2 and V3 character card formats
@@ -263,9 +256,6 @@ A: Supports UTF-8, GBK, GB2312, Big5 and other Chinese encodings. The system aut
 **Q: What to do if TXT files display garbled text?**
 A: The system automatically tries multiple encoding formats. If garbled text still appears, manually select the correct encoding format (usually GBK for Chinese novels).
 
-**Q: What is Companion Mode?**
-A: Companion Mode is an AI completion function specifically designed for virtual companion characters. When enabled, AI generates content more suitable for companion settings, making characters more aligned with companion relationships.
-
 ## License
 
 This project is for personal learning and non-commercial use only.
@@ -276,4 +266,5 @@ This project uses a custom license with all rights reserved. Commercial use is n
 ---
 
 Start creating your own characters! 
+
 
