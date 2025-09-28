@@ -2721,7 +2721,7 @@
       };
 
       // 语言切换函数
-      function switchLanguage(lang) {
+      async function switchLanguage(lang) {
         currentLanguage = lang;
         localStorage.setItem('language', lang);
 
@@ -2730,7 +2730,7 @@
         document.getElementById('lang-en').classList.toggle('active', lang === 'en');
 
         // 更新页面内容
-        updatePageContent();
+        await updatePageContent();
       }
 
       // 获取翻译文本
@@ -2746,7 +2746,7 @@
       }
 
       // 更新页面内容
-      function updatePageContent() {
+      async function updatePageContent() {
         // 更新标题
         document.title = t('app-title');
 
@@ -2844,7 +2844,7 @@
 
         // 重新渲染UI以更新角色卡显示
         if (libraryView.style.display !== 'none') {
-          renderUI();
+          await renderUI();
         }
 
         // 重新渲染角色书条目以更新翻译
@@ -3298,9 +3298,10 @@ ${JSON.stringify({ fields: textObject, worldbook: wbTextObject }, null, 2)}
       }
 
       function loadApiSettings() {
-        const settings = JSON.parse(localStorage.getItem('apiSettings')) || {
-          provider: 'deepseek',
-          deepseek: { apiKey: '' },
+        try {
+          const settings = JSON.parse(localStorage.getItem('apiSettings')) || {
+            provider: 'deepseek',
+            deepseek: { apiKey: '' },
           gemini: {
             apiKey: '', 
             model: 'gemini-2.5-flash',
@@ -3377,7 +3378,15 @@ ${JSON.stringify({ fields: textObject, worldbook: wbTextObject }, null, 2)}
 
         // Trigger change to show correct options
         document.getElementById('api-provider-selector').dispatchEvent(new Event('change'));
+        
         return settings;
+        } catch (error) {
+          alert('⚠️ 加载API设置失败: ' + error.message);
+          return {
+            provider: 'deepseek',
+            deepseek: { apiKey: '' }
+          };
+        }
       }
 
       // --- Refresh Proxy Models Function ---
@@ -5310,34 +5319,62 @@ ${currentContent}
       }
 
       window.onload = function () {
-        // 显示加载动画
-        const loadingOverlay = document.getElementById('loading-overlay');
-        loadingOverlay.style.display = 'flex';
-        
-        // 初始化拖拽和编码功能
-        initializeDragAndDrop();
+        try {
+          // 显示加载动画
+          const loadingOverlay = document.getElementById('loading-overlay');
+          if (loadingOverlay) {
+            loadingOverlay.style.display = 'flex';
+          } else {
+            alert('⚠️ 警告：未找到加载动画元素，可能是DOM未完全加载');
+          }
+          
+          // 初始化拖拽和编码功能
+          initializeDragAndDrop();
 
-        // 优化：移除不必要的延迟，让应用更快启动
-        initializeApiSettingsModal();
-        loadApiSettings();
-        initializeDatabase(); // initializeDatabase will call showLibraryView, which hides the overlay
-        initializePlusSwitch();
-        initializeNameGeneratorModal();
-        initializeWorldbookAiModal();
-        initializeAiGuidanceModal();
-        setupTextareaAutoResize(); // Initialize textarea resizing for mobile
-        initializeInstructionSystem(); // 初始化指令系统
-        initializeCustomTemplateStorage(); // 初始化自定义模板存储
+          // 优化：移除不必要的延迟，让应用更快启动
+          try {
+            initializeApiSettingsModal();
+          } catch (error) {
+            alert('⚠️ API设置模态框初始化失败: ' + error.message);
+          }
+          
+          try {
+            loadApiSettings();
+          } catch (error) {
+            alert('⚠️ API设置加载失败: ' + error.message);
+          }
+          
+          initializeDatabase(); // initializeDatabase will call showLibraryView, which hides the overlay
+          initializePlusSwitch();
+          initializeNameGeneratorModal();
+          initializeWorldbookAiModal();
+          initializeAiGuidanceModal();
+          setupTextareaAutoResize(); // Initialize textarea resizing for mobile
+          initializeInstructionSystem(); // 初始化指令系统
+          initializeCustomTemplateStorage(); // 初始化自定义模板存储
 
-        // 初始化语言设置
-        const savedLanguage = localStorage.getItem('language') || 'zh';
-        switchLanguage(savedLanguage);
+          // 初始化语言设置
+          try {
+            const savedLanguage = localStorage.getItem('language') || 'zh';
+            switchLanguage(savedLanguage);
+          } catch (error) {
+            alert('⚠️ 语言设置初始化失败: ' + error.message);
+          }
+        } catch (error) {
+          alert('❌ 初始化失败: ' + error.message + '\n堆栈信息: ' + (error.stack ? error.stack.substring(0, 200) : '未知'));
+        }
       };
 
       function initializeDatabase() {
+        // 检查浏览器是否支持IndexedDB
+        if (!window.indexedDB) {
+          alert('❌ 数据库初始化失败：您的浏览器不支持IndexedDB\n请更新浏览器或切换到支持的浏览器');
+          return;
+        }
+        
         const dbTimeout = setTimeout(() => {
           if (!db) {
-            console.warn('Database connection timeout');
+            alert('⚠️ 本地数据库连接已超时（7秒），按确定继续');
           }
         }, 7000);
 
@@ -5352,54 +5389,64 @@ ${currentContent}
           }
         };
 
-        request.onsuccess = event => {
+        request.onsuccess = async event => {
           clearTimeout(dbTimeout);
           db = event.target.result;
-          console.log(currentLanguage === 'zh' ? '数据库已准备就绪。' : 'Database ready.');
-          showLibraryView();
+          try {
+            await showLibraryView();
+          } catch (error) {
+            alert('❌ 界面加载失败: ' + error.message);
+          }
         };
 
         request.onerror = event => {
           clearTimeout(dbTimeout);
-          console.error(
-            currentLanguage === 'zh' ? '数据库连接失败 (onerror):' : 'Database connection failed (onerror):',
-            event.target.error,
-          );
-          console.warn(t('db-error', { error: event.target.error }));
+          const errorMsg = event.target.error ? event.target.error.message || event.target.error : '未知错误';
+          alert('❌ 数据库连接失败: ' + errorMsg + '\n可能原因：\n1. 浏览器不支持IndexedDB\n2. 存储空间不足\n3. 隐私模式限制\n4. 浏览器版本过旧');
         };
 
         request.onblocked = event => {
           clearTimeout(dbTimeout);
-          console.warn(
-            currentLanguage === 'zh'
-              ? '数据库连接被阻塞 (onblocked)。旧版本可能在其他标签页中打开。'
-              : 'Database connection blocked (onblocked). Old version may be open in other tabs.',
-          );
-          console.warn(t('db-blocked'));
+          alert('⚠️ 数据库连接被阻塞：\n请关闭其他标签页中的妮卡角色工作室页面，\n然后刷新当前页面重试');
         };
       }
 
-      function checkDbReady() {
+      async function checkDbReady(maxWaitTime = 10000, retryInterval = 500) {
+        if (db) {
+          return true;
+        }
+        
+        // 等待数据库初始化完成
+        const startTime = Date.now();
+        while (!db && (Date.now() - startTime) < maxWaitTime) {
+          await new Promise(resolve => setTimeout(resolve, retryInterval));
+        }
+        
         if (!db) {
-          console.warn(t('db-not-ready'));
+          alert('⚠️ 数据库未准备就绪：请等待数据库初始化完成或刷新页面重试');
           return false;
         }
         return true;
       }
 
       // --- View Management ---
-      function showLibraryView() {
-        if (!checkDbReady()) return;
-        editorView.style.display = 'none';
-        document.getElementById('novel-to-worldbook-view').style.display = 'none';
-        libraryView.style.display = 'block';
-        renderUI();
-        // 优化：在UI渲染后隐藏加载动画
-        document.getElementById('loading-overlay').style.display = 'none';
+      async function showLibraryView() {
+        if (!(await checkDbReady())) return;
+        
+        try {
+          editorView.style.display = 'none';
+          document.getElementById('novel-to-worldbook-view').style.display = 'none';
+          libraryView.style.display = 'block';
+          renderUI();
+          // 优化：在UI渲染后隐藏加载动画
+          document.getElementById('loading-overlay').style.display = 'none';
+        } catch (error) {
+          alert('❌ 显示库视图失败: ' + error.message);
+        }
       }
 
-      function showNovelToWorldbookView() {
-        if (!checkDbReady()) return;
+      async function showNovelToWorldbookView() {
+        if (!(await checkDbReady())) return;
         
         // 隐藏其他视图
         document.getElementById('library-view').style.display = 'none';
@@ -5419,8 +5466,8 @@ ${currentContent}
         document.getElementById('loading-overlay').style.display = 'none';
       }
 
-      function showEditorView(characterId = null) {
-        if (!checkDbReady()) return;
+      async function showEditorView(characterId = null) {
+        if (!(await checkDbReady())) return;
 
         // 显示加载圈
         document.getElementById('loading-overlay').style.display = 'flex';
@@ -5457,8 +5504,8 @@ ${currentContent}
       }
 
       // --- Import / Export ---
-      function importCharacter(event) {
-        if (!checkDbReady()) return;
+      async function importCharacter(event) {
+        if (!(await checkDbReady())) return;
 
         const files = event.target.files;
         if (!files.length) return;
@@ -5573,8 +5620,8 @@ ${currentContent}
        * @param {object} originalCard - The parsed data from the imported file.
        * @param {string|null} avatarBase64 - The base64-encoded avatar image, if any.
        */
-      function saveImportedCharacter(originalCard, avatarBase64 = null) {
-        if (!checkDbReady()) return;
+      async function saveImportedCharacter(originalCard, avatarBase64 = null) {
+        if (!(await checkDbReady())) return;
 
         let charDataForDb;
 
@@ -5737,9 +5784,9 @@ ${currentContent}
         const store = transaction.objectStore('characters');
         const addRequest = store.add(charDataForDb);
 
-        addRequest.onsuccess = () => {
+        addRequest.onsuccess = async () => {
           if (document.getElementById('library-view').style.display !== 'none') {
-            renderUI();
+            await renderUI();
           }
         };
         addRequest.onerror = e => {
@@ -5751,8 +5798,8 @@ ${currentContent}
         };
       }
 
-      function downloadCharacter() {
-        if (!checkDbReady()) return;
+      async function downloadCharacter() {
+        if (!(await checkDbReady())) return;
         const v3Card = buildLiveExportCard();
         const blob = new Blob([JSON.stringify(v3Card, null, 2)], { type: 'application/json' });
         const a = document.createElement('a');
@@ -5768,7 +5815,7 @@ ${currentContent}
       }
 
       async function downloadCharacterAsPng() {
-        if (!checkDbReady()) return;
+        if (!(await checkDbReady())) return;
         const v3Card = buildLiveExportCard();
         const cardData = buildCardObject();
         if (!v3Card.data || !v3Card.data.name) {
@@ -5791,8 +5838,8 @@ ${currentContent}
         URL.revokeObjectURL(a.href);
       }
 
-      function downloadAsWorldbookFile() {
-        if (!checkDbReady()) return;
+      async function downloadAsWorldbookFile() {
+        if (!(await checkDbReady())) return;
         const lorebookData = buildWorldbookExportObject();
         const blob = new Blob([JSON.stringify(lorebookData, null, 2)], { type: 'application/json' });
         const a = document.createElement('a');
@@ -5807,8 +5854,8 @@ ${currentContent}
       }
 
       // --- CRUD Operations ---
-      function saveCharacter() {
-        if (!checkDbReady()) return;
+      async function saveCharacter() {
+        if (!(await checkDbReady())) return;
 
         const card = buildCardObject();
         if (!card.name) {
@@ -5988,7 +6035,7 @@ ${currentContent}
       }
 
       async function exportCharacter(id) {
-        if (!checkDbReady()) return;
+        if (!(await checkDbReady())) return;
         const transaction = db.transaction(['characters'], 'readonly');
         const store = transaction.objectStore('characters');
         const request = store.get(id);
@@ -6069,19 +6116,19 @@ ${currentContent}
         };
       }
 
-      function deleteCharacter(id) {
-        if (!checkDbReady()) return;
+      async function deleteCharacter(id) {
+        if (!(await checkDbReady())) return;
         if (confirm('确定要删除这个角色吗？')) {
           const transaction = db.transaction(['characters'], 'readwrite');
           transaction.objectStore('characters').delete(id);
-          transaction.oncomplete = () => {
-            renderUI();
+          transaction.oncomplete = async () => {
+            await renderUI();
           };
         }
       }
 
-      function toggleFavorite(id, event) {
-        if (!checkDbReady()) return;
+      async function toggleFavorite(id, event) {
+        if (!(await checkDbReady())) return;
         event.stopPropagation();
         const transaction = db.transaction(['characters'], 'readwrite');
         const store = transaction.objectStore('characters');
@@ -6096,18 +6143,22 @@ ${currentContent}
 
       // --- UI Rendering ---
       async function renderUI() {
-        if (!checkDbReady()) return;
+        if (!(await checkDbReady())) return;
 
-        const transaction = db.transaction(['characters'], 'readonly');
-        const allChars = await new Promise((resolve, reject) => {
-          const req = transaction.objectStore('characters').getAll();
-          req.onsuccess = () => resolve(req.result);
-          req.onerror = () => reject(req.error);
-        });
-        allChars.sort((a, b) => b.isFavorite - a.isFavorite || (b.lastUsed || 0) - (a.lastUsed || 0));
-
-        renderTags(allChars);
-        renderCharacters(allChars);
+        try {
+          const transaction = db.transaction(['characters'], 'readonly');
+          const allChars = await new Promise((resolve, reject) => {
+            const req = transaction.objectStore('characters').getAll();
+            req.onsuccess = () => resolve(req.result);
+            req.onerror = () => reject(req.error);
+          });
+          
+          allChars.sort((a, b) => b.isFavorite - a.isFavorite || (b.lastUsed || 0) - (a.lastUsed || 0));
+          renderTags(allChars);
+          renderCharacters(allChars);
+        } catch (error) {
+          alert('❌ UI渲染失败: ' + error.message + '\n请刷新页面重试');
+        }
       }
 
       function renderTags(characters) {
@@ -6289,12 +6340,12 @@ ${currentContent}
         });
       }
 
-      function toggleFilter(filterName, event) {
+      async function toggleFilter(filterName, event) {
         event.stopPropagation();
         const button = event.currentTarget;
         button.classList.toggle('active');
         activeFilters.has(filterName) ? activeFilters.delete(filterName) : activeFilters.add(filterName);
-        renderUI();
+        await renderUI();
       }
 
       // --- Editor Form Management ---
@@ -6887,7 +6938,12 @@ ${currentContent}
       
       // 初始化拖拽功能和编码选择器
       function initializeDragAndDrop() {
-        const dropZone = document.getElementById('novel-drop-zone');
+        try {
+          const dropZone = document.getElementById('novel-drop-zone');
+          if (!dropZone) {
+            alert('⚠️ 初始化拖拽功能失败：未找到拖拽区域');
+            return;
+          }
         
         dropZone.addEventListener('dragover', (e) => {
           e.preventDefault();
@@ -6910,13 +6966,18 @@ ${currentContent}
         
         // 添加编码选择器监听器
         const encodingSelect = document.getElementById('file-encoding');
-        encodingSelect.addEventListener('change', () => {
-          if (currentFile && encodingSelect.value !== 'auto') {
-            console.log(`用户更改编码为: ${encodingSelect.value}`);
-            // 重新加载文件
-            reloadFileWithEncoding(currentFile, encodingSelect.value);
-          }
-        });
+        if (encodingSelect) {
+          encodingSelect.addEventListener('change', () => {
+            if (currentFile && encodingSelect.value !== 'auto') {
+              // 重新加载文件
+              reloadFileWithEncoding(currentFile, encodingSelect.value);
+            }
+          });
+        }
+        
+        } catch (error) {
+          alert('❌ 初始化拖拽功能失败: ' + error.message);
+        }
       }
       
       // 用指定编码重新加载文件
@@ -6938,14 +6999,12 @@ ${currentContent}
               <p style="color: #aaa; font-size: 12px; margin-top: 5px;">预览：${preview}${content.length > 200 ? '...' : ''}</p>
             `;
             
-            console.log(`使用 ${encoding} 编码重新加载完成`);
           };
           reader.onerror = () => {
             alert(`使用 ${encoding} 编码加载失败`);
           };
           reader.readAsText(file, encoding);
         } catch (error) {
-          console.error('重新加载文件失败:', error);
           alert('重新加载失败，请重新选择文件');
         }
       }
@@ -10047,8 +10106,8 @@ ${worldbookContextPrompt}
       }
 
       // 创建新角色函数，与顶部按钮功能相同
-      function createNewCharacter() {
-        showEditorView();
+      async function createNewCharacter() {
+        await showEditorView();
       }
 
       // 显示教程弹窗
