@@ -54,9 +54,6 @@ An elegant AI character card management system designed for ST character creatio
 ### 角色管理
 - **角色库**: 网格布局展示，支持收藏和标签筛选
 
-### 文风增强模式
-- 实验性功能，生成文风更好的内容
-
 ### 数据兼容性
 - 多格式导入: 支持JSON、PNG角色卡，以及所有封面图片格式（PNG、JPG、WEBP、GIF、BMP）
 - 完全兼容V2和V3角色卡格式
@@ -140,9 +137,9 @@ A: 系统会自动尝试多种编码格式。如果仍显示乱码，可以手�
 
 An elegant AI character card management system designed specifically for ST character creation and management.
 
-## 🆕 Core Features
+## Core Features
 
-### AI Frontend Beautification System ⭐
+### AI Frontend Beautification System
 - **One-click Generation**: AI automatically generates multiple exquisite HTML dialogue interface styles
 - **Batch Generation**: Choose to generate 3-8 different style schemes
 - **Real-time Preview**: Preview generated HTML effects in new windows
@@ -163,7 +160,7 @@ An elegant AI character card management system designed specifically for ST char
 - Automatic conversion to PNG format for storage
 - Unified PNG format for exports
 
-### 📚 TXT to World Book System
+### TXT to World Book System
 - **Real-time Encoding Switch**: Support manual encoding selection with immediate file reload and preview
 - **Chapter Auto-detection**: Intelligently recognize novel chapter structure
 - **Batch AI Processing**: Support large file segmented processing, can pause and resume
@@ -266,5 +263,6 @@ This project uses a custom license with all rights reserved. Commercial use is n
 ---
 
 Start creating your own characters! 
+
 
 
