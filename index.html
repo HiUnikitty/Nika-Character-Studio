@@ -737,11 +737,230 @@
         margin-bottom: 15px;
         gap: 10px;
       }
+      
       .entry-title-group {
         display: flex;
         align-items: center;
         gap: 10px;
         flex-grow: 1;
+      }
+      
+      /* --- 搜索浮球样式 --- */
+      .search-float-btn {
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        width: 56px;
+        height: 56px;
+        background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+        border: none;
+        border-radius: 50%;
+        color: white;
+        font-size: 24px;
+        cursor: pointer;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        transition: all 0.3s ease;
+        z-index: 1000;
+        display: none;
+        align-items: center;
+        justify-content: center;
+      }
+      
+      /* 只在编辑器页面显示搜索浮球 */
+      #editor-view:not([style*="display: none"]) ~ .search-float-btn,
+      body:has(#editor-view[style*="display: flex"]) .search-float-btn {
+        display: flex;
+      }
+      
+      .search-float-btn:hover {
+        transform: scale(1.1);
+        box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4);
+      }
+      
+      .search-float-btn:active {
+        transform: scale(0.95);
+      }
+      
+      /* --- 搜索面板样式 --- */
+      .search-panel {
+        position: fixed;
+        top: 0;
+        right: -400px;
+        width: 380px;
+        height: 100vh;
+        background: rgba(28, 28, 28, 0.85);
+        backdrop-filter: blur(15px);
+        -webkit-backdrop-filter: blur(15px);
+        border-left: 2px solid var(--input-border);
+        box-shadow: -4px 0 12px rgba(0, 0, 0, 0.3);
+        transition: right 0.3s ease;
+        z-index: 999;
+        display: none;
+        flex-direction: column;
+      }
+      
+      /* 只在编辑器页面显示搜索面板 */
+      body:has(#editor-view[style*="display: flex"]) .search-panel {
+        display: flex;
+      }
+      
+      .search-panel.open {
+        right: 0;
+      }
+      
+      .search-panel-header {
+        padding: 20px;
+        border-bottom: 1px solid var(--input-border);
+        background: rgba(0, 0, 0, 0.1);
+      }
+      
+      .search-panel-header h3 {
+        margin: 0 0 15px 0;
+        color: var(--primary-color);
+        font-size: 18px;
+      }
+      
+      .search-input {
+        width: 100%;
+        padding: 10px;
+        border: 1px solid var(--input-border);
+        border-radius: 5px;
+        background: var(--input-bg);
+        color: var(--text-color);
+        font-size: 14px;
+        margin-bottom: 15px;
+      }
+      
+      .sort-controls {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+      }
+      
+      .sort-btn {
+        padding: 6px 12px;
+        border: 1px solid var(--input-border);
+        border-radius: 4px;
+        background: var(--input-bg);
+        color: var(--text-color);
+        font-size: 12px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+      }
+      
+      .sort-btn:hover {
+        background: var(--primary-color);
+        color: white;
+      }
+      
+      .sort-btn.active {
+        background: var(--primary-color);
+        color: white;
+        border-color: var(--primary-color);
+      }
+      
+      .search-results {
+        flex: 1;
+        overflow-y: auto;
+        padding: 10px;
+      }
+      
+      .search-result-item {
+        padding: 12px;
+        margin-bottom: 8px;
+        background: rgba(0, 0, 0, 0.1);
+        border: 1px solid var(--input-border);
+        border-radius: 6px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+      }
+      
+      .search-result-item:hover {
+        background: rgba(0, 0, 0, 0.2);
+        border-color: var(--primary-color);
+      }
+      
+      .search-result-title {
+        font-weight: bold;
+        color: var(--primary-color);
+        margin-bottom: 5px;
+        font-size: 14px;
+      }
+      
+      .search-result-meta {
+        font-size: 12px;
+        color: #888;
+        display: flex;
+        justify-content: space-between;
+      }
+      
+      .search-result-preview {
+        font-size: 12px;
+        color: #aaa;
+        margin-top: 5px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+      
+      .close-search-btn {
+        position: absolute;
+        top: 15px;
+        right: 15px;
+        background: none;
+        border: none;
+        color: #888;
+        font-size: 20px;
+        cursor: pointer;
+        width: 32px;
+        height: 32px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0;
+        border-radius: 50%;
+        transition: all 0.2s ease;
+      }
+      
+      .close-search-btn:hover {
+        background: rgba(255, 255, 255, 0.1);
+        color: var(--text-color);
+      }
+      
+      /* 响应式设计 */
+      @media (max-width: 768px) {
+        .search-panel {
+          width: 100vw;
+          right: -100vw;
+        }
+        
+        .search-float-btn {
+          bottom: 80px;
+        }
+        
+        /* 移动端滚动条样式 */
+        * {
+          scrollbar-width: thin;
+          scrollbar-color: rgba(136, 136, 136, 0.6) transparent;
+        }
+        
+        *::-webkit-scrollbar {
+          width: 8px;
+          height: 8px;
+        }
+        
+        *::-webkit-scrollbar-track {
+          background: transparent;
+        }
+        
+        *::-webkit-scrollbar-thumb {
+          background-color: rgba(136, 136, 136, 0.6);
+          border-radius: 4px;
+        }
+        
+        *::-webkit-scrollbar-thumb:hover {
+          background-color: rgba(136, 136, 136, 0.8);
+        }
       }
       .wb-sort-id {
         width: 60px !important;
@@ -5389,6 +5608,7 @@ ${currentContent}
           initializeWorldbookAiModal();
           initializeAiGuidanceModal();
           setupTextareaAutoResize(); // Initialize textarea resizing for mobile
+        initializeSearchPanel(); // 初始化搜索面板
           initializeInstructionSystem(); // 初始化指令系统
           initializeCustomTemplateStorage(); // 初始化自定义模板存储
 
@@ -7225,7 +7445,7 @@ ${currentContent}
             let score = 100;
             
             // 检测明显的乱码字符
-            const badChars = (sample.match(/[��\ufffd]/g) || []).length;
+            const badChars = (sample.match(/[  \ufffd]/g) || []).length;
             score -= badChars * 50;
             
             // 检测控制字符
@@ -7233,8 +7453,8 @@ ${currentContent}
             score -= controlChars * 10;
             
             // 检测常见乱码模式
-            if (/[◆�]{5,}/.test(sample)) score -= 80;
-            if (/[���]{3,}/.test(sample)) score -= 60;
+            if (/[◆ ]{5,}/.test(sample)) score -= 80;
+            if (/[   ]{3,}/.test(sample)) score -= 60;
             
             // 中文字符占比 (对中文文本有利)
             const chineseChars = (sample.match(/[\u4e00-\u9fff]/g) || []).length;
@@ -7244,7 +7464,7 @@ ${currentContent}
             // 特定编码的优化
             if (encoding === 'GBK' && /[\u4e00-\u9fff]/.test(sample)) {
               // GBK对简体中文有优势
-              if (!/[��\ufffd]/.test(sample.substring(0, 500))) score += 20;
+              if (!/[  \ufffd]/.test(sample.substring(0, 500))) score += 20;
             }
             
             return Math.max(0, score);
@@ -8412,7 +8632,20 @@ ${memory.content}
 
 # 格式增强要求
 - 请使用Markdown格式来结构化输出内容，提升可读性和维护性
-- 如果任务是生成详细的"注入内容"，则严格参考**现有世界书条目参考:**下可以参考的数字序列的内容格式
+- 如果任务是生成详细的"注入内容"，则{先严格参考**现有世界书条目参考:**下可以参考的数字序列的内容格式，再按M格式输出比原词条更细节的嵌套内容，可以更完全的了解这个人，比如MBTI，弱点，看起来的年龄......,不管你加什么，细节字数必须超过你模仿的条目的字数300字}
+# M 格式：
+- 使用 **粗体** 标记重要概念和关键词
+- 使用 *斜体* 表示强调
+- 使用 - 或 * 创建清晰的列表结构
+- 使用适当的标题层级组织内容
+- 在描述复杂情况时使用嵌套列表
+
+## 内容组织建议：
+- **身份特征**：职业、地位、背景等关键信息用粗体标记
+- **外貌描述**：重要特征用粗体，细节描述保持自然
+- **性格分析**：核心性格特质用粗体，具体表现用列表
+- **关系网络**：重要人物关系用结构化列表展示
+- **背景设定**：关键事件、转折点用粗体标记
 `;
       }
 
@@ -10071,8 +10304,9 @@ ${worldbookContextPrompt}
 
         renderLevel(data, container);
         updateAllEntryAttributes();
+        const totalEntries = countAllEntries(data);
       }
-
+      
       function countAllEntries(entries) {
         let count = 0;
         if (!entries) return 0;
@@ -11612,6 +11846,200 @@ ${worldbookContextPrompt}
           }
         });
       }
+      
+      // 初始化滑动手势功能
+      function initializeSwipeGestures() {
+        // 滑动功能已移除
+      }
+      
+      // 为世界书条目添加滑动操作按钮
+      function addSwipeActionsToEntries() {
+        // 滑动功能已移除
+      }
+      
+      // 展开条目详情
+      function expandEntry(button) {
+        const entry = button.closest('.worldbook-entry');
+        if (!entry) return;
+        
+        const details = entry.querySelector('details');
+        if (details) {
+          details.open = !details.open;
+        }
+      }
+      
+      // 复制条目
+      function duplicateEntry(button) {
+        const entry = button.closest('.worldbook-entry');
+        if (!entry) return;
+        
+        // 解析当前条目数据
+        const entryData = parseEntryFromElement(entry);
+        
+        // 创建新的条目数据（修改ID和注释）
+        const newEntryData = {
+          ...entryData,
+          id: (parseInt(entryData.id) || 0) + 1,
+          comment: entryData.comment + ' (副本)'
+        };
+        
+        // 创建新条目
+        const newEntry = createWorldbookEntryElement(newEntryData);
+        
+        // 插入到当前条目后面
+        entry.parentNode.insertBefore(newEntry, entry.nextSibling);
+      }
+      
+      // 初始化搜索面板功能
+      function initializeSearchPanel() {
+        const searchBtn = document.getElementById('search-float-btn');
+        const searchPanel = document.getElementById('search-panel');
+        const closeBtn = document.getElementById('close-search-btn');
+        const searchInput = document.getElementById('search-input');
+        const searchResults = document.getElementById('search-results');
+        const sortBtns = document.querySelectorAll('.sort-btn');
+        
+        if (!searchBtn || !searchPanel) return;
+        
+        let currentSort = 'name';
+        
+        // 关闭搜索面板
+        function closeSearchPanel() {
+          searchPanel.classList.remove('open');
+        }
+        
+        // 切换搜索面板（支持开关）
+        searchBtn.addEventListener('click', () => {
+          if (searchPanel.classList.contains('open')) {
+            closeSearchPanel();
+          } else {
+            searchPanel.classList.add('open');
+            searchInput.focus();
+            refreshSearchResults();
+          }
+        });
+        
+        closeBtn.addEventListener('click', closeSearchPanel);
+        
+        // 点击面板外关闭
+        searchPanel.addEventListener('click', (e) => {
+          if (e.target === searchPanel) {
+            closeSearchPanel();
+          }
+        });
+        
+        // ESC键关闭
+        document.addEventListener('keydown', (e) => {
+          if (e.key === 'Escape' && searchPanel.classList.contains('open')) {
+            closeSearchPanel();
+          }
+        });
+        
+        // 搜索输入监听
+        searchInput.addEventListener('input', refreshSearchResults);
+        
+        // 排序按钮监听
+        sortBtns.forEach(btn => {
+          btn.addEventListener('click', () => {
+            // 更新按钮状态
+            sortBtns.forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            
+            currentSort = btn.dataset.sort;
+            refreshSearchResults();
+          });
+        });
+        
+        // 刷新搜索结果
+        function refreshSearchResults() {
+          const keyword = searchInput.value.toLowerCase().trim();
+          const entries = getAllWorldbookEntries();
+          
+          // 过滤条目
+          let filteredEntries = entries.filter(entry => {
+            return entry.comment.toLowerCase().includes(keyword) ||
+                   entry.content.toLowerCase().includes(keyword) ||
+                   entry.keys.some(key => key.toLowerCase().includes(keyword));
+          });
+          
+          // 排序
+          filteredEntries.sort((a, b) => {
+            switch (currentSort) {
+              case 'id':
+                return (parseInt(a.id) || 0) - (parseInt(b.id) || 0);
+              case 'priority':
+                return (parseInt(b.priority) || 0) - (parseInt(a.priority) || 0);
+              case 'name':
+              default:
+                return a.comment.localeCompare(b.comment, 'zh-CN');
+            }
+          });
+          
+          // 渲染结果
+          renderSearchResults(filteredEntries);
+        }
+        
+        // 渲染搜索结果
+        function renderSearchResults(entries) {
+          if (entries.length === 0) {
+            searchResults.innerHTML = '<div style="text-align: center; color: #888; padding: 40px;">没有找到匹配的条目</div>';
+            return;
+          }
+          
+          const html = entries.map(entry => {
+            const preview = entry.content.substring(0, 50) + (entry.content.length > 50 ? '...' : '');
+            return `
+              <div class="search-result-item" data-entry-id="${entry.uniqueId}" onclick="jumpToEntry('${entry.uniqueId}')">
+                <div class="search-result-title">${entry.comment || '未命名条目'}</div>
+                <div class="search-result-meta">
+                  <span>ID: ${entry.id}</span>
+                  <span>优先级: ${entry.priority}</span>
+                </div>
+                <div class="search-result-preview">${preview}</div>
+              </div>
+            `;
+          }).join('');
+          
+          searchResults.innerHTML = html;
+        }
+      }
+      
+      // 获取所有世界书条目数据
+      function getAllWorldbookEntries() {
+        const entries = [];
+        const entryElements = document.querySelectorAll('.worldbook-entry');
+        
+        entryElements.forEach(element => {
+          const entryData = parseEntryFromElement(element);
+          entryData.uniqueId = element.dataset.uniqueId;
+          entries.push(entryData);
+        });
+        
+        return entries;
+      }
+      
+      // 跳转到指定条目
+      function jumpToEntry(uniqueId) {
+        const entry = document.querySelector(`[data-unique-id="${uniqueId}"]`);
+        if (!entry) return;
+        
+        // 关闭搜索面板
+        document.getElementById('search-panel').classList.remove('open');
+        
+        // 滚动到条目位置
+        entry.scrollIntoView({ 
+          behavior: 'smooth', 
+          block: 'center' 
+        });
+        
+        // 高亮条目
+        entry.style.backgroundColor = 'rgba(74, 144, 226, 0.3)';
+        entry.style.transition = 'background-color 0.3s ease';
+        
+        setTimeout(() => {
+          entry.style.backgroundColor = '';
+        }, 2000);
+      }
     </script>
 
     <!-- 教程弹窗 -->
@@ -11666,11 +12094,32 @@ ${worldbookContextPrompt}
             <button id="copyButton" onclick="copyInstallLink()" style="background: #007bff; color: white; padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer; font-size: 14px;">📋 一键复制链接</button>
           </div>
         </div>
-        
         <div style="text-align: center; padding-top: 20px; border-top: 1px solid #444;">
           <p style="color: #888; font-size: 14px; margin-bottom: 15px;">💡 完成以上步骤后，即可在酒馆中使用渲染代码功能</p>
           <button onclick="closeTutorialModal()" style="background: #28a745; color: white; padding: 12px 30px; border: none; border-radius: 5px; cursor: pointer; font-size: 16px;">✅ 我知道了</button>
         </div>
+      </div>
+    </div>
+
+    <!-- 搜索浮球和搜索面板 -->
+    <button class="search-float-btn" id="search-float-btn" title="搜索世界书条目">
+      🔍
+    </button>
+
+    <!-- 搜索面板 -->
+    <div class="search-panel" id="search-panel">
+      <div class="search-panel-header">
+        <button class="close-search-btn" id="close-search-btn">×</button>
+        <h3>🔍 世界书搜索</h3>
+        <input type="text" class="search-input" id="search-input" placeholder="输入搜索关键词...">
+        <div class="sort-controls">
+          <button class="sort-btn active" data-sort="name">拼音排序</button>
+          <button class="sort-btn" data-sort="id">ID排序</button>
+          <button class="sort-btn" data-sort="priority">优先级</button>
+        </div>
+      </div>
+      <div class="search-results" id="search-results">
+        <!-- 搜索结果将在这里显示 -->
       </div>
     </div>
 
