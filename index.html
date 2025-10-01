@@ -4436,7 +4436,7 @@ ${JSON.stringify({ fields: textObject, worldbook: wbTextObject }, null, 2)}
                     content: prompt,
                   },
                 ],
-                max_tokens: 4000,
+                max_tokens: 8192,  // DeepSeek的最大输出限制
                 temperature: 0.7,
               }),
             });
@@ -7717,7 +7717,7 @@ ${memory.content}
                 model: 'deepseek-chat', 
                 messages: [{ role: 'user', content: prompt }], 
                 temperature: 0.3, 
-                max_tokens: 8000 
+                max_tokens: 8192  // DeepSeek的最大输出限制
               }),
             };
             break;
@@ -8573,7 +8573,7 @@ ${type === 'prefix' ? '\n---\n以下是用户的具体要求：\n' : ''}`;
           ],
           generationConfig: {
             candidateCount: 1,
-            maxOutputTokens: 8192,
+            maxOutputTokens: 65536,  // Gemini 2.5支持的最大输出长度
             temperature: 0.7,
             topP: 0.99,
             topK: 40,
@@ -8584,7 +8584,18 @@ ${type === 'prefix' ? '\n---\n以下是用户的具体要求：\n' : ''}`;
         // 处理系统指令
         if (isSystemPromptEnabled) {
           // 使用新的破限提示词生成函数
-          const LimitlessPrompt = generateLimitlessPrompt('system');
+          let LimitlessPrompt;
+          if (typeof generateLimitlessPrompt === 'function') {
+            try {
+              LimitlessPrompt = generateLimitlessPrompt('system');
+            } catch (error) {
+              console.error('破限提示词生成失败:', error);
+              LimitlessPrompt = '你是创意写作助手，专注于角色卡设计和故事创作。';
+            }
+          } else {
+            console.warn('破限提示词函数未定义，使用默认系统消息');
+            LimitlessPrompt = '你是创意写作助手，专注于角色卡设计和故事创作。';
+          }
           
           requestBody.systemInstruction = {
             parts: [{ text: LimitlessPrompt }]
@@ -8629,9 +8640,13 @@ ${type === 'prefix' ? '\n---\n以下是用户的具体要求：\n' : ''}`;
         console.log('破限模式:', isSystemPromptEnabled ? '已启用' : '未启用');
         console.log('模型:', model);
         console.log('工具调用:', finalRequestBody.tools ? finalRequestBody.tools.length + '个工具' : '无');
-        if (isSystemPromptEnabled) {
+        if (isSystemPromptEnabled && typeof LimitlessPrompt !== 'undefined') {
           console.log('系统指令长度:', LimitlessPrompt.length + '字符');
-          console.log('动态后缀:', dynamicSuffix);
+          // 从 LimitlessPrompt 中提取动态后缀
+          const suffixMatch = LimitlessPrompt.match(/创作\s+(\w+)/);
+          if (suffixMatch) {
+            console.log('动态后缀:', suffixMatch[1]);
+          }
         }
         if (finalRequestBody.tools) {
           console.log('工具详情:', finalRequestBody.tools.map(t => {
@@ -8675,7 +8690,12 @@ ${type === 'prefix' ? '\n---\n以下是用户的具体要求：\n' : ''}`;
               requestOptions = {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiSettings.deepseek.apiKey}` },
-                body: JSON.stringify({ model: 'deepseek-chat', messages: [{ role: 'user', content: finalPrompt }] }),
+                body: JSON.stringify({ 
+                  model: 'deepseek-chat', 
+                  messages: [{ role: 'user', content: finalPrompt }],
+                  max_tokens: 8192,  // DeepSeek的最大输出限制
+                  temperature: 0.7
+                }),
               };
               break;
 
@@ -8704,35 +8724,67 @@ ${type === 'prefix' ? '\n---\n以下是用户的具体要求：\n' : ''}`;
               }
 
               const geminiProxyModel = apiSettings['gemini-proxy'].model || 'gemini-2.5-flash';
-              const geminiProxyBody = buildGeminiRequest(finalPrompt, apiSettings, provider);
               
-              // 对于gemini-proxy模式，使用OpenAI兼容的端点格式
-              // 而不是Gemini原生API格式
-              let finalProxyUrl = proxyBaseUrl;
-              if (!finalProxyUrl.includes('/chat/completions')) {
-                if (finalProxyUrl.endsWith('/v1')) {
-                  finalProxyUrl += '/chat/completions';
+              // 检查是否使用OpenAI格式（只有以/v1结尾才使用OpenAI格式）
+              const useOpenAIFormat = proxyBaseUrl.endsWith('/v1');
+              
+              if (useOpenAIFormat) {
+                // 使用OpenAI兼容格式
+                requestUrl = proxyBaseUrl + '/chat/completions';
+                requestOptions = {
+                  method: 'POST',
+                  headers: { 
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${apiSettings['gemini-proxy'].apiKey}`
+                  },
+                  body: JSON.stringify({
+                    model: geminiProxyModel,
+                    messages: [{ role: 'user', content: finalPrompt }],
+                    stream: false
+                  }),
+                };
+                console.log('Gemini Proxy request (OpenAI format):', requestOptions.body);
+              } else {
+                // 使用Gemini原生API格式
+                const geminiProxyBody = buildGeminiRequest(finalPrompt, apiSettings, provider);
+                
+                // 构建Gemini原生格式的URL
+                let finalProxyUrl = proxyBaseUrl;
+                
+                // 检查是否已经是完整的API端点
+                if (finalProxyUrl.includes(':generateContent')) {
+                  // 已经是完整的API端点，直接使用
+                  // 不做任何修改
+                } else if (finalProxyUrl.endsWith('/models')) {
+                  // 已经包含/models路径，只需要添加模型名和操作
+                  finalProxyUrl += `/${geminiProxyModel}:generateContent`;
+                } else if (finalProxyUrl.endsWith('/v1beta')) {
+                  finalProxyUrl += `/models/${geminiProxyModel}:generateContent`;
                 } else if (finalProxyUrl.endsWith('/')) {
-                  finalProxyUrl += 'chat/completions';
+                  finalProxyUrl += `v1beta/models/${geminiProxyModel}:generateContent`;
                 } else {
-                  finalProxyUrl += '/chat/completions';
+                  finalProxyUrl += `/v1beta/models/${geminiProxyModel}:generateContent`;
                 }
+                
+                requestUrl = finalProxyUrl;
+                
+                // 根据Gemini原生API的认证方式，使用key参数而不是Authorization header
+                if (finalProxyUrl.includes('?')) {
+                  requestUrl += `&key=${apiSettings['gemini-proxy'].apiKey}`;
+                } else {
+                  requestUrl += `?key=${apiSettings['gemini-proxy'].apiKey}`;
+                }
+                
+                requestOptions = {
+                  method: 'POST',
+                  headers: { 
+                    'Content-Type': 'application/json'
+                    // Gemini原生API不使用Authorization header，而是使用URL参数
+                  },
+                  body: JSON.stringify(geminiProxyBody),
+                };
+                console.log('Gemini Proxy request (Native format):', requestOptions.body);
               }
-              
-              requestUrl = finalProxyUrl;
-              requestOptions = {
-                method: 'POST',
-                headers: { 
-                  'Content-Type': 'application/json',
-                  'Authorization': `Bearer ${apiSettings['gemini-proxy'].apiKey}`
-                },
-                body: JSON.stringify({
-                  model: geminiProxyModel,
-                  messages: [{ role: 'user', content: finalPrompt }],
-                  stream: false
-                }),
-              };
-              console.log('Gemini Proxy request (OpenAI format):', requestOptions.body);
               break;
 
             case 'local':
@@ -8846,7 +8898,17 @@ ${type === 'prefix' ? '\n---\n以下是用户的具体要求：\n' : ''}`;
                 
                 if (providerSettings.jailbreak) {
                   // 使用独立的破限提示词函数
-                  systemMessage = generateLimitlessPrompt('prefix');
+                  if (typeof generateLimitlessPrompt === 'function') {
+                    try {
+                      systemMessage = generateLimitlessPrompt('prefix');
+                    } catch (error) {
+                      console.error('破限提示词生成失败:', error);
+                      systemMessage = '你是创意写作助手，专注于角色卡设计和故事创作。';
+                    }
+                  } else {
+                    console.warn('破限提示词函数未定义，使用默认系统消息');
+                    systemMessage = '你是创意写作助手，专注于角色卡设计和故事创作。';
+                  }
                 } else {
                   systemMessage = '你是创意写作助手，专注于角色卡设计和故事创作。';
                 }
