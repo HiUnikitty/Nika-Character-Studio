@@ -2,7 +2,10 @@
 <html lang="zh-CN">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+    <meta name="format-detection" content="telephone=no" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <title>妮卡角色工作室Pro</title>
     <script src="https://unpkg.com/pako@2.1.0/dist/pako.min.js"></script>
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-7PYFG35VCZ"></script>
@@ -1672,7 +1675,6 @@
       }
       #worldbook-ai-generator-modal .generated-entry input[type='checkbox'] {
         margin-right: 15px;
-        transform: scale(1.4);
         margin-top: 5px;
         flex-shrink: 0;
       }
@@ -1701,6 +1703,118 @@
         display: flex;
         align-items: center;
         gap: 5px;
+      }
+      
+      /* iOS 兼容性修复 */
+      @supports (-webkit-touch-callout: none) {
+        /* iOS 特定样式 */
+        input:not([type="checkbox"]), textarea, select {
+          font-size: 16px !important; /* 防止iOS自动缩放 */
+          -webkit-appearance: none;
+          appearance: none;
+          border-radius: 0;
+        }
+        
+        /* 保持复选框原生外观 */
+        input[type="checkbox"] {
+          font-size: 16px !important; /* 防止iOS自动缩放 */
+          -webkit-appearance: checkbox;
+          appearance: checkbox;
+        }
+        
+        /* 修复复选框文字溢出问题 */
+        #worldbook-ai-generator-modal .generated-entry > label {
+          display: flex !important;
+          align-items: flex-start !important;
+          width: 100% !important;
+          box-sizing: border-box !important;
+          word-wrap: break-word !important;
+          overflow-wrap: break-word !important;
+        }
+        
+        #worldbook-ai-generator-modal .generated-entry input[type='checkbox'] {
+          margin-right: 15px !important;
+          margin-top: 5px !important;
+          flex-shrink: 0 !important;
+          position: relative !important;
+          /* 保持原生大小，不强制设置尺寸 */
+        }
+        
+        #worldbook-ai-generator-modal .entry-details {
+          flex: 1 !important;
+          min-width: 0 !important; /* 允许文字换行 */
+          word-wrap: break-word !important;
+          overflow-wrap: break-word !important;
+        }
+        
+        #worldbook-ai-generator-modal .entry-details h4 {
+          word-wrap: break-word !important;
+          overflow-wrap: break-word !important;
+          white-space: normal !important;
+        }
+        
+        #worldbook-ai-generator-modal .entry-details p {
+          word-wrap: break-word !important;
+          overflow-wrap: break-word !important;
+          white-space: normal !important;
+        }
+        
+        /* 防止弹窗自动缩放 */
+        .modal-overlay {
+          position: fixed !important;
+          -webkit-overflow-scrolling: touch !important;
+        }
+        
+        .modal-content {
+          -webkit-overflow-scrolling: touch !important;
+          -webkit-transform: translate3d(0,0,0) !important;
+          transform: translate3d(0,0,0) !important;
+        }
+      }
+
+      /* --- 全屏弹窗样式 --- */
+      #instruction-modal .modal-content,
+      #frontend-beautify-modal .modal-content {
+        width: 90% !important;
+        height: 85% !important;
+        max-width: 1000px !important;
+        max-height: none !important;
+        display: flex !important;
+        flex-direction: column !important;
+        margin: 0 auto !important;
+      }
+      
+      #instruction-modal .modal-content > div:last-child,
+      #frontend-beautify-modal .modal-content > div:last-child {
+        margin-top: auto !important;
+        padding-top: 20px !important;
+        border-top: 1px solid var(--input-border) !important;
+      }
+      
+      #instruction-modal .modal-content button,
+      #frontend-beautify-modal .modal-content button {
+        padding: 10px 20px !important;
+      }
+      
+      /* 增加内容框的默认高度 */
+      #instruction-content-input {
+        min-height: 150px !important;
+        height: 150px;
+      }
+      
+      /* 移动端适配 */
+      @media (max-width: 800px) {
+        #instruction-content-input {
+          min-height: 120px !important;
+        }
+        
+        /* 移动端保持全屏 */
+        #instruction-modal .modal-content,
+        #frontend-beautify-modal .modal-content {
+          width: 95% !important;
+          height: 90% !important;
+          max-width: none !important;
+        }
       }
 
       /* --- Generic AI Guidance Modal --- */
@@ -4012,7 +4126,7 @@ ${JSON.stringify({ fields: textObject, worldbook: wbTextObject }, null, 2)}
         // 创建模态框HTML
         const modalHtml = `
         <div id="instruction-modal" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 1000; display: flex; align-items: center; justify-content: center;">
-            <div style="background: var(--bg-color); border-radius: 10px; padding: 20px; width: 90%; max-width: 600px; max-height: 80%; overflow-y: auto;">
+            <div style="background: var(--bg-color); border-radius: 10px; padding: 20px; max-width: 900px; max-height: 90vh; overflow-y: auto; display: flex; flex-direction: column;">
                 <h3>${modalTitle}</h3>
                 <div style="margin-bottom: 15px;">
                     <label>名称：</label>
@@ -4417,7 +4531,7 @@ ${JSON.stringify({ fields: textObject, worldbook: wbTextObject }, null, 2)}
           'position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); display: flex; justify-content: center; align-items: center; z-index: 1000;';
 
         modal.innerHTML = `
-        <div class="modal-content" style="background: var(--card-bg); border-radius: 10px; padding: 20px; max-width: 800px; width: 90%; max-height: 80%; overflow-y: auto;">
+        <div class="modal-content" style="background: var(--card-bg); border-radius: 10px; padding: 20px; width: 95%; height: 90%; overflow-y: auto; display: flex; flex-direction: column;">
             <h3 style="margin-top: 0; color: var(--text-color);">✨ 一键前端美化</h3>
             <p style="color: var(--text-color); margin-bottom: 15px;">AI将为您生成多个美化的HTML对话样式，您可以预览并选择喜欢的样式。</p>
             
@@ -12121,7 +12235,125 @@ ${worldbookContextPrompt}
       <div class="search-results" id="search-results">
         <!-- 搜索结果将在这里显示 -->
       </div>
-    </div>
+    </script>
+
+    <script>
+      // iOS 防缩放脚本
+      (function() {
+        'use strict';
+
+        // 检测是否为iOS设备
+        const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+
+        if (isIOS) {
+          // 防止双击缩放
+          let lastTouchEnd = 0;
+          document.addEventListener('touchend', function(event) {
+            const now = (new Date()).getTime();
+            if (now - lastTouchEnd <= 300) {
+              event.preventDefault();
+            }
+            lastTouchEnd = now;
+          }, false);
+
+          // 防止手势缩放
+          document.addEventListener('gesturestart', function(e) {
+            e.preventDefault();
+          }, { passive: false });
+
+          document.addEventListener('gesturechange', function(e) {
+            e.preventDefault();
+          }, { passive: false });
+
+          document.addEventListener('gestureend', function(e) {
+            e.preventDefault();
+          }, { passive: false });
+
+          // 防止输入框聚焦时的自动缩放
+          document.addEventListener('focusin', function(e) {
+            if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') {
+              // 临时禁用viewport缩放
+              const viewport = document.querySelector('meta[name=viewport]');
+              if (viewport) {
+                viewport.setAttribute('content', 'width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover');
+              }
+            }
+          });
+
+          document.addEventListener('focusout', function(e) {
+            if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') {
+              // 恢复viewport设置
+              setTimeout(() => {
+                const viewport = document.querySelector('meta[name=viewport]');
+                if (viewport) {
+                  viewport.setAttribute('content', 'width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover');
+                }
+              }, 100);
+            }
+          });
+
+          // 修复复选框布局
+          function fixCheckboxLayout() {
+            const checkboxContainers = document.querySelectorAll('#worldbook-ai-generator-modal .generated-entry > label');
+            checkboxContainers.forEach(container => {
+              container.style.cssText += `
+                display: flex !important;
+                align-items: flex-start !important;
+                width: 100% !important;
+                box-sizing: border-box !important;
+                word-wrap: break-word !important;
+                overflow-wrap: break-word !important;
+              `;
+
+              const checkbox = container.querySelector('input[type="checkbox"]');
+              if (checkbox) {
+                checkbox.style.cssText += `
+                  margin-right: 15px !important;
+                  margin-top: 5px !important;
+                  flex-shrink: 0 !important;
+                `;
+              }
+
+              const details = container.querySelector('.entry-details');
+              if (details) {
+                details.style.cssText += `
+                  flex: 1 !important;
+                  min-width: 0 !important;
+                  word-wrap: break-word !important;
+                  overflow-wrap: break-word !important;
+                `;
+              }
+            });
+          }
+
+          // 监听DOM变化，自动修复新增的复选框
+          const observer = new MutationObserver(function(mutations) {
+            mutations.forEach(function(mutation) {
+              if (mutation.type === 'childList') {
+                mutation.addedNodes.forEach(function(node) {
+                  if (node.nodeType === 1 && node.querySelector && 
+                      (node.matches('#worldbook-ai-generator-modal .generated-entry') || 
+                       node.querySelector('#worldbook-ai-generator-modal .generated-entry'))) {
+                    setTimeout(fixCheckboxLayout, 10);
+                  }
+                });
+              }
+            });
+          });
+          observer.observe(document.body, {
+            childList: true,
+            subtree: true
+          });
+
+          // 页面加载完成后立即修复
+          if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', fixCheckboxLayout);
+          } else {
+            fixCheckboxLayout();
+          }
+        }
+      })();
+    </script>
 
   </body>
 </html>
