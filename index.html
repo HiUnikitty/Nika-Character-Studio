@@ -5700,6 +5700,9 @@ ${currentContent}
             alert('⚠️ 警告：未找到加载动画元素，可能是DOM未完全加载');
           }
           
+          // 在APP环境中隐藏不需要的UI元素
+          hideElementsInApp();
+          
           // 初始化拖拽和编码功能
           initializeDragAndDrop();
 
@@ -6179,20 +6182,137 @@ ${currentContent}
         };
       }
 
+      // 检测是否在APP环境中
+      function isInApp() {
+        return typeof plus !== 'undefined';
+      }
+
+      // 在APP环境中隐藏不需要的UI元素
+      function hideElementsInApp() {
+        if (!isInApp()) return;
+        
+        try {
+          // 更精确地隐藏主页面的标题（通过父容器定位）
+          const headerDiv = document.querySelector('.header');
+          if (headerDiv) {
+            const appTitle = headerDiv.querySelector('h1');
+            if (appTitle && appTitle.textContent.includes('妮卡角色工作室Pro')) {
+              appTitle.style.display = 'none';
+            }
+          }
+          
+          // 隐藏中英文切换按钮
+          const languageSwitcher = document.querySelector('.language-switcher');
+          if (languageSwitcher) {
+            languageSwitcher.style.display = 'none';
+          }
+          
+          // 隐藏资源箱
+          const resourceArea = document.querySelector('.resource-area');
+          if (resourceArea) {
+            resourceArea.style.display = 'none';
+          }
+          
+          console.log('APP环境：已隐藏不必要的UI元素');
+        } catch (error) {
+          console.error('隐藏UI元素时发生错误:', error);
+        }
+      }
+
+      // APP环境下的文件下载
+      function downloadFileInApp(content, filename, mimeType = 'application/json') {
+        if (!isInApp()) return false;
+        
+        try {
+          // 获取下载目录
+          const downloadDir = plus.os.name === 'Android' ? 'downloads' : 'documents';
+          
+          // 写入文件
+          plus.io.requestFileSystem(plus.io.PUBLIC_DOWNLOADS, function(fs) {
+            fs.root.getFile(filename, {create: true}, function(fileEntry) {
+              fileEntry.createWriter(function(writer) {
+                writer.onwrite = function() {
+                  plus.nativeUI.toast('文件已保存到下载目录：' + filename);
+                };
+                writer.onerror = function(e) {
+                  plus.nativeUI.toast('文件保存失败');
+                };
+                
+                if (typeof content === 'string') {
+                  writer.write(content);
+                } else {
+                  // 处理Blob对象
+                  const reader = new FileReader();
+                  reader.onload = function() {
+                    writer.write(reader.result);
+                  };
+                  reader.readAsText(content);
+                }
+              });
+            });
+          });
+          return true;
+        } catch (error) {
+          console.error('APP下载失败:', error);
+          return false;
+        }
+      }
+
       async function downloadCharacter() {
         if (!(await checkDbReady())) return;
         const v3Card = buildLiveExportCard();
-        const blob = new Blob([JSON.stringify(v3Card, null, 2)], { type: 'application/json' });
-        const a = document.createElement('a');
-        a.href = URL.createObjectURL(blob);
+        
         // 版本控制：文件名包含版本号
         let filename = v3Card.data && v3Card.data.name ? v3Card.data.name : 'character';
         if (v3Card.data && v3Card.data.character_version && v3Card.data.character_version.trim() !== '') {
           filename += '-' + v3Card.data.character_version.trim();
         }
-        a.download = filename + '.json';
-        a.click();
-        URL.revokeObjectURL(a.href);
+        filename += '.json';
+        
+        // 检测环境并使用对应的下载方式
+        if (isInApp()) {
+          const content = JSON.stringify(v3Card, null, 2);
+          downloadFileInApp(content, filename, 'application/json');
+        } else {
+          // 浏览器环境使用传统方式
+          const blob = new Blob([JSON.stringify(v3Card, null, 2)], { type: 'application/json' });
+          const a = document.createElement('a');
+          a.href = URL.createObjectURL(blob);
+          a.download = filename;
+          a.click();
+          URL.revokeObjectURL(a.href);
+        }
+      }
+
+      // APP环境下的Blob文件下载
+      function downloadBlobInApp(blob, filename) {
+        if (!isInApp()) return false;
+        
+        try {
+          const reader = new FileReader();
+          reader.onload = function() {
+            const arrayBuffer = reader.result;
+            
+            plus.io.requestFileSystem(plus.io.PUBLIC_DOWNLOADS, function(fs) {
+              fs.root.getFile(filename, {create: true}, function(fileEntry) {
+                fileEntry.createWriter(function(writer) {
+                  writer.onwrite = function() {
+                    plus.nativeUI.toast('图片已保存到下载目录：' + filename);
+                  };
+                  writer.onerror = function(e) {
+                    plus.nativeUI.toast('图片保存失败');
+                  };
+                  writer.write(arrayBuffer);
+                });
+              });
+            });
+          };
+          reader.readAsArrayBuffer(blob);
+          return true;
+        } catch (error) {
+          console.error('APP Blob下载失败:', error);
+          return false;
+        }
       }
 
       async function downloadCharacterAsPng() {
@@ -6207,31 +6327,50 @@ ${currentContent}
         const imageToUse =
           cardData.avatar || document.getElementById('avatar-preview').src || createDefaultImage('2:3');
         const finalPngBlob = await embedDataInPng(imageToUse, base64Data);
-        const a = document.createElement('a');
-        a.href = URL.createObjectURL(finalPngBlob);
+        
         // 版本控制：PNG文件名包含版本号
         let filename = v3Card.data.name || 'character';
         if (v3Card.data.character_version && v3Card.data.character_version.trim() !== '') {
           filename += ' ' + v3Card.data.character_version.trim();
         }
-        a.download = filename + '.png';
-        a.click();
-        URL.revokeObjectURL(a.href);
+        filename += '.png';
+        
+        // 检测环境并使用对应的下载方式
+        if (isInApp()) {
+          downloadBlobInApp(finalPngBlob, filename);
+        } else {
+          // 浏览器环境使用传统方式
+          const a = document.createElement('a');
+          a.href = URL.createObjectURL(finalPngBlob);
+          a.download = filename;
+          a.click();
+          URL.revokeObjectURL(a.href);
+        }
       }
 
       async function downloadAsWorldbookFile() {
         if (!(await checkDbReady())) return;
         const lorebookData = buildWorldbookExportObject();
-        const blob = new Blob([JSON.stringify(lorebookData, null, 2)], { type: 'application/json' });
-        const a = document.createElement('a');
-        a.href = URL.createObjectURL(blob);
+        
         let filename = 'lorebook';
         if (lorebookData.originalData && lorebookData.originalData.name) {
           filename = lorebookData.originalData.name.replace(`(${t('world-knowledge-book')}) `, '');
         }
-        a.download = filename + '.json';
-        a.click();
-        URL.revokeObjectURL(a.href);
+        filename += '.json';
+        
+        // 检测环境并使用对应的下载方式
+        if (isInApp()) {
+          const content = JSON.stringify(lorebookData, null, 2);
+          downloadFileInApp(content, filename, 'application/json');
+        } else {
+          // 浏览器环境使用传统方式
+          const blob = new Blob([JSON.stringify(lorebookData, null, 2)], { type: 'application/json' });
+          const a = document.createElement('a');
+          a.href = URL.createObjectURL(blob);
+          a.download = filename;
+          a.click();
+          URL.revokeObjectURL(a.href);
+        }
       }
 
       // --- CRUD Operations ---
@@ -6430,12 +6569,20 @@ ${currentContent}
 
           if (isPureLorebook(charData)) {
             const lorebookData = buildWorldbookExportObjectFromData(charData);
-            const blob = new Blob([JSON.stringify(lorebookData, null, 2)], { type: 'application/json' });
-            const a = document.createElement('a');
-            a.href = URL.createObjectURL(blob);
-            a.download = (charData.name || 'lorebook') + '.json';
-            a.click();
-            URL.revokeObjectURL(a.href);
+            const filename = (charData.name || 'lorebook') + '.json';
+            
+            // 检测环境并使用对应的下载方式
+            if (isInApp()) {
+              const content = JSON.stringify(lorebookData, null, 2);
+              downloadFileInApp(content, filename, 'application/json');
+            } else {
+              const blob = new Blob([JSON.stringify(lorebookData, null, 2)], { type: 'application/json' });
+              const a = document.createElement('a');
+              a.href = URL.createObjectURL(blob);
+              a.download = filename;
+              a.click();
+              URL.revokeObjectURL(a.href);
+            }
           } else {
             const v3Card = buildV3Card(charData);
             // 检查头像是否有效（不为空且不是无效值）
@@ -6450,43 +6597,64 @@ ${currentContent}
               try {
                 const base64Data = btoa(unescape(encodeURIComponent(JSON.stringify(v3Card))));
                 const finalPngBlob = await embedDataInPng(charData.avatar, base64Data);
-                const a = document.createElement('a');
-                a.href = URL.createObjectURL(finalPngBlob);
+                
                 // 版本控制：PNG文件名包含版本号
                 let filename = v3Card.data.name || 'character';
                 if (v3Card.data.character_version && v3Card.data.character_version.trim() !== '') {
                   filename += ' ' + v3Card.data.character_version.trim();
                 }
-                a.download = filename + '.png';
-                a.click();
-                URL.revokeObjectURL(a.href);
+                filename += '.png';
+                
+                // 检测环境并使用对应的下载方式
+                if (isInApp()) {
+                  downloadBlobInApp(finalPngBlob, filename);
+                } else {
+                  const a = document.createElement('a');
+                  a.href = URL.createObjectURL(finalPngBlob);
+                  a.download = filename;
+                  a.click();
+                  URL.revokeObjectURL(a.href);
+                }
               } catch (error) {
                 console.error('PNG导出失败，回退到JSON:', error);
                 // 如果PNG导出失败，回退到JSON导出
-                const blob = new Blob([JSON.stringify(v3Card, null, 2)], { type: 'application/json' });
-                const a = document.createElement('a');
-                a.href = URL.createObjectURL(blob);
-                // 版本控制：JSON文件名包含版本号
                 let filename = v3Card.data && v3Card.data.name ? v3Card.data.name : 'character';
                 if (v3Card.data && v3Card.data.character_version && v3Card.data.character_version.trim() !== '') {
                   filename += ' ' + v3Card.data.character_version.trim();
                 }
-                a.download = filename + '.json';
-                a.click();
-                URL.revokeObjectURL(a.href);
+                filename += '.json';
+                
+                if (isInApp()) {
+                  const content = JSON.stringify(v3Card, null, 2);
+                  downloadFileInApp(content, filename, 'application/json');
+                } else {
+                  const blob = new Blob([JSON.stringify(v3Card, null, 2)], { type: 'application/json' });
+                  const a = document.createElement('a');
+                  a.href = URL.createObjectURL(blob);
+                  a.download = filename;
+                  a.click();
+                  URL.revokeObjectURL(a.href);
+                }
               }
             } else {
-              const blob = new Blob([JSON.stringify(v3Card, null, 2)], { type: 'application/json' });
-              const a = document.createElement('a');
-              a.href = URL.createObjectURL(blob);
               // 版本控制：JSON文件名包含版本号
               let filename = v3Card.data && v3Card.data.name ? v3Card.data.name : 'character';
               if (v3Card.data && v3Card.data.character_version && v3Card.data.character_version.trim() !== '') {
                 filename += ' ' + v3Card.data.character_version.trim();
               }
-              a.download = filename + '.json';
-              a.click();
-              URL.revokeObjectURL(a.href);
+              filename += '.json';
+              
+              if (isInApp()) {
+                const content = JSON.stringify(v3Card, null, 2);
+                downloadFileInApp(content, filename, 'application/json');
+              } else {
+                const blob = new Blob([JSON.stringify(v3Card, null, 2)], { type: 'application/json' });
+                const a = document.createElement('a');
+                a.href = URL.createObjectURL(blob);
+                a.download = filename;
+                a.click();
+                URL.revokeObjectURL(a.href);
+              }
             }
           }
         };
@@ -8298,14 +8466,21 @@ ${memory.content}
         } else {
           fileName = `转换数据-${timeString}`;
         }
+        fileName += '.json';
         
-        const blob = new Blob([JSON.stringify(generatedWorldbook, null, 2)], { type: 'application/json' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = fileName + '.json';
-        a.click();
-        URL.revokeObjectURL(url);
+        // 检测环境并使用对应的下载方式
+        if (isInApp()) {
+          const content = JSON.stringify(generatedWorldbook, null, 2);
+          downloadFileInApp(content, fileName, 'application/json');
+        } else {
+          const blob = new Blob([JSON.stringify(generatedWorldbook, null, 2)], { type: 'application/json' });
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = fileName;
+          a.click();
+          URL.revokeObjectURL(url);
+        }
       }
       
       // 导入到SillyTavern
@@ -8331,15 +8506,22 @@ ${memory.content}
           } else {
             fileName = `酒馆书-${timeString}`;
           }
+          fileName += '.json';
           
-          // 创建下载文件
-          const blob = new Blob([JSON.stringify(sillyTavernWorldbook, null, 2)], { type: 'application/json' });
-          const url = URL.createObjectURL(blob);
-          const a = document.createElement('a');
-          a.href = url;
-          a.download = fileName + '.json';
-          a.click();
-          URL.revokeObjectURL(url);
+          // 检测环境并使用对应的下载方式
+          if (isInApp()) {
+            const content = JSON.stringify(sillyTavernWorldbook, null, 2);
+            downloadFileInApp(content, fileName, 'application/json');
+          } else {
+            // 创建下载文件
+            const blob = new Blob([JSON.stringify(sillyTavernWorldbook, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = fileName;
+            a.click();
+            URL.revokeObjectURL(url);
+          }
           
           alert('世界书已转换为SillyTavern格式并下载，请在SillyTavern中手动导入该文件。');
         } catch (error) {
@@ -12233,7 +12415,7 @@ ${worldbookContextPrompt}
         </div>
       </div>
       <div class="search-results" id="search-results">
-        <!-- 搜索结果将在这里显示 -->
+      <!-- 搜索结果将在这里显示 -->
       </div>
     </script>
 
