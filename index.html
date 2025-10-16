@@ -5833,7 +5833,7 @@ ${currentContent}
         initializeDragAndDrop();
         
         // 检查是否有未完成的状态
-        checkForSavedState();
+        await checkForSavedState();
         
         // 隐藏加载圈
         document.getElementById('loading-overlay').style.display = 'none';
@@ -7143,10 +7143,94 @@ ${currentContent}
       let generatedWorldbook = {};
       let isProcessingStopped = false; // 停止处理标志
       
-      // 简单的状态管理
+      // IndexedDB 辅助类
+      const IndexedDBHelper = {
+        dbName: 'NovelWorldbookDB',
+        storeName: 'states',
+        version: 1,
+        
+        // 打开数据库
+        async openDB() {
+          return new Promise((resolve, reject) => {
+            const request = indexedDB.open(this.dbName, this.version);
+            
+            request.onerror = () => reject(request.error);
+            request.onsuccess = () => resolve(request.result);
+            
+            request.onupgradeneeded = (event) => {
+              const db = event.target.result;
+              if (!db.objectStoreNames.contains(this.storeName)) {
+                db.createObjectStore(this.storeName);
+              }
+            };
+          });
+        },
+        
+        // 保存数据
+        async setItem(key, value) {
+          try {
+            const db = await this.openDB();
+            return new Promise((resolve, reject) => {
+              const transaction = db.transaction([this.storeName], 'readwrite');
+              const store = transaction.objectStore(this.storeName);
+              const request = store.put(value, key);
+              
+              request.onsuccess = () => resolve();
+              request.onerror = () => reject(request.error);
+              
+              transaction.oncomplete = () => db.close();
+            });
+          } catch (error) {
+            console.error('IndexedDB setItem 错误:', error);
+            throw error;
+          }
+        },
+        
+        // 获取数据
+        async getItem(key) {
+          try {
+            const db = await this.openDB();
+            return new Promise((resolve, reject) => {
+              const transaction = db.transaction([this.storeName], 'readonly');
+              const store = transaction.objectStore(this.storeName);
+              const request = store.get(key);
+              
+              request.onsuccess = () => resolve(request.result);
+              request.onerror = () => reject(request.error);
+              
+              transaction.oncomplete = () => db.close();
+            });
+          } catch (error) {
+            console.error('IndexedDB getItem 错误:', error);
+            return null;
+          }
+        },
+        
+        // 删除数据
+        async removeItem(key) {
+          try {
+            const db = await this.openDB();
+            return new Promise((resolve, reject) => {
+              const transaction = db.transaction([this.storeName], 'readwrite');
+              const store = transaction.objectStore(this.storeName);
+              const request = store.delete(key);
+              
+              request.onsuccess = () => resolve();
+              request.onerror = () => reject(request.error);
+              
+              transaction.oncomplete = () => db.close();
+            });
+          } catch (error) {
+            console.error('IndexedDB removeItem 错误:', error);
+            throw error;
+          }
+        }
+      };
+      
+      // 简单的状态管理（使用 IndexedDB）
       const NovelState = {
         // 保存当前状态
-        saveState(currentIndex = 0) {
+        async saveState(currentIndex = 0) {
           const state = {
             currentIndex: currentIndex,
             totalItems: memoryQueue.length,
@@ -7157,38 +7241,38 @@ ${currentContent}
             lastUpdate: Date.now(),
             completed: currentIndex >= memoryQueue.length
           };
-          localStorage.setItem('novel_worldbook_state', JSON.stringify(state));
+          await IndexedDBHelper.setItem('novel_worldbook_state', state);
           console.log(`状态已保存: ${currentIndex}/${memoryQueue.length}`, currentFile ? `文件: ${currentFile.name}` : '无文件');
         },
         
         // 加载状态
-        loadState() {
-          const saved = localStorage.getItem('novel_worldbook_state');
-          return saved ? JSON.parse(saved) : null;
+        async loadState() {
+          const saved = await IndexedDBHelper.getItem('novel_worldbook_state');
+          return saved || null;
         },
         
         // 清除状态
-        clearState() {
-          localStorage.removeItem('novel_worldbook_state');
+        async clearState() {
+          await IndexedDBHelper.removeItem('novel_worldbook_state');
           console.log('状态已清除');
         },
         
         // 检查是否有未完成的状态
-        hasIncompleteState() {
-          const state = this.loadState();
+        async hasIncompleteState() {
+          const state = await this.loadState();
           return state && !state.completed && state.currentIndex < state.totalItems;
         },
         
         // 检查是否有任何保存的状态（包括已完成的）
-        hasSavedState() {
-          const state = this.loadState();
+        async hasSavedState() {
+          const state = await this.loadState();
           return state !== null;
         }
       };
       
       // 检查是否有保存的状态
-      function checkForSavedState() {
-        const state = NovelState.loadState();
+      async function checkForSavedState() {
+        const state = await NovelState.loadState();
         if (!state) return;
         
         const lastUpdate = new Date(state.lastUpdate).toLocaleString();
@@ -7219,7 +7303,7 @@ ${currentContent}
           restoreState(state, isCompleted);
         } else {
           // 用户选择开始新任务，清除旧状态
-          NovelState.clearState();
+          await NovelState.clearState();
         }
       }
       
@@ -7345,7 +7429,7 @@ ${currentContent}
             await processMemoryChunk(i);
             
             // 每处理完一个记忆块就保存状态
-            NovelState.saveState(i + 1);
+            await NovelState.saveState(i + 1);
           }
           
           // 完成处理
@@ -7358,7 +7442,7 @@ ${currentContent}
           
           // 标记完成并保存最终状态（不清除，以便下次恢复）
           if (!isProcessingStopped) {
-            NovelState.saveState(memoryQueue.length); // 保存完成状态
+            await NovelState.saveState(memoryQueue.length); // 保存完成状态
             console.log('✅ 转换完成，状态已保存，可在下次打开时恢复');
           }
           
@@ -7710,7 +7794,7 @@ ${currentContent}
         addStopButton();
         
         // 保存初始状态
-        NovelState.saveState(0);
+        await NovelState.saveState(0);
         
         try {
           for (let i = 0; i < memoryQueue.length; i++) {
@@ -7729,7 +7813,7 @@ ${currentContent}
             await processMemoryChunk(i);
             
             // 每处理完一个记忆块就保存状态
-            NovelState.saveState(i + 1);
+            await NovelState.saveState(i + 1);
           }
           
           // 完成处理
@@ -7744,7 +7828,7 @@ ${currentContent}
           
           // 完成后清除保存的状态
           if (!isProcessingStopped) {
-            NovelState.clearState();
+            await NovelState.clearState();
           }
           
         } catch (error) {
