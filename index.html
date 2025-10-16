@@ -9037,7 +9037,7 @@ ${type === 'prefix' ? '\n---\n以下是用户的具体要求：\n' : ''}`;
         if (/^gemini-2.5-(flash|pro)/.test(model)) {
           requestBody.generationConfig.thinkingConfig = {
             includeThoughts: false,
-            thinkingBudget: 32767  // 增加思维预算，增强创造性
+            thinkingBudget: 24576  // 增加思维预算，增强创造性
           };
           
           // 注意：responseMimeType和responseSchema可能导致API错误
