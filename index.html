@@ -8154,6 +8154,67 @@ ${memory.content}
             };
             break;
             
+          case 'gemini-proxy':
+            if (!apiSettings['gemini-proxy'].endpoint) throw new Error('Gemini Proxy Endpoint 未设置');
+            if (!apiSettings['gemini-proxy'].apiKey) throw new Error('Gemini Proxy API Key 未设置');
+            
+            let proxyBaseUrl = apiSettings['gemini-proxy'].endpoint;
+            if (!proxyBaseUrl.startsWith('http')) proxyBaseUrl = 'https://' + proxyBaseUrl;
+            if (proxyBaseUrl.endsWith('/')) proxyBaseUrl = proxyBaseUrl.slice(0, -1);
+            
+            const geminiProxyModel = apiSettings['gemini-proxy'].model || 'gemini-2.5-flash';
+            const useOpenAIFormat = proxyBaseUrl.endsWith('/v1');
+            
+            if (useOpenAIFormat) {
+              // OpenAI兼容格式
+              requestUrl = proxyBaseUrl + '/chat/completions';
+              requestOptions = {
+                method: 'POST',
+                headers: { 
+                  'Content-Type': 'application/json',
+                  'Authorization': `Bearer ${apiSettings['gemini-proxy'].apiKey}`
+                },
+                body: JSON.stringify({
+                  model: geminiProxyModel,
+                  messages: [{ role: 'user', content: prompt }],
+                  temperature: 0.3,
+                  max_tokens: 65536
+                }),
+              };
+            } else {
+              // Gemini原生格式
+              const finalProxyUrl = `${proxyBaseUrl}/${geminiProxyModel}:generateContent`;
+              requestUrl = finalProxyUrl.includes('?') 
+                ? `${finalProxyUrl}&key=${apiSettings['gemini-proxy'].apiKey}`
+                : `${finalProxyUrl}?key=${apiSettings['gemini-proxy'].apiKey}`;
+              requestOptions = {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  contents: [{ parts: [{ text: prompt }] }],
+                  generationConfig: { maxOutputTokens: 65536, temperature: 0.3 }
+                }),
+              };
+            }
+            break;
+            
+          case 'local':
+            const localEndpoint = apiSettings.local?.endpoint || 'http://127.0.0.1:5000/v1/chat/completions';
+            const localModel = apiSettings.local?.model || 'local-model';
+            
+            requestUrl = localEndpoint;
+            requestOptions = {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                model: localModel,
+                messages: [{ role: 'user', content: prompt }],
+                temperature: 0.3,
+                max_tokens: 65536
+              }),
+            };
+            break;
+            
           case 'tavern':
             const providerSettings = apiSettings.tavern;
             const isReverseProxy = providerSettings.connectionType === 'reverse-proxy';
@@ -8246,10 +8307,21 @@ ${memory.content}
           const data = await response.json();
           
           // 解析响应
-          if (provider === 'deepseek' || provider === 'tavern') {
+          if (provider === 'deepseek' || provider === 'tavern' || provider === 'local') {
             return data.choices[0].message.content;
           } else if (provider === 'gemini') {
             return data.candidates[0].content.parts[0].text;
+          } else if (provider === 'gemini-proxy') {
+            // gemini-proxy 可能返回两种格式
+            if (data.candidates) {
+              // Gemini原生格式
+              return data.candidates[0].content.parts[0].text;
+            } else if (data.choices) {
+              // OpenAI兼容格式
+              return data.choices[0].message.content;
+            } else {
+              throw new Error('Gemini Proxy 返回了未知的响应格式');
+            }
           }
           
           throw new Error('未知的API响应格式');
