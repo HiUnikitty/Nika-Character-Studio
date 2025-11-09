@@ -3958,6 +3958,9 @@ ${JSON.stringify({ fields: textObject, worldbook: wbTextObject }, null, 2)}
       }
       
       // --- 文本折叠视图功能 ---
+      // 存储折叠状态
+      const foldStates = {};
+      
       function initializeFoldView() {
         // 解析文本内容，识别标题
         function parseTextContent(text) {
@@ -4017,15 +4020,23 @@ ${JSON.stringify({ fields: textObject, worldbook: wbTextObject }, null, 2)}
             return '<div style="text-align: center; color: #888; padding: 20px;">没有检测到标题结构</div>';
           }
           
+          // 获取该textarea的折叠状态
+          const savedStates = foldStates[textareaId] || {};
+          
           let html = '';
           sections.forEach((section, index) => {
+            // 检查是否应该折叠
+            const isCollapsed = savedStates[section.title] === true;
+            const collapsedClass = isCollapsed ? ' collapsed' : '';
+            const iconClass = isCollapsed ? ' collapsed' : '';
+            
             html += `
               <div class="fold-section">
-                <div class="fold-section-header" onclick="toggleFoldSection(${index})">
-                  <span class="fold-toggle-icon" id="fold-icon-${index}">▼</span>
+                <div class="fold-section-header" onclick="toggleFoldSection(${index}, '${textareaId}', '${escapeHtml(section.title).replace(/'/g, "\\'")}')">  
+                  <span class="fold-toggle-icon${iconClass}" id="fold-icon-${index}">▼</span>
                   <span class="fold-section-title">${escapeHtml(section.title)}</span>
                 </div>
-                <div class="fold-section-content" id="fold-content-${index}">
+                <div class="fold-section-content${collapsedClass}" id="fold-content-${index}">
                   <textarea class="fold-section-textarea" data-section-index="${index}" data-textarea-id="${textareaId}">${escapeHtml(section.content)}</textarea>
                 </div>
               </div>
@@ -4043,13 +4054,19 @@ ${JSON.stringify({ fields: textObject, worldbook: wbTextObject }, null, 2)}
         }
         
         // 切换折叠状态
-        window.toggleFoldSection = function(index) {
+        window.toggleFoldSection = function(index, textareaId, sectionTitle) {
           const content = document.getElementById(`fold-content-${index}`);
           const icon = document.getElementById(`fold-icon-${index}`);
           
           if (content && icon) {
-            content.classList.toggle('collapsed');
+            const isCollapsed = content.classList.toggle('collapsed');
             icon.classList.toggle('collapsed');
+            
+            // 保存折叠状态
+            if (!foldStates[textareaId]) {
+              foldStates[textareaId] = {};
+            }
+            foldStates[textareaId][sectionTitle] = isCollapsed;
           }
         };
         
