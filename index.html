@@ -866,6 +866,8 @@
         flex: 1;
         overflow-y: auto;
         padding: 10px;
+        position: relative;
+        user-select: none;
       }
       
       .search-result-item {
@@ -876,6 +878,8 @@
         border-radius: 6px;
         cursor: pointer;
         transition: all 0.2s ease;
+        overflow: hidden;
+        word-wrap: break-word;
       }
       
       .search-result-item:hover {
@@ -888,6 +892,8 @@
         color: var(--primary-color);
         margin-bottom: 5px;
         font-size: 14px;
+        word-wrap: break-word;
+        overflow-wrap: break-word;
       }
       
       .search-result-meta {
@@ -895,15 +901,22 @@
         color: #888;
         display: flex;
         justify-content: space-between;
+        gap: 10px;
+        margin-bottom: 5px;
+      }
+      
+      .search-result-meta span {
+        flex-shrink: 0;
       }
       
       .search-result-preview {
         font-size: 12px;
         color: #aaa;
         margin-top: 5px;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
+        word-wrap: break-word;
+        overflow-wrap: break-word;
+        white-space: normal;
+        line-height: 1.4;
       }
       
       .close-search-btn {
@@ -3828,7 +3841,9 @@ ${JSON.stringify({ fields: textObject, worldbook: wbTextObject }, null, 2)}
         // Temporarily reset height to allow the scrollHeight to be calculated correctly.
         textarea.style.height = 'auto';
 
-        const maxHeight = window.innerHeight / 2; // Max height is half the viewport height.
+        // Get editor-body height's 9/10 as max height
+        const editorBody = document.querySelector('#editor-view .editor-body');
+        const maxHeight = editorBody ? editorBody.clientHeight * (9/10) : window.innerHeight;
         const scrollHeight = textarea.scrollHeight;
 
         // Set height to the calculated scroll height, but not exceeding the max height.
@@ -10990,6 +11005,7 @@ ${worldbookContextPrompt}
         </div>
         <ul class="child-entries"></ul>
     `;
+        
         return entryLi;
       }
 
@@ -12220,6 +12236,50 @@ ${worldbookContextPrompt}
           });
         });
         
+        // 全选功能
+        const selectAllCheckbox = document.getElementById('select-all-entries');
+        if (selectAllCheckbox) {
+          selectAllCheckbox.addEventListener('change', (e) => {
+            const checkboxes = document.querySelectorAll('.entry-checkbox');
+            checkboxes.forEach(cb => cb.checked = e.target.checked);
+            updateSelectedCount();
+          });
+        }
+        
+        // 批量修改按钮
+        const batchModifyBtn = document.getElementById('batch-modify-btn');
+        if (batchModifyBtn) {
+          batchModifyBtn.addEventListener('click', () => {
+            openBatchModifyModal();
+          });
+        }
+        
+        // 更新已选数量
+        function updateSelectedCount() {
+          const checkboxes = document.querySelectorAll('.entry-checkbox:checked');
+          const count = checkboxes.length;
+          const countSpan = document.getElementById('selected-count');
+          const batchBtn = document.getElementById('batch-modify-btn');
+          
+          if (countSpan) {
+            countSpan.textContent = `已选 ${count} 个`;
+          }
+          
+          if (batchBtn) {
+            batchBtn.style.display = count > 0 ? 'block' : 'none';
+          }
+          
+          // 更新全选复选框状态
+          const allCheckboxes = document.querySelectorAll('.entry-checkbox');
+          if (selectAllCheckbox && allCheckboxes.length > 0) {
+            selectAllCheckbox.checked = count === allCheckboxes.length;
+            selectAllCheckbox.indeterminate = count > 0 && count < allCheckboxes.length;
+          }
+        }
+        
+        // 使updateSelectedCount全局可用
+        window.updateSelectedCount = updateSelectedCount;
+        
         // 刷新搜索结果
         function refreshSearchResults() {
           const keyword = searchInput.value.toLowerCase().trim();
@@ -12253,25 +12313,189 @@ ${worldbookContextPrompt}
         function renderSearchResults(entries) {
           if (entries.length === 0) {
             searchResults.innerHTML = '<div style="text-align: center; color: #888; padding: 40px;">没有找到匹配的条目</div>';
+            updateSelectedCount();
             return;
           }
           
           const html = entries.map(entry => {
-            const preview = entry.content.substring(0, 50) + (entry.content.length > 50 ? '...' : '');
+            const preview = entry.content.substring(0, 80) + (entry.content.length > 80 ? '...' : '');
             return `
-              <div class="search-result-item" data-entry-id="${entry.uniqueId}" onclick="jumpToEntry('${entry.uniqueId}')">
-                <div class="search-result-title">${entry.comment || '未命名条目'}</div>
-                <div class="search-result-meta">
-                  <span>ID: ${entry.id}</span>
-                  <span>优先级: ${entry.priority}</span>
+              <div class="search-result-item" data-entry-id="${entry.uniqueId}" style="display: flex; gap: 10px; align-items: flex-start;">
+                <input type="checkbox" class="entry-checkbox" data-entry-id="${entry.uniqueId}" onclick="event.stopPropagation(); updateSelectedCount();" style="margin-top: 5px; cursor: pointer; flex-shrink: 0;">
+                <div style="flex: 1; min-width: 0; cursor: pointer;" onclick="jumpToEntry('${entry.uniqueId}')">
+                  <div class="search-result-title" style="word-wrap: break-word; overflow-wrap: break-word;">${entry.comment || '未命名条目'}</div>
+                  <div class="search-result-meta" style="display: flex; justify-content: space-between; gap: 10px;">
+                    <span style="flex-shrink: 0;">ID: ${entry.id}</span>
+                    <span style="flex-shrink: 0;">优先级: ${entry.priority}</span>
+                  </div>
+                  <div class="search-result-preview" style="word-wrap: break-word; overflow-wrap: break-word; white-space: normal;">${preview}</div>
                 </div>
-                <div class="search-result-preview">${preview}</div>
               </div>
             `;
           }).join('');
           
           searchResults.innerHTML = html;
+          updateSelectedCount();
+          
+          // 重新初始化框选功能
+          initializeBoxSelection();
         }
+        
+        // 鼠标框选功能
+        function initializeBoxSelection() {
+          let isSelecting = false;
+          let startX = 0;
+          let startY = 0;
+          let selectionBox = null;
+          let autoScrollInterval = null;
+          
+          // 创建选择框元素
+          function createSelectionBox() {
+            const box = document.createElement('div');
+            box.style.position = 'absolute';
+            box.style.border = '2px dashed #4a90e2';
+            box.style.backgroundColor = 'rgba(74, 144, 226, 0.1)';
+            box.style.pointerEvents = 'none';
+            box.style.zIndex = '9999';
+            return box;
+          }
+          
+          // 自动滚动函数
+          function autoScroll(mouseY, rect) {
+            const scrollSpeed = 5;
+            const scrollThreshold = 50; // 距离边缘多少像素开始滚动
+            
+            // 清除之前的滚动定时器
+            if (autoScrollInterval) {
+              clearInterval(autoScrollInterval);
+              autoScrollInterval = null;
+            }
+            
+            const distanceFromTop = mouseY - rect.top;
+            const distanceFromBottom = rect.bottom - mouseY;
+            
+            // 如果鼠标靠近顶部
+            if (distanceFromTop < scrollThreshold && distanceFromTop > 0) {
+              autoScrollInterval = setInterval(() => {
+                if (searchResults.scrollTop > 0) {
+                  searchResults.scrollTop -= scrollSpeed;
+                }
+              }, 16); // 约60fps
+            }
+            // 如果鼠标靠近底部
+            else if (distanceFromBottom < scrollThreshold && distanceFromBottom > 0) {
+              autoScrollInterval = setInterval(() => {
+                const maxScroll = searchResults.scrollHeight - searchResults.clientHeight;
+                if (searchResults.scrollTop < maxScroll) {
+                  searchResults.scrollTop += scrollSpeed;
+                }
+              }, 16);
+            }
+          }
+          
+          // 停止自动滚动
+          function stopAutoScroll() {
+            if (autoScrollInterval) {
+              clearInterval(autoScrollInterval);
+              autoScrollInterval = null;
+            }
+          }
+          
+          searchResults.addEventListener('mousedown', (e) => {
+            // 如果点击的是复选框或链接区域，不触发框选
+            if (e.target.classList.contains('entry-checkbox') || 
+                e.target.closest('.search-result-title') ||
+                e.target.closest('.search-result-preview')) {
+              return;
+            }
+            
+            isSelecting = true;
+            const rect = searchResults.getBoundingClientRect();
+            startX = e.clientX - rect.left + searchResults.scrollLeft;
+            startY = e.clientY - rect.top + searchResults.scrollTop;
+            
+            selectionBox = createSelectionBox();
+            selectionBox.style.left = startX + 'px';
+            selectionBox.style.top = startY + 'px';
+            searchResults.appendChild(selectionBox);
+            
+            e.preventDefault();
+          });
+          
+          searchResults.addEventListener('mousemove', (e) => {
+            if (!isSelecting || !selectionBox) return;
+            
+            const rect = searchResults.getBoundingClientRect();
+            
+            // 自动滚动检测
+            autoScroll(e.clientY, rect);
+            
+            const currentX = e.clientX - rect.left + searchResults.scrollLeft;
+            const currentY = e.clientY - rect.top + searchResults.scrollTop;
+            
+            const left = Math.min(startX, currentX);
+            const top = Math.min(startY, currentY);
+            const width = Math.abs(currentX - startX);
+            const height = Math.abs(currentY - startY);
+            
+            selectionBox.style.left = left + 'px';
+            selectionBox.style.top = top + 'px';
+            selectionBox.style.width = width + 'px';
+            selectionBox.style.height = height + 'px';
+            
+            // 检测与条目的碰撞
+            const boxRect = {
+              left: left,
+              top: top,
+              right: left + width,
+              bottom: top + height
+            };
+            
+            const items = searchResults.querySelectorAll('.search-result-item');
+            items.forEach(item => {
+              const itemRect = item.getBoundingClientRect();
+              const scrollTop = searchResults.scrollTop;
+              const scrollLeft = searchResults.scrollLeft;
+              const containerRect = searchResults.getBoundingClientRect();
+              
+              const itemBox = {
+                left: itemRect.left - containerRect.left + scrollLeft,
+                top: itemRect.top - containerRect.top + scrollTop,
+                right: itemRect.right - containerRect.left + scrollLeft,
+                bottom: itemRect.bottom - containerRect.top + scrollTop
+              };
+              
+              // 检测矩形碰撞
+              const isIntersecting = !(
+                boxRect.right < itemBox.left ||
+                boxRect.left > itemBox.right ||
+                boxRect.bottom < itemBox.top ||
+                boxRect.top > itemBox.bottom
+              );
+              
+              const checkbox = item.querySelector('.entry-checkbox');
+              if (checkbox && isIntersecting) {
+                checkbox.checked = true;
+              }
+            });
+            
+            updateSelectedCount();
+          });
+          
+          document.addEventListener('mouseup', () => {
+            if (isSelecting) {
+              isSelecting = false;
+              stopAutoScroll();
+              if (selectionBox && selectionBox.parentNode) {
+                selectionBox.parentNode.removeChild(selectionBox);
+              }
+              selectionBox = null;
+            }
+          });
+        }
+        
+        // 初始化框选功能
+        initializeBoxSelection();
       }
       
       // 获取所有世界书条目数据
@@ -12309,6 +12533,227 @@ ${worldbookContextPrompt}
         setTimeout(() => {
           entry.style.backgroundColor = '';
         }, 2000);
+      }
+      
+      // 打开批量修改模态框
+      function openBatchModifyModal() {
+        const selectedCheckboxes = document.querySelectorAll('.entry-checkbox:checked');
+        const count = selectedCheckboxes.length;
+        
+        if (count === 0) {
+          alert('请先选择要修改的条目');
+          return;
+        }
+        
+        const modal = document.getElementById('batch-modify-modal');
+        const countSpan = document.getElementById('batch-selected-count');
+        
+        if (countSpan) {
+          countSpan.textContent = count;
+        }
+        
+        // 重置选项
+        document.getElementById('batch-modify-type').value = '';
+        document.getElementById('batch-enabled-options').style.display = 'none';
+        document.getElementById('batch-constant-options').style.display = 'none';
+        document.getElementById('batch-recursion-options').style.display = 'none';
+        document.getElementById('batch-selective-options').style.display = 'none';
+        document.getElementById('batch-regex-options').style.display = 'none';
+        document.getElementById('batch-wholewords-options').style.display = 'none';
+        document.getElementById('batch-casesensitive-options').style.display = 'none';
+        document.getElementById('batch-position-options').style.display = 'none';
+        document.getElementById('batch-priority-options').style.display = 'none';
+        
+        modal.style.display = 'flex';
+        
+        // 监听修改类型变化
+        const typeSelect = document.getElementById('batch-modify-type');
+        typeSelect.onchange = function() {
+          // 隐藏所有二级选项
+          document.getElementById('batch-enabled-options').style.display = 'none';
+          document.getElementById('batch-constant-options').style.display = 'none';
+          document.getElementById('batch-recursion-options').style.display = 'none';
+          document.getElementById('batch-selective-options').style.display = 'none';
+          document.getElementById('batch-regex-options').style.display = 'none';
+          document.getElementById('batch-wholewords-options').style.display = 'none';
+          document.getElementById('batch-casesensitive-options').style.display = 'none';
+          document.getElementById('batch-position-options').style.display = 'none';
+          document.getElementById('batch-priority-options').style.display = 'none';
+          
+          // 根据选择显示对应的二级选项
+          switch(this.value) {
+            case 'enabled':
+              document.getElementById('batch-enabled-options').style.display = 'block';
+              break;
+            case 'constant':
+              document.getElementById('batch-constant-options').style.display = 'block';
+              break;
+            case 'prevent_recursion':
+              document.getElementById('batch-recursion-options').style.display = 'block';
+              break;
+            case 'selective':
+              document.getElementById('batch-selective-options').style.display = 'block';
+              break;
+            case 'use_regex':
+              document.getElementById('batch-regex-options').style.display = 'block';
+              break;
+            case 'match_whole_words':
+              document.getElementById('batch-wholewords-options').style.display = 'block';
+              break;
+            case 'case_sensitive':
+              document.getElementById('batch-casesensitive-options').style.display = 'block';
+              break;
+            case 'position':
+              document.getElementById('batch-position-options').style.display = 'block';
+              break;
+            case 'priority':
+              document.getElementById('batch-priority-options').style.display = 'block';
+              break;
+          }
+        };
+      }
+      
+      // 关闭批量修改模态框
+      function closeBatchModifyModal() {
+        document.getElementById('batch-modify-modal').style.display = 'none';
+      }
+      
+      // 应用批量修改
+      function applyBatchModify() {
+        const modifyType = document.getElementById('batch-modify-type').value;
+        
+        if (!modifyType) {
+          alert('请选择要修改的属性');
+          return;
+        }
+        
+        const selectedCheckboxes = document.querySelectorAll('.entry-checkbox:checked');
+        const entryIds = Array.from(selectedCheckboxes).map(cb => cb.dataset.entryId);
+        
+        let modifiedCount = 0;
+        
+        entryIds.forEach(uniqueId => {
+          const entryElement = document.querySelector(`[data-unique-id="${uniqueId}"]`);
+          if (!entryElement) return;
+          
+          switch(modifyType) {
+            case 'enabled':
+              const enabledValue = document.getElementById('batch-enabled-value').value === 'true';
+              const enabledCheckbox = entryElement.querySelector('.wb-enabled');
+              if (enabledCheckbox) {
+                enabledCheckbox.checked = enabledValue;
+                modifiedCount++;
+              }
+              break;
+              
+            case 'constant':
+              const constantValue = document.getElementById('batch-constant-value').value === 'true';
+              const constantCheckbox = entryElement.querySelector('.wb-constant');
+              const constantBtn = entryElement.querySelector('.constant-toggle-btn');
+              if (constantCheckbox) {
+                constantCheckbox.checked = constantValue;
+                if (constantBtn) {
+                  constantBtn.textContent = constantValue ? '永久' : '关键词';
+                  constantBtn.style.backgroundColor = constantValue ? '#ff7849' : '#6c757d';
+                  constantBtn.dataset.constant = constantValue.toString();
+                }
+                modifiedCount++;
+              }
+              break;
+              
+            case 'prevent_recursion':
+              const recursionValue = document.getElementById('batch-recursion-value').value === 'true';
+              const recursionCheckbox = entryElement.querySelector('.wb-prevent-recursion');
+              if (recursionCheckbox) {
+                recursionCheckbox.checked = recursionValue;
+                modifiedCount++;
+              }
+              break;
+              
+            case 'selective':
+              const selectiveValue = document.getElementById('batch-selective-value').value === 'true';
+              const selectiveCheckbox = entryElement.querySelector('.wb-selective');
+              if (selectiveCheckbox) {
+                selectiveCheckbox.checked = selectiveValue;
+                modifiedCount++;
+              }
+              break;
+              
+            case 'use_regex':
+              const regexValue = document.getElementById('batch-regex-value').value === 'true';
+              const regexCheckbox = entryElement.querySelector('.wb-use-regex');
+              if (regexCheckbox) {
+                regexCheckbox.checked = regexValue;
+                modifiedCount++;
+              }
+              break;
+              
+            case 'match_whole_words':
+              const wholeWordsValue = document.getElementById('batch-wholewords-value').value === 'true';
+              const wholeWordsCheckbox = entryElement.querySelector('.wb-match-whole-words');
+              if (wholeWordsCheckbox) {
+                wholeWordsCheckbox.checked = wholeWordsValue;
+                modifiedCount++;
+              }
+              break;
+              
+            case 'case_sensitive':
+              const caseSensitiveValue = document.getElementById('batch-casesensitive-value').value === 'true';
+              const caseSensitiveCheckbox = entryElement.querySelector('.wb-case-sensitive');
+              if (caseSensitiveCheckbox) {
+                caseSensitiveCheckbox.checked = caseSensitiveValue;
+                modifiedCount++;
+              }
+              break;
+              
+            case 'position':
+              const positionValue = document.getElementById('batch-position-value').value;
+              const positionSelect = entryElement.querySelector('.wb-position');
+              if (positionSelect) {
+                if (positionValue.includes('-')) {
+                  // 处理智能插入（position-role格式）
+                  const [pos, role] = positionValue.split('-');
+                  positionSelect.value = pos;
+                  // 触发change事件以显示depth字段
+                  positionSelect.dispatchEvent(new Event('change'));
+                  // 查找对应的option并选中
+                  const options = positionSelect.querySelectorAll('option');
+                  options.forEach(opt => {
+                    if (opt.value === pos && opt.dataset.role === role) {
+                      opt.selected = true;
+                    }
+                  });
+                } else {
+                  positionSelect.value = positionValue;
+                  positionSelect.dispatchEvent(new Event('change'));
+                }
+                modifiedCount++;
+              }
+              break;
+              
+            case 'priority':
+              const priorityValue = document.getElementById('batch-priority-value').value;
+              const priorityInput = entryElement.querySelector('.wb-priority');
+              if (priorityInput) {
+                priorityInput.value = priorityValue;
+                modifiedCount++;
+              }
+              break;
+          }
+        });
+        
+        alert(`成功修改 ${modifiedCount} 个条目`);
+        closeBatchModifyModal();
+        
+        // 刷新搜索结果以反映变化
+        const searchPanel = document.getElementById('search-panel');
+        if (searchPanel && searchPanel.classList.contains('open')) {
+          // 如果搜索面板打开，刷新结果
+          const refreshBtn = document.querySelector('.sort-btn.active');
+          if (refreshBtn) {
+            refreshBtn.click();
+          }
+        }
       }
     </script>
 
@@ -12372,29 +12817,134 @@ ${worldbookContextPrompt}
     </div>
 
     <!-- 搜索浮球和搜索面板 -->
-    <button class="search-float-btn" id="search-float-btn" title="搜索世界书条目">
-      🔍
-    </button>
-
-    <!-- 搜索面板 -->
+    <button class="search-float-btn" id="search-float-btn">🔍</button>
+    
     <div class="search-panel" id="search-panel">
       <div class="search-panel-header">
         <button class="close-search-btn" id="close-search-btn">×</button>
-        <h3>🔍 世界书搜索</h3>
+        <h3>世界书管理</h3>
         <input type="text" class="search-input" id="search-input" placeholder="输入搜索关键词...">
         <div class="sort-controls">
           <button class="sort-btn active" data-sort="name">拼音排序</button>
           <button class="sort-btn" data-sort="id">ID排序</button>
           <button class="sort-btn" data-sort="priority">优先级</button>
         </div>
+        <div class="batch-operations" style="margin-top: 10px; display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+          <label style="display: flex; align-items: center; gap: 5px; cursor: pointer;">
+            <input type="checkbox" id="select-all-entries" style="cursor: pointer;">
+            <span>全选</span>
+          </label>
+          <span id="selected-count" style="color: #888; font-size: 14px;">已选 0 个</span>
+          <button id="batch-modify-btn" class="batch-modify-btn" style="display: none; padding: 8px 16px; background: var(--primary-color); color: white; border: none; border-radius: 5px; cursor: pointer;">批量修改</button>
+        </div>
       </div>
       <div class="search-results" id="search-results">
         <!-- 搜索结果将在这里显示 -->
       </div>
-    </script>
+    </div>
+
+    <!-- 批量修改模态框 -->
+    <div id="batch-modify-modal" class="modal-overlay" style="display: none;">
+      <div class="modal-content" style="max-width: 600px;">
+        <h3>批量修改世界书条目</h3>
+        <p style="color: #888; margin-bottom: 20px;">已选择 <span id="batch-selected-count">0</span> 个条目</p>
+        
+        <div class="field-group">
+          <label>修改选项：</label>
+          <select id="batch-modify-type" style="width: 100%; padding: 10px; background: var(--input-bg); color: var(--text-color); border: 1px solid var(--input-border); border-radius: 5px;">
+            <option value="">请选择要修改的属性</option>
+            <option value="enabled">📋 条目状态（启用/禁用）</option>
+            <option value="constant">⭐ 恒定注入（永久/关键词）</option>
+            <option value="prevent_recursion">🔄 防止递归</option>
+            <option value="selective">🎯 选择性触发</option>
+            <option value="use_regex">🔤 正则表达式</option>
+            <option value="match_whole_words">📖 全词匹配</option>
+            <option value="case_sensitive">🔠 大小写敏感</option>
+            <option value="position">📍 注入位置</option>
+            <option value="priority">⚡ 优先级</option>
+          </select>
+        </div>
+        
+        <div id="batch-position-options" class="field-group" style="display: none; margin-top: 15px;">
+          <label>选择注入位置：</label>
+          <select id="batch-position-value" style="width: 100%; padding: 10px; background: var(--input-bg); color: var(--text-color); border: 1px solid var(--input-border); border-radius: 5px;">
+            <option value="0">📄 角色卡前 - 很高注意力</option>
+            <option value="1">📄 角色卡后 - 中等注意力</option>
+            <option value="4-0">⭐ 智能插入 - 系统视角</option>
+            <option value="4-1">⭐ 智能插入 - 用户视角</option>
+            <option value="4-2">⭐ 智能插入 - AI视角</option>
+          </select>
+        </div>
+        
+        <div id="batch-priority-options" class="field-group" style="display: none; margin-top: 15px;">
+          <label>设置优先级：</label>
+          <input type="number" id="batch-priority-value" value="100" step="100" style="width: 100%; padding: 10px; background: var(--input-bg); color: var(--text-color); border: 1px solid var(--input-border); border-radius: 5px;">
+        </div>
+        
+        <div id="batch-enabled-options" class="field-group" style="display: none; margin-top: 15px;">
+          <label>条目状态：</label>
+          <select id="batch-enabled-value" style="width: 100%; padding: 10px; background: var(--input-bg); color: var(--text-color); border: 1px solid var(--input-border); border-radius: 5px;">
+            <option value="true">✅ 启用</option>
+            <option value="false">❌ 禁用</option>
+          </select>
+        </div>
+        
+        <div id="batch-constant-options" class="field-group" style="display: none; margin-top: 15px;">
+          <label>恒定注入：</label>
+          <select id="batch-constant-value" style="width: 100%; padding: 10px; background: var(--input-bg); color: var(--text-color); border: 1px solid var(--input-border); border-radius: 5px;">
+            <option value="true">⭐ 永久注入（始终触发）</option>
+            <option value="false">🔑 关键词触发</option>
+          </select>
+        </div>
+        
+        <div id="batch-recursion-options" class="field-group" style="display: none; margin-top: 15px;">
+          <label>防止递归：</label>
+          <select id="batch-recursion-value" style="width: 100%; padding: 10px; background: var(--input-bg); color: var(--text-color); border: 1px solid var(--input-border); border-radius: 5px;">
+            <option value="true">✅ 启用</option>
+            <option value="false">❌ 禁用</option>
+          </select>
+        </div>
+        
+        <div id="batch-selective-options" class="field-group" style="display: none; margin-top: 15px;">
+          <label>选择性触发：</label>
+          <select id="batch-selective-value" style="width: 100%; padding: 10px; background: var(--input-bg); color: var(--text-color); border: 1px solid var(--input-border); border-radius: 5px;">
+            <option value="true">✅ 启用</option>
+            <option value="false">❌ 禁用</option>
+          </select>
+        </div>
+        
+        <div id="batch-regex-options" class="field-group" style="display: none; margin-top: 15px;">
+          <label>正则表达式：</label>
+          <select id="batch-regex-value" style="width: 100%; padding: 10px; background: var(--input-bg); color: var(--text-color); border: 1px solid var(--input-border); border-radius: 5px;">
+            <option value="true">✅ 启用</option>
+            <option value="false">❌ 禁用</option>
+          </select>
+        </div>
+        
+        <div id="batch-wholewords-options" class="field-group" style="display: none; margin-top: 15px;">
+          <label>全词匹配：</label>
+          <select id="batch-wholewords-value" style="width: 100%; padding: 10px; background: var(--input-bg); color: var(--text-color); border: 1px solid var(--input-border); border-radius: 5px;">
+            <option value="true">✅ 启用</option>
+            <option value="false">❌ 禁用</option>
+          </select>
+        </div>
+        
+        <div id="batch-casesensitive-options" class="field-group" style="display: none; margin-top: 15px;">
+          <label>大小写敏感：</label>
+          <select id="batch-casesensitive-value" style="width: 100%; padding: 10px; background: var(--input-bg); color: var(--text-color); border: 1px solid var(--input-border); border-radius: 5px;">
+            <option value="true">✅ 启用</option>
+            <option value="false">❌ 禁用</option>
+          </select>
+        </div>
+        
+        <div class="button-row" style="margin-top: 20px; display: flex; gap: 10px;">
+          <button onclick="applyBatchModify()" style="flex: 1; padding: 10px; background: var(--primary-color); color: white; border: none; border-radius: 5px; cursor: pointer;">应用修改</button>
+          <button onclick="closeBatchModifyModal()" style="flex: 1; padding: 10px; background: #666; color: white; border: none; border-radius: 5px; cursor: pointer;">取消</button>
+        </div>
+      </div>
+    </div>
 
     <script>
-      // iOS 防缩放脚本
       (function() {
         'use strict';
 
