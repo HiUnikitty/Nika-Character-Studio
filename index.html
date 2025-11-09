@@ -648,6 +648,98 @@
       .ai-undo-button:hover {
         background: #5a6268;
       }
+      
+      /* 折叠视图按钮 */
+      .toggle-fold-btn {
+        background: #6c757d;
+        color: #fff;
+        border-radius: 5px;
+        padding: 5px 10px;
+        font-size: 12px;
+        margin-top: 5px;
+        margin-left: 5px;
+      }
+      .toggle-fold-btn:hover {
+        background: #5a6268;
+      }
+      
+      /* 折叠视图容器 */
+      .fold-view {
+        display: none;
+        background: var(--input-bg);
+        border: 1px solid var(--input-border);
+        border-radius: 5px;
+        padding: 12px;
+        margin-top: 5px;
+        max-height: 70vh;
+        overflow-y: auto;
+      }
+      
+      .fold-view.active {
+        display: block;
+      }
+      
+      /* 折叠章节 */
+      .fold-section {
+        margin-bottom: 10px;
+      }
+      
+      .fold-section-header {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px;
+        background: rgba(230, 126, 34, 0.1);
+        border-radius: 4px;
+        cursor: pointer;
+        transition: background 0.2s;
+      }
+      
+      .fold-section-header:hover {
+        background: rgba(230, 126, 34, 0.2);
+      }
+      
+      .fold-toggle-icon {
+        font-size: 12px;
+        color: var(--primary-color);
+        transition: transform 0.2s;
+      }
+      
+      .fold-toggle-icon.collapsed {
+        transform: rotate(-90deg);
+      }
+      
+      .fold-section-title {
+        font-weight: bold;
+        color: var(--primary-color);
+        font-size: 14px;
+      }
+      
+      .fold-section-content {
+        padding: 10px;
+        padding-left: 24px;
+        color: var(--text-color);
+        line-height: 1.6;
+        white-space: pre-wrap;
+      }
+      
+      .fold-section-content textarea {
+        width: 100%;
+        min-height: 60px;
+        padding: 8px;
+        border: 1px solid var(--input-border);
+        border-radius: 4px;
+        background: var(--input-bg);
+        color: var(--text-color);
+        font-size: 14px;
+        resize: vertical;
+        font-family: inherit;
+      }
+      
+      .fold-section-content.collapsed {
+        display: none;
+      }
+      
       /* 名字生成器按钮 */
       .name-generator-btn {
         background: none;
@@ -3841,9 +3933,9 @@ ${JSON.stringify({ fields: textObject, worldbook: wbTextObject }, null, 2)}
         // Temporarily reset height to allow the scrollHeight to be calculated correctly.
         textarea.style.height = 'auto';
 
-        // Get editor-body height's 9/10 as max height
+        // Get editor-body height's 6/7 as max height
         const editorBody = document.querySelector('#editor-view .editor-body');
-        const maxHeight = editorBody ? editorBody.clientHeight * (9/10) : window.innerHeight;
+        const maxHeight = editorBody ? editorBody.clientHeight * (6/7) : window.innerHeight;
         const scrollHeight = textarea.scrollHeight;
 
         // Set height to the calculated scroll height, but not exceeding the max height.
@@ -3863,6 +3955,245 @@ ${JSON.stringify({ fields: textObject, worldbook: wbTextObject }, null, 2)}
 
         editorBody.addEventListener('focusin', resizeHandler);
         editorBody.addEventListener('input', resizeHandler);
+      }
+      
+      // --- 文本折叠视图功能 ---
+      function initializeFoldView() {
+        // 解析文本内容，识别标题
+        function parseTextContent(text) {
+          if (!text) return [];
+          
+          const lines = text.split('\n');
+          const sections = [];
+          let currentSection = null;
+          
+          // 匹配 Markdown 标题 (###) 或中文序号 (一、二、三、)
+          const titlePattern = /^(#{1,6}\s+|[一二三四五六七八九十百千]+、\s*|[0-9]+[.、]\s*|[A-Z][.、]\s*|[a-z][.、]\s*)/;
+          
+          for (let i = 0; i < lines.length; i++) {
+            const line = lines[i];
+            const match = line.match(titlePattern);
+            
+            if (match) {
+              // 保存上一个章节
+              if (currentSection) {
+                sections.push(currentSection);
+              }
+              
+              // 创建新章节
+              currentSection = {
+                title: line.replace(match[0], '').trim() || line.trim(),
+                content: '',
+                startLine: i
+              };
+            } else if (currentSection) {
+              // 添加到当前章节内容
+              currentSection.content += line + '\n';
+            } else {
+              // 没有标题的开头内容
+              if (!sections.length || sections[sections.length - 1].title !== '序言') {
+                sections.push({
+                  title: '序言',
+                  content: line + '\n',
+                  startLine: i
+                });
+              } else {
+                sections[sections.length - 1].content += line + '\n';
+              }
+            }
+          }
+          
+          // 保存最后一个章节
+          if (currentSection) {
+            sections.push(currentSection);
+          }
+          
+          return sections;
+        }
+        
+        // 创建折叠视图HTML（可编辑版本）
+        function createFoldViewHTML(sections, textareaId) {
+          if (!sections.length) {
+            return '<div style="text-align: center; color: #888; padding: 20px;">没有检测到标题结构</div>';
+          }
+          
+          let html = '';
+          sections.forEach((section, index) => {
+            html += `
+              <div class="fold-section">
+                <div class="fold-section-header" onclick="toggleFoldSection(${index})">
+                  <span class="fold-toggle-icon" id="fold-icon-${index}">▼</span>
+                  <span class="fold-section-title">${escapeHtml(section.title)}</span>
+                </div>
+                <div class="fold-section-content" id="fold-content-${index}">
+                  <textarea class="fold-section-textarea" data-section-index="${index}" data-textarea-id="${textareaId}">${escapeHtml(section.content)}</textarea>
+                </div>
+              </div>
+            `;
+          });
+          
+          return html;
+        }
+        
+        // HTML转义
+        function escapeHtml(text) {
+          const div = document.createElement('div');
+          div.textContent = text;
+          return div.innerHTML;
+        }
+        
+        // 切换折叠状态
+        window.toggleFoldSection = function(index) {
+          const content = document.getElementById(`fold-content-${index}`);
+          const icon = document.getElementById(`fold-icon-${index}`);
+          
+          if (content && icon) {
+            content.classList.toggle('collapsed');
+            icon.classList.toggle('collapsed');
+          }
+        };
+        
+        // 同步折叠视图的编辑到原始textarea
+        window.syncFoldViewToTextarea = function(textareaId) {
+          const textarea = document.getElementById(textareaId);
+          if (!textarea) return;
+          
+          const foldTextareas = document.querySelectorAll(`textarea[data-textarea-id="${textareaId}"]`);
+          if (!foldTextareas.length) return;
+          
+          // 重新构建完整文本
+          let fullText = '';
+          const sections = [];
+          
+          foldTextareas.forEach(foldTextarea => {
+            const sectionIndex = parseInt(foldTextarea.dataset.sectionIndex);
+            const content = foldTextarea.value;
+            const title = foldTextarea.closest('.fold-section').querySelector('.fold-section-title').textContent;
+            sections.push({ index: sectionIndex, title, content });
+          });
+          
+          // 按索引排序
+          sections.sort((a, b) => a.index - b.index);
+          
+          // 重建文本
+          sections.forEach(section => {
+            if (section.title !== '序言') {
+              // 尝试识别原始标题格式
+              const originalText = textarea.value;
+              const titlePattern = new RegExp(`(#{1,6}\\s+|[一二三四五六七八九十百千]+、\\s*|[0-9]+[.、]\\s*|[A-Z][.、]\\s*|[a-z][.、]\\s*)${section.title}`, 'm');
+              const match = originalText.match(titlePattern);
+              const prefix = match ? match[1] : '### ';
+              fullText += prefix + section.title + '\n';
+            }
+            fullText += section.content;
+            if (!section.content.endsWith('\n')) {
+              fullText += '\n';
+            }
+          });
+          
+          textarea.value = fullText.trim();
+        };
+        
+        // 切换折叠视图显示/隐藏
+        window.toggleFoldView = function(button) {
+          const fieldGroup = button.closest('.field-group');
+          const textarea = fieldGroup.querySelector('textarea');
+          const foldView = fieldGroup.querySelector('.fold-view');
+          
+          // 生成唯一ID
+          if (!textarea.id) {
+            textarea.id = 'textarea-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);
+          }
+          
+          if (!foldView) {
+            // 创建折叠视图
+            const newFoldView = document.createElement('div');
+            newFoldView.className = 'fold-view';
+            textarea.parentNode.insertBefore(newFoldView, textarea.nextSibling);
+            
+            // 解析并渲染内容
+            const sections = parseTextContent(textarea.value);
+            newFoldView.innerHTML = createFoldViewHTML(sections, textarea.id);
+            newFoldView.classList.add('active');
+            
+            // 隐藏原始textarea
+            textarea.style.display = 'none';
+            button.textContent = '📝 编辑模式';
+            
+            // 添加自动同步事件监听
+            newFoldView.addEventListener('input', (e) => {
+              if (e.target.classList.contains('fold-section-textarea')) {
+                syncFoldViewToTextarea(textarea.id);
+              }
+            });
+          } else {
+            // 切换显示状态
+            if (foldView.classList.contains('active')) {
+              // 切换到编辑模式
+              foldView.classList.remove('active');
+              textarea.style.display = 'block';
+              button.textContent = '📖 折叠视图';
+            } else {
+              // 切换到折叠视图（刷新内容）
+              const sections = parseTextContent(textarea.value);
+              foldView.innerHTML = createFoldViewHTML(sections, textarea.id);
+              foldView.classList.add('active');
+              textarea.style.display = 'none';
+              button.textContent = '📝 编辑模式';
+              
+              // 重新添加事件监听
+              foldView.addEventListener('input', (e) => {
+                if (e.target.classList.contains('fold-section-textarea')) {
+                  syncFoldViewToTextarea(textarea.id);
+                }
+              });
+            }
+          }
+        };
+        
+        // 为描述框和世界书内容添加折叠按钮
+        function addFoldButtons() {
+          // 描述框
+          const description = document.getElementById('description');
+          if (description && !description.parentNode.querySelector('.toggle-fold-btn')) {
+            const button = document.createElement('button');
+            button.className = 'toggle-fold-btn';
+            button.textContent = '📖 折叠视图';
+            button.onclick = function() { toggleFoldView(this); };
+            description.parentNode.insertBefore(button, description.nextSibling);
+          }
+          
+          // 世界书条目内容
+          document.querySelectorAll('.wb-content').forEach(textarea => {
+            if (!textarea.parentNode.querySelector('.toggle-fold-btn')) {
+              const button = document.createElement('button');
+              button.className = 'toggle-fold-btn';
+              button.textContent = '📖 折叠视图';
+              button.onclick = function() { toggleFoldView(this); };
+              textarea.parentNode.insertBefore(button, textarea.nextSibling);
+            }
+          });
+        }
+        
+        // 初始化时添加按钮
+        addFoldButtons();
+        
+        // 监听世界书条目的动态添加
+        const observer = new MutationObserver((mutations) => {
+          mutations.forEach((mutation) => {
+            if (mutation.addedNodes.length) {
+              addFoldButtons();
+            }
+          });
+        });
+        
+        const worldbookList = document.getElementById('worldbook-list');
+        if (worldbookList) {
+          observer.observe(worldbookList, {
+            childList: true,
+            subtree: true
+          });
+        }
       }
 
       // --- DB & Initialization ---
@@ -5737,7 +6068,8 @@ ${currentContent}
           initializeWorldbookAiModal();
           initializeAiGuidanceModal();
           setupTextareaAutoResize(); // Initialize textarea resizing for mobile
-        initializeSearchPanel(); // 初始化搜索面板
+          initializeFoldView(); // 初始化文本折叠视图
+          initializeSearchPanel(); // 初始化搜索面板
           initializeInstructionSystem(); // 初始化指令系统
           initializeCustomTemplateStorage(); // 初始化自定义模板存储
 
