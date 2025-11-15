@@ -800,7 +800,7 @@
         z-index: 10001;
       }
 
-      /* --- 角色书 (Character Book) 专业样式 --- */
+      /* --- 世界书 (Character Book) 专业样式 --- */
       .worldbook-list,
       .child-entries {
         list-style-type: none;
@@ -1495,7 +1495,7 @@
         transform: scale(1.1);
       }
 
-      /* --- 角色书高级设置样式 --- */
+      /* --- 世界书高级设置样式 --- */
       .worldbook-entry details {
         border: 1px solid #444;
         border-radius: 5px;
@@ -2182,7 +2182,7 @@
 
     <div id="worldbook-ai-generator-modal" class="modal-overlay">
       <div class="modal-content">
-        <h3 id="wb-ai-modal-title">角色书生成</h3>
+        <h3 id="wb-ai-modal-title">世界书生成</h3>
         <p class="help-text" style="text-align: center; margin-top: -15px; margin-bottom: 20px" id="wb-ai-modal-desc">请选择要生成的条目类型：</p>
         <div class="generation-type-selector">
           <button data-type="worldview" class="uniform-btn">生成世界观</button>
@@ -2703,7 +2703,7 @@
                 </button>
               </div>
             </div>
-            <p class="help-text" id="worldbook-help-text">“角色书”是给AI角色绑定的一部<b>参考词典和设定集</b>。如果你要世界书，上面的信息只用填名字</p>
+            <p class="help-text" id="worldbook-help-text">“世界书”是给AI角色绑定的一部<b>参考词典和设定集</b>。如果你要世界书，上面的信息只用填名字</p>
             <ul id="worldbook-entries-container" class="worldbook-list"></ul>
             <div class="action-buttons row" style="margin-top: 15px">
               <div class="Plus-switch-container">
@@ -2790,7 +2790,7 @@
           'creator-notes-placeholder': '作者的名字',
           'character-version': '版本',
           'character-version-placeholder': '例如：1.0, 测试版',
-          'world-knowledge-book': '世界书/记忆书',
+          'world-knowledge-book': '世界书',
           'style-mode': '格式增强',
 
           // 世界书相关
@@ -2894,15 +2894,15 @@
 
           // 默认值
           'imported-character': '从图片导入的角色',
-          'imported-lorebook': '导入的角色书',
-          'lorebook-description': '从SillyTavern导入的角色书。',
-          'lorebook-tag': '角色书',
+          'imported-lorebook': '导入的世界书',
+          'lorebook-description': '从SillyTavern导入的世界书。',
+          'lorebook-tag': '世界书',
 
           // 确认对话框
           'confirm-overwrite-worldbook': '这会打开AI生成弹窗，但不会覆盖现有条目。你可以选择性注入新条目。继续吗？',
 
           // 成功消息
-          'worldbook-generated-success': '已成功生成角色书参考条目！请在弹窗中选择要注入的条目。',
+          'worldbook-generated-success': '已成功生成世界书参考条目！请在弹窗中选择要注入的条目。',
           'lorebook-injected-success': '{count}个条目已成功注入！',
           'all-fields-completed': 'AI已补全所有字段！',
 
@@ -2925,7 +2925,7 @@
           generate: '生成',
 
           // AI Lorebook Modal
-          'wb-ai-modal-title': '角色书生成',
+          'wb-ai-modal-title': '世界书生成',
           'wb-ai-modal-desc': '请选择要生成的条目类型：',
           'wb-ai-modal-desc-generating': 'AI正在生成一套{type}条目，请稍后...',
           'wb-ai-modal-desc-generated': 'AI已为你生成一套{type}条目，请选择需要注入的条目。',
@@ -3269,7 +3269,7 @@
         document.getElementById('ai-guidance-generate-btn').textContent = t('generate');
         document.getElementById('ai-guidance-cancel-btn').textContent = t('cancel');
 
-        // 更新角色书AI Modal
+        // 更新世界书AI Modal
         document.getElementById('wb-ai-modal-title').textContent = t('wb-ai-modal-title');
         document.getElementById('wb-ai-modal-desc').textContent = t('wb-ai-modal-desc');
         document.querySelector('.generation-type-selector button[data-type="worldview"]').textContent =
@@ -3287,7 +3287,7 @@
           await renderUI();
         }
 
-        // 重新渲染角色书条目以更新翻译
+        // 重新渲染世界书条目以更新翻译
         if (editorView.style.display !== 'none') {
           const worldbookData = buildWorldbookDataFromDOM();
           renderWorldbookFromData(worldbookData);
@@ -10025,7 +10025,7 @@ ${existingEntriesText || '无'}
             });
           }
 
-          let prompt = `请基于以下提供的角色信息和角色书结构，为我撰写条目【${currentComment}】的"注入内容"。内容需要详细、富有想象力，并与角色设定保持高度一致。
+          let prompt = `请基于以下提供的角色信息和世界书结构，为我撰写条目【${currentComment}】的"注入内容"。内容需要详细、富有想象力，并与角色设定保持高度一致。
 
 ---
 **角色核心设定:**
@@ -10033,7 +10033,7 @@ ${existingEntriesText || '无'}
 - 描述: ${characterContext.description || '未指定'}
 - 个性: ${characterContext.personality || '未指定'}
 
-**角色书上下文:**
+**世界书上下文:**
 - **当前条目标题 (Comment):** ${currentComment}
 - **当前条目主要关键词 (Keys):** ${currentKeys || '未指定'}
 
@@ -12886,7 +12886,7 @@ ${worldbookContextPrompt}
       
       // 打开批量修改模态框
       function openBatchModifyModal() {
-        const selectedCheckboxes = document.querySelectorAll('.entry-checkbox:checked');
+        const selectedCheckboxes = document.querySelectorAll('#search-results .entry-checkbox:checked');
         const count = selectedCheckboxes.length;
         
         if (count === 0) {
@@ -12976,7 +12976,7 @@ ${worldbookContextPrompt}
           return;
         }
         
-        const selectedCheckboxes = document.querySelectorAll('.entry-checkbox:checked');
+        const selectedCheckboxes = document.querySelectorAll('#search-results .entry-checkbox:checked');
         const entryIds = Array.from(selectedCheckboxes).map(cb => cb.dataset.entryId);
         
         let modifiedCount = 0;
