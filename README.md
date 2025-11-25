@@ -73,7 +73,7 @@ An elegant AI character card management system designed for ST character creatio
 
 ![主页预览](./主页预览.png)
 
-![创造界面预览](./创建界面预览.png)
+![聊天页面预览](./聊天页面预览.png)
 
 ![世界书界面预览](./世界书界面预览.png)
 
@@ -301,6 +301,7 @@ Thanks to the original author **Soaring Bird** for the open-source contribution,
 ---
 
 Start creating your own characters! 
+
 
 
 
