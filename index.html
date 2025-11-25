@@ -2008,38 +2008,38 @@
     <div id="loading-overlay" class="loading-overlay">
       <div style="display: flex; flex-direction: column; align-items: center">
         <div class="loading-spinner"></div>
-        <div class="loading-text" id="loading-text">正在加载...</div>
+        <div class="loading-text" id="loading-text" data-i18n="loading">正在加载...</div>
       </div>
     </div>
 
     <div id="api-settings-modal" class="modal-overlay">
       <div class="modal-content">
-        <h3 id="api-modal-title">API 设置</h3>
+        <h3 id="api-modal-title" data-i18n="api-settings">API 设置</h3>
         <div class="field-group">
-          <label for="api-provider-selector">选择服务商</label>
+          <label for="api-provider-selector" data-i18n="select-provider">选择服务商</label>
           <select id="api-provider-selector">
-            <option value="deepseek">DeepSeek</option>
-            <option value="gemini">Gemini (直链，需魔法)</option>
-            <option value="gemini-proxy">Gemini (中转站)</option>
-            <option value="local">本地大模型（bat启动用这个）</option>
-            <option value="tavern">CLI反代 / 自定义</option>
+            <option value="deepseek" data-i18n="api-provider-deepseek">DeepSeek</option>
+            <option value="gemini" data-i18n="api-provider-gemini">Gemini (直链，需魔法)</option>
+            <option value="gemini-proxy" data-i18n="api-provider-gemini-proxy">Gemini (中转站)</option>
+            <option value="local" data-i18n="api-provider-local">本地大模型（bat启动用这个）</option>
+            <option value="tavern" data-i18n="api-provider-tavern">CLI反代 / 自定义</option>
           </select>
         </div>
 
         <div id="deepseek-options" class="api-provider-options active">
           <div class="field-group">
-            <label for="deepseek-api-key">API Key</label>
-            <input type="password" id="deepseek-api-key" placeholder="输入你的 DeepSeek API Key">
+            <label for="deepseek-api-key" data-i18n="api-key">API Key</label>
+            <input type="password" id="deepseek-api-key" data-i18n-placeholder="api-key-placeholder" placeholder="输入你的 DeepSeek API Key">
           </div>
         </div>
 
         <div id="gemini-options" class="api-provider-options">
           <div class="field-group">
-            <label for="gemini-api-key">API Key</label>
+            <label for="gemini-api-key" data-i18n="api-key">API Key</label>
             <input type="password" id="gemini-api-key" placeholder="输入你的 Google AI Studio API Key">
           </div>
           <div class="field-group">
-            <label for="gemini-model">选择模型</label>
+            <label for="gemini-model" data-i18n="select-model">选择模型</label>
             <select id="gemini-model">
               <option value="gemini-2.5-flash">Gemini 2.5 Flash</option>
               <option value="gemini-2.5-pro">Gemini 2.5 Pro</option>
@@ -2047,23 +2047,23 @@
           </div>
           <div class="field-group">
             <label>
-              <input type="checkbox" id="gemini-use-system-prompt"> 启用破限
+              <input type="checkbox" id="gemini-use-system-prompt"><span data-i18n="enable-jailbreak"> 启用破限</span>
             </label>
-            <small class="help-text">防止模型敏感</small>
+            <small class="help-text" data-i18n="jailbreak-help">防止模型敏感</small>
           </div>
         </div>
 
         <div id="gemini-proxy-options" class="api-provider-options">
           <div class="field-group">
-            <label for="gemini-proxy-endpoint">代理 Endpoint URL</label>
-            <input type="text" id="gemini-proxy-endpoint" placeholder="例如: https://mydomain.com/v1beta/models">
+            <label for="gemini-proxy-endpoint" data-i18n="proxy-endpoint">代理 Endpoint URL</label>
+            <input type="text" id="gemini-proxy-endpoint" data-i18n-placeholder="proxy-endpoint-placeholder" placeholder="例如: https://mydomain.com/v1beta/models">
           </div>
           <div class="field-group">
-            <label for="gemini-proxy-api-key">API Key</label>
+            <label for="gemini-proxy-api-key" data-i18n="api-key">API Key</label>
             <input type="password" id="gemini-proxy-api-key" placeholder="输入你的 Google AI Studio API Key">
           </div>
           <div class="field-group">
-            <label for="gemini-proxy-model">选择模型</label>
+            <label for="gemini-proxy-model" data-i18n="select-model">选择模型</label>
             <select id="gemini-proxy-model">
               <option value="gemini-2.5-flash">Gemini 2.5 Flash</option>
               <option value="gemini-2.5-pro">Gemini 2.5 Pro</option>
@@ -2071,89 +2071,89 @@
           </div>
           <div class="field-group">
             <label>
-              <input type="checkbox" id="gemini-proxy-use-system-prompt"> 启用破限
+              <input type="checkbox" id="gemini-proxy-use-system-prompt"><span data-i18n="enable-jailbreak"> 启用破限</span>
             </label>
-            <small class="help-text">防止模型敏感</small>
+            <small class="help-text" data-i18n="jailbreak-help">防止模型敏感</small>
           </div>
-          <p class="help-text">
+          <p class="help-text" data-i18n="proxy-help">
             用于连接 Cloudflare Worker 等自定义反向代理。Endpoint URL 应为不包含模型名称的完整路径。
           </p>
         </div>
 
         <div id="local-options" class="api-provider-options">
           <div class="field-group">
-            <label for="local-api-endpoint">API URL</label>
-            <input type="text" id="local-api-endpoint" placeholder="例如: http://localhost:1234/v1">
+            <label for="local-api-endpoint" data-i18n="local-api-url">API URL</label>
+            <input type="text" id="local-api-endpoint" data-i18n-placeholder="local-api-placeholder" placeholder="例如: http://localhost:1234/v1">
           </div>
-          <p class="help-text">用于连接LM Studio或者Ollama, 需下载项目源文件启动才能使用。</p>
+          <p class="help-text" data-i18n="local-help">用于连接LM Studio或者Ollama, 需下载项目源文件启动才能使用。</p>
         </div>
 
         <div id="tavern-options" class="api-provider-options">
           <div class="field-group">
-            <label for="tavern-connection-type">连接类型</label>
+            <label for="tavern-connection-type" data-i18n="connection-type">连接类型</label>
             <select id="tavern-connection-type">
-              <option value="direct">自定义API</option>
-              <option value="reverse-proxy">CLI反代</option>
+              <option value="direct" data-i18n="custom-api">自定义API</option>
+              <option value="reverse-proxy" data-i18n="cli-reverse-proxy">CLI反代</option>
             </select>
           </div>
           
           <!-- 直连API设置 -->
           <div id="tavern-direct-settings" class="connection-type-settings">
             <div class="field-group">
-              <label for="tavern-api-endpoint">API URL</label>
+              <label for="tavern-api-endpoint" data-i18n="api-url">API URL</label>
               <input type="text" id="tavern-api-endpoint" placeholder="http://api.xxx.com/v1">
             </div>
             <div class="field-group">
-              <label for="tavern-api-key">API Key</label>
+              <label for="tavern-api-key" data-i18n="api-key">API Key</label>
               <input type="password" id="tavern-api-key" placeholder="输入 API Key">
             </div>
             <div class="field-group">
-              <label for="tavern-model">模型名称</label>
-              <input type="text" id="tavern-model" placeholder="例如: gpt-3.5-turbo">
+              <label for="tavern-model" data-i18n="model-name">模型名称</label>
+              <input type="text" id="tavern-model" data-i18n-placeholder="model-placeholder" placeholder="例如: gpt-3.5-turbo">
             </div>
-            <p class="help-text">用于连接远程的、兼容OpenAI格式的API服务。</p>
+            <p class="help-text" data-i18n="custom-api-help">用于连接远程的、兼容OpenAI格式的API服务。</p>
           </div>
           
           <!-- 反向代理设置 -->
           <div id="tavern-proxy-settings" class="connection-type-settings" style="display: none;">
             <div class="field-group">
-              <label for="tavern-proxy-url">代理服务器 URL</label>
-              <input type="text" id="tavern-proxy-url" placeholder="https://gcli2api-xxxx.onrender.com/v1">
-              <p class="help-text" style="margin-top: 5px; font-size: 12px; color: #888;">
+              <label for="tavern-proxy-url" data-i18n="proxy-server-url">代理服务器 URL</label>
+              <input type="text" id="tavern-proxy-url" data-i18n-placeholder="proxy-url-placeholder" placeholder="https://gcli2api-xxxx.onrender.com/v1">
+              <p class="help-text" data-i18n="proxy-url-help" style="margin-top: 5px; font-size: 12px; color: #888;">
                 不起作用？在末尾添加 /v1 试试！/chat/completions 后缀将自动添加。
               </p>
             </div>
             <div class="field-group">
-              <label for="tavern-proxy-password">代理密码</label>
-              <input type="password" id="tavern-proxy-password" placeholder="123456">
-              <p class="help-text" style="margin-top: 5px; font-size: 12px; color: #888;">
+              <label for="tavern-proxy-password" data-i18n="proxy-password">代理密码</label>
+              <input type="password" id="tavern-proxy-password" data-i18n-placeholder="proxy-password-placeholder" placeholder="123456">
+              <p class="help-text" data-i18n="proxy-password-help" style="margin-top: 5px; font-size: 12px; color: #888;">
                 将用作代理的密码，而不是 API 密钥。
               </p>
             </div>
             <div class="field-group">
-              <label for="tavern-proxy-model">模型名称</label>
+              <label for="tavern-proxy-model" data-i18n="model-name">模型名称</label>
               <div style="display: flex; gap: 8px; align-items: center;">
                 <select id="tavern-proxy-model" style="flex: 1;">
-                  <option value="">请刷新模型...</option>
+                  <option value="" data-i18n="refresh-models-placeholder">请刷新模型...</option>
                 </select>
-                <button type="button" id="refresh-proxy-models-btn" style="background: var(--primary-color); color: white; padding: 8px 12px; border: none; border-radius: 4px; cursor: pointer; white-space: nowrap;">
+                <button type="button" id="refresh-proxy-models-btn" data-i18n="refresh-models" style="background: var(--primary-color); color: white; padding: 8px 12px; border: none; border-radius: 4px; cursor: pointer; white-space: nowrap;">
                   刷新
                 </button>
               </div>
             </div>
             <div class="field-group">
               <label>
-                <input type="checkbox" id="tavern-proxy-jailbreak"> 启用破限
+                <input type="checkbox" id="tavern-proxy-jailbreak"><span data-i18n="enable-jailbreak"> 启用破限</span>
               </label>
-              <small class="help-text">防止模型敏感，适用于Gemini模型</small>
+              <small class="help-text" data-i18n="jailbreak-help">防止模型敏感，适用于Gemini模型</small>
             </div>
-            <p class="help-text">通过反向代理连接到API服务，适用于Render等的CLI反代</p>
+            <p class="help-text" data-i18n="proxy-help-text">通过反向代理连接到API服务，适用于Render等的CLI反代</p>
           </div>
         </div>
 
         <div class="modal-actions">
-          <button id="save-api-settings-btn" class="action-btn">保存</button>
-          <button id="cancel-api-settings-btn" class="cancel-btn">取消</button>
+          <button id="save-api-settings-btn" class="action-btn" data-i18n="save">保存</button>
+          <button id="cancel-api-settings-btn" class="cancel-btn" data-i18n="cancel">取消</button>
         </div>
       </div>
     </div>
@@ -2171,8 +2171,8 @@
 
     <div id="ai-guidance-modal" class="modal-overlay">
       <div class="modal-content">
-        <h3 id="ai-guidance-title">为AI提供指引</h3>
-        <textarea id="ai-guidance-input" rows="5" placeholder="在此输入你的具体要求、风格、关键词等... (可留空)"></textarea>
+        <h3 id="ai-guidance-title" data-i18n="ai-guidance-title">为AI提供指引</h3>
+        <textarea id="ai-guidance-input" rows="5" data-i18n-placeholder="ai-guidance-input-placeholder" placeholder="在此输入你的具体要求、风格、关键词等... (可留空)"></textarea>
         <div class="modal-actions">
           <button id="ai-guidance-generate-btn" class="action-btn">生成</button>
           <button id="ai-guidance-cancel-btn" class="cancel-btn">取消</button>
@@ -2182,23 +2182,23 @@
 
     <div id="worldbook-ai-generator-modal" class="modal-overlay">
       <div class="modal-content">
-        <h3 id="wb-ai-modal-title">世界书生成</h3>
-        <p class="help-text" style="text-align: center; margin-top: -15px; margin-bottom: 20px" id="wb-ai-modal-desc">请选择要生成的条目类型：</p>
+        <h3 id="wb-ai-modal-title" data-i18n="wb-ai-modal-title">世界书生成</h3>
+        <p class="help-text" style="text-align: center; margin-top: -15px; margin-bottom: 20px" id="wb-ai-modal-desc" data-i18n="wb-ai-modal-desc">请选择要生成的条目类型：</p>
         <div class="generation-type-selector">
-          <button data-type="worldview" class="uniform-btn">生成世界观</button>
-          <button data-type="main_plot" class="uniform-btn">生成主线剧情</button>
-          <button data-type="side_plot" class="uniform-btn">生成支线剧情</button>
+          <button data-type="worldview" class="uniform-btn" data-i18n="wb-ai-gen-type-btn-worldview">生成世界观</button>
+          <button data-type="main_plot" class="uniform-btn" data-i18n="wb-ai-gen-type-btn-main-plot">生成主线剧情</button>
+          <button data-type="side_plot" class="uniform-btn" data-i18n="wb-ai-gen-type-btn-side-plot">生成支线剧情</button>
         </div>
         <div class="field-group">
-          <label for="wb-ai-request-input">快速生成世界书条目：</label>
-          <textarea id="wb-ai-request-input" rows="5" placeholder="请输入你对世界书条目的具体要求，例如：生成全部主要角色的外貌、性格、经历、技能，相互的关系"></textarea>
+          <label for="wb-ai-request-input" data-i18n="wb-ai-quick-generate-label">快速生成世界书条目：</label>
+          <textarea id="wb-ai-request-input" rows="5" data-i18n-placeholder="wb-ai-request-input-placeholder" placeholder="请输入你对世界书条目的具体要求，例如：生成全部主要角色的外貌、性格、经历、技能，相互的关系"></textarea>
         </div>
         <div id="wb-ai-options-container"></div>
         <div class="modal-actions">
-          <button id="wb-ai-generate-btn" class="action-btn">生成世界书条目</button>
-          <button id="wb-ai-inject-btn" style="display: none" class="action-btn">注入选中条目</button>
-          <button id="wb-ai-regenerate-btn" style="display: none" class="action-btn">再生成一套</button>
-          <button id="wb-ai-cancel-btn" class="cancel-btn">关闭</button>
+          <button id="wb-ai-generate-btn" class="action-btn" data-i18n="wb-ai-generate-btn">生成世界书条目</button>
+          <button id="wb-ai-inject-btn" style="display: none" class="action-btn" data-i18n="wb-ai-inject-btn">注入选中条目</button>
+          <button id="wb-ai-regenerate-btn" style="display: none" class="action-btn" data-i18n="wb-ai-regenerate-btn">再生成一套</button>
+          <button id="wb-ai-cancel-btn" class="cancel-btn" data-i18n="wb-ai-close-btn">关闭</button>
         </div>
       </div>
     </div>
@@ -2206,65 +2206,65 @@
     <!-- AI 全局修改模态框 -->
     <div id="global-edit-modal" class="modal-overlay">
       <div class="modal-content" style="max-width: 900px; max-height: 90vh; overflow-y: auto;">
-        <h3>🔮 AI 全局修改</h3>
+        <h3 data-i18n="global-edit">🔮 AI 全局修改</h3>
         
         <!-- 快速选择区域 -->
         <div class="quick-select-area" style="margin-bottom: 20px; padding: 15px; background: rgba(0,0,0,0.1); border-radius: 8px;">
-          <h4>快速选择：</h4>
+          <h4 data-i18n="quick-select">快速选择：</h4>
           <div class="button-group" style="display: flex; gap: 10px; margin-top: 10px;">
-            <button class="uniform-btn" onclick="selectAllWorldbook()">所有世界书</button>
-            <button class="uniform-btn" onclick="selectAllCharacterCards()">所有角色卡</button>
-            <button class="uniform-btn" onclick="showCustomFilter()">自定义</button>
+            <button class="uniform-btn" onclick="selectAllWorldbook()" data-i18n="all-worldbook">所有世界书</button>
+            <button class="uniform-btn" onclick="selectAllCharacterCards()" data-i18n="all-character-cards">所有角色卡</button>
+            <button class="uniform-btn" onclick="showCustomFilter()" data-i18n="custom">自定义</button>
           </div>
         </div>
 
         <!-- 自定义筛选区域 -->
         <div id="custom-filter-area" style="display: none; margin-bottom: 20px; padding: 15px; background: rgba(0,0,0,0.1); border-radius: 8px;">
-          <h4>自定义筛选：</h4>
+          <h4 data-i18n="custom-filter">自定义筛选：</h4>
           <div class="filter-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 10px;">
             <div class="filter-item">
-              <label>优先级筛选：</label>
+              <label data-i18n="priority-filter">优先级筛选：</label>
               <div style="display: flex; gap: 5px; align-items: center;">
                 <select id="priority-filter" class="uniform-select">
-                  <option value="all">全部</option>
-                  <option value="above">大于等于</option>
-                  <option value="below">小于等于</option>
+                  <option value="all" data-i18n="all">全部</option>
+                  <option value="above" data-i18n="greater-equal">大于等于</option>
+                  <option value="below" data-i18n="less-equal">小于等于</option>
                 </select>
-                <input type="number" id="priority-value" placeholder="优先级值" class="uniform-input" style="width: 80px;">
+                <input type="number" id="priority-value" data-i18n-placeholder="priority-value" placeholder="优先级值" class="uniform-input" style="width: 80px;">
               </div>
             </div>
             <div class="filter-item">
-              <label>恒定注入：</label>
+              <label data-i18n="constant-injection">恒定注入：</label>
               <select id="constant-filter" class="uniform-select">
-                <option value="all">全部</option>
-                <option value="true">仅恒定</option>
-                <option value="false">仅非恒定</option>
+                <option value="all" data-i18n="all">全部</option>
+                <option value="true" data-i18n="only-constant">仅恒定</option>
+                <option value="false" data-i18n="only-non-constant">仅非恒定</option>
               </select>
             </div>
             <div class="filter-item">
-              <label>注入位置：</label>
+              <label data-i18n="injection-position">注入位置：</label>
               <select id="position-filter" class="uniform-select">
-                <option value="all">全部位置</option>
-                <option value="before_char">角色前</option>
-                <option value="after_char">角色后</option>
+                <option value="all" data-i18n="all-positions">全部位置</option>
+                <option value="before_char" data-i18n="before-char">角色前</option>
+                <option value="after_char" data-i18n="after-char">角色后</option>
               </select>
             </div>
             <div class="filter-item">
-              <button class="uniform-btn" onclick="applyCustomFilter()">应用筛选</button>
+              <button class="uniform-btn" onclick="applyCustomFilter()" data-i18n="apply-filter">应用筛选</button>
             </div>
           </div>
         </div>
 
         <!-- 历史回溯区域 -->
         <div class="history-area" style="margin-bottom: 20px; padding: 15px; background: rgba(0,0,0,0.1); border-radius: 8px;">
-          <h4>历史回溯：</h4>
+          <h4 data-i18n="history-rollback">历史回溯：</h4>
           <div class="history-controls" style="display: flex; gap: 10px; align-items: center; margin-top: 10px;">
-            <label>存档点个数：</label>
+            <label data-i18n="checkpoint-count">存档点个数：</label>
             <input type="number" id="history-count" value="5" min="1" max="20" class="uniform-input" style="width: 60px;">
             <select id="history-select" class="uniform-select" style="flex: 1;">
-              <option value="">选择历史版本...</option>
+              <option value="" data-i18n="select-history">选择历史版本...</option>
             </select>
-            <button class="uniform-btn" onclick="loadHistoryVersion()">回溯</button>
+            <button class="uniform-btn" onclick="loadHistoryVersion()" data-i18n="rollback">回溯</button>
           </div>
         </div>
 
@@ -2274,7 +2274,7 @@
           <div class="section-core" style="margin-bottom: 20px;">
             <h4 style="color: #e74c3c; display: flex; align-items: center; gap: 10px;">
               <input type="checkbox" id="select-all-core" onchange="toggleSectionSelection('core-entries', this.checked)">
-              🔥 核心 (恒定注入)
+              <span data-i18n="core-constant">🔥 核心 (恒定注入)</span>
             </h4>
             <div id="core-entries" class="entries-container"></div>
           </div>
@@ -2283,7 +2283,7 @@
           <div class="section-detailed" style="margin-bottom: 20px;">
             <h4 style="color: #f39c12; display: flex; align-items: center; gap: 10px;">
               <input type="checkbox" id="select-all-detailed" onchange="toggleSectionSelection('detailed-entries', this.checked)">
-              📋 详细 (高优先级)
+              <span data-i18n="detailed-high-priority">📋 详细 (高优先级)</span>
             </h4>
             <div id="detailed-entries" class="entries-container"></div>
           </div>
@@ -2292,7 +2292,7 @@
           <div class="section-other" style="margin-bottom: 20px;">
             <h4 style="color: #95a5a6; display: flex; align-items: center; gap: 10px;">
               <input type="checkbox" id="select-all-other" onchange="toggleSectionSelection('other-entries', this.checked)">
-              📄 其他
+              <span data-i18n="other">📄 其他</span>
             </h4>
             <div id="other-entries" class="entries-container"></div>
           </div>
@@ -2303,7 +2303,7 @@
           <div class="section-character" style="margin-bottom: 20px;">
             <h4 style="color: #3498db; display: flex; align-items: center; gap: 10px;">
               <input type="checkbox" id="select-all-character" onchange="toggleSectionSelection('character-entries', this.checked)">
-              👤 角色信息
+              <span data-i18n="character-info-section">👤 角色信息</span>
             </h4>
             <div id="character-entries" class="entries-container"></div>
           </div>
@@ -2311,17 +2311,17 @@
 
         <!-- 指令输入区域 -->
         <div class="instruction-area" style="margin: 20px 0; padding: 15px; background: var(--card-bg); border: 1px solid var(--input-border); border-radius: 8px;">
-          <h4>修改指令：</h4>
-          <textarea id="global-instruction" rows="4" placeholder="输入你的修改指令，支持使用 @id 引用特定条目，例如：@1 @3 请将这两个条目的语调改为更正式的风格" class="uniform-textarea" style="width: 100%; margin-top: 10px;"></textarea>
-          <div style="margin-top: 10px; font-size: 12px; color: #888;">
+          <h4 data-i18n="modify-instruction">修改指令：</h4>
+          <textarea id="global-instruction" rows="4" data-i18n-placeholder="instruction-placeholder" placeholder="输入你的修改指令，支持使用 @id 引用特定条目，例如：@1 @3 请将这两个条目的语调改为更正式的风格" class="uniform-textarea" style="width: 100%; margin-top: 10px;"></textarea>
+          <div style="margin-top: 10px; font-size: 12px; color: #888;" data-i18n="instruction-tip">
             提示：使用 @id 可以引用特定条目，如 @1 @5 表示引用ID为1和5的条目
           </div>
         </div>
 
         <!-- 操作按钮 -->
         <div class="modal-actions">
-          <button id="global-edit-execute-btn" class="action-btn" onclick="executeGlobalEdit()">🔮 执行修改</button>
-          <button id="global-edit-cancel-btn" class="cancel-btn" onclick="closeGlobalEditModal()">关闭</button>
+          <button id="global-edit-execute-btn" class="action-btn" onclick="executeGlobalEdit()" data-i18n="execute-modify">🔮 执行修改</button>
+          <button id="global-edit-cancel-btn" class="cancel-btn" onclick="closeGlobalEditModal()" data-i18n="close">关闭</button>
         </div>
       </div>
     </div>
@@ -2340,6 +2340,7 @@
             <button onclick="showEditorView()">+ 创建新角色</button>
             <button onclick="showNovelToWorldbookView()">📚 txt转世界书</button>
             <button onclick="document.getElementById('file-importer').click()">📥 导入</button>
+            <button onclick="continueChatting()">💬 继续聊天</button>
             <input type="file" id="file-importer" accept=".json,.png" onchange="importCharacter(event)" multiple="">
           </div>
         </div>
@@ -2445,26 +2446,26 @@
     <div id="novel-to-worldbook-view">
       <div class="worldbook-container">
         <div class="worldbook-header">
-          <h1>📚 长文本转世界书</h1>
-          <button style="background: var(--secondary-color); color: white; padding: 8px 15px; border-radius: 5px" onclick="showLibraryView()">返回</button>
+          <h1 id="novel-to-worldbook-title">📚 长文本转世界书</h1>
+          <button id="novel-return-btn" style="background: var(--secondary-color); color: white; padding: 8px 15px; border-radius: 5px" onclick="showLibraryView()">返回</button>
         </div>
         
         <div class="worldbook-body">
           <!-- 文件导入区域 -->
           <div class="novel-import-section">
-            <h3>📁 导入小说/资料文件</h3>
+            <h3 id="import-novel-title">📁 导入小说/资料文件</h3>
             <div class="file-drop-zone" id="novel-drop-zone" onclick="document.getElementById('novel-file-input').click()">
               <div style="font-size: 48px; margin-bottom: 15px;">📄</div>
-              <p>点击或拖拽文件到此处</p>
-              <p style="color: #aaa; font-size: 14px; margin-top: 10px;">支持格式：txt</p>
+              <p id="drop-zone-text">点击或拖拽文件到此处</p>
+              <p id="supported-formats-text" style="color: #aaa; font-size: 14px; margin-top: 10px;">支持格式：txt</p>
             </div>
             <input type="file" id="novel-file-input" accept=".txt" style="display: none;" onchange="handleNovelFile(event)">
             
             <!-- 编码选择 -->
             <div style="margin-top: 10px; display: flex; align-items: center; gap: 10px;">
-              <label style="color: #aaa; font-size: 14px;">文件编码：</label>
+              <label id="file-encoding-label" style="color: #aaa; font-size: 14px;">文件编码：</label>
               <select id="file-encoding" style="padding: 5px; background: rgba(0,0,0,0.3); border: 1px solid #555; border-radius: 4px; color: white;">
-                <option value="auto">自动检测</option>
+                <option value="auto" data-i18n="auto-detect">自动检测</option>
                 <option value="UTF-8">UTF-8</option>
                 <option value="GBK">GBK</option>
                 <option value="GB2312">GB2312</option>
@@ -2475,39 +2476,39 @@
             <!-- 切分设置 -->
             <div class="split-settings">
               <div class="split-option">
-                <h4>📆 自动化章回阅读</h4>
-                <label>章回正则：</label>
+                <h4 id="chapter-reading-title">📆 自动化章回阅读</h4>
+                <label id="chapter-regex-label">章回正则：</label>
                 <input type="text" id="chapter-regex" value="第[零一二三四五六七八九十百千万0-9]+[章回卷节部篇]" placeholder="例：第[零一二三四五六七八九十百千万0-9]+[章回卷节部篇]" style="width: 100%; padding: 8px; background: rgba(0,0,0,0.3); border: 1px solid #555; border-radius: 4px; color: white; margin-top: 5px;">
                 
                 <!-- 快速选择按钮 -->
                 <div style="margin-top: 8px; display: flex; flex-wrap: wrap; gap: 5px;">
-                  <button onclick="setChapterRegex('第[零一二三四五六七八九十百千万0-9]+[章回卷节部篇]')" style="padding: 4px 8px; background: #444; color: white; border: 1px solid #666; border-radius: 3px; font-size: 12px;">中文通用格式</button>
-                  <button onclick="setChapterRegex('Chapter\\s+[0-9]+')" style="padding: 4px 8px; background: #444; color: white; border: 1px solid #666; border-radius: 3px; font-size: 12px;">英文Chapter</button>
+                  <button id="chinese-format-btn" onclick="setChapterRegex('第[零一二三四五六七八九十百千万0-9]+[章回卷节部篇]')" style="padding: 4px 8px; background: #444; color: white; border: 1px solid #666; border-radius: 3px; font-size: 12px;">中文通用格式</button>
+                  <button id="english-chapter-btn" onclick="setChapterRegex('Chapter\\s+[0-9]+')" style="padding: 4px 8px; background: #444; color: white; border: 1px solid #666; border-radius: 3px; font-size: 12px;">英文Chapter</button>
                 </div>
                 
-                <button onclick="detectChapters()" style="margin-top: 10px; padding: 8px 15px; background: var(--primary-color); color: white; border: none; border-radius: 4px;">检测+生成</button>
+                <button id="detect-generate-btn" onclick="detectChapters()" style="margin-top: 10px; padding: 8px 15px; background: var(--primary-color); color: white; border: none; border-radius: 4px;">检测+生成</button>
               </div>
               
               <div class="split-option">
-                <h4>⚙️ 自动化连续阅读</h4>
-                <label>每次阅读字数：</label>
+                <h4 id="continuous-reading-title">⚙️ 自动化连续阅读</h4>
+                <label id="read-size-label">每次阅读字数：</label>
                 <select id="split-size" style="width: 100%; padding: 8px; background: rgba(0,0,0,0.3); border: 1px solid #555; border-radius: 4px; color: white; margin-top: 5px;">
-                  <option value="10000">1万字 </option>
-                  <option value="30000">3万字</option>
-                  <option value="50000">5万字</option>
-                  <option value="100000">10万字（Deepseek不要超过）</option>
-                  <option value="200000">20万字</option>
-                  <option value="500000">50万字 (建议Gemini)</option>
+                  <option value="10000" data-i18n="10k-words">1万字 </option>
+                  <option value="30000" data-i18n="30k-words">3万字</option>
+                  <option value="50000" data-i18n="50k-words">5万字</option>
+                  <option value="100000" data-i18n="100k-words">10万字（Deepseek不要超过）</option>
+                  <option value="200000" data-i18n="200k-words">20万字</option>
+                  <option value="500000" data-i18n="500k-words">50万字 (建议Gemini)</option>
                   
                 </select>
-                <button onclick="bruteForceSplit()" style="margin-top: 10px; padding: 8px 15px; background: var(--secondary-color); color: white; border: none; border-radius: 4px;">生成世界书</button>
+                <button id="generate-worldbook-btn" onclick="bruteForceSplit()" style="margin-top: 10px; padding: 8px 15px; background: var(--secondary-color); color: white; border: none; border-radius: 4px;">生成世界书</button>
               </div>
             </div>
           </div>
           
           <!-- 进度显示区域 -->
           <div class="progress-section" id="progress-section">
-            <h3>🧠 AI记忆大师处理中...</h3>
+            <h3 id="ai-processing-title">🧠 AI记忆大师处理中...</h3>
             <div class="progress-bar">
               <div class="progress-fill" id="progress-fill"></div>
             </div>
@@ -2515,7 +2516,7 @@
             
             <!-- 记忆队列 -->
             <div>
-              <h4>📋 小说阅读队列</h4>
+              <h4 id="reading-queue-title">📋 小说阅读队列</h4>
               <div class="memory-queue" id="memory-queue">
                 <!-- 动态生成记忆项 -->
               </div>
@@ -2524,11 +2525,11 @@
           
           <!-- 结果显示区域 -->
           <div class="result-section" id="result-section">
-            <h3>✨ 生成的世界书</h3>
+            <h3 id="generated-worldbook-title">✨ 生成的世界书</h3>
             <div style="margin-bottom: 15px;">
-              <button onclick="exportWorldbook()" style="padding: 10px 20px; background: var(--primary-color); color: white; border: none; border-radius: 4px; margin-right: 10px;">📥 导出数据</button>
-              <button onclick="importToSillyTavern()" style="padding: 10px 20px; background: var(--secondary-color); color: white; border: none; border-radius: 4px; margin-right: 10px;">🚀 导出世界书</button>
-              <button onclick="saveWorldbookToLibrary()" style="padding: 10px 20px; background: #28a745; color: white; border: none; border-radius: 4px;">💾 保存到库</button>
+              <button id="export-data-btn" onclick="exportWorldbook()" style="padding: 10px 20px; background: var(--primary-color); color: white; border: none; border-radius: 4px; margin-right: 10px;">📥 导出数据</button>
+              <button id="export-worldbook-btn" onclick="importToSillyTavern()" style="padding: 10px 20px; background: var(--secondary-color); color: white; border: none; border-radius: 4px; margin-right: 10px;">🚀 导出世界书</button>
+              <button id="save-to-library-btn" onclick="saveWorldbookToLibrary()" style="padding: 10px 20px; background: #28a745; color: white; border: none; border-radius: 4px;">💾 保存到库</button>
             </div>
             <div class="worldbook-preview" id="worldbook-preview">
               <!-- 世界书JSON预览 -->
@@ -2542,7 +2543,7 @@
       <div class="editor-container">
         <div class="editor-header">
           <h1 id="editor-title">创建新角色</h1>
-          <button onclick="openApiSettingsModal()" style="background: var(--secondary-color); color: white; padding: 8px 15px; border-radius: 5px">
+          <button onclick="openApiSettingsModal()" style="background: var(--secondary-color); color: white; padding: 8px 15px; border-radius: 5px" data-i18n="api-settings-btn">
             ⚙️ API 设置
           </button>
         </div>
@@ -2561,11 +2562,11 @@
               <button onclick="document.getElementById('avatar-input').click()" style="max-width: 250px">上传图片</button>
             </div>
             <div class="action-buttons" style="flex-direction: column">
-              <button onclick="saveCharacter()">💾 储存并返回角色库</button>
-              <button onclick="downloadCharacter()">📥 下载 JSON</button>
-              <button onclick="downloadCharacterAsPng()">📥 下载 PNG 角色卡</button>
-              <button onclick="downloadAsWorldbookFile()">📥 下载为世界书</button>
-              <button class="secondary" onclick="showLibraryView()">🔙 返回 (不储存)</button>
+              <button id="save-and-return-btn" onclick="saveCharacter()">💾 储存并返回角色库</button>
+              <button id="download-json-btn" onclick="downloadCharacter()">📥 下载 JSON</button>
+              <button id="download-png-btn" onclick="downloadCharacterAsPng()">📥 下载 PNG 角色卡</button>
+              <button id="download-lorebook-btn" onclick="downloadAsWorldbookFile()">📥 下载为世界书</button>
+              <button id="return-without-save-btn" class="secondary" onclick="showLibraryView()">🔙 返回 (不储存)</button>
             </div>
 
             <div style="display: flex; justify-content: space-between; align-items: center">
@@ -2695,10 +2696,10 @@
             <div style="display: flex; justify-content: space-between; align-items: center">
               <h3 class="section-title" id="world-knowledge-book-title">世界书 </h3>
               <div style="display: flex; gap: 10px;">
-                <button id="ai-global-edit-btn" onclick="openGlobalEditModal(this)" style="background-color: var(--ai-button-bg); color: white; padding: 8px 15px; border-radius: 5px">
+                <button id="ai-global-edit-btn" onclick="openGlobalEditModal(this)" style="background-color: var(--ai-button-bg); color: white; padding: 8px 15px; border-radius: 5px" data-i18n="ai-global-edit-btn">
                   🔮 AI 全局改
                 </button>
-                <button id="ai-lorebook-generator-btn" onclick="openWorldbookAiModal(this)" style="background-color: var(--ai-button-bg); color: white; padding: 8px 15px; border-radius: 5px">
+                <button id="ai-lorebook-generator-btn" onclick="openWorldbookAiModal(this)" style="background-color: var(--ai-button-bg); color: white; padding: 8px 15px; border-radius: 5px" data-i18n="ai-generate-worldbook">
                   🔮 一键生成世界书
                 </button>
               </div>
@@ -2713,9 +2714,9 @@
                   <span class="slider"></span>
                 </label>
               </div>
-              <button onclick="addWorldbookEntry()" class="secondary" style="background-color: #e67e22; flex-grow: 1">+ 补充世界书</button>
-              <button onclick="sortWorldbookEntriesByPriority()" class="secondary" style="flex-grow: 1">按优先级排序</button>
-              <button onclick="sortWorldbookEntries()" class="secondary" style="flex-grow: 1">按ID排序</button>
+              <button id="add-worldbook-entry-btn" onclick="addWorldbookEntry()" class="secondary" style="background-color: #e67e22; flex-grow: 1">+ 补充世界书</button>
+              <button id="worldbook-sort-priority-btn" onclick="sortWorldbookEntriesByPriority()" class="secondary" style="flex-grow: 1">按优先级排序</button>
+              <button id="worldbook-sort-id-btn" onclick="sortWorldbookEntries()" class="secondary" style="flex-grow: 1">按ID排序</button>
             </div>
           </div>
         </div>
@@ -2733,6 +2734,8 @@
           'create-new-character': '创建新角色',
           'import-character': '📥 导入',
           'edit-character': '编辑角色',
+          'edit-draft': '编辑草稿',
+          'restore-draft-confirm': '发现未保存的草稿，是否恢复？\n取消将丢弃草稿。',
           'save-and-return': '💾 储存并返回角色库',
           'return-without-save': '🔙 返回 (不储存)',
           'download-json': '📥 下载 JSON',
@@ -2743,6 +2746,7 @@
           export: '导出',
           'add-tag': '添加标签',
           delete: '删除',
+          chat: '聊天',
           'add-new-entry': '+ 补充世界书',
           'sort-by-id': '按ID排序',
           'ai-generate-entries': '🔮 AI生成参考条目',
@@ -2823,6 +2827,8 @@
           'entry-probability-placeholder': '0-100',
           'entry-depth': '记录深度',
           'entry-depth-placeholder': '数字',
+          'scan-depth': '扫描深度',
+          'scan-depth-placeholder': '留空使用默认设置',
           'match-whole-words': '全词匹配',
           'case-sensitive': '区分大小写',
 
@@ -2884,11 +2890,12 @@
             '让AI“看心情”查阅这条内容。\n用法：设为80，则此条目被关键词触发后，有80%的几率生效。\n用途：可以增加AI行为的随机性。',
           'help-entry-depth':
             '仅在选择"深度"类型的注入位置时有效。决定在聊天记录中从第几条消息开始注入内容。\n• 深度值越小，AI越容易注意到（更接近当前对话）\n• 深度0表示最新的消息位置\n• 例：深度2表示从倒数第3条消息位置注入',
+          'help-scan-depth':
+            '定义在聊天历史中扫描世界信息关键词的消息数量。设置为0时，仅扫描递归条目和作者注释。设置为1时，仅扫描最后一条消息。',
           'help-match-whole-words':
             '开启“精确查找”模式。\n效果：要求关键词必须是一个独立的词才触发。\n例：关键词为`爱`。勾选后，只有当用户说`爱`这个字时才算，`热爱`、`爱情`这些词不算。',
           'help-case-sensitive':
-            '让AI“注意大小写”。\n效果：勾选后，关键词的大小写必须完全一样才能触发。\n例：关键词为`Apple`，则`apple`不会触发。一般用于英文。',
-
+            '区分大小写。\n效果：勾选后，关键词的大小写必须完全一样才能触发。\n例：关键词为`Apple`，则`apple`不会触发。',
           // API相关
           'api-key-placeholder': '输入 DeepSeek API Key',
 
@@ -2897,6 +2904,7 @@
           'imported-lorebook': '导入的世界书',
           'lorebook-description': '从SillyTavern导入的世界书。',
           'lorebook-tag': '世界书',
+          'new-entry': '新条目',
 
           // 确认对话框
           'confirm-overwrite-worldbook': '这会打开AI生成弹窗，但不会覆盖现有条目。你可以选择性注入新条目。继续吗？',
@@ -2938,6 +2946,341 @@
           'wb-ai-gen-type-btn-worldview': '生成世界观',
           'wb-ai-gen-type-btn-main-plot': '生成主线剧情',
           'wb-ai-gen-type-btn-side-plot': '生成支线剧情',
+          'wb-ai-generate-btn': '生成世界书条目',
+          'wb-ai-quick-generate-label': '快速生成世界书条目：',
+          'wb-ai-request-input-placeholder': '请输入你对世界书条目的具体要求，例如：生成全部主要角色的外貌、性格、经历、技能，相互的关系',
+          
+          // 新增翻译
+          'continue-chatting': '💬 继续聊天',
+          'txt-to-worldbook': '📚 txt转世界书',
+          'resource-box': '📦 资源箱',
+          'english-cards': '🌍 英文卡资源',
+          'community-resources': '💬 社区资源',
+          'preset-resources': '⚙️ 预设资源',
+          'tutorial-resources': '📖 教程资源',
+          'odysseia-community': '类脑社区',
+          'elysian-community': '旅程社区',
+          'gemini-preset': 'Gemini 推荐',
+          'deepseek-preset': 'DeepSeek 推荐',
+          'cursor-tutorial': 'Cursor 前端美化教程',
+          'favorite': '⭐ 收藏',
+          'create-character-placeholder': '创建新角色',
+          
+          // API设置相关
+          'api-settings': 'API 设置',
+          'select-provider': '选择服务商',
+          'api-key': 'API Key',
+          'enter-api-key': '输入你的 {provider} API Key',
+          'select-model': '选择模型',
+          'enable-jailbreak': '启用破限',
+          'jailbreak-help': '防止模型敏感',
+          'proxy-endpoint': '代理 Endpoint URL',
+          'proxy-endpoint-placeholder': '例如: https://mydomain.com/v1beta/models',
+          'proxy-help': '用于连接 Cloudflare Worker 等自定义反向代理。Endpoint URL 应为不包含模型名称的完整路径。',
+          'local-api-url': 'API URL',
+          'local-api-placeholder': '例如: http://localhost:1234/v1',
+          'local-help': '用于连接LM Studio或者Ollama, 需下载项目源文件启动才能使用。',
+          'connection-type': '连接类型',
+          'custom-api': '自定义API',
+          'cli-reverse-proxy': 'CLI反代',
+          'api-url': 'API URL',
+          'model-name': '模型名称',
+          'model-placeholder': '例如: gpt-3.5-turbo',
+          'custom-api-help': '用于连接远程的、兼容OpenAI格式的API服务。',
+          'proxy-server-url': '代理服务器 URL',
+          'proxy-url-placeholder': 'https://gcli2api-xxxx.onrender.com/v1',
+          'proxy-url-help': '不起作用？在末尾添加 /v1 试试！/chat/completions 后缀将自动添加。',
+          'proxy-password': '代理密码',
+          'proxy-password-placeholder': '123456',
+          'proxy-password-help': '将用作代理的密码,而不是 API 密钥。',
+          'refresh-models': '刷新',
+          'refresh-models-placeholder': '请刷新模型...',
+          'select-model-placeholder': '请选择模型...',
+          'proxy-help-text': '通过反向代理连接到API服务,适用于Render等的CLI反代',
+          'save': '保存',
+          'cancel': '取消',
+          'parse-error': '解析AI响应时出错：{error}',
+          'generation-failed': '生成失败，请检查API设置和网络连接。',
+          'generation-error': '生成错误：{error}',
+          
+          // 长文本转世界书
+          'novel-to-worldbook': '📚 长文本转世界书',
+          'return': '返回',
+          'import-novel': '📁 导入小说/资料文件',
+          'drop-zone-text': '点击或拖拽文件到此处',
+          'supported-formats': '支持格式：txt',
+          'file-encoding': '文件编码：',
+          'auto-detect': '自动检测',
+          'chapter-reading': '📆 自动化章回阅读',
+          'chapter-regex': '章回正则：',
+          'chapter-regex-placeholder': '例：第[零一二三四五六七八九十百千万0-9]+[章回卷节部篇]',
+          'chinese-format': '中文通用格式',
+          'english-chapter': '英文Chapter',
+          'detect-generate': '检测+生成',
+          'continuous-reading': '⚙️ 自动化连续阅读',
+          'read-size': '每次阅读字数：',
+          'generate-worldbook': '生成世界书',
+          'ai-processing': '🧠 AI记忆大师处理中...',
+          'initializing': '正在初始化...',
+          'reading-queue': '📋 小说阅读队列',
+          'generated-worldbook': '✨ 生成的世界书',
+          'export-data': '📥 导出数据',
+          'export-worldbook': '🚀 导出世界书',
+          'save-to-library': '💾 保存到库',
+          
+          // 全局修改模态框
+          'global-edit': '🔮 AI 全局修改',
+          'quick-select': '快速选择：',
+          'all-worldbook': '所有世界书',
+          'all-character-cards': '所有角色卡',
+          'custom': '自定义',
+          'custom-filter': '自定义筛选：',
+          'priority-filter': '优先级筛选：',
+          'all': '全部',
+          'greater-equal': '大于等于',
+          'less-equal': '小于等于',
+          'priority-value': '优先级值',
+          'constant-injection': '恒定注入：',
+          'only-constant': '仅恒定',
+          'only-non-constant': '仅非恒定',
+          'injection-position': '注入位置：',
+          'all-positions': '全部位置',
+          'before-char': '角色前',
+          'after-char': '角色后',
+          'apply-filter': '应用筛选',
+          'history-rollback': '历史回溯：',
+          'checkpoint-count': '存档点个数：',
+          'select-history': '选择历史版本...',
+          'rollback': '回溯',
+          'core-constant': '🔥 核心 (恒定注入)',
+          'detailed-high-priority': '📋 详细 (高优先级)',
+          'other': '📄 其他',
+          'character-info-section': '👤 角色信息',
+          'modify-instruction': '修改指令：',
+          'instruction-placeholder': '输入你的修改指令，支持使用 @id 引用特定条目，例如：@1 @3 请将这两个条目的语调改为更正式的风格',
+          'instruction-tip': '提示：使用 @id 可以引用特定条目，如 @1 @5 表示引用ID为1和5的条目',
+          'execute-modify': '🔮 执行修改',
+          'close': '关闭',
+          
+          // 系统指令相关
+          'bracket-mode': '括号模式',
+          'simple-statusbar': '简易状态栏',
+          'system-instruction': '系统指令 · 状态栏 · 美化',
+          'edit': '编辑',
+          'delete': '删除',
+          
+          // 世界书按钮
+          'ai-global-edit-btn': '🔮 AI 全局改',
+          'ai-generate-worldbook': '🔮 一键生成世界书',
+          'add-worldbook-entry': '+ 补充世界书',
+          'sort-by-priority': '按优先级排序',
+          'sort-by-id': '按ID排序',
+          
+          // AI引导
+          'ai-guidance-input-placeholder': '在此输入你的具体要求、风格、关键词等... (可留空)',
+          'wb-ai-request-placeholder': '请输入你对世界书条目的具体要求，例如：生成全部主要角色的外貌、性格、经历、技能，相互的关系',
+          
+          // 字数选项
+          '10k-words': '1万字',
+          '30k-words': '3万字',
+          '50k-words': '5万字',
+          '100k-words': '10万字（Deepseek不要超过）',
+          '200k-words': '20万字',
+          '500k-words': '50万字 (建议Gemini)',
+          
+          // 搜索面板
+          'worldbook-management': '世界书管理',
+          'search-placeholder': '输入搜索关键词...',
+          'sort-by-pinyin': '拼音排序',
+          'sort-by-id-btn': 'ID排序',
+          'sort-by-priority-btn': '优先级',
+          'select-all': '全选',
+          'selected-count': '已选 {count} 个',
+          'batch-modify': '批量修改',
+          
+          // 世界书条目操作
+          'add-child-entry': '添加子条目',
+          'exit-parent-entry': '↓退出',
+          'exit-parent-entry-title': '将此条目移出父条目',
+          'join-parent-entry': '↑加入',
+          'join-parent-entry-title': '将此条目设为上方同级条目的子条目',
+          'airdrop-entry-title': '将此条目插入到左侧框中指定的ID位置，并顺延后续条目',
+          'keyword-filter': '关键字过滤器',
+          'secondary-keys-logic-any': '与任意',
+          'secondary-keys-logic-none': '非任意',
+          'secondary-keys-logic-all': '与所有',
+          'secondary-keys-logic-not-all': '非所有',
+          'position-before-char-system': '📄 角色卡前 - 很高注意力（在系统指令中）',
+          'position-after-char-system': '📄 角色卡后 - 中等注意力（在系统指令中）',
+          'position-smart-system': '⭐ 智能插入 - 系统视角（最高注意力）',
+          'position-smart-user': '⭐ 智能插入 - 用户视角（最高注意力）',
+          'position-smart-ai': '⭐ 智能插入 - AI视角（最高注意力）',
+          'constant-mode-permanent': '永久',
+          'constant-mode-keyword': '关键词',
+          'additional-match-sources': '📎 额外匹配源',
+          'additional-match-sources-help': '开启后,角色卡的设定信息（描述、个性、场景等）也能触发此条目',
+          'advanced-settings-subtitle': '(关键词匹配、注入逻辑等)',
+          'ai-guidance-placeholder': '在此输入你的具体要求、风格、关键词等... (可留空)',
+          'code-added-to-instruction': '代码已加入到"指令内容"中，同时备份到了剪切板，请下滑返回',
+          'code-added-to-instruction-short': '代码已加入到"指令内容"中，同时备份到了剪切板',
+          'cannot-join-first-entry': '已经是同级中的第一个条目，无法加入（缩进）。',
+          
+          // 批量修改
+          'batch-modify-title': '批量修改世界书条目',
+          'batch-selected-info': '已选择 {count} 个条目',
+          'modify-option': '修改选项：',
+          'select-property': '请选择要修改的属性',
+          'entry-status': '条目状态（启用/禁用）',
+          'constant-injection-option': '恒定注入（永久/关键词）',
+          'prevent-recursion-option': '防止递归',
+          'selective-trigger': '选择性触发',
+          'regex-option': '正则表达式',
+          'whole-word-match': '全词匹配',
+          'case-sensitive-option': '大小写敏感',
+          'injection-position-option': '注入位置',
+          'priority-option': '优先级',
+          'apply-changes': '应用修改',
+          'cancel-batch': '取消',
+          'modify-success': '成功修改 {count} 个条目',
+          'select-entries-first': '请先选择要修改的条目',
+          
+          // 指令系统
+          'instruction-name': '名称：',
+          'instruction-content': '内容：',
+          'preview-instruction': '📄 前端预览',
+          'ai-modify-instruction': '🤖 AI帮我改',
+          'template-import': '模板导入：',
+          'select-template': '选择预设模板...',
+          'tutorial': '📖 小白教程',
+          'ai-beautify': '🔮 AI前端美化',
+          'save-template': '💾 保存为模板',
+          'cancel-instruction': '取消',
+          'save-instruction': '加入设定',
+          'install-tavern-helper': '安装酒馆助手，并开启(简洁)预设的Main Prompt开关。',
+          
+          // AI美化功能
+          'beautify-modal-title': '✨ 一键前端美化',
+          'beautify-modal-desc': 'AI将为您生成多个美化的HTML对话样式，您可以预览并选择喜欢的样式。',
+          'beautify-count-label': '生成数量:',
+          'beautify-count-3': '3个',
+          'beautify-count-5': '5个',
+          'beautify-count-8': '8个',
+          'beautify-lines-label': '每个HTML行数限制:',
+          'beautify-lines-50': '50行',
+          'beautify-lines-80': '80行',
+          'beautify-lines-100': '100行',
+          'beautify-lines-unlimited': '不限制(不建议)',
+          'beautify-requirements-label': '自定义要求 (可选):',
+          'beautify-requirements-placeholder': '例如：深色主题、聊天气泡样式、动画效果等...',
+          'beautify-generate-btn': '🎨 开始生成',
+          'beautify-cancel-btn': '取消 | 返回',
+          'beautify-generating': 'AI正在生成美化样式，请稍候...',
+          'beautify-api-config-required': '⚠️ 需要配置API设置',
+          'beautify-api-config-desc': '请先在API设置中配置您的AI服务提供商才能使用AI生成功能。',
+          'beautify-open-api-settings': '打开API设置',
+          'beautify-generation-failed': '❌ 生成失败',
+          'beautify-api-error': '调用AI API时出现错误: {error}',
+          'beautify-no-html-found': '⚠️ 未找到有效的HTML代码',
+          'beautify-no-html-desc': 'AI生成的内容中没有找到有效的HTML代码块。',
+          
+          // 指令模板
+          'delete-template-btn': '🗑️ 删除此模板',
+          'confirm-delete-template': '确定要删除这个自定义模板吗？',
+          'template-deleted': '模板删除成功！',
+          'template-delete-failed': '删除模板失败：{error}',
+          'confirm-delete-instruction': '确定要删除这个指令吗？',
+          'edit-btn': '编辑',
+          'delete-btn': '删除',
+          
+          // 世界书搜索
+          'search-no-results': '未找到匹配的条目',
+          'search-results-count': '找到 {count} 个匹配的条目',
+          
+          // 历史版本和通知
+          'version-select-label': '历史版本:',
+          'select-version': '选择版本...',
+          'undo-btn': '撤销',
+          'confirm-delete-character': '确定要删除这个角色吗？',
+          
+          // Alert和确认消息
+          'api-config-local-alert': '请先在 API 设置中配置本地大模型的API URL（例如: http://localhost:1234/v1）',
+          'api-config-reverse-proxy-alert': '请先在 API 设置中配置CLI反代的代理服务器URL和密码',
+          'api-config-custom-alert': '请先在 API 设置中配置自定义API的endpoint和API Key',
+          'api-config-provider-alert': '请先在 API 设置中配置您的服务商。',
+          'no-content-to-translate': '没有需要翻译的内容。',
+          'translation-failed': '翻译失败，请检查控制台获取详情。',
+          'no-undo-translation': '没有可撤销的翻译。',
+          'api-settings-saved': 'API 设置已保存！',
+          'api-settings-load-failed': '⚠️ 加载API设置失败: {error}',
+          'proxy-url-required': '请先输入代理服务器 URL',
+          'proxy-password-required': '请先输入代理密码',
+          'models-fetched': '成功获取 {count} 个模型',
+          'models-fetch-failed': '获取模型列表失败: {error}',
+          'template-name-content-required': '请填写模板名称和内容',
+          'template-save-success': '自定义模板保存成功！',
+          'template-save-failed': '保存模板失败：{error}',
+          'ai-improve-in-development': 'AI改进功能正在开发中...',
+          'instruction-name-content-required': '请填写指令名称和内容！\n\n💡 提示：\n• 指令名称：给指令起个名字，如"状态栏"、"对话模式"等\n• 指令内容：具体的指令内容',
+          'instruction-name-required': '请填写指令名称！\n\n💡 指令名称示例：\n• 状态栏\n• 对话模式\n• 角色指令\n• 情感模式\n\n指令名称用于在系统设定中生成 <指令名称></指令名称> 标签',
+          'instruction-content-required': '请填写指令内容！\n\n指令内容不能为空',
+          'style-code-not-exist': '样式代码不存在',
+          'render-requires-plugin': '渲染功能需要安装酒馆助手插件才能使用。',
+          'code-copied-to-clipboard': '代码已加入到"指令内容"中，同时备份到了剪切板，请下滑返回',
+          
+          // 指令模态框
+          'edit-instruction': '编辑指令',
+          'instruction-and-beautify': '指令与前端美化',
+          'instruction-name-label': '名称：',
+          'instruction-content-label': '内容：',
+          'preview-instruction': '📄 前端预览',
+          'ai-modify-instruction': '🤖 AI帮我改',
+          'template-import-label': '模板导入：',
+          'tavern-helper-tip': '安装酒馆助手，并开启(简洁)预设的Main Prompt开关。',
+          'tutorial-btn': '📖 小白教程',
+          'ai-beautify-btn': '🔮 AI前端美化',
+          'save-template-btn': '💾 保存为模板',
+          'cancel-instruction': '取消',
+          'save-instruction': '加入设定',
+          'add-instruction-text': '系统指令 · 状态栏 · 美化',
+          
+          // 世界书相关
+          'wb-entry-format': '条目注释: {comment}\n关键词: {keys}\n内容: {content}',
+          'wb-generating-msg': 'AI正在根据你的要求生成世界书条目，请稍后..',
+          'priority-label': '优先级: {priority}',
+          'trigger-words': '触发词: {keys}',
+          'position-label': '位置: {position}',
+          'constant-label': '恒定: {value}',
+          'yes': '是',
+          'no': '否',
+          'suggested-priority': '建议优先级: {priority}',
+          'position-after-char': '角色后',
+          'position-before-char': '角色前',
+          'trigger-words-label': '触发词',
+          'content-label': '内容',
+          'api-settings-btn': '⚙️ API 设置',
+          'api-provider-deepseek': 'DeepSeek',
+          'api-provider-gemini': 'Gemini (直链，需魔法)',
+          'api-provider-gemini-proxy': 'Gemini (中转站)',
+          'api-provider-local': '本地大模型（bat启动用这个）',
+          'api-provider-tavern': 'CLI反代 / 自定义',
+          'edit-instruction': '编辑指令',
+          'instruction-beautify': '指令与前端美化',
+          'instruction-name': '名称：',
+          'instruction-content': '内容：',
+          'preview-frontend': '📄 前端预览',
+          'ai-help-modify': '🤖 AI帮我改',
+          'template-import': '模板导入：',
+          'tavern-helper-tip': '安装酒馆助手，并开启(简洁)预设的Main Prompt开关。',
+          'tutorial-btn': '📖 小白教程',
+          'ai-beautify-btn': '🔮 AI前端美化',
+          'save-as-template': '💾 保存为模板',
+          'cancel': '取消',
+          'add-to-settings': '加入设定',
+          'system-instruction-prefix': '[系统指令]: ',
+          
+          // 折叠视图
+          'fold-view': '📖 折叠视图',
+          'edit-mode': '📝 编辑模式',
         },
 
         en: {
@@ -2946,7 +3289,9 @@
           'create-new-character': 'Create New Character/Book',
           'import-character': '📥 Import',
           'edit-character': 'Edit Character',
-          'save-and-return': '💾 Save and Return to Library',
+          'edit-draft': 'Edit Draft',
+          'restore-draft-confirm': 'Unsaved draft found. Restore it?\nCancel to discard draft.',
+          'save-and-return': '💾 Save & Return to Library',
           'return-without-save': "🔙 Return (Don't Save)",
           'download-json': '📥 Download JSON',
           'download-png': '📥 Download PNG Character Card',
@@ -2956,6 +3301,7 @@
           export: 'Export',
           'add-tag': 'Add Tag',
           delete: 'Delete',
+          chat: 'Chat',
           'add-new-entry': '+ Add New Entry',
           'sort-by-id': 'Sort by ID',
           'ai-generate-entries': '🔮 AI Generate Reference Entries',
@@ -3031,7 +3377,9 @@
           'entry-enabled': 'Enabled',
           'entry-constant': 'Constant',
           'entry-selective': 'Selective',
+          'use-regex': 'Use Regex',
           'entry-use-regex': 'Use Regex',
+          'prevent-recursion': 'Prevent Recursion',
           'entry-prevent-recursion': 'Prevent Recursion',
           'entry-group': 'Group',
           'entry-group-placeholder': 'Group name',
@@ -3039,6 +3387,8 @@
           'entry-probability-placeholder': '0-100',
           'entry-depth': 'Scan Depth',
           'entry-depth-placeholder': 'Number',
+          'scan-depth': 'Scan Depth',
+          'scan-depth-placeholder': 'Leave empty for default',
           'match-whole-words': 'Match Whole Words',
           'case-sensitive': 'Case-Sensitive',
 
@@ -3097,19 +3447,30 @@
             '[Trigger Probability] Set a number from 0 to 100. This determines the chance that the entry will actually be injected after its keywords are triggered. 100 means it always will.',
           'help-entry-depth':
             "[Scan Depth] Only effective when using depth-type injection positions. Determines at which message position in chat history to inject content.\n• Smaller depth values = AI pays more attention (closer to current conversation)\n• Depth 0 = most recent message position\n• Example: Depth 2 = inject at the 3rd message from the bottom",
+          'help-scan-depth':
+            'Defines the number of messages in chat history to scan for world info keywords. When set to 0, only recursive entries and author notes are scanned. When set to 1, only the last message is scanned.',
           'help-match-whole-words':
             '[Match Whole Words] If checked, a keyword is only triggered if it appears as a whole word. For example, if the keyword is "love", it would trigger on "I love you" but not "glove".',
-          'case-sensitive':
-            '[Case-Sensitive] If checked, the keyword must match the case of the text exactly to be triggered. For example, if the keyword is "Apple", it will not be triggered by "apple".',
+          'help-case-sensitive':
+            '[Case-Sensitive] Keywords must match case exactly. For example, "Apple" will not match "apple".',
 
           // API related
           'api-key-placeholder': 'Enter DeepSeek API Key',
+          'jailbreak-help': 'Prevents model sensitivity, suitable for Gemini models',
+          'proxy-endpoint-placeholder': 'e.g.: https://mydomain.com/v1beta/models',
+          'local-api-placeholder': 'e.g.: http://localhost:1234/v1',
+          'model-placeholder': 'e.g.: gpt-3.5-turbo',
+          'proxy-url-placeholder': 'https://gcli2api-xxxx.onrender.com/v1',
+          'proxy-url-help': 'Not working? Try adding /v1 at the end! The /chat/completions suffix will be added automatically.',
+          'proxy-password-placeholder': '123456',
+          'refresh-models-placeholder': 'Please refresh models...',
 
           // Default values
           'imported-character': 'Character imported from image',
           'imported-lorebook': 'Imported Lorebook',
           'lorebook-description': 'A lorebook imported from SillyTavern.',
           'lorebook-tag': 'lorebook',
+          'new-entry': 'New Entry',
 
           // Confirmation dialogs
           'confirm-overwrite-worldbook':
@@ -3157,6 +3518,341 @@
           'wb-ai-gen-type-btn-worldview': 'Generate Worldview',
           'wb-ai-gen-type-btn-main-plot': 'Generate Main Plot',
           'wb-ai-gen-type-btn-side-plot': 'Generate Side Plot',
+          'wb-ai-generate-btn': 'Generate Worldbook Entries',
+          'wb-ai-quick-generate-label': 'Quick Generate Worldbook Entries:',
+          'wb-ai-request-input-placeholder': 'Enter your specific requirements for worldbook entries, e.g.: Generate appearance, personality, experience, skills, and relationships of all main characters',
+          
+          // 新增翻译
+          'continue-chatting': '💬 Continue Chatting',
+          'txt-to-worldbook': '📚 TXT to Worldbook',
+          'resource-box': '📦 Resource Box',
+          'english-cards': '🌍 English Character Cards',
+          'community-resources': '💬 Community Resources',
+          'preset-resources': '⚙️ Preset Resources',
+          'tutorial-resources': '📖 Tutorial Resources',
+          'odysseia-community': 'Odysseia Community',
+          'elysian-community': 'Elysian Horizon Community',
+          'gemini-preset': 'Gemini Recommended',
+          'deepseek-preset': 'DeepSeek Recommended',
+          'cursor-tutorial': 'Cursor Frontend Tutorial',
+          'favorite': '⭐ Favorite',
+          'create-character-placeholder': 'Create New Character',
+          
+          // API设置相关
+          'api-settings': 'API Settings',
+          'select-provider': 'Select Provider',
+          'api-key': 'API Key',
+          'enter-api-key': 'Enter your {provider} API Key',
+          'select-model': 'Select Model',
+          'enable-jailbreak': 'Enable Jailbreak',
+          'jailbreak-help': 'Prevent model sensitivity',
+          'proxy-endpoint': 'Proxy Endpoint URL',
+          'proxy-endpoint-placeholder': 'e.g.: https://mydomain.com/v1beta/models',
+          'proxy-help': 'For connecting to custom reverse proxies like Cloudflare Worker. Endpoint URL should be the full path without model name.',
+          'local-api-url': 'API URL',
+          'local-api-placeholder': 'e.g.: http://localhost:1234/v1',
+          'local-help': 'For connecting to LM Studio or Ollama. Requires downloading and running the project source files.',
+          'connection-type': 'Connection Type',
+          'custom-api': 'Custom API',
+          'cli-reverse-proxy': 'CLI Reverse Proxy',
+          'api-url': 'API URL',
+          'model-name': 'Model Name',
+          'model-placeholder': 'e.g.: gpt-3.5-turbo',
+          'custom-api-help': 'For connecting to remote OpenAI-compatible API services.',
+          'proxy-server-url': 'Proxy Server URL',
+          'proxy-url-placeholder': 'https://gcli2api-xxxx.onrender.com/v1',
+          'proxy-url-help': 'Not working? Try adding /v1 at the end! The /chat/completions suffix will be added automatically.',
+          'proxy-password': 'Proxy Password',
+          'proxy-password-placeholder': '123456',
+          'proxy-password-help': 'Will be used as the proxy password, not the API key.',
+          'refresh-models': 'Refresh',
+          'refresh-models-placeholder': 'Please refresh models...',
+          'select-model-placeholder': 'Please select a model...',
+          'proxy-help-text': 'Connect to API service through reverse proxy, suitable for CLI proxies on Render, etc.',
+          'save': 'Save',
+          'cancel': 'Cancel',
+          'parse-error': 'Error parsing AI response: {error}',
+          'generation-failed': 'Generation failed, please check API settings and network connection.',
+          'generation-error': 'Generation error: {error}',
+          
+          // 长文本转世界书
+          'novel-to-worldbook': '📚 Novel to Worldbook',
+          'return': 'Return',
+          'import-novel': '📁 Import Novel/Document File',
+          'drop-zone-text': 'Click or drag file here',
+          'supported-formats': 'Supported formats: txt',
+          'file-encoding': 'File Encoding:',
+          'auto-detect': 'Auto Detect',
+          'chapter-reading': '📆 Automated Chapter Reading',
+          'chapter-regex': 'Chapter Regex:',
+          'chapter-regex-placeholder': 'e.g.: Chapter\\s+[0-9]+',
+          'chinese-format': 'Chinese Common Format',
+          'english-chapter': 'English Chapter',
+          'detect-generate': 'Detect + Generate',
+          'continuous-reading': '⚙️ Automated Continuous Reading',
+          'read-size': 'Reading Size per Time:',
+          'generate-worldbook': 'Generate Worldbook',
+          'ai-processing': '🧠 AI Memory Master Processing...',
+          'initializing': 'Initializing...',
+          'reading-queue': '📋 Novel Reading Queue',
+          'generated-worldbook': '✨ Generated Worldbook',
+          'export-data': '📥 Export Data',
+          'export-worldbook': '🚀 Export Worldbook',
+          'save-to-library': '💾 Save to Library',
+          
+          // 全局修改模态框
+          'global-edit': '🔮 AI Global Edit',
+          'quick-select': 'Quick Select:',
+          'all-worldbook': 'All Worldbook',
+          'all-character-cards': 'All Character Cards',
+          'custom': 'Custom',
+          'custom-filter': 'Custom Filter:',
+          'priority-filter': 'Priority Filter:',
+          'all': 'All',
+          'greater-equal': 'Greater or Equal',
+          'less-equal': 'Less or Equal',
+          'priority-value': 'Priority Value',
+          'constant-injection': 'Constant Injection:',
+          'only-constant': 'Only Constant',
+          'only-non-constant': 'Only Non-Constant',
+          'injection-position': 'Injection Position:',
+          'all-positions': 'All Positions',
+          'before-char': 'Before Character',
+          'after-char': 'After Character',
+          'apply-filter': 'Apply Filter',
+          'history-rollback': 'History Rollback:',
+          'checkpoint-count': 'Checkpoint Count:',
+          'select-history': 'Select history version...',
+          'rollback': 'Rollback',
+          'core-constant': '🔥 Core (Constant Injection)',
+          'detailed-high-priority': '📋 Detailed (High Priority)',
+          'other': '📄 Other',
+          'character-info-section': '👤 Character Information',
+          'modify-instruction': 'Modify Instruction:',
+          'instruction-placeholder': 'Enter your modification instruction. Use @id to reference specific entries, e.g.: @1 @3 Please change the tone of these two entries to a more formal style',
+          'instruction-tip': 'Tip: Use @id to reference specific entries, e.g., @1 @5 refers to entries with ID 1 and 5',
+          'execute-modify': '🔮 Execute Modification',
+          'close': 'Close',
+          
+          // 系统指令相关
+          'bracket-mode': 'Bracket Mode',
+          'simple-statusbar': 'Simple Status Bar',
+          'system-instruction': 'System Instruction · Status Bar · Beautify',
+          'edit': 'Edit',
+          'delete': 'Delete',
+          
+          // 世界书按钮
+          'ai-global-edit-btn': '🔮 AI Global Edit',
+          'ai-generate-worldbook': '🔮 One-Click Generate Worldbook',
+          'add-worldbook-entry': '+ Add Worldbook Entry',
+          'sort-by-priority': 'Sort by Priority',
+          'sort-by-id': 'Sort by ID',
+          
+          // AI引导
+          'ai-guidance-input-placeholder': 'Enter your specific requirements, style, keywords, etc... (optional)',
+          'wb-ai-request-placeholder': 'Enter your specific requirements for worldbook entries, e.g.: Generate appearance, personality, experience, skills, and relationships of all main characters',
+          
+          // 字数选项
+          '10k-words': '10k words',
+          '30k-words': '30k words',
+          '50k-words': '50k words',
+          '100k-words': '100k words (DeepSeek limit)',
+          '200k-words': '200k words',
+          '500k-words': '500k words (Recommended for Gemini)',
+          
+          // 搜索面板
+          'worldbook-management': 'Worldbook Management',
+          'search-placeholder': 'Enter search keywords...',
+          'sort-by-pinyin': 'Sort by Pinyin',
+          'sort-by-id-btn': 'Sort by ID',
+          'sort-by-priority-btn': 'Priority',
+          'select-all': 'Select All',
+          'selected-count': 'Selected {count}',
+          'batch-modify': 'Batch Modify',
+          
+          // 世界书条目操作
+          'add-child-entry': 'Add Child Entry',
+          'exit-parent-entry': '↓Exit',
+          'exit-parent-entry-title': 'Move this entry out of parent entry',
+          'join-parent-entry': '↑Join',
+          'join-parent-entry-title': 'Set this entry as child of above sibling entry',
+          'airdrop-entry-title': 'Insert this entry at the specified ID position in the left box, shifting subsequent entries',
+          'keyword-filter': 'Keyword Filter',
+          'secondary-keys-logic-any': 'Match Any',
+          'secondary-keys-logic-none': 'Match None',
+          'secondary-keys-logic-all': 'Match All',
+          'secondary-keys-logic-not-all': 'Not All',
+          'position-before-char-system': '📄 Before Character - High Attention (In System Prompt)',
+          'position-after-char-system': '📄 After Character - Medium Attention (In System Prompt)',
+          'position-smart-system': '⭐ Smart Insert - System View (Highest Attention)',
+          'position-smart-user': '⭐ Smart Insert - User View (Highest Attention)',
+          'position-smart-ai': '⭐ Smart Insert - AI View (Highest Attention)',
+          'constant-mode-permanent': 'Permanent',
+          'constant-mode-keyword': 'Keyword',
+          'additional-match-sources': '📎 Additional Match Sources',
+          'additional-match-sources-help': 'When enabled, character card settings (description, personality, scenario, etc.) can also trigger this entry',
+          'advanced-settings-subtitle': '(Keyword matching, injection logic, etc.)',
+          'ai-guidance-placeholder': 'Enter your specific requirements, style, keywords, etc... (optional)',
+          'code-added-to-instruction': 'Code has been added to "Instruction Content" and backed up to clipboard, please scroll down to return',
+          'code-added-to-instruction-short': 'Code has been added to "Instruction Content" and backed up to clipboard',
+          'cannot-join-first-entry': 'Already the first entry among siblings, cannot join (indent).',
+          
+          // 批量修改
+          'batch-modify-title': 'Batch Modify Worldbook Entries',
+          'batch-selected-info': '{count} entries selected',
+          'modify-option': 'Modify Option:',
+          'select-property': 'Please select property to modify',
+          'entry-status': 'Entry Status (Enabled/Disabled)',
+          'constant-injection-option': 'Constant Injection (Permanent/Keyword)',
+          'prevent-recursion-option': 'Prevent Recursion',
+          'selective-trigger': 'Selective Trigger',
+          'regex-option': 'Regular Expression',
+          'whole-word-match': 'Whole Word Match',
+          'case-sensitive-option': 'Case Sensitive',
+          'injection-position-option': 'Injection Position',
+          'priority-option': 'Priority',
+          'apply-changes': 'Apply Changes',
+          'cancel-batch': 'Cancel',
+          'modify-success': 'Successfully modified {count} entries',
+          'select-entries-first': 'Please select entries to modify first',
+          
+          // Instruction system
+          'instruction-name': 'Name:',
+          'instruction-content': 'Content:',
+          'preview-instruction': '📄 Preview',
+          'ai-modify-instruction': '🤖 AI Modify',
+          'template-import': 'Template Import:',
+          'select-template': 'Select preset template...',
+          'tutorial': '📖 Tutorial',
+          'ai-beautify': '🔮 AI Beautify',
+          'save-template': '💾 Save as Template',
+          'cancel-instruction': 'Cancel',
+          'save-instruction': 'Add to Settings',
+          'install-tavern-helper': 'Install Tavern Helper and enable Main Prompt switch in (Simple) preset.',
+          
+          // AI Beautify
+          'beautify-modal-title': '✨ One-Click Frontend Beautification',
+          'beautify-modal-desc': 'AI will generate multiple beautified HTML conversation styles for you to preview and choose from.',
+          'beautify-count-label': 'Generation Count:',
+          'beautify-count-3': '3',
+          'beautify-count-5': '5',
+          'beautify-count-8': '8',
+          'beautify-lines-label': 'HTML Line Limit per Style:',
+          'beautify-lines-50': '50 lines',
+          'beautify-lines-80': '80 lines',
+          'beautify-lines-100': '100 lines',
+          'beautify-lines-unlimited': 'Unlimited (Not Recommended)',
+          'beautify-requirements-label': 'Custom Requirements (Optional):',
+          'beautify-requirements-placeholder': 'e.g.: Dark theme, chat bubble style, animation effects...',
+          'beautify-generate-btn': '🎨 Start Generation',
+          'beautify-cancel-btn': 'Cancel | Return',
+          'beautify-generating': 'AI is generating beautified styles, please wait...',
+          'beautify-api-config-required': '⚠️ API Configuration Required',
+          'beautify-api-config-desc': 'Please configure your AI service provider in API settings before using AI generation features.',
+          'beautify-open-api-settings': 'Open API Settings',
+          'beautify-generation-failed': '❌ Generation Failed',
+          'beautify-api-error': 'Error calling AI API: {error}',
+          'beautify-no-html-found': '⚠️ No Valid HTML Code Found',
+          'beautify-no-html-desc': 'No valid HTML code blocks were found in the AI-generated content.',
+          
+          // Instruction Templates
+          'delete-template-btn': '🗑️ Delete This Template',
+          'confirm-delete-template': 'Are you sure you want to delete this custom template?',
+          'template-deleted': 'Template deleted successfully!',
+          'template-delete-failed': 'Failed to delete template: {error}',
+          'confirm-delete-instruction': 'Are you sure you want to delete this instruction?',
+          'edit-btn': 'Edit',
+          'delete-btn': 'Delete',
+          
+          // Worldbook Search
+          'search-no-results': 'No matching entries found',
+          'search-results-count': 'Found {count} matching entries',
+          
+          // History and Notifications
+          'version-select-label': 'History:',
+          'select-version': 'Select version...',
+          'undo-btn': 'Undo',
+          'confirm-delete-character': 'Are you sure you want to delete this character?',
+          
+          // Alert and Confirmation Messages
+          'api-config-local-alert': 'Please configure the local model API URL in API settings (e.g., http://localhost:1234/v1)',
+          'api-config-reverse-proxy-alert': 'Please configure the CLI reverse proxy server URL and password in API settings',
+          'api-config-custom-alert': 'Please configure the custom API endpoint and API Key in API settings',
+          'api-config-provider-alert': 'Please configure your service provider in API settings.',
+          'no-content-to-translate': 'No content to translate.',
+          'translation-failed': 'Translation failed. Please check the console for details.',
+          'no-undo-translation': 'No translation to undo.',
+          'api-settings-saved': 'API settings saved!',
+          'api-settings-load-failed': '⚠️ Failed to load API settings: {error}',
+          'proxy-url-required': 'Please enter the proxy server URL',
+          'proxy-password-required': 'Please enter the proxy password',
+          'models-fetched': 'Successfully fetched {count} models',
+          'models-fetch-failed': 'Failed to fetch model list: {error}',
+          'template-name-content-required': 'Please fill in template name and content',
+          'template-save-success': 'Custom template saved successfully!',
+          'template-save-failed': 'Failed to save template: {error}',
+          'ai-improve-in-development': 'AI improvement feature is under development...',
+          'instruction-name-content-required': 'Please fill in instruction name and content!\n\n💡 Tips:\n• Instruction Name: Give it a name, e.g., "Status Bar", "Dialogue Mode"\n• Instruction Content: The specific instruction content',
+          'instruction-name-required': 'Please fill in instruction name!\n\n💡 Example names:\n• Status Bar\n• Dialogue Mode\n• Character Instruction\n• Emotion Mode\n\nThe instruction name is used to generate <InstructionName></InstructionName> tags in system prompts',
+          'instruction-content-required': 'Please fill in instruction content!\n\nInstruction content cannot be empty',
+          'style-code-not-exist': 'Style code does not exist',
+          'render-requires-plugin': 'Rendering feature requires the Tavern Helper plugin to be installed.',
+          'code-copied-to-clipboard': 'Code has been added to "Instruction Content" and backed up to clipboard. Please scroll down to return',
+          
+          // Instruction modal
+          'edit-instruction': 'Edit Instruction',
+          'instruction-and-beautify': 'Instruction & Frontend Beautify',
+          'instruction-name-label': 'Name:',
+          'instruction-content-label': 'Content:',
+          'preview-instruction': '📄 Preview',
+          'ai-modify-instruction': '🤖 AI Modify',
+          'template-import-label': 'Template Import:',
+          'tavern-helper-tip': 'Install Tavern Helper and enable Main Prompt switch in (Simple) preset.',
+          'tutorial-btn': '📖 Tutorial',
+          'ai-beautify-btn': '🔮 AI Frontend Beautify',
+          'save-template-btn': '💾 Save as Template',
+          'cancel-instruction': 'Cancel',
+          'save-instruction': 'Add to Settings',
+          'add-instruction-text': 'System Instruction · Status Bar · Beautify',
+          
+          // Worldbook related
+          'wb-entry-format': 'Entry Comment: {comment}\nKeywords: {keys}\nContent: {content}',
+          'wb-generating-msg': 'AI is generating worldbook entries based on your request, please wait..',
+          'priority-label': 'Priority: {priority}',
+          'trigger-words': 'Trigger Words: {keys}',
+          'position-label': 'Position: {position}',
+          'constant-label': 'Constant: {value}',
+          'yes': 'Yes',
+          'no': 'No',
+          'suggested-priority': 'Suggested Priority: {priority}',
+          'position-after-char': 'After Character',
+          'position-before-char': 'Before Character',
+          'trigger-words-label': 'Trigger Words',
+          'content-label': 'Content',
+          'api-settings-btn': '⚙️ API Settings',
+          'api-provider-deepseek': 'DeepSeek',
+          'api-provider-gemini': 'Gemini',
+          'api-provider-gemini-proxy': 'Gemini (Proxy)',
+          'api-provider-local': 'Local Model (Use with .bat)',
+          'api-provider-tavern': 'CLI Reverse Proxy / Custom',
+          'edit-instruction': 'Edit Instruction',
+          'instruction-beautify': 'Instruction & Frontend Beautify',
+          'instruction-name': 'Name:',
+          'instruction-content': 'Content:',
+          'preview-frontend': '📄 Preview',
+          'ai-help-modify': '🤖 AI Modify',
+          'template-import': 'Template Import:',
+          'tavern-helper-tip': 'Install Tavern Helper and enable Main Prompt switch in (Simple) preset.',
+          'tutorial-btn': '📖 Tutorial',
+          'ai-beautify-btn': '🔮 AI Beautify',
+          'save-as-template': '💾 Save as Template',
+          'cancel': 'Cancel',
+          'add-to-settings': 'Add to Settings',
+          'system-instruction-prefix': '[System Instruction]: ',
+          
+          // Fold view
+          'fold-view': '📖 Fold View',
+          'edit-mode': '📝 Edit Mode',
         },
       };
 
@@ -3185,8 +3881,32 @@
         return text;
       }
 
+      // 获取AI提示词的语言前缀
+      function getLanguagePrefix() {
+        const prefix = currentLanguage === 'zh' 
+          ? '【重要】请用中文回答。\n\n' 
+          : '【IMPORTANT】Please respond in English.\n\n';
+        return prefix;
+      }
+
       // 更新页面内容
       async function updatePageContent() {
+        // 通用更新：自动更新所有带有 data-i18n 属性的元素（优先执行）
+        document.querySelectorAll('[data-i18n]').forEach(element => {
+          const key = element.getAttribute('data-i18n');
+          if (key) {
+            element.textContent = t(key);
+          }
+        });
+        
+        // 更新所有带有 data-i18n-placeholder 属性的元素的 placeholder
+        document.querySelectorAll('[data-i18n-placeholder]').forEach(element => {
+          const key = element.getAttribute('data-i18n-placeholder');
+          if (key) {
+            element.placeholder = t(key);
+          }
+        });
+        
         // 更新标题
         document.title = t('app-title');
 
@@ -3220,8 +3940,7 @@
 
         const novelToWorldbookBtn = document.querySelector('#library-view .header-buttons button:nth-child(2)');
         if (novelToWorldbookBtn && novelToWorldbookBtn.onclick.toString().includes('showNovelToWorldbookView')) {
-          // 保持txt转世界书按钮的文本不变
-          novelToWorldbookBtn.textContent = '📚 txt转世界书';
+          novelToWorldbookBtn.textContent = t('txt-to-worldbook');
         }
 
         const importBtn = document.querySelector('#library-view .header-buttons button:nth-child(3)');
@@ -3229,8 +3948,55 @@
           importBtn.textContent = t('import-character');
         }
         
+        const continueChatBtn = document.querySelector('#library-view .header-buttons button:nth-child(4)');
+        if (continueChatBtn && continueChatBtn.onclick.toString().includes('continueChatting')) {
+          continueChatBtn.textContent = t('continue-chatting');
+        }
+        
         const tagFilterTitle = document.querySelector('#library-view .tag-filter-area h3');
         if (tagFilterTitle) tagFilterTitle.textContent = t('tag-filter');
+        
+        // 更新资源箱
+        const resourceTitle = document.getElementById('resource-title');
+        if (resourceTitle) resourceTitle.textContent = t('resource-box');
+        
+        const englishCardsTitle = document.getElementById('english-cards-title');
+        if (englishCardsTitle) englishCardsTitle.textContent = t('english-cards');
+        
+        const communityTitle = document.getElementById('community-title');
+        if (communityTitle) communityTitle.textContent = t('community-resources');
+        
+        const presetsTitle = document.getElementById('presets-title');
+        if (presetsTitle) presetsTitle.textContent = t('preset-resources');
+        
+        const tutorialsTitle = document.getElementById('tutorials-title');
+        if (tutorialsTitle) tutorialsTitle.textContent = t('tutorial-resources');
+        
+        // 更新社区名称
+        const odysseiaLink = document.querySelector('a[href*="odysseia"] .resource-name');
+        if (odysseiaLink) odysseiaLink.textContent = t('odysseia-community');
+        
+        const elysianLink = document.querySelector('a[href*="elysianhorizon"] .resource-name');
+        if (elysianLink) elysianLink.textContent = t('elysian-community');
+        
+        // 更新预设名称
+        const geminiPreset = document.querySelector('a[href*="sqHAyK2L"] .resource-name');
+        if (geminiPreset) geminiPreset.textContent = t('gemini-preset');
+        
+        const deepseekPreset = document.querySelector('a[href*="p94ZyMU7"] .resource-name');
+        if (deepseekPreset) deepseekPreset.textContent = t('deepseek-preset');
+        
+        // 更新教程名称
+        const cursorTutorial = document.querySelector('a[href*="stagedog.github.io"] .resource-name');
+        if (cursorTutorial) cursorTutorial.textContent = t('cursor-tutorial');
+        
+        // 更新收藏标签
+        const favoriteTag = document.querySelector('.tag[onclick*="FAVORITE"]');
+        if (favoriteTag) favoriteTag.textContent = t('favorite');
+        
+        // 更新创建角色占位符
+        const createPlaceholder = document.querySelector('.create-character-btn div:last-child');
+        if (createPlaceholder) createPlaceholder.textContent = t('create-character-placeholder');
 
         // 更新编辑器视图
         const editorTitle = document.getElementById('editor-title');
@@ -3281,6 +4047,224 @@
         document.getElementById('wb-ai-inject-btn').textContent = t('wb-ai-inject-btn');
         document.getElementById('wb-ai-regenerate-btn').textContent = t('wb-ai-regenerate-btn');
         document.getElementById('wb-ai-cancel-btn').textContent = t('wb-ai-close-btn');
+        
+        // 更新API设置模态框
+        const apiModalTitle = document.getElementById('api-modal-title');
+        if (apiModalTitle) apiModalTitle.textContent = t('api-settings');
+        
+        const selectProviderLabel = document.querySelector('label[for="api-provider-selector"]');
+        if (selectProviderLabel) selectProviderLabel.textContent = t('select-provider');
+        
+        const saveApiBtn = document.getElementById('save-api-settings-btn');
+        if (saveApiBtn) saveApiBtn.textContent = t('save');
+        
+        const cancelApiBtn = document.getElementById('cancel-api-settings-btn');
+        if (cancelApiBtn) cancelApiBtn.textContent = t('cancel');
+        
+        // 更新AI引导输入框占位符
+        const aiGuidanceInput = document.getElementById('ai-guidance-input');
+        if (aiGuidanceInput) aiGuidanceInput.placeholder = t('ai-guidance-input-placeholder');
+        
+        const wbAiRequestInput = document.getElementById('wb-ai-request-input');
+        if (wbAiRequestInput) wbAiRequestInput.placeholder = t('wb-ai-request-placeholder');
+        
+        // 更新长文本转世界书页面
+        const novelToWorldbookTitle = document.getElementById('novel-to-worldbook-title');
+        if (novelToWorldbookTitle) novelToWorldbookTitle.textContent = t('novel-to-worldbook');
+        
+        const novelReturnBtn = document.getElementById('novel-return-btn');
+        if (novelReturnBtn) novelReturnBtn.textContent = t('return');
+        
+        const importNovelTitle = document.getElementById('import-novel-title');
+        if (importNovelTitle) importNovelTitle.textContent = t('import-novel');
+        
+        const dropZoneText = document.getElementById('drop-zone-text');
+        if (dropZoneText) dropZoneText.textContent = t('drop-zone-text');
+        
+        const supportedFormatsText = document.getElementById('supported-formats-text');
+        if (supportedFormatsText) supportedFormatsText.textContent = t('supported-formats');
+        
+        const fileEncodingLabel = document.getElementById('file-encoding-label');
+        if (fileEncodingLabel) fileEncodingLabel.textContent = t('file-encoding');
+        
+        const autoDetectOption = document.querySelector('#file-encoding option[value="auto"]');
+        if (autoDetectOption) autoDetectOption.textContent = t('auto-detect');
+        
+        const chapterReadingTitle = document.getElementById('chapter-reading-title');
+        if (chapterReadingTitle) chapterReadingTitle.textContent = t('chapter-reading');
+        
+        const chapterRegexLabel = document.getElementById('chapter-regex-label');
+        if (chapterRegexLabel) chapterRegexLabel.textContent = t('chapter-regex');
+        
+        const chineseFormatBtn = document.getElementById('chinese-format-btn');
+        if (chineseFormatBtn) chineseFormatBtn.textContent = t('chinese-format');
+        
+        const englishChapterBtn = document.getElementById('english-chapter-btn');
+        if (englishChapterBtn) englishChapterBtn.textContent = t('english-chapter');
+        
+        const detectGenerateBtn = document.getElementById('detect-generate-btn');
+        if (detectGenerateBtn) detectGenerateBtn.textContent = t('detect-generate');
+        
+        const continuousReadingTitle = document.getElementById('continuous-reading-title');
+        if (continuousReadingTitle) continuousReadingTitle.textContent = t('continuous-reading');
+        
+        const readSizeLabel = document.getElementById('read-size-label');
+        if (readSizeLabel) readSizeLabel.textContent = t('read-size');
+        
+        // 更新字数选项
+        const wordOptions = document.querySelectorAll('#split-size option[data-i18n]');
+        wordOptions.forEach(option => {
+          const key = option.getAttribute('data-i18n');
+          if (key) option.textContent = t(key);
+        });
+        
+        const generateWorldbookBtn = document.getElementById('generate-worldbook-btn');
+        if (generateWorldbookBtn) generateWorldbookBtn.textContent = t('generate-worldbook');
+        
+        const aiProcessingTitle = document.getElementById('ai-processing-title');
+        if (aiProcessingTitle) aiProcessingTitle.textContent = t('ai-processing');
+        
+        const progressText = document.getElementById('progress-text');
+        if (progressText && progressText.textContent === '正在初始化...') {
+          progressText.textContent = t('initializing');
+        }
+        
+        const readingQueueTitle = document.getElementById('reading-queue-title');
+        if (readingQueueTitle) readingQueueTitle.textContent = t('reading-queue');
+        
+        const generatedWorldbookTitle = document.getElementById('generated-worldbook-title');
+        if (generatedWorldbookTitle) generatedWorldbookTitle.textContent = t('generated-worldbook');
+        
+        const exportDataBtn = document.getElementById('export-data-btn');
+        if (exportDataBtn) exportDataBtn.textContent = t('export-data');
+        
+        const exportWorldbookBtn = document.getElementById('export-worldbook-btn');
+        if (exportWorldbookBtn) exportWorldbookBtn.textContent = t('export-worldbook');
+        
+        const saveToLibraryBtn = document.getElementById('save-to-library-btn');
+        if (saveToLibraryBtn) saveToLibraryBtn.textContent = t('save-to-library');
+        
+        // 更新搜索面板
+        const worldbookManagementTitle = document.getElementById('worldbook-management-title');
+        if (worldbookManagementTitle) worldbookManagementTitle.textContent = t('worldbook-management');
+        
+        const searchInput = document.getElementById('search-input');
+        if (searchInput) searchInput.placeholder = t('search-placeholder');
+        
+        const sortByPinyinBtn = document.getElementById('sort-by-pinyin-btn');
+        if (sortByPinyinBtn) sortByPinyinBtn.textContent = t('sort-by-pinyin');
+        
+        const sortByIdBtn = document.getElementById('sort-by-id-btn');
+        if (sortByIdBtn) sortByIdBtn.textContent = t('sort-by-id-btn');
+        
+        const sortByPriorityBtn = document.getElementById('sort-by-priority-btn');
+        if (sortByPriorityBtn) sortByPriorityBtn.textContent = t('sort-by-priority-btn');
+        
+        const selectAllLabel = document.getElementById('select-all-label');
+        if (selectAllLabel) selectAllLabel.textContent = t('select-all');
+        
+        const batchModifyBtn = document.getElementById('batch-modify-btn');
+        if (batchModifyBtn) batchModifyBtn.textContent = t('batch-modify');
+        
+        // 更新批量修改模态框
+        const batchModifyModalTitle = document.getElementById('batch-modify-modal-title');
+        if (batchModifyModalTitle) batchModifyModalTitle.textContent = t('batch-modify-title');
+        
+        const modifyOptionLabel = document.getElementById('modify-option-label');
+        if (modifyOptionLabel) modifyOptionLabel.textContent = t('modify-option');
+        
+        // 更新批量修改选项
+        const batchModifyOptions = document.querySelectorAll('#batch-modify-type option[data-i18n]');
+        batchModifyOptions.forEach(option => {
+          const key = option.getAttribute('data-i18n');
+          if (key) option.textContent = t(key);
+        });
+        
+        const applyBatchBtn = document.getElementById('apply-batch-btn');
+        if (applyBatchBtn) applyBatchBtn.textContent = t('apply-changes');
+        
+        const cancelBatchBtn = document.getElementById('cancel-batch-btn');
+        if (cancelBatchBtn) cancelBatchBtn.textContent = t('cancel-batch');
+        
+        // 更新编辑器视图的按钮
+        const saveAndReturnBtn = document.getElementById('save-and-return-btn');
+        if (saveAndReturnBtn) saveAndReturnBtn.textContent = t('save-and-return');
+        
+        const downloadJsonBtn = document.getElementById('download-json-btn');
+        if (downloadJsonBtn) downloadJsonBtn.textContent = t('download-json');
+        
+        const downloadPngBtn = document.getElementById('download-png-btn');
+        if (downloadPngBtn) downloadPngBtn.textContent = t('download-png');
+        
+        const downloadLorebookBtn = document.getElementById('download-lorebook-btn');
+        if (downloadLorebookBtn) downloadLorebookBtn.textContent = t('download-lorebook');
+        
+        const returnWithoutSaveBtn = document.getElementById('return-without-save-btn');
+        if (returnWithoutSaveBtn) returnWithoutSaveBtn.textContent = t('return-without-save');
+        
+        // 更新世界书按钮
+        const addWorldbookEntryBtn = document.getElementById('add-worldbook-entry-btn');
+        if (addWorldbookEntryBtn) addWorldbookEntryBtn.textContent = t('add-worldbook-entry');
+        
+        const worldbookSortPriorityBtn = document.getElementById('worldbook-sort-priority-btn');
+        if (worldbookSortPriorityBtn) worldbookSortPriorityBtn.textContent = t('sort-by-priority');
+        
+        const worldbookSortIdBtn = document.getElementById('worldbook-sort-id-btn');
+        if (worldbookSortIdBtn) worldbookSortIdBtn.textContent = t('sort-by-id');
+        
+        // 更新指令系统模态框元素
+        const instructionNameLabel = document.getElementById('instruction-name-label');
+        if (instructionNameLabel) instructionNameLabel.textContent = t('instruction-name');
+        
+        const instructionContentLabel = document.getElementById('instruction-content-label');
+        if (instructionContentLabel) instructionContentLabel.textContent = t('instruction-content');
+        
+        const previewInstructionBtn = document.getElementById('preview-instruction-btn');
+        if (previewInstructionBtn) previewInstructionBtn.textContent = t('preview-instruction');
+        
+        const aiModifyInstructionBtn = document.getElementById('ai-modify-instruction-btn');
+        if (aiModifyInstructionBtn) aiModifyInstructionBtn.textContent = t('ai-modify-instruction');
+        
+        const templateImportLabel = document.getElementById('template-import-label');
+        if (templateImportLabel) templateImportLabel.textContent = t('template-import');
+        
+        const tutorialBtn = document.getElementById('tutorial-btn');
+        if (tutorialBtn) tutorialBtn.textContent = t('tutorial');
+        
+        const tavernHelperTip = document.getElementById('tavern-helper-tip');
+        if (tavernHelperTip) tavernHelperTip.textContent = t('install-tavern-helper');
+        
+        const aiBeautifyBtn = document.getElementById('ai-beautify-btn');
+        if (aiBeautifyBtn) aiBeautifyBtn.textContent = t('ai-beautify');
+        
+        const saveTemplateBtn = document.getElementById('save-template-btn');
+        if (saveTemplateBtn) saveTemplateBtn.textContent = t('save-template');
+        
+        const cancelInstructionBtn = document.getElementById('cancel-instruction-btn');
+        if (cancelInstructionBtn) cancelInstructionBtn.textContent = t('cancel-instruction');
+        
+        const saveInstructionBtn = document.getElementById('save-instruction-btn');
+        if (saveInstructionBtn) saveInstructionBtn.textContent = t('save-instruction');
+        
+        // 更新"选择预设模板..."选项
+        const templateSelectOptions = document.querySelectorAll('#template-select option[data-i18n]');
+        templateSelectOptions.forEach(option => {
+          const key = option.getAttribute('data-i18n');
+          if (key) option.textContent = t(key);
+        });
+        
+        // 更新所有折叠视图按钮
+        document.querySelectorAll('.toggle-fold-btn').forEach(btn => {
+          const fieldGroup = btn.closest('.field-group');
+          if (fieldGroup) {
+            const foldView = fieldGroup.querySelector('.fold-view');
+            if (foldView && foldView.classList.contains('active')) {
+              btn.textContent = t('edit-mode');
+            } else {
+              btn.textContent = t('fold-view');
+            }
+          }
+        });
 
         // 重新渲染UI以更新角色卡显示
         if (libraryView.style.display !== 'none') {
@@ -3376,11 +4360,9 @@
         // 更新高级设定summary
         const advancedSummary = document.getElementById('advanced-settings-summary');
         if (advancedSummary) {
-          const subtitle =
-            currentLanguage === 'zh' ? '(关键词匹配、注入逻辑等)' : '(Keyword matching, injection logic, etc.)';
           advancedSummary.innerHTML = `${t(
             'advanced-settings',
-          )} <span style="font-weight: normal; font-size: 14px; color: #aaa;">${subtitle}</span>`;
+          )} <span style="font-weight: normal; font-size: 14px; color: #aaa;">${t('advanced-settings-subtitle')}</span>`;
         }
 
         // 更新上传图片按钮
@@ -3468,16 +4450,16 @@
           
           // 针对CLI/local提供更详细的错误信息
           if (provider === 'local') {
-            alert('请先在 API 设置中配置本地大模型的API URL（例如: http://localhost:1234/v1）');
+            alert(t('api-config-local-alert'));
           } else if (provider === 'tavern') {
             const tavernSettings = apiSettings.tavern;
             if (tavernSettings?.connectionType === 'reverse-proxy') {
-              alert('请先在 API 设置中配置CLI反代的代理服务器URL和密码');
+              alert(t('api-config-reverse-proxy-alert'));
             } else {
-              alert('请先在 API 设置中配置自定义API的endpoint和API Key');
+              alert(t('api-config-custom-alert'));
             }
           } else {
-            alert('请先在 API 设置中配置您的服务商。');
+            alert(t('api-config-provider-alert'));
           }
           openApiSettingsModal();
           return;
@@ -3529,12 +4511,12 @@
         });
 
         if (Object.keys(textObject).length === 0 && wbTextObject.length === 0) {
-          alert('没有需要翻译的内容。');
+          alert(t('no-content-to-translate'));
           return;
         }
 
         // 2. 构建Prompt
-        let prompt = `You are an expert translator. Translate the following JSON object's string values from ${fromLang} to ${toLang}.
+        let prompt = getLanguagePrefix() + `You are an expert translator. Translate the following JSON object's string values from ${fromLang} to ${toLang}.
 Maintain the original JSON structure and keys. For keys like "tags" or "keys", translate each item in the comma-separated string individually.
 Do not translate special placeholders like {{user}} or {{char}} or "<START>".
 
@@ -3601,7 +4583,7 @@ ${JSON.stringify({ fields: textObject, worldbook: wbTextObject }, null, 2)}
           }
         } catch (e) {
           console.error('Translation failed:', e, 'Raw response:', result);
-          alert('翻译失败，请检查控制台获取详情。');
+          alert(t('translation-failed'));
           originalFieldsData = null; // 清除备份
         } finally {
           button.disabled = false;
@@ -3612,7 +4594,7 @@ ${JSON.stringify({ fields: textObject, worldbook: wbTextObject }, null, 2)}
 
       function undoTranslateAllFields(button) {
         if (!originalFieldsData) {
-          alert('没有可撤销的翻译。');
+          alert(t('no-undo-translation'));
           return;
         }
 
@@ -3729,7 +4711,7 @@ ${JSON.stringify({ fields: textObject, worldbook: wbTextObject }, null, 2)}
             },
           };
           localStorage.setItem('apiSettings', JSON.stringify(settings));
-          alert('API 设置已保存！');
+          alert(t('api-settings-saved'));
           modal.style.display = 'none';
         };
       }
@@ -3812,7 +4794,7 @@ ${JSON.stringify({ fields: textObject, worldbook: wbTextObject }, null, 2)}
         
         return settings;
         } catch (error) {
-          alert('⚠️ 加载API设置失败: ' + error.message);
+          alert(t('api-settings-load-failed', {error: error.message}));
           return {
             provider: 'deepseek',
             deepseek: { apiKey: '' }
@@ -3828,12 +4810,12 @@ ${JSON.stringify({ fields: textObject, worldbook: wbTextObject }, null, 2)}
         const proxyPassword = document.getElementById('tavern-proxy-password').value.trim();
 
         if (!proxyUrl) {
-          alert('请先输入代理服务器 URL');
+          alert(t('proxy-url-required'));
           return;
         }
 
         if (!proxyPassword) {
-          alert('请先输入代理密码');
+          alert(t('proxy-password-required'));
           return;
         }
 
@@ -3903,7 +4885,7 @@ ${JSON.stringify({ fields: textObject, worldbook: wbTextObject }, null, 2)}
           const currentValue = modelSelect.value;
 
           // 清空并重新填充模型选择框
-          modelSelect.innerHTML = '<option value="">请选择模型...</option>';
+          modelSelect.innerHTML = `<option value="">${t('select-model-placeholder')}</option>`;
           
           models.forEach(model => {
             const option = document.createElement('option');
@@ -3917,11 +4899,11 @@ ${JSON.stringify({ fields: textObject, worldbook: wbTextObject }, null, 2)}
             modelSelect.value = currentValue;
           }
 
-          alert(`成功获取 ${models.length} 个模型`);
+          alert(t('models-fetched', {count: models.length}));
 
         } catch (error) {
           console.error('获取模型列表失败:', error);
-          alert(`获取模型列表失败: ${error.message}`);
+          alert(t('models-fetch-failed', {error: error.message}));
         } finally {
           refreshBtn.disabled = false;
           refreshBtn.textContent = originalText;
@@ -4135,7 +5117,7 @@ ${JSON.stringify({ fields: textObject, worldbook: wbTextObject }, null, 2)}
             
             // 隐藏原始textarea
             textarea.style.display = 'none';
-            button.textContent = '📝 编辑模式';
+            button.textContent = t('edit-mode');
             
             // 添加自动同步事件监听
             newFoldView.addEventListener('input', (e) => {
@@ -4149,14 +5131,14 @@ ${JSON.stringify({ fields: textObject, worldbook: wbTextObject }, null, 2)}
               // 切换到编辑模式
               foldView.classList.remove('active');
               textarea.style.display = 'block';
-              button.textContent = '📖 折叠视图';
+              button.textContent = t('fold-view');
             } else {
               // 切换到折叠视图（刷新内容）
               const sections = parseTextContent(textarea.value);
               foldView.innerHTML = createFoldViewHTML(sections, textarea.id);
               foldView.classList.add('active');
               textarea.style.display = 'none';
-              button.textContent = '📝 编辑模式';
+              button.textContent = t('edit-mode');
               
               // 重新添加事件监听
               foldView.addEventListener('input', (e) => {
@@ -4175,7 +5157,7 @@ ${JSON.stringify({ fields: textObject, worldbook: wbTextObject }, null, 2)}
           if (description && !description.parentNode.querySelector('.toggle-fold-btn')) {
             const button = document.createElement('button');
             button.className = 'toggle-fold-btn';
-            button.textContent = '📖 折叠视图';
+            button.textContent = t('fold-view');
             button.onclick = function() { toggleFoldView(this); };
             description.parentNode.insertBefore(button, description.nextSibling);
           }
@@ -4185,7 +5167,7 @@ ${JSON.stringify({ fields: textObject, worldbook: wbTextObject }, null, 2)}
             if (!textarea.parentNode.querySelector('.toggle-fold-btn')) {
               const button = document.createElement('button');
               button.className = 'toggle-fold-btn';
-              button.textContent = '📖 折叠视图';
+              button.textContent = t('fold-view');
               button.onclick = function() { toggleFoldView(this); };
               textarea.parentNode.insertBefore(button, textarea.nextSibling);
             }
@@ -4386,8 +5368,8 @@ ${JSON.stringify({ fields: textObject, worldbook: wbTextObject }, null, 2)}
         <div class="instruction-header">
             <div class="instruction-name">${instruction.name}</div>
             <div class="instruction-actions">
-                <button onclick="editInstruction('${instruction.id}')">编辑</button>
-                <button class="delete-btn" onclick="deleteInstruction('${instruction.id}')">删除</button>
+                <button onclick="editInstruction('${instruction.id}')">${t('edit-btn')}</button>
+                <button class="delete-btn" onclick="deleteInstruction('${instruction.id}')">${t('delete-btn')}</button>
             </div>
         </div>
         <div class="instruction-content">${instruction.content}</div>
@@ -4411,7 +5393,7 @@ ${JSON.stringify({ fields: textObject, worldbook: wbTextObject }, null, 2)}
 
       // 删除指令
       function deleteInstruction(instructionId) {
-        if (confirm('确定要删除这个指令吗？')) {
+        if (confirm(t('confirm-delete-instruction'))) {
           // 找到要删除的指令
           const instructionToDelete = instructionsData.find(inst => inst.id == instructionId);
           if (instructionToDelete) {
@@ -4431,7 +5413,7 @@ ${JSON.stringify({ fields: textObject, worldbook: wbTextObject }, null, 2)}
         const instruction = instructionsData.find(inst => inst.id == instructionId);
         if (instruction) {
           if (type === 'renderEnabled' && !tavernHelperInstalled) {
-            alert('渲染功能需要安装酒馆助手插件才能使用。');
+            alert(t('render-requires-plugin'));
             return;
           }
 
@@ -4484,7 +5466,7 @@ ${JSON.stringify({ fields: textObject, worldbook: wbTextObject }, null, 2)}
       // 显示指令编辑模态框
       function showInstructionModal(instruction = null) {
         const isEdit = instruction !== null;
-        const modalTitle = isEdit ? '编辑指令' : '指令与前端美化';
+        const modalTitle = isEdit ? t('edit-instruction') : t('instruction-beautify');
 
         // 创建模态框HTML
         const modalHtml = `
@@ -4492,25 +5474,25 @@ ${JSON.stringify({ fields: textObject, worldbook: wbTextObject }, null, 2)}
             <div style="background: var(--bg-color); border-radius: 10px; padding: 20px; max-width: 900px; max-height: 90vh; overflow-y: auto; display: flex; flex-direction: column;">
                 <h3>${modalTitle}</h3>
                 <div style="margin-bottom: 15px;">
-                    <label>名称：</label>
+                    <label id="instruction-name-label">名称：</label>
                     <input type="text" id="instruction-name-input" value="${
                       instruction ? instruction.name : ''
                     }" style="width: 100%; padding: 8px; margin-top: 5px; border: 1px solid var(--input-border); border-radius: 5px; background: var(--input-bg); color: var(--text-color); box-sizing: border-box;">
                 </div>
                 <div style="margin-bottom: 15px;">
-                    <label>内容：</label>
+                    <label id="instruction-content-label">${t('instruction-content')}</label>
                     <textarea id="instruction-content-input" rows="8" style="width: 100%; padding: 8px; margin-top: 5px; border: 1px solid var(--input-border); border-radius: 5px; background: var(--input-bg); color: var(--text-color); resize: vertical; box-sizing: border-box;">${
                       instruction ? instruction.content : '[系统指令]: '
                     }</textarea>
                     <div style="margin-top: 8px;">
-                        <button onclick="previewInstructionHTML()" style="background: #6c757d; color: white; padding: 6px 12px; border: none; border-radius: 4px; cursor: pointer; font-size: 12px; margin-right: 8px;">📄 前端预览</button>
-                        <button onclick="showInstructionAIModify()" style="background: #6c757d; color: white; padding: 6px 12px; border: none; border-radius: 4px; cursor: pointer; font-size: 12px;">🤖 AI帮我改</button>
+                        <button id="preview-instruction-btn" onclick="previewInstructionHTML()" style="background: #6c757d; color: white; padding: 6px 12px; border: none; border-radius: 4px; cursor: pointer; font-size: 12px; margin-right: 8px;">📄 前端预览</button>
+                        <button id="ai-modify-instruction-btn" onclick="showInstructionAIModify()" style="background: #6c757d; color: white; padding: 6px 12px; border: none; border-radius: 4px; cursor: pointer; font-size: 12px;">🤖 AI帮我改</button>
                     </div>
                 </div>
                 <div style="margin-bottom: 15px;">
-                    <label>模板导入：</label>
+                    <label id="template-import-label">模板导入：</label>
                     <select id="template-select" onchange="applyTemplate()" style="width: 100%; padding: 8px; margin-top: 5px; border: 1px solid var(--input-border); border-radius: 5px; background: var(--input-bg); color: var(--text-color); box-sizing: border-box;">
-                        <option value="">选择预设模板...</option>
+                        <option value="" data-i18n="select-template">选择预设模板...</option>
                         ${Object.entries(instructionTemplates)
                           .map(
                             ([key, template]) =>
@@ -4525,20 +5507,20 @@ ${JSON.stringify({ fields: textObject, worldbook: wbTextObject }, null, 2)}
                     <div style="display: flex; align-items: center; justify-content: space-between; color: white;">
                         <div style="display: flex; align-items: center; gap: 8px;">
                             <span style="font-size: 16px;">💡</span>
-                            <span style="font-size: 14px; font-weight: 500;">安装酒馆助手，并开启(简洁)预设的Main Prompt开关。</span>
+                            <span id="tavern-helper-tip" style="font-size: 14px; font-weight: 500;">安装酒馆助手，并开启(简洁)预设的Main Prompt开关。</span>
                         </div>
-                        <button onclick="showTutorialModal()" style="background: #007bff; color: white; padding: 6px 12px; border: none; border-radius: 4px; cursor: pointer; font-size: 12px; white-space: nowrap;">📖 小白教程</button>
+                        <button id="tutorial-btn" onclick="showTutorialModal()" style="background: #007bff; color: white; padding: 6px 12px; border: none; border-radius: 4px; cursor: pointer; font-size: 12px; white-space: nowrap;">📖 小白教程</button>
                     </div>
                 </div>
                 <div style="margin-bottom: 20px;">
-                    <button onclick="showFrontendBeautifyModal()" style="background-color: var(--ai-button-bg); color: white; padding: 8px 15px; border: none; border-radius: 5px; cursor: pointer;">🔮 AI前端美化</button>
-                    <button onclick="saveAsCustomTemplate()" style="background: #6c757d; color: white; padding: 8px 15px; border: none; border-radius: 5px; cursor: pointer; margin-left: 10px;">💾 保存为模板</button>
+                    <button id="ai-beautify-btn" onclick="showFrontendBeautifyModal()" style="background-color: var(--ai-button-bg); color: white; padding: 8px 15px; border: none; border-radius: 5px; cursor: pointer;">🔮 AI前端美化</button>
+                    <button id="save-template-btn" onclick="saveAsCustomTemplate()" style="background: #6c757d; color: white; padding: 8px 15px; border: none; border-radius: 5px; cursor: pointer; margin-left: 10px;">💾 保存为模板</button>
                 </div>
                 <div style="display: flex; justify-content: flex-end; gap: 10px;">
-                    <button onclick="closeInstructionModal()" style="background: #6c757d; color: white; padding: 8px 15px; border: none; border-radius: 5px; cursor: pointer;">取消</button>
-                    <button onclick="saveInstruction(${
+                    <button id="cancel-instruction-btn" onclick="closeInstructionModal()" style="background: #6c757d; color: white; padding: 8px 15px; border: none; border-radius: 5px; cursor: pointer;">取消</button>
+                    <button id="save-instruction-btn" onclick="saveInstruction(${
                       isEdit ? instruction.id : 'null'
-                    })" style="background: #FF9800; color: white; padding: 8px 15px; border: none; border-radius: 5px; cursor: pointer;">加入设定</button>
+                    })" style="background: #FF9800; color: white; padding: 8px 15px; border: none; border-radius: 5px; cursor: pointer;">${t('add-to-settings')}</button>
                 </div>
             </div>
         </div>
@@ -4557,18 +5539,18 @@ ${JSON.stringify({ fields: textObject, worldbook: wbTextObject }, null, 2)}
         const content = contentInput.value.trim();
 
         if (!name || !content) {
-          alert('请填写模板名称和内容');
+          alert(t('template-name-content-required'));
           return;
         }
 
         saveCustomTemplate(name, content)
           .then(() => {
-            alert('自定义模板保存成功！');
+            alert(t('template-save-success'));
             // 重新生成模板选择框
             const select = document.getElementById('template-select');
             const currentValue = select.value;
             select.innerHTML = `
-                <option value="">选择预设模板...</option>
+                <option value="">${t('select-template')}</option>
                 ${Object.entries(instructionTemplates)
                   .map(
                     ([key, template]) =>
@@ -4581,7 +5563,7 @@ ${JSON.stringify({ fields: textObject, worldbook: wbTextObject }, null, 2)}
             select.value = currentValue;
           })
           .catch(error => {
-            alert('保存模板失败：' + error);
+            alert(t('template-save-failed', {error: error}));
           });
       }
 
@@ -4607,7 +5589,7 @@ ${JSON.stringify({ fields: textObject, worldbook: wbTextObject }, null, 2)}
           if (template.isCustom) {
             // 自定义模板显示删除按钮
             const deleteBtn = document.createElement('button');
-            deleteBtn.textContent = '🗑️ 删除此模板';
+            deleteBtn.textContent = t('delete-template-btn');
             deleteBtn.style.cssText =
               'background: #6c757d; color: white; padding: 4px 8px; border: none; border-radius: 4px; cursor: pointer; font-size: 12px; margin-left: 10px;';
             deleteBtn.onclick = () => deleteTemplateFromModal(template.id);
@@ -4619,14 +5601,14 @@ ${JSON.stringify({ fields: textObject, worldbook: wbTextObject }, null, 2)}
 
       // 从模态框中删除模板
       function deleteTemplateFromModal(templateId) {
-        if (confirm('确定要删除这个自定义模板吗？')) {
+        if (confirm(t('confirm-delete-template'))) {
           deleteCustomTemplate(templateId)
             .then(() => {
-              alert('模板删除成功！');
+              alert(t('template-deleted'));
               // 重新生成模板选择框
               const select = document.getElementById('template-select');
               select.innerHTML = `
-                    <option value="">选择预设模板...</option>
+                    <option value="">${t('select-template')}</option>
                     ${Object.entries(instructionTemplates)
                       .map(
                         ([key, template]) =>
@@ -4641,7 +5623,7 @@ ${JSON.stringify({ fields: textObject, worldbook: wbTextObject }, null, 2)}
               if (actionBtn) actionBtn.remove();
             })
             .catch(error => {
-              alert('删除模板失败：' + error);
+              alert(t('template-delete-failed', {error: error}));
             });
         }
       }
@@ -4655,7 +5637,7 @@ ${JSON.stringify({ fields: textObject, worldbook: wbTextObject }, null, 2)}
         if (!userRequest) return;
 
         // 这里可以集成AI API来改进指令
-        alert('AI改进功能正在开发中...');
+        alert(t('ai-improve-in-development'));
       }
 
       // 保存指令
@@ -4667,12 +5649,12 @@ ${JSON.stringify({ fields: textObject, worldbook: wbTextObject }, null, 2)}
         const content = contentInput.value.trim();
 
         if (!name && !content) {
-          alert('请填写指令名称和内容！\n\n💡 提示：\n• 指令名称：给指令起个名字，如"状态栏"、"对话模式"等\n• 指令内容：具体的指令内容');
+          alert(t('instruction-name-content-required'));
           return;
         }
         
         if (!name) {
-          alert('请填写指令名称！\n\n💡 指令名称示例：\n• 状态栏\n• 对话模式\n• 角色指令\n• 情感模式\n\n指令名称用于在系统设定中生成 <指令名称></指令名称> 标签');
+          alert(t('instruction-name-required'));
           // 自动聚焦到名称输入框
           nameInput.focus();
           nameInput.style.border = '2px solid #ff4444';
@@ -4683,7 +5665,7 @@ ${JSON.stringify({ fields: textObject, worldbook: wbTextObject }, null, 2)}
         }
         
         if (!content) {
-          alert('请填写指令内容！\n\n指令内容不能为空');
+          alert(t('instruction-content-required'));
           contentInput.focus();
           contentInput.style.border = '2px solid #ff4444';
           setTimeout(() => {
@@ -4895,38 +5877,38 @@ ${JSON.stringify({ fields: textObject, worldbook: wbTextObject }, null, 2)}
 
         modal.innerHTML = `
         <div class="modal-content" style="background: var(--card-bg); border-radius: 10px; padding: 20px; width: 95%; height: 90%; overflow-y: auto; display: flex; flex-direction: column;">
-            <h3 style="margin-top: 0; color: var(--text-color);">✨ 一键前端美化</h3>
-            <p style="color: var(--text-color); margin-bottom: 15px;">AI将为您生成多个美化的HTML对话样式，您可以预览并选择喜欢的样式。</p>
+            <h3 style="margin-top: 0; color: var(--text-color);">${t('beautify-modal-title')}</h3>
+            <p style="color: var(--text-color); margin-bottom: 15px;">${t('beautify-modal-desc')}</p>
             
             <div style="margin-bottom: 15px;">
-                <label style="color: var(--text-color); display: block; margin-bottom: 5px;">生成数量:</label>
+                <label style="color: var(--text-color); display: block; margin-bottom: 5px;">${t('beautify-count-label')}</label>
                 <select id="beautify-count" style="width: 100px; padding: 5px; border: 1px solid var(--input-border); border-radius: 5px; background: var(--input-bg); color: var(--text-color);">
-                    <option value="3">3个</option>
-                    <option value="5" selected>5个</option>
-                    <option value="8">8个</option>
+                    <option value="3">${t('beautify-count-3')}</option>
+                    <option value="5" selected>${t('beautify-count-5')}</option>
+                    <option value="8">${t('beautify-count-8')}</option>
                 </select>
             </div>
             
             <div style="margin-bottom: 15px;">
-                <label style="color: var(--text-color); display: block; margin-bottom: 5px;">每个HTML行数限制:</label>
+                <label style="color: var(--text-color); display: block; margin-bottom: 5px;">${t('beautify-lines-label')}</label>
                 <select id="beautify-lines" style="width: 120px; padding: 5px; border: 1px solid var(--input-border); border-radius: 5px; background: var(--input-bg); color: var(--text-color);">
-                    <option value="50">50行</option>
-                    <option value="80" selected>80行</option>
-                    <option value="100">100行</option>
-                    <option value="不限制">不限制(不建议)</option>
+                    <option value="50">${t('beautify-lines-50')}</option>
+                    <option value="80" selected>${t('beautify-lines-80')}</option>
+                    <option value="100">${t('beautify-lines-100')}</option>
+                    <option value="不限制">${t('beautify-lines-unlimited')}</option>
                 </select>
             </div>
             
             <div style="margin-bottom: 15px;">
-                <label style="color: var(--text-color); display: block; margin-bottom: 5px;">自定义要求 (可选):</label>
-                <textarea id="beautify-requirements" placeholder="例如：深色主题、聊天气泡样式、动画效果等..." style="width: 100%; height: 80px; padding: 12px; border: 1px solid var(--input-border); border-radius: 5px; background: var(--input-bg); color: var(--text-color); resize: vertical; font-size: 14px; line-height: 1.4; box-sizing: border-box;"></textarea>
+                <label style="color: var(--text-color); display: block; margin-bottom: 5px;">${t('beautify-requirements-label')}</label>
+                <textarea id="beautify-requirements" placeholder="${t('beautify-requirements-placeholder')}" style="width: 100%; height: 80px; padding: 12px; border: 1px solid var(--input-border); border-radius: 5px; background: var(--input-bg); color: var(--text-color); resize: vertical; font-size: 14px; line-height: 1.4; box-sizing: border-box;"></textarea>
             </div>
             
             <div id="beautify-results" style="margin-top: 20px;"></div>
             
             <div style="margin-top: 20px; text-align: right;">
-                <button id="generate-beautify-btn" style="background: #FF9800; color: white; padding: 8px 16px; border: none; border-radius: 5px; cursor: pointer; margin-right: 10px;">🎨 开始生成</button>
-                <button id="cancel-beautify-btn" style="background: #6c757d; color: white; padding: 8px 16px; border: none; border-radius: 5px; cursor: pointer;">取消 | 返回</button>
+                <button id="generate-beautify-btn" style="background: #FF9800; color: white; padding: 8px 16px; border: none; border-radius: 5px; cursor: pointer; margin-right: 10px;">${t('beautify-generate-btn')}</button>
+                <button id="cancel-beautify-btn" style="background: #6c757d; color: white; padding: 8px 16px; border: none; border-radius: 5px; cursor: pointer;">${t('beautify-cancel-btn')}</button>
             </div>
         </div>
     `;
@@ -4977,7 +5959,7 @@ ${JSON.stringify({ fields: textObject, worldbook: wbTextObject }, null, 2)}
         generateBtn.style.cursor = 'not-allowed';
 
         resultsDiv.innerHTML =
-          '<div style="text-align: center; color: var(--text-color); padding: 20px;"><div style="display: inline-block; width: 20px; height: 20px; border: 2px solid #f3f3f3; border-top: 2px solid #FF9800; border-radius: 50%; animation: spin 1s linear infinite; margin-right: 10px;"></div>AI正在生成美化样式，请稍候...</div><style>@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }</style>';
+          `<div style="text-align: center; color: var(--text-color); padding: 20px;"><div style="display: inline-block; width: 20px; height: 20px; border: 2px solid #f3f3f3; border-top: 2px solid #FF9800; border-radius: 50%; animation: spin 1s linear infinite; margin-right: 10px;"></div>${t('beautify-generating')}</div><style>@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }</style>`;
 
         // 读取当前角色信息
         const characterInfo = {
@@ -4990,7 +5972,7 @@ ${JSON.stringify({ fields: textObject, worldbook: wbTextObject }, null, 2)}
           tags: document.getElementById('tags')?.value || '',
           system_prompt: document.getElementById('system_prompt')?.value || '',
         };
-        let prompt = ``
+        let prompt = getLanguagePrefix();
         // 构建包含角色信息的AI提示词
         if (requirements.trim()) {
           prompt += `**核心要求: ${requirements.trim()}**\n\n`;
@@ -5035,10 +6017,10 @@ ${JSON.stringify({ fields: textObject, worldbook: wbTextObject }, null, 2)}
           if (!hasValidApiConfig) {
             resultsDiv.innerHTML = `
                 <div style="text-align: center; color: #f44336; padding: 20px;">
-                    <h4>⚠️ 需要配置API设置</h4>
-                    <p>请先在API设置中配置您的AI服务提供商才能使用AI生成功能。</p>
+                    <h4>${t('beautify-api-config-required')}</h4>
+                    <p>${t('beautify-api-config-desc')}</p>
                     <div style="margin-top: 15px;">
-                        <button onclick="openApiSettingsModal()" style="background: #FF9800; color: white; padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer;">打开API设置</button>
+                        <button onclick="openApiSettingsModal()" style="background: #FF9800; color: white; padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer;">${t('beautify-open-api-settings')}</button>
                     </div>
                 </div>
             `;
@@ -5051,8 +6033,8 @@ ${JSON.stringify({ fields: textObject, worldbook: wbTextObject }, null, 2)}
           console.error('生成样式时出错:', error);
           resultsDiv.innerHTML = `
             <div style="text-align: center; color: #f44336; padding: 20px;">
-                <h4>❌ 生成失败</h4>
-                <p>调用AI API时出现错误: ${error.message}</p>
+                <h4>${t('beautify-generation-failed')}</h4>
+                <p>${t('beautify-api-error', {error: error.message})}</p>
             </div>
         `;
         } finally {
@@ -5253,8 +6235,8 @@ ${JSON.stringify({ fields: textObject, worldbook: wbTextObject }, null, 2)}
         if (codeBlocks.length === 0) {
           resultsDiv.innerHTML = `
             <div style="text-align: center; color: #f44336; padding: 20px;">
-                <h4>⚠️ 未找到有效的HTML代码</h4>
-                <p>AI生成的内容中没有找到有效的HTML代码块。</p>
+                <h4>${t('beautify-no-html-found')}</h4>
+                <p>${t('beautify-no-html-desc')}</p>
             </div>
         `;
           return;
@@ -5299,7 +6281,7 @@ ${JSON.stringify({ fields: textObject, worldbook: wbTextObject }, null, 2)}
       function previewStyle(index) {
         const code = window[`generatedStyle_${index}`];
         if (!code) {
-          alert('样式代码不存在');
+          alert(t('style-code-not-exist'));
           return;
         }
 
@@ -5314,7 +6296,7 @@ ${JSON.stringify({ fields: textObject, worldbook: wbTextObject }, null, 2)}
       function directInject(index) {
         const code = window[`generatedStyle_${index}`];
         if (!code) {
-          alert('样式代码不存在');
+          alert(t('style-code-not-exist'));
           return;
         }
 
@@ -5341,7 +6323,7 @@ ${JSON.stringify({ fields: textObject, worldbook: wbTextObject }, null, 2)}
               button.style.background = 'var(--ai-button-bg)';
             }, 2000);
 
-            alert('✅ 指令输入框已更新，代码已复制到剪贴板，请下滑返回');
+            alert(t('code-added-to-instruction'));
           })
           .catch(err => {
             console.error('注入失败:', err);
@@ -5352,7 +6334,7 @@ ${JSON.stringify({ fields: textObject, worldbook: wbTextObject }, null, 2)}
             textArea.select();
             document.execCommand('copy');
             document.body.removeChild(textArea);
-            alert('代码已加入到"指令内容"中，同时备份到了剪切板，请下滑返回');
+            alert(t('code-copied-to-clipboard'));
           });
       }
 
@@ -5433,7 +6415,7 @@ ${JSON.stringify({ fields: textObject, worldbook: wbTextObject }, null, 2)}
       async function handleAIModify(index) {
         const code = window[`generatedStyle_${index}`];
         if (!code) {
-          alert('样式代码不存在');
+          alert(t('style-code-not-exist'));
           return;
         }
 
@@ -5464,7 +6446,7 @@ ${JSON.stringify({ fields: textObject, worldbook: wbTextObject }, null, 2)}
           undoData.styleCode = code;
           
           // 构建AI修改prompt
-          const aiPrompt = `请基于以下HTML/CSS代码，按照用户要求进行修改和优化：${modifyRequest.trim()}。
+          const aiPrompt = getLanguagePrefix() + `请基于以下HTML/CSS代码，按照用户要求进行修改和优化：${modifyRequest.trim()}。
 
 重要要求：
 1. 保持代码的核心功能不变
@@ -5792,7 +6774,7 @@ ${code}
         }
 
         // 构建AI优化prompt
-        const aiPrompt = `请基于以下现有指令内容，按照用户要求进行优化和修改：${request}。
+        const aiPrompt = getLanguagePrefix() + `请基于以下现有指令内容，按照用户要求进行优化和修改：${request}。
 
 重要要求：
 1. 保持指令的核心功能不变
@@ -5841,7 +6823,7 @@ ${currentContent}
       function handleInject(position, index) {
         const code = window[`generatedStyle_${index}`];
         if (!code) {
-          alert('样式代码不存在');
+          alert(t('style-code-not-exist'));
           return;
         }
 
@@ -6131,6 +7113,7 @@ ${currentContent}
           db = event.target.result;
           try {
             await showLibraryView();
+            checkAndRestoreDraft();
           } catch (error) {
             alert('❌ 界面加载失败: ' + error.message);
           }
@@ -6214,7 +7197,7 @@ ${currentContent}
         clearEditorForm();
 
         if (characterId) {
-          document.getElementById('editor-title').innerText = t('edit-character');
+          document.getElementById('editor-title').innerText = characterId === DRAFT_ID ? (t('edit-draft')) : t('edit-character');
           const transaction = db.transaction(['characters'], 'readonly');
           const store = transaction.objectStore('characters');
           const request = store.get(characterId);
@@ -6223,7 +7206,27 @@ ${currentContent}
             const charData = e.target.result;
             if (charData) {
               populateEditorForm(charData);
+              // 如果是草稿，且有原ID，恢复原ID以便保存
+              if (charData.id === DRAFT_ID) {
+                  if (charData.draftForId) {
+                      document.getElementById('charId').value = charData.draftForId;
+                  } else {
+                      document.getElementById('charId').value = ''; // 新建角色的草稿
+                  }
+              }
+            } else {
+              // 角色不存在，隐藏加载圈并提示
+              document.getElementById('loading-overlay').style.display = 'none';
+              alert(t('character-not-found') || '角色不存在');
+              showLibraryView();
             }
+          };
+          
+          request.onerror = () => {
+            // 查询出错，隐藏加载圈并提示
+            document.getElementById('loading-overlay').style.display = 'none';
+            alert(t('load-character-error') || '加载角色失败');
+            showLibraryView();
           };
         } else {
           document.getElementById('editor-title').innerText = t('create-new-character');
@@ -6238,6 +7241,8 @@ ${currentContent}
         }
         // 确保每次进入编辑器时，按钮文本都根据开关状态刷新
         toggleAiButtonText(document.getElementById('Plus-switch').checked);
+        
+        initAutoSave();
       }
 
       // --- Import / Export ---
@@ -6598,6 +7603,110 @@ ${currentContent}
         URL.revokeObjectURL(a.href);
       }
 
+      // --- 草稿卡系统 ---
+      const DRAFT_ID = -1;
+      let autoSaveTimer = null;
+
+      function debounce(func, wait) {
+        return function(...args) {
+          const context = this;
+          clearTimeout(autoSaveTimer);
+          autoSaveTimer = setTimeout(() => func.apply(context, args), wait);
+        };
+      }
+
+      async function saveDraft() {
+        // 只有在编辑视图可见时才保存草稿
+        if (document.getElementById('editor-view').style.display === 'none') return;
+        
+        // 如果数据库未就绪，暂不保存
+        if (!db) return; 
+
+        try {
+            const card = buildCardObject();
+            
+            // 处理 ID 
+            if (card.id && String(card.id) !== String(DRAFT_ID)) {
+                card.draftForId = card.id;
+            }
+            
+            // 强制 ID 为草稿 ID
+            card.id = DRAFT_ID;
+            card.lastUsed = Date.now();
+            if (!card.name) card.name = '未命名草稿';
+
+            // 清理世界书数据
+            const cardForDb = { ...card };
+            if (typeof cleanWorldbookForStorage === 'function') {
+                cardForDb.worldbook = cleanWorldbookForStorage(card.worldbook);
+            } else {
+                 cardForDb.worldbook = JSON.parse(JSON.stringify(card.worldbook));
+            }
+            
+            const transaction = db.transaction(['characters'], 'readwrite');
+            const store = transaction.objectStore('characters');
+            store.put(cardForDb);
+        } catch (e) {
+            console.error('自动保存草稿失败', e);
+        }
+      }
+
+      const debouncedSaveDraft = debounce(saveDraft, 1000);
+
+      async function deleteDraft() {
+        if (!(await checkDbReady())) return;
+        try {
+            const transaction = db.transaction(['characters'], 'readwrite');
+            const store = transaction.objectStore('characters');
+            store.delete(DRAFT_ID);
+        } catch(e) {
+            console.error('删除草稿失败', e);
+        }
+      }
+
+      async function checkAndRestoreDraft() {
+        if (!(await checkDbReady())) return;
+        try {
+            const transaction = db.transaction(['characters'], 'readonly');
+            const store = transaction.objectStore('characters');
+            const request = store.get(DRAFT_ID);
+            
+            request.onsuccess = (e) => {
+                const draft = e.target.result;
+                if (draft) {
+                    const restore = confirm(t('restore-draft-confirm') || '发现未保存的草稿，是否恢复？\n取消将丢弃草稿。');
+                    if (restore) {
+                        showEditorView(DRAFT_ID);
+                    } else {
+                        deleteDraft();
+                    }
+                }
+            };
+        } catch(e) {
+            console.error('检查草稿失败', e);
+        }
+      }
+
+      // 初始化自动保存监听器
+      function initAutoSave() {
+         const editorView = document.getElementById('editor-view');
+         if (editorView.dataset.autoSaveBound) return;
+
+         editorView.addEventListener('input', (e) => {
+             if (e.target.matches('input, textarea, select')) {
+                 debouncedSaveDraft();
+             }
+         });
+         
+         editorView.addEventListener('click', (e) => {
+             if (e.target.tagName === 'BUTTON' || e.target.closest('.worldbook-entry')) {
+                 setTimeout(debouncedSaveDraft, 500);
+             }
+         });
+         
+         editorView.dataset.autoSaveBound = 'true';
+      }
+
       // --- CRUD Operations ---
       async function saveCharacter() {
         if (!(await checkDbReady())) return;
@@ -6641,6 +7750,7 @@ ${currentContent}
               const addVersionRequest = store.add(versionedCopy);
               addVersionRequest.onsuccess = () => {
                 console.log(`已创建版本化副本: ${card.name}-${currentVersion}`);
+                deleteDraft();
                 alert(t('character-saved', { name: card.name }));
                 // 强制刷新UI以确保头像正确显示
                 setTimeout(() => {
@@ -6655,6 +7765,7 @@ ${currentContent}
               // 版本号没有变化，正常更新原有记录
               const putRequest = store.put(cardForDb);
               putRequest.onsuccess = () => {
+                deleteDraft();
                 alert(t('character-saved', { name: card.name }));
                 // 强制刷新UI以确保头像正确显示
                 setTimeout(() => {
@@ -6672,6 +7783,7 @@ ${currentContent}
             // 如果获取失败，直接保存
             const request = store.put(cardForDb);
             request.onsuccess = () => {
+              deleteDraft();
               alert(t('character-saved', { name: card.name }));
               setTimeout(() => {
                 showLibraryView();
@@ -6686,6 +7798,7 @@ ${currentContent}
           // 新建角色，直接保存
           const request = store.put(cardForDb);
           request.onsuccess = () => {
+            deleteDraft();
             alert(t('character-saved', { name: card.name }));
             setTimeout(() => {
               showLibraryView();
@@ -6863,7 +7976,7 @@ ${currentContent}
 
       async function deleteCharacter(id) {
         if (!(await checkDbReady())) return;
-        if (confirm('确定要删除这个角色吗？')) {
+        if (confirm(t('confirm-delete-character'))) {
           const transaction = db.transaction(['characters'], 'readwrite');
           transaction.objectStore('characters').delete(id);
           transaction.oncomplete = async () => {
@@ -6871,6 +7984,107 @@ ${currentContent}
           };
         }
       }
+
+      // --- 聊天功能 ---
+      async function startChatWithCharacter(id) {
+        if (!(await checkDbReady())) return;
+        
+        try {
+          // 从当前数据库获取角色数据
+          const transaction = db.transaction(['characters'], 'readonly');
+          const store = transaction.objectStore('characters');
+          const request = store.get(id);
+          
+          request.onsuccess = async (e) => {
+            const charData = e.target.result;
+            if (!charData) {
+              alert('角色数据不存在');
+              return;
+            }
+            
+            console.log('准备复制角色到chat.html:', charData.name, 'ID:', id);
+            
+            // 确保角色数据的id字段正确
+            charData.id = id;
+            
+            // 转换字段名：index.html 使用 worldbook，chat.html 使用 character_book
+            if (charData.worldbook && !charData.character_book) {
+              charData.character_book = {
+                name: charData.name ? `${charData.name}的世界书` : '角色世界书',
+                entries: charData.worldbook || []
+              };
+            }
+            
+            // 打开chat.html使用的独立IndexedDB（ChatCharacterDB）
+            const chatDbRequest = indexedDB.open('ChatCharacterDB', 2);
+            
+            chatDbRequest.onerror = () => {
+              console.error('无法打开聊天数据库');
+              alert('无法连接到聊天数据库');
+            };
+            
+            chatDbRequest.onsuccess = async (event) => {
+              const chatDb = event.target.result;
+              
+              try {
+                // 将角色添加到IndexedDB的characters存储
+                const chatTransaction = chatDb.transaction(['characters'], 'readwrite');
+                const chatStore = chatTransaction.objectStore('characters');
+                
+                // 使用put而不是add，这样可以更新已存在的角色
+                const putRequest = chatStore.put(charData);
+                
+                putRequest.onsuccess = () => {
+                  console.log('角色已保存到IndexedDB characters存储');
+                  
+                  // 设置标记，表示应该从IndexedDB加载
+                  localStorage.setItem('use_indexeddb_characters', 'true');
+                  
+                  // 设置当前角色ID
+                  localStorage.setItem('active_character_v2', String(id));
+                  console.log('设置当前角色ID:', id);
+                  
+                  // 跳转到chat.html，添加参数标记从IndexedDB加载
+                  window.location.href = 'chat.html?from_index=1';
+                };
+                
+                putRequest.onerror = (error) => {
+                  console.error('保存角色到IndexedDB失败:', error);
+                  alert('保存角色失败，请重试');
+                };
+                
+              } catch (error) {
+                console.error('IndexedDB操作失败:', error);
+                alert('数据库操作失败: ' + error.message);
+              }
+            };
+            
+            chatDbRequest.onupgradeneeded = (event) => {
+              const chatDb = event.target.result;
+              if (!chatDb.objectStoreNames.contains('characters')) {
+                chatDb.createObjectStore('characters', { keyPath: 'id' });
+              }
+            };
+          };
+          
+          request.onerror = () => {
+            alert('获取角色数据失败');
+            console.error('Failed to get character:', request.error);
+          };
+        } catch (error) {
+          console.error('启动聊天失败:', error);
+          alert('启动聊天失败: ' + error.message);
+        }
+      }
+
+      function continueChatting() {
+        // 直接跳转到chat.html，chat.html会自动加载上次的角色
+        window.location.href = 'chat.html';
+      }
+
+      // 将函数暴露到全局作用域，以便HTML的onclick可以访问
+      window.startChatWithCharacter = startChatWithCharacter;
+      window.continueChatting = continueChatting;
 
       async function toggleFavorite(id, event) {
         if (!(await checkDbReady())) return;
@@ -6898,9 +8112,12 @@ ${currentContent}
             req.onerror = () => reject(req.error);
           });
           
-          allChars.sort((a, b) => b.isFavorite - a.isFavorite || (b.lastUsed || 0) - (a.lastUsed || 0));
-          renderTags(allChars);
-          renderCharacters(allChars);
+          // 过滤掉草稿
+          const validChars = allChars.filter(c => c.id !== DRAFT_ID);
+          
+          validChars.sort((a, b) => b.isFavorite - a.isFavorite || (b.lastUsed || 0) - (a.lastUsed || 0));
+          renderTags(validChars);
+          renderCharacters(validChars);
         } catch (error) {
           alert('❌ UI渲染失败: ' + error.message + '\n请刷新页面重试');
         }
@@ -6927,7 +8144,7 @@ ${currentContent}
 
         let tagsHtml = `<div class="tag type-special ${
           activeFilters.has('FAVORITE') ? 'active' : ''
-        }" onclick="toggleFilter('FAVORITE', event)">⭐ 收藏</div>`;
+        }" onclick="toggleFilter('FAVORITE', event)">${t('favorite')}</div>`;
         [...extraTags].sort().forEach(tag => {
           tagsHtml += `<div class="tag type-personality ${
             activeFilters.has(tag) ? 'active' : ''
@@ -7074,6 +8291,7 @@ ${currentContent}
             <button onclick="showEditorView(${char.id})">✏️ ${t('edit')}</button>
             <button onclick="exportCharacter(${char.id})">📤 ${t('export')}</button>
             <button onclick="deleteCharacter(${char.id})">🗑️ ${t('delete')}</button>
+            <button onclick="startChatWithCharacter(${char.id})">💬 ${t('chat')}</button>
         `;
 
           card.appendChild(headerDiv);
@@ -8272,7 +9490,7 @@ ${currentContent}
         
         // V1内容: 基于原文的角色描述，包含各阶段的身份、性格、外貌、技能、重要事件等
         // 构建专业世界书生成提示词 V2
-        let prompt = `你是专业的小说世界书生成专家。请仔细阅读提供的小说内容，提取其中的关键信息，生成高质量的世界书条目。
+        let prompt = getLanguagePrefix() + `你是专业的小说世界书生成专家。请仔细阅读提供的小说内容，提取其中的关键信息，生成高质量的世界书条目。
 
 ## 重要要求
 1. **必须基于提供的具体小说内容**，不要生成通用模板
@@ -9938,7 +11156,7 @@ ${type === 'prefix' ? '\n---\n以下是用户的具体要求：\n' : ''}`;
             .map(e => `- ${e.comment}: ${e.content.substring(0, 100)}...`)
             .join('\n');
 
-          let prompt = `请根据以下已经提供的角色信息，为我生成或补全【${labelText}】这一项。
+          let prompt = getLanguagePrefix() + `请根据以下已经提供的角色信息，为我生成或补全【${labelText}】这一项。
 请直接返回最适合填入该项的内容，语言风格要自然
 
 已提供信息:
@@ -10025,7 +11243,7 @@ ${existingEntriesText || '无'}
             });
           }
 
-          let prompt = `请基于以下提供的角色信息和世界书结构，为我撰写条目【${currentComment}】的"注入内容"。内容需要详细、富有想象力，并与角色设定保持高度一致。
+          let prompt = getLanguagePrefix() + `请基于以下提供的角色信息和世界书结构，为我撰写条目【${currentComment}】的"注入内容"。内容需要详细、富有想象力，并与角色设定保持高度一致。
 
 ---
 **角色核心设定:**
@@ -10086,17 +11304,21 @@ ${worldbookContext}
         const inputEl = document.getElementById('ai-guidance-input');
         const generateBtn = document.getElementById('ai-guidance-generate-btn');
 
-        titleEl.textContent = title;
-        inputEl.value = '';
-        inputEl.placeholder = placeholder || t('ai-guidance-prompt');
+        if (titleEl) titleEl.textContent = title;
+        if (inputEl) {
+          inputEl.value = '';
+          inputEl.placeholder = placeholder || t('ai-guidance-prompt');
+        }
 
-        generateBtn.onclick = () => {
-          modal.style.display = 'none';
-          callback(inputEl.value.trim());
-        };
+        if (generateBtn) {
+          generateBtn.onclick = () => {
+            if (modal) modal.style.display = 'none';
+            callback(inputEl ? inputEl.value.trim() : '');
+          };
+        }
 
-        modal.style.display = 'flex';
-        inputEl.focus();
+        if (modal) modal.style.display = 'flex';
+        if (inputEl) inputEl.focus();
       }
 
       function initializeNameGeneratorModal() {
@@ -10123,7 +11345,7 @@ ${worldbookContext}
         modal.style.display = 'flex';
 
         const currentCard = buildCardObject();
-        const prompt = `请根据以下角色设定，为角色生成5个好听、贴切的名字。
+        const prompt = getLanguagePrefix() + `请根据以下角色设定，为角色生成5个好听、贴切的名字。
 请严格按照JSON数组的格式返回，例如：["名字A", "名字B", "名字C", "名字D", "名字E"]。不要包含任何额外的解释或文本。
 
 角色设定:
@@ -10273,7 +11495,7 @@ ${worldbookContext}
           .map(entry => `条目注释: ${entry.comment}\n关键词: ${entry.keys.join(', ')}\n内容: ${entry.content.substring(0, 200)}${entry.content.length > 200 ? '...' : ''}`)
           .join('\n\n');
 
-        let prompt = `你是一个专业的sillytavern世界观构建师和剧情设计师。请根据用户的要求生成世界书条目。
+        let prompt = getLanguagePrefix() + `你是一个专业的sillytavern世界观构建师和剧情设计师。请根据用户的要求生成世界书条目。
 
 用户要求：
 ${userRequest}
@@ -10382,26 +11604,26 @@ ${existingEntriesText || '无'}
                   contentDiv.appendChild(checkbox);
                   contentDiv.appendChild(textDiv);
                   label.appendChild(contentDiv);
-                  container.appendChild(label);
+                  if (container) container.appendChild(label);
                 });
                 
-                desc.textContent = `AI已根据你的要求生成了 ${generatedEntries.length} 个世界书条目，请选择需要注入的条目。`;
-                injectBtn.style.display = 'inline-block';
-                regenerateBtn.style.display = 'inline-block';
+                if (desc) desc.textContent = `AI已根据你的要求生成了 ${generatedEntries.length} 个世界书条目，请选择需要注入的条目。`;
+                if (injectBtn) injectBtn.style.display = 'inline-block';
+                if (regenerateBtn) regenerateBtn.style.display = 'inline-block';
               } else {
                 throw new Error('生成的数据格式不正确');
               }
             } catch (parseError) {
               console.error('JSON解析错误:', parseError);
               console.error('原始响应:', response);
-              container.innerHTML = `<p style="color: red;">解析AI响应时出错：${parseError.message}</p>`;
+              if (container) container.innerHTML = `<p style="color: red;">${t('parse-error', {error: parseError.message})}</p>`;
             }
           } else {
-            container.innerHTML = '<p style="color: red;">生成失败，请检查API设置和网络连接。</p>';
+            if (container) container.innerHTML = `<p style="color: red;">${t('generation-failed')}</p>`;
           }
         } catch (error) {
           console.error('AI生成错误:', error);
-          container.innerHTML = `<p style="color: red;">生成错误：${error.message}</p>`;
+          if (container) container.innerHTML = `<p style="color: red;">${t('generation-error', {error: error.message})}</p>`;
         } finally {
           generateBtn.disabled = false;
           generateBtn.textContent = originalButtonText;
@@ -10417,13 +11639,13 @@ ${existingEntriesText || '无'}
         const requestInput = document.getElementById('wb-ai-request-input');
 
         // Reset modal state
-        desc.textContent = t('wb-ai-modal-desc');
+        if (desc) desc.textContent = t('wb-ai-modal-desc');
         if (optionsContainer) optionsContainer.innerHTML = '';
-        injectBtn.style.display = 'none';
-        regenerateBtn.style.display = 'none';
+        if (injectBtn) injectBtn.style.display = 'none';
+        if (regenerateBtn) regenerateBtn.style.display = 'none';
         if (requestInput) requestInput.value = '';
 
-        modal.style.display = 'flex';
+        if (modal) modal.style.display = 'flex';
       }
 
       async function fetchWorldbookStoryNodes(button, generationType) {
@@ -10434,10 +11656,10 @@ ${existingEntriesText || '无'}
         const regenerateBtn = document.getElementById('wb-ai-regenerate-btn');
 
         const typeName = t(`wb-ai-type-${generationType}`);
-        desc.textContent = t('wb-ai-modal-desc-generating', { type: typeName });
-        container.innerHTML = `<div class="loading-spinner" style="margin: 20px auto;"></div>`;
-        injectBtn.style.display = 'none';
-        regenerateBtn.style.display = 'none';
+        if (desc) desc.textContent = t('wb-ai-modal-desc-generating', { type: typeName });
+        if (container) container.innerHTML = `<div class="loading-spinner" style="margin: 20px auto;"></div>`;
+        if (injectBtn) injectBtn.style.display = 'none';
+        if (regenerateBtn) regenerateBtn.style.display = 'none';
 
         const characterContext = buildCardObject();
         const existingEntries = buildWorldbookDataFromDOM(); // 获取现有条目
@@ -10490,7 +11712,7 @@ ${existingEntriesText || '无'}
 `;
 
         getAiGuidance(t('ai-guidance-title'), async userGuidance => {
-          let finalPrompt = prompt;
+          let finalPrompt = getLanguagePrefix() + prompt;
           if (userGuidance) {
             finalPrompt += `\n**用户的额外指令:** ${userGuidance}\n`;
           }
@@ -10562,10 +11784,10 @@ ${existingEntriesText || '无'}
                                 <input type="checkbox" id="${mainCheckboxId}" checked>
                                 <div class="entry-details">
                                     <h4>${entry.comment || '无题'}</h4>
-                                    <p><strong>触发词:</strong> ${(entry.keys || []).join(', ')}</p>
-                                    <p><strong>内容:</strong> ${entry.content || '无内容'}</p>
+                                    <p><strong>${t('trigger-words-label')}:</strong> ${(entry.keys || []).join(', ')}</p>
+                                    <p><strong>${t('content-label')}:</strong> ${entry.content || '无内容'}</p>
                                     <div class="ai-entry-controls">
-                                        <span><strong>建议优先级:</strong> ${entry.priority || 100}</span>
+                                        <span><strong>${t('suggested-priority', {priority: entry.priority || 100})}</strong></span>
                                         <label>
                                             <input type="checkbox" class="wb-ai-constant-toggle" ${
                                               entry.constant ? 'checked' : ''
@@ -10667,7 +11889,7 @@ ${existingEntriesText || '无'}
                 if (el) el.dataset.aiBackup = el.value;
               });
 
-              let prompt = `你正在设计角色。请根据以下已经提供的角色信息，为角色补全剩余的空白字段。
+              let prompt = getLanguagePrefix() + `你正在设计角色。请根据以下已经提供的角色信息，为角色补全剩余的空白字段。
 ---
 **已提供的信息:**
 ${Object.entries(filledFields)
@@ -10768,7 +11990,7 @@ ${worldbookContextPrompt}
                 if (el) el.dataset.aiBackup = el.value;
               });
 
-              const prompt = `根据用户提供的核心概念，为角色生成一个完整的设定档案。
+              const prompt = getLanguagePrefix() + `根据用户提供的核心概念，为角色生成一个完整的设定档案。
 ---
 **用户核心概念:** ${userGuidance}
 ${worldbookContextPrompt}
@@ -11064,7 +12286,7 @@ ${worldbookContextPrompt}
       function addWorldbookEntry() {
         const worldbookData = buildWorldbookDataFromDOM();
         const newId = worldbookData.length > 0 ? Math.max(...worldbookData.map(e => e.id)) + 1 : 0;
-        worldbookData.push({ id: newId, comment: '新条目', keys: [], content: '', children: [] });
+        worldbookData.push({ id: newId, comment: t('new-entry'), keys: [], content: '', children: [] });
         renderWorldbookFromData(worldbookData);
       }
 
@@ -11095,7 +12317,7 @@ ${worldbookContextPrompt}
         entryLi.dataset.uniqueId = uniqueId;
 
         const defaultEntry = {
-          comment: '新条目',
+          comment: t('new-entry'),
           keys: [],
           secondary_keys: [],
           content: '',
@@ -11135,7 +12357,7 @@ ${worldbookContextPrompt}
                         <input type="number" class="wb-sort-id" title="${t('help-entry-id')}" placeholder="${t(
           'entry-id',
         )}" value="${defaultEntry.id}" style="width: 65px; flex-shrink: 0;">
-                        <button title="将此条目插入到左侧框中指定的ID位置，并顺延后续条目" onclick="airdropEntry(this)" style="padding: 5px 8px; font-size: 14px; background-color: #6c757d; color: white;">➡️</button>
+                        <button title="${t('airdrop-entry-title')}" onclick="airdropEntry(this)" style="padding: 5px 8px; font-size: 14px; background-color: #6c757d; color: white;">➡️</button>
                     </div>
                     <input type="text" class="entry-comment" placeholder="${t('entry-comment-placeholder')}" value="${
           defaultEntry.comment
@@ -11143,9 +12365,9 @@ ${worldbookContextPrompt}
                     <span class="help-icon" onclick="event.preventDefault(); event.stopPropagation(); showHelp(t('help-id-drop'))">?</span>
                 </div>
                 <div class="entry-actions">
-                    <button title="添加子条目" onclick="addChildEntry(this)">➕</button>
-                    <button title="将此条目移出父条目" onclick="indentEntry(this, -1)">↓退出</button>
-                    <button title="将此条目设为上方同级条目的子条目" onclick="indentEntry(this, 1)">↑加入</button>
+                    <button title="${t('add-child-entry')}" onclick="addChildEntry(this)">➕</button>
+                    <button title="${t('exit-parent-entry-title')}" onclick="indentEntry(this, -1)">${t('exit-parent-entry')}</button>
+                    <button title="${t('join-parent-entry-title')}" onclick="indentEntry(this, 1)">${t('join-parent-entry')}</button>
                     <button class="delete-entry-btn" onclick="deleteWorldbookEntry(this);">${t(
                       'delete',
                     )}</button>
@@ -11163,7 +12385,7 @@ ${worldbookContextPrompt}
                         <button class="constant-toggle-btn" onclick="toggleConstantMode(this)" 
                                 style="padding: 8px 12px; border: none; border-radius: 4px; font-size: 12px; font-weight: bold; cursor: pointer; min-width: 60px; transition: all 0.2s ease; ${defaultEntry.constant ? 'background-color: #ff7849; color: white;' : 'background-color: #6c757d; color: white;'}"
                                 data-constant="${defaultEntry.constant || false}">
-                            ${defaultEntry.constant ? '永久' : '关键词'}
+                            ${defaultEntry.constant ? t('constant-mode-permanent') : t('constant-mode-keyword')}
                         </button>
                     </div>
                 </div>
@@ -11182,26 +12404,26 @@ ${worldbookContextPrompt}
                     <details>
                         <summary id="advanced-settings-summary">${t(
                           'advanced-settings',
-                        )} <span style="font-weight: normal; font-size: 14px; color: #aaa;">(关键词匹配、注入逻辑等)</span></summary>
+                        )} <span style="font-weight: normal; font-size: 14px; color: #aaa;">${t('advanced-settings-subtitle')}</span></summary>
                         <div class="advanced-grid">
                             <div class="field-group full-width">
-                                <label>关键字过滤器 
+                                <label>${t('keyword-filter')} 
                                     <span class="help-icon" onclick="event.preventDefault(); event.stopPropagation(); showHelp(t('help-secondary-keys'))">?</span>
                                 </label>
                                 <div style="display: flex; gap: 10px; align-items: center;">
                                     <select class="wb-secondary-keys-logic" style="flex: 1; padding: 12px;">
                                         <option value="any" ${
                                           defaultEntry.secondary_keys_logic === 'any' ? 'selected' : ''
-                                        }>与任意</option>
+                                        }>${t('secondary-keys-logic-any')}</option>
                                         <option value="none" ${
                                           defaultEntry.secondary_keys_logic === 'none' ? 'selected' : ''
-                                        }>非任意</option>
+                                        }>${t('secondary-keys-logic-none')}</option>
                                         <option value="all" ${
                                           defaultEntry.secondary_keys_logic === 'all' ? 'selected' : ''
-                                        }>与所有</option>
+                                        }>${t('secondary-keys-logic-all')}</option>
                                         <option value="not_all" ${
                                           defaultEntry.secondary_keys_logic === 'not_all' ? 'selected' : ''
-                                        }>非所有</option>
+                                        }>${t('secondary-keys-logic-not-all')}</option>
                                     </select>
                                     <input type="text" class="wb-secondary-keys" placeholder="${t(
                                       'secondary-keys-placeholder',
@@ -11215,21 +12437,21 @@ ${worldbookContextPrompt}
                                 <select class="wb-position" onchange="toggleDepthField(this)">
                                     <!-- 基础位置：在角色定义附近 -->
                                     <option value="0" ${defaultEntry.position === 0 ? 'selected' : ''}>
-                                        📄 角色卡前 - 很高注意力（在系统指令中）
+                                        ${t('position-before-char-system')}
                                     </option>
                                     <option value="1" ${defaultEntry.position === 1 ? 'selected' : ''}>
-                                        📄 角色卡后 - 中等注意力（在系统指令中）
+                                        ${t('position-after-char-system')}
                                     </option>
                                     
                                     <!-- 最高优先级：在对话历史中动态插入 -->
                                     <option value="4" data-role="0" ${defaultEntry.position === 4 && defaultEntry.role === 0 ? 'selected' : ''}>
-                                        ⭐ 智能插入 - 系统视角（最高注意力）
+                                        ${t('position-smart-system')}
                                     </option>
                                     <option value="4" data-role="1" ${defaultEntry.position === 4 && defaultEntry.role === 1 ? 'selected' : ''}>
-                                        ⭐ 智能插入 - 用户视角（最高注意力）
+                                        ${t('position-smart-user')}
                                     </option>
                                     <option value="4" data-role="2" ${defaultEntry.position === 4 && defaultEntry.role === 2 ? 'selected' : ''}>
-                                        ⭐ 智能插入 - AI视角（最高注意力）
+                                        ${t('position-smart-ai')}
                                     </option>
 
                                     <!-- 高级选项（默认隐藏）
@@ -11286,9 +12508,9 @@ ${worldbookContextPrompt}
                             )} <span class="help-icon" onclick="event.preventDefault(); event.stopPropagation(); showHelp(t('help-entry-depth'))">?</span></label><input type="number" class="wb-depth" value="${
           defaultEntry.depth
         }" min="0" placeholder="深度越浅AI越注意，最小为0"></div>
-                            <div class="field-group"><label>扫描深度 (Scan Depth) <span class="help-icon" onclick="event.preventDefault(); event.stopPropagation(); showHelp('定义在聊天历史中扫描世界信息关键词的消息数量。设置为0时，仅扫描递归条目和作者注释。设置为1时，仅扫描最后一条消息。')">?</span></label><input type="number" class="wb-scan-depth" value="${
+                            <div class="field-group"><label>${t('scan-depth')} <span class="help-icon" onclick="event.preventDefault(); event.stopPropagation(); showHelp(t('help-scan-depth'))">?</span></label><input type="number" class="wb-scan-depth" value="${
           defaultEntry.scan_depth || ''
-        }" min="0" placeholder="留空使用默认设置"></div>
+        }" min="0" placeholder="${t('scan-depth-placeholder')}"></div>
                             <!-- <div class="field-group"><label>组权重 <span class="help-icon" onclick="event.preventDefault(); event.stopPropagation(); showHelp('用于组内排序的权重值')">?</span></label><input type="number" class="wb-group-weight" value="${
           defaultEntry.group_weight
         }" min="0" step="1"></div> -->
@@ -11331,7 +12553,7 @@ ${worldbookContextPrompt}
                                 
                                 <label><input type="checkbox" class="wb-additional-sources" ${
                                   defaultEntry.match_persona_description ? 'checked' : ''
-                                } onchange="toggleAllAdditionalSources(this)">📎 额外匹配源<span class="help-icon" onclick="event.preventDefault(); event.stopPropagation(); showHelp('开启后，角色卡的设定信息（描述、个性、场景等）也能触发此条目')">?</span></label>
+                                } onchange="toggleAllAdditionalSources(this)">${t('additional-match-sources')}<span class="help-icon" onclick="event.preventDefault(); event.stopPropagation(); showHelp(t('additional-match-sources-help'))">?</span></label>
                                 
                                 <!-- 隐藏的实际控制字段 -->
                                 <input type="hidden" class="wb-match-persona-description" value="${defaultEntry.match_persona_description}">
@@ -11399,17 +12621,17 @@ ${worldbookContextPrompt}
         const { entry, parentList, index, parentEntry } = found;
 
         if (direction > 0) {
-          // Indent (↑加入): 将条目设为上方同级条目的子条目
+          // Indent: 将条目设为上方同级条目的子条目
           if (index > 0) {
             const newParent = parentList[index - 1];
             parentList.splice(index, 1); // 从当前列表中移除
             newParent.children.push(entry); // 添加到新父级的 children 数组中
           } else {
-            alert('已经是同级中的第一个条目，无法加入（缩进）。');
+            alert(t('cannot-join-first-entry'));
             return;
           }
         } else {
-          // Un-indent (↓退出): 将子条目移出，成为父条目的同级
+          // Un-indent: 将子条目移出，成为父条目的同级
           if (parentEntry) {
             const parentFound = findEntryRecursive(worldbookData, parentEntry.element);
             if (parentFound) {
@@ -11676,22 +12898,25 @@ ${worldbookContextPrompt}
       // 打开全局修改模态框
       function openGlobalEditModal(button) {
         const modal = document.getElementById('global-edit-modal');
-        modal.style.display = 'flex';
-        
-        // 初始化界面
-        initializeGlobalEditModal();
+        if (modal) {
+          modal.style.display = 'flex';
+          
+          // 初始化界面
+          initializeGlobalEditModal();
+        }
       }
 
       // 关闭全局修改模态框
       function closeGlobalEditModal() {
         const modal = document.getElementById('global-edit-modal');
-        modal.style.display = 'none';
+        if (modal) modal.style.display = 'none';
       }
 
       // 初始化全局修改模态框
       function initializeGlobalEditModal() {
         // 重置筛选区域
-        document.getElementById('custom-filter-area').style.display = 'none';
+        const customFilterArea = document.getElementById('custom-filter-area');
+        if (customFilterArea) customFilterArea.style.display = 'none';
         
         // 加载所有条目
         loadAllEntries();
@@ -11773,7 +12998,7 @@ ${worldbookContextPrompt}
 
         const keys = Array.isArray(entry.keys) ? entry.keys.join(', ') : entry.keys || '';
         const content = entry.content || '';
-        const position = entry.position === 'after_char' ? '角色后' : '角色前';
+        const position = entry.position === 'after_char' ? t('position-after-char') : t('position-before-char');
         
         entryDiv.innerHTML = `
           <input type="checkbox" class="entry-checkbox" checked>
@@ -11782,12 +13007,12 @@ ${worldbookContextPrompt}
               <span class="entry-id">ID:${entry.id}</span>
               ${entry.comment || '无标题'}
             </div>
-            <div class="entry-keys">触发词: ${keys}</div>
+            <div class="entry-keys">${t('trigger-words', {keys: keys})}</div>
             <div class="entry-content-preview">${content}</div>
             <div class="entry-meta">
-              <span>优先级: ${entry.priority || 100}</span>
-              <span>位置: ${position}</span>
-              <span>恒定: ${entry.constant ? '是' : '否'}</span>
+              <span>${t('priority-label', {priority: entry.priority || 100})}</span>
+              <span>${t('position-label', {position: position})}</span>
+              <span>${t('constant-label', {value: entry.constant ? t('yes') : t('no')})}</span>
             </div>
           </div>
         `;
@@ -12037,7 +13262,7 @@ ${worldbookContextPrompt}
 
       // 构建全局修改提示
       function buildGlobalEditPrompt(instruction, selectedEntries) {
-        let prompt = `请根据用户的指令修改以下内容。
+        let prompt = getLanguagePrefix() + `请根据用户的指令修改以下内容。
 
 用户指令：${instruction}
 
@@ -12424,11 +13649,11 @@ ${worldbookContextPrompt}
         if (isConstant) {
           button.style.backgroundColor = '#ff7849';
           button.style.color = 'white';
-          button.textContent = '永久';
+          button.textContent = t('constant-mode-permanent');
         } else {
           button.style.backgroundColor = '#6c757d';
           button.style.color = 'white';
-          button.textContent = '关键词';
+          button.textContent = t('constant-mode-keyword');
         }
       }
       
@@ -12611,7 +13836,7 @@ ${worldbookContextPrompt}
           const batchBtn = document.getElementById('batch-modify-btn');
           
           if (countSpan) {
-            countSpan.textContent = `已选 ${count} 个`;
+            countSpan.textContent = t('selected-count').replace('{count}', count);
           }
           
           if (batchBtn) {
@@ -12675,7 +13900,7 @@ ${worldbookContextPrompt}
                   <div class="search-result-title" style="word-wrap: break-word; overflow-wrap: break-word;">${entry.comment || '未命名条目'}</div>
                   <div class="search-result-meta" style="display: flex; justify-content: space-between; gap: 10px;">
                     <span style="flex-shrink: 0;">ID: ${entry.id}</span>
-                    <span style="flex-shrink: 0;">优先级: ${entry.priority}</span>
+                    <span style="flex-shrink: 0;">${t('priority-label', {priority: entry.priority})}</span>
                   </div>
                   <div class="search-result-preview" style="word-wrap: break-word; overflow-wrap: break-word; white-space: normal;">${preview}</div>
                 </div>
@@ -12890,15 +14115,15 @@ ${worldbookContextPrompt}
         const count = selectedCheckboxes.length;
         
         if (count === 0) {
-          alert('请先选择要修改的条目');
+          alert(t('select-entries-first'));
           return;
         }
         
         const modal = document.getElementById('batch-modify-modal');
-        const countSpan = document.getElementById('batch-selected-count');
+        const batchSelectedInfo = document.getElementById('batch-selected-info');
         
-        if (countSpan) {
-          countSpan.textContent = count;
+        if (batchSelectedInfo) {
+          batchSelectedInfo.innerHTML = t('batch-selected-info').replace('{count}', `<span id="batch-selected-count">${count}</span>`);
         }
         
         // 重置选项
@@ -13002,7 +14227,7 @@ ${worldbookContextPrompt}
               if (constantCheckbox) {
                 constantCheckbox.checked = constantValue;
                 if (constantBtn) {
-                  constantBtn.textContent = constantValue ? '永久' : '关键词';
+                  constantBtn.textContent = constantValue ? t('constant-mode-permanent') : t('constant-mode-keyword');
                   constantBtn.style.backgroundColor = constantValue ? '#ff7849' : '#6c757d';
                   constantBtn.dataset.constant = constantValue.toString();
                 }
@@ -13091,7 +14316,7 @@ ${worldbookContextPrompt}
           }
         });
         
-        alert(`成功修改 ${modifiedCount} 个条目`);
+        alert(t('modify-success').replace('{count}', modifiedCount));
         closeBatchModifyModal();
         
         // 刷新搜索结果以反映变化
@@ -13171,17 +14396,17 @@ ${worldbookContextPrompt}
     <div class="search-panel" id="search-panel">
       <div class="search-panel-header">
         <button class="close-search-btn" id="close-search-btn">×</button>
-        <h3>世界书管理</h3>
+        <h3 id="worldbook-management-title">世界书管理</h3>
         <input type="text" class="search-input" id="search-input" placeholder="输入搜索关键词...">
         <div class="sort-controls">
-          <button class="sort-btn active" data-sort="name">拼音排序</button>
-          <button class="sort-btn" data-sort="id">ID排序</button>
-          <button class="sort-btn" data-sort="priority">优先级</button>
+          <button id="sort-by-pinyin-btn" class="sort-btn active" data-sort="name">拼音排序</button>
+          <button id="sort-by-id-btn" class="sort-btn" data-sort="id">ID排序</button>
+          <button id="sort-by-priority-btn" class="sort-btn" data-sort="priority">优先级</button>
         </div>
         <div class="batch-operations" style="margin-top: 10px; display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
           <label style="display: flex; align-items: center; gap: 5px; cursor: pointer;">
             <input type="checkbox" id="select-all-entries" style="cursor: pointer;">
-            <span>全选</span>
+            <span id="select-all-label">全选</span>
           </label>
           <span id="selected-count" style="color: #888; font-size: 14px;">已选 0 个</span>
           <button id="batch-modify-btn" class="batch-modify-btn" style="display: none; padding: 8px 16px; background: var(--primary-color); color: white; border: none; border-radius: 5px; cursor: pointer;">批量修改</button>
@@ -13195,22 +14420,22 @@ ${worldbookContextPrompt}
     <!-- 批量修改模态框 -->
     <div id="batch-modify-modal" class="modal-overlay" style="display: none;">
       <div class="modal-content" style="max-width: 600px;">
-        <h3>批量修改世界书条目</h3>
-        <p style="color: #888; margin-bottom: 20px;">已选择 <span id="batch-selected-count">0</span> 个条目</p>
+        <h3 id="batch-modify-modal-title">批量修改世界书条目</h3>
+        <p id="batch-selected-info" style="color: #888; margin-bottom: 20px;">已选择 <span id="batch-selected-count">0</span> 个条目</p>
         
         <div class="field-group">
-          <label>修改选项：</label>
+          <label id="modify-option-label">修改选项：</label>
           <select id="batch-modify-type" style="width: 100%; padding: 10px; background: var(--input-bg); color: var(--text-color); border: 1px solid var(--input-border); border-radius: 5px;">
-            <option value="">请选择要修改的属性</option>
-            <option value="enabled">条目状态（启用/禁用）</option>
-            <option value="constant">恒定注入（永久/关键词）</option>
-            <option value="prevent_recursion">防止递归</option>
-            <option value="selective">选择性触发</option>
-            <option value="use_regex">正则表达式</option>
-            <option value="match_whole_words">全词匹配</option>
-            <option value="case_sensitive">大小写敏感</option>
-            <option value="position">注入位置</option>
-            <option value="priority">优先级</option>
+            <option value="" data-i18n="select-property">请选择要修改的属性</option>
+            <option value="enabled" data-i18n="entry-status">条目状态（启用/禁用）</option>
+            <option value="constant" data-i18n="constant-injection-option">恒定注入（永久/关键词）</option>
+            <option value="prevent_recursion" data-i18n="prevent-recursion-option">防止递归</option>
+            <option value="selective" data-i18n="selective-trigger">选择性触发</option>
+            <option value="use_regex" data-i18n="regex-option">正则表达式</option>
+            <option value="match_whole_words" data-i18n="whole-word-match">全词匹配</option>
+            <option value="case_sensitive" data-i18n="case-sensitive-option">大小写敏感</option>
+            <option value="position" data-i18n="injection-position-option">注入位置</option>
+            <option value="priority" data-i18n="priority-option">优先级</option>
           </select>
         </div>
         
@@ -13287,8 +14512,8 @@ ${worldbookContextPrompt}
         </div>
         
         <div class="button-row" style="margin-top: 20px; display: flex; gap: 10px;">
-          <button onclick="applyBatchModify()" style="flex: 1; padding: 10px; background: var(--primary-color); color: white; border: none; border-radius: 5px; cursor: pointer;">应用修改</button>
-          <button onclick="closeBatchModifyModal()" style="flex: 1; padding: 10px; background: #666; color: white; border: none; border-radius: 5px; cursor: pointer;">取消</button>
+          <button id="apply-batch-btn" onclick="applyBatchModify()" style="flex: 1; padding: 10px; background: var(--primary-color); color: white; border: none; border-radius: 5px; cursor: pointer;">应用修改</button>
+          <button id="cancel-batch-btn" onclick="closeBatchModifyModal()" style="flex: 1; padding: 10px; background: #666; color: white; border: none; border-radius: 5px; cursor: pointer;">取消</button>
         </div>
       </div>
     </div>
@@ -13406,6 +14631,17 @@ ${worldbookContextPrompt}
           } else {
             fixCheckboxLayout();
           }
+        }
+      })();
+      
+      // 页面加载时初始化语言
+      (function initLanguage() {
+        if (document.readyState === 'loading') {
+          document.addEventListener('DOMContentLoaded', function() {
+            updatePageContent();
+          });
+        } else {
+          updatePageContent();
         }
       })();
     </script>

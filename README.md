@@ -53,10 +53,18 @@ An elegant AI character card management system designed for ST character creatio
 
 ### 角色管理
 - **角色库**: 网格布局展示，支持收藏和标签筛选
+- **聊天功能**: 一键跳转到聊天界面，与创建的角色进行对话
+
+### 聊天系统
+- **继续聊天**: 首页一键跳转到聊天界面(chat.html)
+- **流式输出**: 实时显示AI回复
+- **消息管理**: 编辑、删除、重新生成消息
+- **聊天记录**: 自动保存对话历史
+- **图片支持**: 发送图片并使用视觉识图API
 
 ### 数据兼容性
 - 多格式导入: 支持JSON、PNG角色卡，以及所有封面图片格式（PNG、JPG、WEBP、GIF、BMP）
-- 完全兼容V2和V3角色卡格式
+- 完全兼容SillyTavern V2和V3角色卡格式
 
 ### 界面设计
 - **现代化UI**: 酒馆主色调
@@ -85,7 +93,8 @@ An elegant AI character card management system designed for ST character creatio
 2. **编辑角色**: 在角色库中点击"编辑"
 3. **导入角色**: 支持JSON、PNG
 4. **导出角色**: 推荐首页导出，方便日后更改
-5. **txt转世界书**: 点击"📚 txt转世界书"，上传小说文件，自动生成世界书
+5. **txt转世界书**: 点击"📚 txt转世界书",上传小说文件，自动生成世界书
+6. **继续聊天**: 点击"💬 继续聊天"按钮，跳转到聊天界面与角色对话
 
 ### AI功能
 1. 在API设置中选择AI服务提供商（DeepSeek、Gemini、本地大模型或自定义）
@@ -117,13 +126,26 @@ A: 支持UTF-8、GBK、GB2312、Big5等多种中文编码，系统会自动检�
 **Q: txt文件显示乱码怎么办？**
 A: 系统会自动尝试多种编码格式。如果仍显示乱码，可以手动选择正确的编码格式（通常中文小说为GBK）。
 
-
 ## 许可证
 
-本项目仅供个人学习和非商业用途使用。
+本项目采用 **GNU Affero General Public License v3.0 (AGPL-3.0)** 许可证。
 
-### 版权声明
-本项目采用自定义许可证，保留所有权利。未经明确授权，不得用于商业目的。
+本项目包含基于MIT许可证的 [Midsummer's Bird](https://github.com/csjafuwvbegscbw-star/Midsummer-s-Bird) 项目的代码（chat.html），原始MIT许可证声明已包含在LICENSE文件中。
+
+详见 [LICENSE](LICENSE) 文件。
+
+## 特别鸣谢
+
+本项目的聊天功能基于开源项目 **[Midsummer's Bird](https://github.com/csjafuwvbegscbw-star/Midsummer-s-Bird)** 进行开发和扩展。
+
+**Midsummer's Bird** 是一个优雅、强大且完全本地化的 AI 角色扮演聊天前端，提供了：
+- 完整的角色卡管理系统
+- 强大的世界书(World Info)系统
+- 流式AI对话支持
+- 多API集成(DeepSeek、OpenAI、Gemini等)
+- 精美的主题定制系统
+
+感谢原作者 **Soaring Bird** 的开源贡献，为AI角色扮演社区提供了如此优秀的工具！
 
 ---
 
@@ -199,6 +221,7 @@ An elegant AI character card management system designed specifically for ST char
 - **Create/Edit Characters**: Complete character information entry, including avatars, basic information, personality settings, etc.
 - **Character Library**: Grid layout display with favorites and tag filtering
 - **World Book System**: Advanced character book functionality with hierarchical structure and AI generation
+- **Chat Function**: One-click jump to chat interface to converse with created characters
 
 ### Interface Design
 - **Modern UI**: Dark theme with ST-like interface
@@ -223,6 +246,7 @@ An elegant AI character card management system designed specifically for ST char
 3. **Import Character**: Supports JSON, PNG and image files
 4. **Export Character**: JSON or PNG format
 5. **TXT to World Book**: Click "📚 txt转世界书", upload novel files, automatically generate world books
+6. **Continue Chatting**: Click "💬 继续聊天" button to jump to chat interface and talk with characters
 
 ### AI Features
 1. Enter DeepSeek API key
@@ -255,10 +279,24 @@ A: The system automatically tries multiple encoding formats. If garbled text sti
 
 ## License
 
-This project is for personal learning and non-commercial use only.
+This project is licensed under the **GNU Affero General Public License v3.0 (AGPL-3.0)**.
 
-### Copyright Notice
-This project uses a custom license with all rights reserved. Commercial use is not permitted without explicit authorization.
+This project includes code from [Midsummer's Bird](https://github.com/csjafuwvbegscbw-star/Midsummer-s-Bird) (chat.html) which is licensed under the MIT License. The original MIT license notice is included in the LICENSE file.
+
+See [LICENSE](LICENSE) file for details.
+
+## Special Thanks
+
+The chat functionality of this project is developed and extended based on the open-source project **[Midsummer's Bird](https://github.com/csjafuwvbegscbw-star/Midsummer-s-Bird)**.
+
+**Midsummer's Bird** is an elegant, powerful, and fully localized AI role-playing chat frontend that provides:
+- Complete character card management system
+- Powerful World Info system
+- Streaming AI conversation support
+- Multi-API integration (DeepSeek, OpenAI, Gemini, etc.)
+- Beautiful theme customization system
+
+Thanks to the original author **Soaring Bird** for the open-source contribution, providing such an excellent tool for the AI role-playing community!
 
 ---
 
