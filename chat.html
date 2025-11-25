@@ -2997,9 +2997,9 @@ body {
         // 初始化多语言系统
         i18n.init();
 
-        // --- 混合存储类：IndexedDB 存储角色，localStorage 存储配置 ---
+        // --- 混合存储类：IndexedDB 存储配置和聊天记录，角色从 CharacterDB 读取 ---
         class IndexedDBStorage {
-            constructor(dbName = 'ChatCharacterDB', version = 3) {
+            constructor(dbName = 'NikaChatDB', version = 1) {
                 this.dbName = dbName;
                 this.version = version;
                 this.db = null;

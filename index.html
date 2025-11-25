@@ -8015,8 +8015,8 @@ ${currentContent}
               };
             }
             
-            // 打开chat.html使用的独立IndexedDB（ChatCharacterDB）
-            const chatDbRequest = indexedDB.open('ChatCharacterDB', 2);
+            // 打开chat.html使用的独立IndexedDB（NikaChatDB）
+            const chatDbRequest = indexedDB.open('NikaChatDB', 1);
             
             chatDbRequest.onerror = () => {
               console.error('无法打开聊天数据库');
@@ -8037,15 +8037,22 @@ ${currentContent}
                 putRequest.onsuccess = () => {
                   console.log('角色已保存到IndexedDB characters存储');
                   
-                  // 设置标记，表示应该从IndexedDB加载
-                  localStorage.setItem('use_indexeddb_characters', 'true');
+                  // 将当前角色ID存入IndexedDB的keyvalue存储
+                  const kvTransaction = chatDb.transaction(['keyvalue'], 'readwrite');
+                  const kvStore = kvTransaction.objectStore('keyvalue');
+                  const kvRequest = kvStore.put({ key: 'active_character_v2', value: String(id) });
                   
-                  // 设置当前角色ID
-                  localStorage.setItem('active_character_v2', String(id));
-                  console.log('设置当前角色ID:', id);
+                  kvRequest.onsuccess = () => {
+                    console.log('当前角色ID已保存到IndexedDB:', id);
+                    // 跳转到chat.html
+                    window.location.href = 'chat.html?from_index=1';
+                  };
                   
-                  // 跳转到chat.html，添加参数标记从IndexedDB加载
-                  window.location.href = 'chat.html?from_index=1';
+                  kvRequest.onerror = () => {
+                    console.error('保存角色ID失败');
+                    // 仍然跳转，chat.html会使用默认角色
+                    window.location.href = 'chat.html?from_index=1';
+                  };
                 };
                 
                 putRequest.onerror = (error) => {
@@ -8061,8 +8068,15 @@ ${currentContent}
             
             chatDbRequest.onupgradeneeded = (event) => {
               const chatDb = event.target.result;
+              // 创建 characters 存储（用于角色数据）
               if (!chatDb.objectStoreNames.contains('characters')) {
-                chatDb.createObjectStore('characters', { keyPath: 'id' });
+                const store = chatDb.createObjectStore('characters', { keyPath: 'id', autoIncrement: true });
+                store.createIndex('name', 'name', { unique: false });
+                store.createIndex('lastUsed', 'lastUsed', { unique: false });
+              }
+              // 创建 keyvalue 存储（用于配置和聊天记录）
+              if (!chatDb.objectStoreNames.contains('keyvalue')) {
+                chatDb.createObjectStore('keyvalue', { keyPath: 'key' });
               }
             };
           };
