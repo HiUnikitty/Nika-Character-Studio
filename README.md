@@ -1,12 +1,12 @@
 # 妮卡角色工作室 Pro
 
-一个优雅的AI角色卡管理系统，专为ST角色创作和管理而设计。
+从创作到对话，一站式角色扮演体验
 
-An elegant AI character card management system designed for ST character creation and management.
+A one-stop free AI role-playing studio inspired by Silly Tavern.
 
 ## 🌐 在线体验
 
-**在线网站**: [妮卡角色工作室Pro](https://your-website-url.com) - 无需下载，直接使用
+**在线网站**: [妮卡角色工作室Pro](https://mocards.netlify.com) - 无需下载，直接使用
 
 ## 📢 反馈与交流
 
@@ -226,7 +226,13 @@ An elegant AI character card management system designed specifically for ST char
 ### Interface Design
 - **Modern UI**: Dark theme with ST-like interface
 - **Responsive Design**: Supports desktop and mobile devices
-- **Chinese Interface**: Localized user interface
+- **English Interface**: Localized user interface
+
+![Home Preview](./主页预览.png)
+
+![Chat Page Preview](./聊天页面预览.png)
+
+![World Book Interface Preview](./世界书界面预览.png)
 
 ## Quick Start
 
@@ -301,8 +307,3 @@ Thanks to the original author **Soaring Bird** for the open-source contribution,
 ---
 
 Start creating your own characters! 
-
-
-
-
-
