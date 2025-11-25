@@ -1,6 +1,6 @@
 # 妮卡角色工作室 Pro
 
-从创作到对话，一站式角色扮演体验
+从创作到对话，一站式的AI角色扮演体验
 
 A one-stop free AI role-playing studio inspired by Silly Tavern.
 
@@ -307,3 +307,4 @@ Thanks to the original author **Soaring Bird** for the open-source contribution,
 ---
 
 Start creating your own characters! 
+
