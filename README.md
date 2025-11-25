@@ -6,7 +6,7 @@ A one-stop free AI role-playing studio inspired by Silly Tavern.
 
 ## 🌐 在线体验
 
-**在线网站**: [妮卡角色工作室Pro](https://mocards.netlify.com) - 无需下载，直接使用
+**在线网站**: [妮卡角色工作室Pro](https://mocards.netlify.app) - 无需下载，直接使用
 
 ## 📢 反馈与交流
 
@@ -307,4 +307,5 @@ Thanks to the original author **Soaring Bird** for the open-source contribution,
 ---
 
 Start creating your own characters! 
+
 
