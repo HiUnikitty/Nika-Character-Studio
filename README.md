@@ -251,8 +251,8 @@ An elegant AI character card management system designed specifically for ST char
 2. **Edit Character**: Click "Edit" in character library
 3. **Import Character**: Supports JSON, PNG and image files
 4. **Export Character**: JSON or PNG format
-5. **TXT to World Book**: Click "📚 txt转世界书", upload novel files, automatically generate world books
-6. **Continue Chatting**: Click "💬 继续聊天" button to jump to chat interface and talk with characters
+5. **TXT to World Book**: Click "📚 TXT to Worldbook", upload novel files, automatically generate world books
+6. **Continue Chatting**: Click "💬 Continue Chat" button to jump to chat interface and talk with characters
 
 ### AI Features
 1. Enter DeepSeek API key
