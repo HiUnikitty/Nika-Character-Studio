@@ -3252,8 +3252,8 @@ body {
                                     character_version: char.character_version || '',
                                     alternate_greetings: char.alternate_greetings || [],
                                     character_book: char.character_book || null,
-                                    regex: char.regex || [],
-                                    regex_enabled: char.regex_enabled || false
+                                    regex: char.regex || char.regex_scripts || [],
+                                    regex_enabled: char.regex_enabled !== undefined ? char.regex_enabled : (char.regex || char.regex_scripts || []).some(s => s.disabled === false)
                                 }
                             };
                             
@@ -3348,8 +3348,8 @@ body {
                                             character_version: char.character_version || '',
                                             alternate_greetings: char.alternate_greetings || [],
                                             character_book: characterBook,
-                                            regex: char.regex || [],
-                                            regex_enabled: char.regex_enabled || false
+                                            regex: char.regex || char.regex_scripts || [],
+                                            regex_enabled: char.regex_enabled !== undefined ? char.regex_enabled : (char.regex || char.regex_scripts || []).some(s => s.disabled === false)
                                         }
                                     };
                                     
@@ -4690,6 +4690,11 @@ body {
                                 if (charData.data?.character_book) {
                                     indexCharData.character_book = charData.data.character_book;
                                 }
+                                // 修复：同时保存 regex 和 regex_scripts 以兼容 index.html
+                                if (charData.data?.regex) {
+                                    indexCharData.regex = charData.data.regex;
+                                    indexCharData.regex_scripts = charData.data.regex;
+                                }
                                 
                                 await idbStorage.saveCharacterToStore(indexCharData);
                             } catch (error) {
@@ -5181,7 +5186,7 @@ body {
                 // 处理 V3 卡片格式的正则
                 if (charData.data?.extensions?.regex_scripts) {
                     newChar.data.regex = charData.data.extensions.regex_scripts;
-                    newChar.data.regex_enabled = true;
+                    newChar.data.regex_enabled = charData.data.extensions.regex_scripts.some(s => s.disabled === false);
                 }
 
                 // 处理 V3 卡片格式的世界书
