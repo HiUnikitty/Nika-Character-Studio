@@ -3212,12 +3212,13 @@ body {
                         // 转换为 char.data 格式 {id: character}
                         const charData = {};
                         characters.forEach(char => {
-                            // 使用角色的 id 字段作为键，统一转为字符串确保类型一致
+                            // 使用角色的 id 字段作为键，统一转换为字符串类型
+                            // 因为 index.html 存储 active_character_v2 时使用 String(id)
                             const charId = String(char.id);
                             
                             const convertedChar = {
                                 id: charId,
-                                dbId: char.id, // 保存数据库 ID
+                                dbId: char.id, // 保存原始数据库 ID
                                 fav: char.isFavorite || false,
                                 avatar: char.avatar || 'none',
                                 name: char.name || '未命名角色',
@@ -5602,31 +5603,28 @@ body {
                 devLogs.other('[加载角色] 从 IndexedDB 加载了', Object.keys(char.data).length, '个角色');
                 devLogs.other('[加载角色] 角色列表:', Object.keys(char.data));
 
-                let activeId = await idbStorage.getItem('active_character_v2');
-                devLogs.other('[加载角色] 读取到的 active_character_v2:', activeId, '类型:', typeof activeId);
+                let storedActiveId = await idbStorage.getItem('active_character_v2');
+                devLogs.other('[加载角色] 存储的活动角色ID:', storedActiveId, '类型:', typeof storedActiveId);
                 
-                // 尝试匹配角色ID（处理字符串/数字类型不匹配的情况）
-                if (activeId) {
+                // 修复：尝试多种方式匹配角色ID（字符串和数字）
+                let matchedId = null;
+                if (storedActiveId !== null && storedActiveId !== undefined) {
                     // 先尝试直接匹配
-                    if (char.data[activeId]) {
-                        char.activeCharacterId = activeId;
-                    } 
+                    if (char.data[storedActiveId]) {
+                        matchedId = storedActiveId;
+                    }
                     // 尝试数字类型匹配
-                    else if (char.data[Number(activeId)]) {
-                        char.activeCharacterId = Number(activeId);
+                    else if (char.data[Number(storedActiveId)]) {
+                        matchedId = Number(storedActiveId);
                     }
                     // 尝试字符串类型匹配
-                    else if (char.data[String(activeId)]) {
-                        char.activeCharacterId = String(activeId);
+                    else if (char.data[String(storedActiveId)]) {
+                        matchedId = String(storedActiveId);
                     }
-                    // 都找不到，设为null
-                    else {
-                        char.activeCharacterId = null;
-                        devLogs.other('[加载角色] 未找到匹配的角色ID:', activeId);
-                    }
-                } else {
-                    char.activeCharacterId = null;
+                    devLogs.other('[加载角色] 匹配到的角色ID:', matchedId);
                 }
+                
+                char.activeCharacterId = matchedId;
                 
                 renderCharacterSelect();
                 if (char.activeCharacterId && char.data[char.activeCharacterId]) {
@@ -6737,8 +6735,8 @@ body {
                     item.style.backgroundColor = 'var(--card-bg-color)';
                     item.style.borderColor = 'var(--border-color)';
 
-                    // 应用regex转换后获取预览（使用processStreamingContent处理^^^等特殊标记）
-                    const processedGreeting = processStreamingContent(greeting, false);
+                    // 应用regex转换后获取预览
+                    const processedGreeting = applyRegex(greeting);
 
                     // 创建元素而不是用innerHTML避免XSS
                     const flexDiv = document.createElement('div');
@@ -6751,11 +6749,16 @@ body {
                     const contentDiv = document.createElement('div');
                     contentDiv.className = 'flex-1 min-w-0';
 
+                    const titleDiv = document.createElement('div');
+                    titleDiv.className = 'text-sm font-medium text-gray-900 mb-1';
+                    titleDiv.textContent = `开场白 ${index + 1}`;
+
                     const previewDiv = document.createElement('div');
                     previewDiv.className = 'text-sm theme-text-secondary break-words';
                     previewDiv.style.maxHeight = '200px';
                     previewDiv.style.overflow = 'hidden';
-                    previewDiv.style.position = 'relative';
+                    previewDiv.style.overflowWrap = 'break-word';
+                    previewDiv.style.wordBreak = 'break-word';
                     previewDiv.style.maxWidth = '100%';
 
                     // 检查是否包含HTML内容
@@ -6846,6 +6849,7 @@ body {
                         previewDiv.style.whiteSpace = 'pre-wrap';
                     }
 
+                    contentDiv.appendChild(titleDiv);
                     contentDiv.appendChild(previewDiv);
                     flexDiv.appendChild(badge);
                     flexDiv.appendChild(contentDiv);
