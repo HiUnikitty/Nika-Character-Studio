@@ -3212,8 +3212,8 @@ body {
                         // 转换为 char.data 格式 {id: character}
                         const charData = {};
                         characters.forEach(char => {
-                            // 使用角色的 id 字段作为键（与index.html保持一致）
-                            const charId = char.id;
+                            // 使用角色的 id 字段作为键，统一转为字符串确保类型一致
+                            const charId = String(char.id);
                             
                             const convertedChar = {
                                 id: charId,
@@ -5602,7 +5602,31 @@ body {
                 devLogs.other('[加载角色] 从 IndexedDB 加载了', Object.keys(char.data).length, '个角色');
                 devLogs.other('[加载角色] 角色列表:', Object.keys(char.data));
 
-                char.activeCharacterId = await idbStorage.getItem('active_character_v2');
+                let activeId = await idbStorage.getItem('active_character_v2');
+                devLogs.other('[加载角色] 读取到的 active_character_v2:', activeId, '类型:', typeof activeId);
+                
+                // 尝试匹配角色ID（处理字符串/数字类型不匹配的情况）
+                if (activeId) {
+                    // 先尝试直接匹配
+                    if (char.data[activeId]) {
+                        char.activeCharacterId = activeId;
+                    } 
+                    // 尝试数字类型匹配
+                    else if (char.data[Number(activeId)]) {
+                        char.activeCharacterId = Number(activeId);
+                    }
+                    // 尝试字符串类型匹配
+                    else if (char.data[String(activeId)]) {
+                        char.activeCharacterId = String(activeId);
+                    }
+                    // 都找不到，设为null
+                    else {
+                        char.activeCharacterId = null;
+                        devLogs.other('[加载角色] 未找到匹配的角色ID:', activeId);
+                    }
+                } else {
+                    char.activeCharacterId = null;
+                }
                 
                 renderCharacterSelect();
                 if (char.activeCharacterId && char.data[char.activeCharacterId]) {
