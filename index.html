@@ -3087,8 +3087,8 @@
           'regex-replace': '替换为',
           'regex-enabled': '启用',
           'regex-run-on-edit': '编辑时运行',
-          'regex-markdown-only': '仅改变显示(不影响发送)',
-          'regex-prompt-only': '仅改变发送(不影响显示)',
+          'regex-markdown-only': '仅改变显示',
+          'regex-prompt-only': '仅改变发送',
           'regex-placement': '应用位置',
           'regex-placement-ai': 'AI输出',
           'regex-placement-user': '用户输入',
@@ -8601,6 +8601,18 @@ ${currentContent}
                 name: charData.name ? `${charData.name}的世界书` : '角色世界书',
                 entries: charData.worldbook || []
               };
+            }
+            
+            // 转换正则脚本字段：确保 chat.html 能正确加载局部正则脚本
+            // 优先级：extensions.regex_scripts > regex_scripts > regex
+            if (!charData.regex) {
+              if (charData.extensions && charData.extensions.regex_scripts) {
+                charData.regex = charData.extensions.regex_scripts;
+                charData.regex_enabled = true;
+              } else if (charData.regex_scripts) {
+                charData.regex = charData.regex_scripts;
+                charData.regex_enabled = true;
+              }
             }
             
             // 打开chat.html使用的独立IndexedDB（NikaChatDB）

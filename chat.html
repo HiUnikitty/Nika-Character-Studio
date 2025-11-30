@@ -2524,8 +2524,8 @@ body {
                     'regexEdit.scopeQuickReply': '快捷命令 (Quick Reply)',
                     'regexEdit.scopeWorldInfo': '世界信息 (World Info)',
                     'regexEdit.options': '其他选项',
-                    'regexEdit.markdownOnly': '仅改变显示(不影响发送)',
-                    'regexEdit.promptOnly': '仅改变发送(不影响显示)',
+                    'regexEdit.markdownOnly': '仅改变显示',
+                    'regexEdit.promptOnly': '仅改变发送',
                     'regexEdit.save': '保存',
                     'regexEdit.delete': '删除',
 
@@ -3242,8 +3242,9 @@ body {
                                     character_version: char.character_version || '',
                                     alternate_greetings: char.alternate_greetings || [],
                                     character_book: char.character_book || null,
-                                    regex: char.regex || [],
-                                    regex_enabled: char.regex_enabled || false
+                                    // 兼容多种正则脚本字段位置：regex > extensions.regex_scripts > regex_scripts
+                                    regex: char.regex || (char.extensions && char.extensions.regex_scripts) || char.regex_scripts || [],
+                                    regex_enabled: char.regex_enabled !== undefined ? char.regex_enabled : (char.regex || (char.extensions && char.extensions.regex_scripts) || char.regex_scripts ? true : false)
                                 }
                             };
                             
@@ -4679,6 +4680,13 @@ body {
                                 indexCharData.first_mes = charData.first_mes || charData.data?.first_mes || '';
                                 if (charData.data?.character_book) {
                                     indexCharData.character_book = charData.data.character_book;
+                                }
+                                // 显式保存局部正则脚本数据
+                                if (charData.data?.regex) {
+                                    indexCharData.regex = charData.data.regex;
+                                }
+                                if (charData.data?.regex_enabled !== undefined) {
+                                    indexCharData.regex_enabled = charData.data.regex_enabled;
                                 }
                                 
                                 await idbStorage.saveCharacterToStore(indexCharData);
