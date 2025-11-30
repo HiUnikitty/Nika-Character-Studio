@@ -1463,16 +1463,12 @@
                     <div>
                         <label class="block font-medium mb-1" data-i18n="regexEdit.options">其他选项</label>
                         <div class="space-y-1 mt-2">
-                            <label class="flex items-center gap-2 cursor-pointer"><input id="regex-markdown-only" type="checkbox" class="w-4 h-4 accent-primary-color"><span data-i18n="regexEdit.markdownOnly">仅已禁用 (Markdown Only)</span></label>
-                            <label class="flex items-center gap-2 cursor-pointer"><input id="regex-prompt-only" type="checkbox" class="w-4 h-4 accent-primary-color"><span data-i18n="regexEdit.promptOnly">在编辑时运行 (Prompt Only)</span></label>
+                            <label class="flex items-center gap-2 cursor-pointer"><input id="regex-markdown-only" type="checkbox" class="w-4 h-4 accent-primary-color"><span data-i18n="regexEdit.markdownOnly">仅改变显示(不影响发送)</span></label>
+                            <label class="flex items-center gap-2 cursor-pointer"><input id="regex-prompt-only" type="checkbox" class="w-4 h-4 accent-primary-color"><span data-i18n="regexEdit.promptOnly">仅改变发送(不影响显示)</span></label>
                         </div>
                     </div>
                 </div>
-                <div class="grid grid-cols-2 gap-4">
-                    <div><label class="block font-medium mb-1" data-i18n="regexEdit.minDepth">最小深度</label><input id="regex-min-depth" type="number" data-i18n-placeholder="regexEdit.noLimit" placeholder="无限" class="w-full light-input rounded-md p-2"></div>
-                    <div><label class="block font-medium mb-1" data-i18n="regexEdit.maxDepth">最大深度</label><input id="regex-max-depth" type="number" data-i18n-placeholder="regexEdit.noLimit" placeholder="无限" class="w-full light-input rounded-md p-2"></div>
-                </div>
-                 <div class="flex gap-4 pt-2">
+                <div class="flex gap-4 pt-2">
                     <button id="save-regex-changes-btn" class="flex-1 py-2 btn-primary rounded-lg" data-i18n="regexEdit.save">保存</button>
                     <button id="delete-regex-btn" class="flex-1 py-2 btn-secondary rounded-lg hover:bg-red-100 hover:text-red-600" data-i18n="regexEdit.delete">删除</button>
                 </div>
@@ -2528,11 +2524,8 @@ body {
                     'regexEdit.scopeQuickReply': '快捷命令 (Quick Reply)',
                     'regexEdit.scopeWorldInfo': '世界信息 (World Info)',
                     'regexEdit.options': '其他选项',
-                    'regexEdit.markdownOnly': '仅已禁用 (Markdown Only)',
-                    'regexEdit.promptOnly': '在编辑时运行 (Prompt Only)',
-                    'regexEdit.minDepth': '最小深度',
-                    'regexEdit.maxDepth': '最大深度',
-                    'regexEdit.noLimit': '无限',
+                    'regexEdit.markdownOnly': '仅改变显示(不影响发送)',
+                    'regexEdit.promptOnly': '仅改变发送(不影响显示)',
                     'regexEdit.save': '保存',
                     'regexEdit.delete': '删除',
 
@@ -2946,11 +2939,8 @@ body {
                     'regexEdit.scopeQuickReply': 'Quick Reply',
                     'regexEdit.scopeWorldInfo': 'World Info',
                     'regexEdit.options': 'Other Options',
-                    'regexEdit.markdownOnly': 'Markdown Only',
-                    'regexEdit.promptOnly': 'Prompt Only',
-                    'regexEdit.minDepth': 'Min Depth',
-                    'regexEdit.maxDepth': 'Max Depth',
-                    'regexEdit.noLimit': 'Unlimited',
+                    'regexEdit.markdownOnly': 'Display Only (not sent)',
+                    'regexEdit.promptOnly': 'Send Only (not displayed)',
                     'regexEdit.save': 'Save',
                     'regexEdit.delete': 'Delete',
 
@@ -3252,8 +3242,8 @@ body {
                                     character_version: char.character_version || '',
                                     alternate_greetings: char.alternate_greetings || [],
                                     character_book: char.character_book || null,
-                                    regex: char.regex || char.regex_scripts || [],
-                                    regex_enabled: char.regex_enabled !== undefined ? char.regex_enabled : (char.regex || char.regex_scripts || []).some(s => s.disabled === false)
+                                    regex: char.regex || [],
+                                    regex_enabled: char.regex_enabled || false
                                 }
                             };
                             
@@ -3348,8 +3338,8 @@ body {
                                             character_version: char.character_version || '',
                                             alternate_greetings: char.alternate_greetings || [],
                                             character_book: characterBook,
-                                            regex: char.regex || char.regex_scripts || [],
-                                            regex_enabled: char.regex_enabled !== undefined ? char.regex_enabled : (char.regex || char.regex_scripts || []).some(s => s.disabled === false)
+                                            regex: char.regex || [],
+                                            regex_enabled: char.regex_enabled || false
                                         }
                                     };
                                     
@@ -4690,11 +4680,6 @@ body {
                                 if (charData.data?.character_book) {
                                     indexCharData.character_book = charData.data.character_book;
                                 }
-                                // 修复：同时保存 regex 和 regex_scripts 以兼容 index.html
-                                if (charData.data?.regex) {
-                                    indexCharData.regex = charData.data.regex;
-                                    indexCharData.regex_scripts = charData.data.regex;
-                                }
                                 
                                 await idbStorage.saveCharacterToStore(indexCharData);
                             } catch (error) {
@@ -5186,7 +5171,7 @@ body {
                 // 处理 V3 卡片格式的正则
                 if (charData.data?.extensions?.regex_scripts) {
                     newChar.data.regex = charData.data.extensions.regex_scripts;
-                    newChar.data.regex_enabled = charData.data.extensions.regex_scripts.some(s => s.disabled === false);
+                    newChar.data.regex_enabled = true;
                 }
 
                 // 处理 V3 卡片格式的世界书
@@ -6137,8 +6122,6 @@ body {
                     placements: document.querySelectorAll('.regex-placement-cb'),
                     markdownOnly: document.getElementById('regex-markdown-only'),
                     promptOnly: document.getElementById('regex-prompt-only'),
-                    minDepth: document.getElementById('regex-min-depth'),
-                    maxDepth: document.getElementById('regex-max-depth'),
                     saveBtn: document.getElementById('save-regex-changes-btn'),
                     deleteBtn: document.getElementById('delete-regex-btn'),
                 },
@@ -6279,8 +6262,6 @@ body {
                 regex.editor.replace.value = script.replaceString || '';
                 regex.editor.markdownOnly.checked = script.markdownOnly || false;
                 regex.editor.promptOnly.checked = script.promptOnly || false;
-                regex.editor.minDepth.value = script.minDepth ?? '';
-                regex.editor.maxDepth.value = script.maxDepth ?? '';
                 
                 regex.editor.placements.forEach(cb => {
                     const placementVal = parseInt(cb.dataset.placement);
@@ -6302,8 +6283,6 @@ body {
                 script.replaceString = regex.editor.replace.value;
                 script.markdownOnly = regex.editor.markdownOnly.checked;
                 script.promptOnly = regex.editor.promptOnly.checked;
-                script.minDepth = regex.editor.minDepth.value ? parseInt(regex.editor.minDepth.value) : null;
-                script.maxDepth = regex.editor.maxDepth.value ? parseInt(regex.editor.maxDepth.value) : null;
                 
                 script.placement = [];
                 regex.editor.placements.forEach(cb => {
@@ -6337,9 +6316,7 @@ body {
                     placement: [1], // Default to AI Output
                     disabled: false,
                     markdownOnly: false,
-                    promptOnly: false,
-                    minDepth: null,
-                    maxDepth: null
+                    promptOnly: false
                 };
                 if (!regex.data[scope]) regex.data[scope] = [];
                 regex.data[scope].push(newScript);
@@ -7951,11 +7928,45 @@ body {
                     const contentDiv = bubble.querySelector('.message-content');
 
                     if (contentDiv) {
-                        // 只对AI消息应用regex
                         let processedContent = trimmedContent;
-                        if (message.role === 'assistant') {
-                            processedContent = applyRegex(trimmedContent);
+                        const isUser = message.role === 'user';
+
+                        // 第一步：替换{{user}}为当前用户名（最先执行）
+                        if (!isUser) {
+                            const currentUserName = userManagement.getCurrentUser()?.name || '用户';
+                            processedContent = processedContent.replace(/\{\{user\}\}/gi, currentUserName);
                         }
+
+                        // 第二步：提取并保护状态栏内容（在正则处理之前）
+                        const statBarPlaceholders = [];
+                        const statBarRegex = /```([^`]*)```/gs;
+                        
+                        processedContent = processedContent.replace(statBarRegex, (match, statContent) => {
+                            const statTrimmed = statContent.trim();
+                            // 只保护不包含HTML标签的纯文本状态栏
+                            if (statTrimmed && !/<[^>]+>/.test(statTrimmed)) {
+                                const placeholder = `__STATBAR_PLACEHOLDER_${statBarPlaceholders.length}__`;
+                                statBarPlaceholders.push(statTrimmed);
+                                return placeholder;
+                            }
+                            return match; // 保留原样（可能是代码块）
+                        });
+                        
+                        // 第三步：对AI消息应用正则表达式
+                        if (!isUser) {
+                            processedContent = applyRegex(processedContent);
+                        }
+                        
+                        // 第四步：处理^^^包裹的HTML内容
+                        processedContent = processedContent.replace(/\^\^\^([\s\S]*?)\^\^\^/g, function(match, htmlContent) {
+                            return htmlContent;
+                        });
+                        
+                        // 第五步：恢复并渲染状态栏
+                        processedContent = processedContent.replace(/__STATBAR_PLACEHOLDER_(\d+)__/g, (match, index) => {
+                            const statContent = statBarPlaceholders[parseInt(index)];
+                            return renderStatBar(statContent);
+                        });
 
                         // 如果包含HTML,使用innerHTML;否则使用textContent
                         if (containsHTML(processedContent)) {

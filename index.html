@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="zh-CN">
   <head>
     <meta charset="UTF-8" />
@@ -3087,13 +3087,11 @@
           'regex-replace': '替换为',
           'regex-enabled': '启用',
           'regex-run-on-edit': '编辑时运行',
-          'regex-markdown-only': '仅Markdown',
-          'regex-prompt-only': '仅提示词',
+          'regex-markdown-only': '仅改变显示(不影响发送)',
+          'regex-prompt-only': '仅改变发送(不影响显示)',
           'regex-placement': '应用位置',
           'regex-placement-ai': 'AI输出',
           'regex-placement-user': '用户输入',
-          'regex-min-depth': '最小深度',
-          'regex-max-depth': '最大深度',
           'message-example': '示例消息',
           'message-example-placeholder':
           'AI会模仿，但复杂上下文无用。例如：\n{{user}}: (看)\n{{char}}: 特别优美的环境描写',
@@ -3384,7 +3382,7 @@
           'ai-global-edit-btn': '🔮 AI 全局改',
           'ai-generate-worldbook': '🔮 一键生成世界书',
           'add-worldbook-entry': '+ 补充世界书',
-          'sort-by-priority': '按优先级排序',
+          'sort-by-priority': '按优先级排',
           'sort-by-id': '按ID排序',
           
           // AI引导
@@ -3664,13 +3662,11 @@
           'regex-replace': 'Replace With',
           'regex-enabled': 'Enabled',
           'regex-run-on-edit': 'Run on Edit',
-          'regex-markdown-only': 'Markdown Only',
-          'regex-prompt-only': 'Prompt Only',
+          'regex-markdown-only': 'Display Only',
+          'regex-prompt-only': 'Send Only',
           'regex-placement': 'Placement',
           'regex-placement-ai': 'AI Output',
           'regex-placement-user': 'User Input',
-          'regex-min-depth': 'Min Depth',
-          'regex-max-depth': 'Max Depth',
           'message-example': 'Message Example',
           'message-example-placeholder': 'Example dialogues for the AI to imitate. Very important!',
           'advanced-settings': 'Meta Data',
@@ -5949,16 +5945,6 @@ ${JSON.stringify({ fields: textObject, worldbook: wbTextObject }, null, 2)}
                   onchange="updateRegexScript(${index}, 'promptOnly', this.checked)">
                 ${t('regex-prompt-only')}
               </label>
-              <label class="regex-option">
-                ${t('regex-min-depth')}:
-                <input type="number" value="${script.minDepth ?? ''}" min="0" 
-                  onchange="updateRegexScript(${index}, 'minDepth', this.value ? parseInt(this.value) : null)">
-              </label>
-              <label class="regex-option">
-                ${t('regex-max-depth')}:
-                <input type="number" value="${script.maxDepth ?? ''}" min="0" 
-                  onchange="updateRegexScript(${index}, 'maxDepth', this.value ? parseInt(this.value) : null)">
-              </label>
             </div>
           `;
           container.appendChild(card);
@@ -5999,9 +5985,7 @@ ${JSON.stringify({ fields: textObject, worldbook: wbTextObject }, null, 2)}
           markdownOnly: true,
           promptOnly: false,
           runOnEdit: true,
-          substituteRegex: false,
-          minDepth: null,
-          maxDepth: null
+          substituteRegex: false
         };
         regexScriptsData.push(newScript);
         renderRegexScripts();
@@ -12822,34 +12806,118 @@ ${worldbookContextPrompt}
         return entries;
       }
 
+      // 世界书分批渲染配置
+      const WB_BATCH_SIZE = 30; // 每批渲染数量
+      const WB_BATCH_DELAY = 10; // 批次间延迟(ms)
+      let wbRenderAbortController = null; // 用于取消渲染
+
       function renderWorldbookFromData(data) {
         const container = document.getElementById('worldbook-entries-container');
-        container.innerHTML = '';
-
-        function renderLevel(entries, parentElement) {
-          entries.forEach(entryData => {
-            const entryElement = createWorldbookEntryElement(entryData);
-            parentElement.appendChild(entryElement);
-            if (entryData.children && entryData.children.length > 0) {
-              const childContainer = entryElement.querySelector('.child-entries');
-              renderLevel(entryData.children, childContainer);
-            }
-          });
-        }
-
-        renderLevel(data, container);
-        updateAllEntryAttributes();
         const totalEntries = countAllEntries(data);
+        
+        // 取消之前的渲染任务
+        if (wbRenderAbortController) {
+          wbRenderAbortController.abort();
+        }
+        wbRenderAbortController = new AbortController();
+        const signal = wbRenderAbortController.signal;
+        
+        container.innerHTML = '';
+        
+        // 小数据量直接渲染
+        if (totalEntries <= 100) {
+          renderLevelSync(data, container);
+          updateAllEntryAttributes();
+          return;
+        }
+        
+        // 大数据量：显示加载提示并分批渲染
+        const loadingDiv = document.createElement('div');
+        loadingDiv.id = 'wb-loading-indicator';
+        loadingDiv.style.cssText = 'text-align:center;padding:20px;color:#aaa;';
+        loadingDiv.innerHTML = `<span>正在加载 ${totalEntries} 个条目...</span><div style="margin-top:10px;height:4px;background:#333;border-radius:2px;overflow:hidden;"><div id="wb-progress-bar" style="height:100%;width:0%;background:linear-gradient(90deg,var(--primary-color),var(--secondary-color));transition:width 0.2s;"></div></div>`;
+        container.appendChild(loadingDiv);
+        
+        // 扁平化数据用于分批处理
+        const flatEntries = flattenEntries(data);
+        const entryMap = new Map();
+        
+        renderBatched(flatEntries, container, entryMap, signal, totalEntries);
+      }
+      
+      // 同步渲染（小数据量）
+      function renderLevelSync(entries, parentElement) {
+        entries.forEach(entryData => {
+          const entryElement = createWorldbookEntryElement(entryData);
+          parentElement.appendChild(entryElement);
+          if (entryData.children && entryData.children.length > 0) {
+            const childContainer = entryElement.querySelector('.child-entries');
+            renderLevelSync(entryData.children, childContainer);
+          }
+        });
+      }
+      
+      // 扁平化条目数据，保留层级信息
+      function flattenEntries(entries, parentId = null, result = []) {
+        entries.forEach(entry => {
+          result.push({ ...entry, _parentId: parentId, _originalChildren: entry.children });
+          if (entry.children && entry.children.length > 0) {
+            flattenEntries(entry.children, entry.id, result);
+          }
+        });
+        return result;
+      }
+      
+      // 分批渲染
+      async function renderBatched(flatEntries, container, entryMap, signal, total) {
+        const progressBar = document.getElementById('wb-progress-bar');
+        let rendered = 0;
+        
+        for (let i = 0; i < flatEntries.length; i += WB_BATCH_SIZE) {
+          if (signal.aborted) return;
+          
+          const batch = flatEntries.slice(i, i + WB_BATCH_SIZE);
+          
+          batch.forEach(entryData => {
+            const entryElement = createWorldbookEntryElement({
+              ...entryData,
+              children: []
+            });
+            entryMap.set(entryData.id, entryElement);
+            
+            if (entryData._parentId !== null) {
+              const parentEl = entryMap.get(entryData._parentId);
+              if (parentEl) {
+                const childContainer = parentEl.querySelector('.child-entries');
+                childContainer.appendChild(entryElement);
+              }
+            } else {
+              container.appendChild(entryElement);
+            }
+            rendered++;
+          });
+          
+          if (progressBar) {
+            progressBar.style.width = Math.round((rendered / total) * 100) + '%';
+          }
+          
+          await new Promise(r => setTimeout(r, WB_BATCH_DELAY));
+        }
+        
+        const loadingDiv = document.getElementById('wb-loading-indicator');
+        if (loadingDiv) loadingDiv.remove();
+        
+        updateAllEntryAttributes();
+        console.log(`世界书渲染完成: ${total} 个条目`);
       }
       
       function countAllEntries(entries) {
         let count = 0;
         if (!entries) return 0;
-
         for (const entry of entries) {
-          count++; // Count the entry itself
+          count++;
           if (entry.children && entry.children.length > 0) {
-            count += countAllEntries(entry.children); // Add count of children
+            count += countAllEntries(entry.children);
           }
         }
         return count;
