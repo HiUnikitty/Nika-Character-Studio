@@ -8615,9 +8615,11 @@ ${currentContent}
               const chatDb = event.target.result;
               
               try {
-                // 将角色添加到IndexedDB的characters存储
-                const chatTransaction = chatDb.transaction(['characters'], 'readwrite');
+                // 使用单个事务同时操作 characters 和 keyvalue 存储
+                // 这样可以确保两个操作的原子性
+                const chatTransaction = chatDb.transaction(['characters', 'keyvalue'], 'readwrite');
                 const chatStore = chatTransaction.objectStore('characters');
+                const kvStore = chatTransaction.objectStore('keyvalue');
                 
                 // 使用put而不是add，这样可以更新已存在的角色
                 const putRequest = chatStore.put(charData);
@@ -8625,27 +8627,38 @@ ${currentContent}
                 putRequest.onsuccess = () => {
                   console.log('角色已保存到IndexedDB characters存储');
                   
-                  // 将当前角色ID存入IndexedDB的keyvalue存储
-                  const kvTransaction = chatDb.transaction(['keyvalue'], 'readwrite');
-                  const kvStore = kvTransaction.objectStore('keyvalue');
+                  // 在同一个事务中保存当前角色ID
                   const kvRequest = kvStore.put({ key: 'active_character_v2', value: String(id) });
                   
                   kvRequest.onsuccess = () => {
                     console.log('当前角色ID已保存到IndexedDB:', id);
-                    // 跳转到chat.html
-                    window.location.href = 'chat.html?from_index=1';
                   };
                   
-                  kvRequest.onerror = () => {
-                    console.error('保存角色ID失败');
-                    // 仍然跳转，chat.html会使用默认角色
-                    window.location.href = 'chat.html?from_index=1';
+                  kvRequest.onerror = (e) => {
+                    console.error('保存角色ID失败:', e.target.error);
                   };
                 };
                 
                 putRequest.onerror = (error) => {
                   console.error('保存角色到IndexedDB失败:', error);
                   alert('保存角色失败，请重试');
+                };
+                
+                // 关键修复：等待整个事务完成后再跳转
+                // oncomplete 确保所有数据已经持久化到磁盘
+                chatTransaction.oncomplete = () => {
+                  console.log('事务完成，所有数据已持久化，准备跳转');
+                  window.location.href = 'chat.html?from_index=1';
+                };
+                
+                chatTransaction.onerror = (e) => {
+                  console.error('事务失败:', e.target.error);
+                  alert('保存数据失败，请重试');
+                };
+                
+                chatTransaction.onabort = (e) => {
+                  console.error('事务被中止:', e.target.error);
+                  alert('保存数据被中止，请重试');
                 };
                 
               } catch (error) {
