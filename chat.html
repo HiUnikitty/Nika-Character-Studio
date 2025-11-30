@@ -6713,11 +6713,37 @@ body {
                     item.style.backgroundColor = 'var(--card-bg-color)';
                     item.style.borderColor = 'var(--border-color)';
 
-                    // 应用regex转换后获取预览,并移除^^^标记
-                    let processedGreeting = applyRegex(greeting);
-                    // 移除^^^包裹的HTML标记
+                    // 第一步：替换{{user}}为当前用户名
+                    const currentUserName = userManagement.getCurrentUser()?.name || '用户';
+                    let processedGreeting = greeting.replace(/\{\{user\}\}/gi, currentUserName);
+                    
+                    // 第二步：提取并保护状态栏内容（在正则处理之前）
+                    const statBarPlaceholders = [];
+                    const statBarRegex = /```([^`]*)```/gs;
+                    
+                    processedGreeting = processedGreeting.replace(statBarRegex, (match, statContent) => {
+                        const trimmedContent = statContent.trim();
+                        // 只保护不包含HTML标签的纯文本状态栏
+                        if (trimmedContent && !/<[^>]+>/.test(trimmedContent)) {
+                            const placeholder = `__STATBAR_PLACEHOLDER_${statBarPlaceholders.length}__`;
+                            statBarPlaceholders.push(trimmedContent);
+                            return placeholder;
+                        }
+                        return match; // 保留原样（可能是代码块）
+                    });
+                    
+                    // 第三步：应用regex转换后获取预览
+                    processedGreeting = applyRegex(processedGreeting);
+                    
+                    // 第四步：移除^^^包裹的HTML标记
                     processedGreeting = processedGreeting.replace(/\^\^\^([\s\S]*?)\^\^\^/g, function(match, htmlContent) {
                         return htmlContent;
+                    });
+                    
+                    // 第五步：恢复并渲染状态栏（在正则处理之后）
+                    processedGreeting = processedGreeting.replace(/__STATBAR_PLACEHOLDER_(\d+)__/g, (match, idx) => {
+                        const statContent = statBarPlaceholders[parseInt(idx)];
+                        return renderStatBar(statContent);
                     });
 
                     // 创建元素而不是用innerHTML避免XSS
@@ -6734,7 +6760,7 @@ body {
                     const previewDiv = document.createElement('div');
                     previewDiv.className = 'text-sm theme-text-secondary break-words';
                     previewDiv.style.maxHeight = '200px';
-                    previewDiv.style.overflow = 'hidden';
+                    previewDiv.style.overflow = 'auto';
                     previewDiv.style.overflowWrap = 'break-word';
                     previewDiv.style.wordBreak = 'break-word';
                     previewDiv.style.maxWidth = '100%';
@@ -6742,7 +6768,7 @@ body {
                     // 检查是否包含HTML内容
                     if (containsHTML(processedGreeting)) {
                         // 检查是否是完整的HTML文档（包含<!DOCTYPE, <html>, <body>等）
-                        const isFullHTMLDoc = /<!DOCTYPE|<html|<body/i.test(processedGreeting);
+                        const isFullHTMLDoc = /<!DOCTYPE|<html[^>]*>|<head[^>]*>|<body[^>]*>/i.test(processedGreeting);
 
                         if (isFullHTMLDoc) {
                             // 对于完整的HTML文档，不直接渲染，而是显示提示信息
@@ -6758,13 +6784,7 @@ body {
                             `;
                             previewDiv.appendChild(placeholder);
                         } else {
-                            // 非完整HTML文档，使用原有的div隔离方案
-                            const sandbox = document.createElement('div');
-                            sandbox.style.maxHeight = '200px';
-                            sandbox.style.overflow = 'hidden';
-                            sandbox.style.position = 'relative';
-                            sandbox.style.maxWidth = '100%';
-
+                            // 非完整HTML文档，直接渲染HTML片段
                             // 处理<style>标签
                             const styleRegex = /<style[^>]*>([\s\S]*?)<\/style>/gi;
                             const styles = [];
@@ -6797,34 +6817,46 @@ body {
                                 // 创建一个带有唯一ID的wrapper
                                 const styledWrapper = document.createElement('div');
                                 styledWrapper.id = styleId;
-                                styledWrapper.style.maxHeight = '200px';
-                                styledWrapper.style.overflow = 'hidden';
-                                styledWrapper.style.position = 'relative';
-                                styledWrapper.style.maxWidth = '100%';
 
                                 // 创建<style>元素并插入到wrapper内部
                                 const styleElement = document.createElement('style');
                                 styleElement.textContent = scopedStyles;
                                 styledWrapper.appendChild(styleElement);
 
-                                // 插入不含<style>的HTML内容
+                                // 插入不含<style>的HTML内容，保留换行
+                                const contentWithBreaks = contentWithoutStyles
+                                    .replace(/\r\n/g, '<br>')
+                                    .replace(/\r/g, '<br>')
+                                    .replace(/\n/g, '<br>');
                                 const contentContainer = document.createElement('div');
-                                contentContainer.innerHTML = contentWithoutStyles;
+                                contentContainer.innerHTML = contentWithBreaks;
                                 styledWrapper.appendChild(contentContainer);
 
-                                sandbox.appendChild(styledWrapper);
+                                previewDiv.appendChild(styledWrapper);
                             } else {
-                                // 没有样式,直接使用innerHTML
-                                sandbox.innerHTML = processedGreeting;
+                                // 没有样式,直接使用innerHTML，保留换行
+                                const contentWithBreaks = processedGreeting
+                                    .replace(/\r\n/g, '<br>')
+                                    .replace(/\r/g, '<br>')
+                                    .replace(/\n/g, '<br>');
+                                previewDiv.innerHTML = contentWithBreaks;
                             }
-
-                            previewDiv.appendChild(sandbox);
                         }
                     } else {
-                        // 纯文本内容
-                        const textPreview = processedGreeting.length > 300 ? processedGreeting.substring(0, 300) + '...' : processedGreeting;
-                        previewDiv.textContent = textPreview;
-                        previewDiv.style.whiteSpace = 'pre-wrap';
+                        // 纯文本内容，检查是否包含状态栏
+                        if (processedGreeting.includes('stat-bar-container')) {
+                            // 包含状态栏,使用innerHTML渲染,但保留换行
+                            const contentWithBreaks = processedGreeting
+                                .replace(/\r\n/g, '<br>')
+                                .replace(/\r/g, '<br>')
+                                .replace(/\n/g, '<br>');
+                            previewDiv.innerHTML = contentWithBreaks;
+                        } else {
+                            // 纯文本，限制长度
+                            const textPreview = processedGreeting.length > 300 ? processedGreeting.substring(0, 300) + '...' : processedGreeting;
+                            previewDiv.textContent = textPreview;
+                            previewDiv.style.whiteSpace = 'pre-wrap';
+                        }
                     }
 
                     contentDiv.appendChild(previewDiv);
