@@ -6713,8 +6713,12 @@ body {
                     item.style.backgroundColor = 'var(--card-bg-color)';
                     item.style.borderColor = 'var(--border-color)';
 
-                    // 应用regex转换后获取预览
-                    const processedGreeting = applyRegex(greeting);
+                    // 应用regex转换后获取预览,并移除^^^标记
+                    let processedGreeting = applyRegex(greeting);
+                    // 移除^^^包裹的HTML标记
+                    processedGreeting = processedGreeting.replace(/\^\^\^([\s\S]*?)\^\^\^/g, function(match, htmlContent) {
+                        return htmlContent;
+                    });
 
                     // 创建元素而不是用innerHTML避免XSS
                     const flexDiv = document.createElement('div');
@@ -6726,10 +6730,6 @@ body {
 
                     const contentDiv = document.createElement('div');
                     contentDiv.className = 'flex-1 min-w-0';
-
-                    const titleDiv = document.createElement('div');
-                    titleDiv.className = 'text-sm font-medium text-gray-900 mb-1';
-                    titleDiv.textContent = `开场白 ${index + 1}`;
 
                     const previewDiv = document.createElement('div');
                     previewDiv.className = 'text-sm theme-text-secondary break-words';
@@ -6827,7 +6827,6 @@ body {
                         previewDiv.style.whiteSpace = 'pre-wrap';
                     }
 
-                    contentDiv.appendChild(titleDiv);
                     contentDiv.appendChild(previewDiv);
                     flexDiv.appendChild(badge);
                     flexDiv.appendChild(contentDiv);
