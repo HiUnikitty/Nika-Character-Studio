@@ -3212,13 +3212,12 @@ body {
                         // 转换为 char.data 格式 {id: character}
                         const charData = {};
                         characters.forEach(char => {
-                            // 使用角色的 id 字段作为键，统一转换为字符串类型
-                            // 因为 index.html 存储 active_character_v2 时使用 String(id)
-                            const charId = String(char.id);
+                            // 使用角色的 id 字段作为键（与index.html保持一致）
+                            const charId = char.id;
                             
                             const convertedChar = {
                                 id: charId,
-                                dbId: char.id, // 保存原始数据库 ID
+                                dbId: char.id, // 保存数据库 ID
                                 fav: char.isFavorite || false,
                                 avatar: char.avatar || 'none',
                                 name: char.name || '未命名角色',
@@ -5603,28 +5602,7 @@ body {
                 devLogs.other('[加载角色] 从 IndexedDB 加载了', Object.keys(char.data).length, '个角色');
                 devLogs.other('[加载角色] 角色列表:', Object.keys(char.data));
 
-                let storedActiveId = await idbStorage.getItem('active_character_v2');
-                devLogs.other('[加载角色] 存储的活动角色ID:', storedActiveId, '类型:', typeof storedActiveId);
-                
-                // 修复：尝试多种方式匹配角色ID（字符串和数字）
-                let matchedId = null;
-                if (storedActiveId !== null && storedActiveId !== undefined) {
-                    // 先尝试直接匹配
-                    if (char.data[storedActiveId]) {
-                        matchedId = storedActiveId;
-                    }
-                    // 尝试数字类型匹配
-                    else if (char.data[Number(storedActiveId)]) {
-                        matchedId = Number(storedActiveId);
-                    }
-                    // 尝试字符串类型匹配
-                    else if (char.data[String(storedActiveId)]) {
-                        matchedId = String(storedActiveId);
-                    }
-                    devLogs.other('[加载角色] 匹配到的角色ID:', matchedId);
-                }
-                
-                char.activeCharacterId = matchedId;
+                char.activeCharacterId = await idbStorage.getItem('active_character_v2');
                 
                 renderCharacterSelect();
                 if (char.activeCharacterId && char.data[char.activeCharacterId]) {
@@ -11009,6 +10987,14 @@ You must structure your entire output strictly in the following format, without 
             };
 
             // --- Initial Load ---
+            // 检查是否从 index.html 跳转过来
+            const urlParams = new URLSearchParams(window.location.search);
+            if (urlParams.get('from_index') === '1') {
+                // 设置标志，告诉 getCharacters 函数使用 IndexedDB 模式
+                localStorage.setItem('use_indexeddb_characters', 'true');
+                console.log('从 index.html 跳转，启用 IndexedDB 角色模式');
+            }
+
             // 异步初始化函数
             async function initializeApp() {
                 // 先初始化主题和偏好设置（需要等待IndexedDB加载）
