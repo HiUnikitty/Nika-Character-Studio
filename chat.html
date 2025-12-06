@@ -630,6 +630,22 @@
 
         .message-content em {
             font-style: italic;
+            color: var(--star-color);
+        }
+
+        /* SillyTavern 风格：对话引号着色 */
+        .message-content q {
+            quotes: none;
+            color: var(--speaking-color);
+            font-weight: 500;
+        }
+
+        .ai-bubble .message-content q {
+            color: var(--speaking-color);
+        }
+
+        .user-bubble .message-content q {
+            color: rgba(255, 255, 255, 0.95);
         }
 
         .message-content a {
@@ -6147,34 +6163,45 @@ body {
                 const globalDataStr = await idbStorage.getItem('global_regex_v1');
                 let globalData = globalDataStr ? JSON.parse(globalDataStr) : [];
                 
-                // 检查并添加默认的regex脚本
+                // 默认正则脚本配置（已禁用，由 SillyTavern 风格替代）
                 const defaultScripts = [
                     {
                         id: 'default-speaking-color',
                         scriptName: 'Speaking Color',
-                        findRegex: '(“[\\s\\S]*?”|"[\\s\\S]*?")',
+                        findRegex: '("[\\s\\S]*?"|"[\\s\\S]*?")',
                         replaceString: '^^^<span class="speaking-color">$1</span>^^^',
-                        disabled: false
+                        disabled: true  // 已由内置 SillyTavern 风格处理替代
                     },
                     {
                         id: 'default-star-color',
                         scriptName: 'Star Color',
                         findRegex: '\\*([\\s\\S]*?)\\*',
                         replaceString: '^^^<span class="star-color">$1</span>^^^',
-                        disabled: false
+                        disabled: true  // 已由内置 SillyTavern 风格处理替代
                     }
                 ];
                 
-                // 检查每个默认脚本是否已存在
+                let needsSave = false;
+                
+                // 检查并更新/添加默认脚本
                 defaultScripts.forEach(defaultScript => {
-                    const exists = globalData.some(script => script.scriptName === defaultScript.scriptName);
-                    if (!exists) {
+                    const existingIndex = globalData.findIndex(script => script.id === defaultScript.id);
+                    
+                    if (existingIndex !== -1) {
+                        // 已存在：更新为禁用状态
+                        if (globalData[existingIndex].disabled !== true) {
+                            globalData[existingIndex].disabled = true;
+                            needsSave = true;
+                        }
+                    } else {
+                        // 不存在：添加新脚本
                         globalData.push(defaultScript);
+                        needsSave = true;
                     }
                 });
                 
-                // 如果添加了新脚本，保存到存储
-                if (globalData.length > (globalDataStr ? JSON.parse(globalDataStr).length : 0)) {
+                // 如果有更改，保存到存储
+                if (needsSave) {
                     await idbStorage.setItem('global_regex_v1', JSON.stringify(globalData));
                 }
                 
@@ -7861,9 +7888,66 @@ body {
                                     contentDiv.innerHTML = contentWithBreaks;
                                     contentDiv.setAttribute('data-style-id', styleId);
                                 } else {
-                                    // 没有样式,直接使用innerHTML
-                                    // 先转换所有类型的换行符为<br>标签,确保换行被保留
-                                    const contentWithBreaks = finalContent
+                                    // 没有样式,先应用 SillyTavern 风格处理
+                                    let processedContent = finalContent;
+                                    
+                                    // 0. 保护 HTML 标签中的引号（避免被转换）
+                                    processedContent = processedContent.replace(/<([^>]+)>/g, function (_, contents) {
+                                        return '<' + contents.replace(/"/g, '\ufffe') + '>';
+                                    });
+                                    
+                                    // 1. 处理引号：转换为 <q> 标签（排除代码块，保留原始引号）
+                                    processedContent = processedContent.replace(
+                                        /<style>[\s\S]*?<\/style>|```[\s\S]*?```|~~~[\s\S]*?~~~|``[\s\S]*?``|`[\s\S]*?`|(".*?")|(\u201c.*?\u201d)|(\u00ab.*?\u00bb)|(\u300c.*?\u300d)|(\u300e.*?\u300f)|(\uff02.*?\uff02)/gim,
+                                        function (match, p1, p2, p3, p4, p5, p6) {
+                                            if (p1) {
+                                                // 英文双引号 "..."
+                                                return `<q>"${p1.slice(1, -1)}"</q>`;
+                                            } else if (p2) {
+                                                // 弯引号 ""
+                                                return `<q>"${p2.slice(1, -1)}"</q>`;
+                                            } else if (p3) {
+                                                // 书名号 «»
+                                                return `<q>«${p3.slice(1, -1)}»</q>`;
+                                            } else if (p4) {
+                                                // 中文引号 「」
+                                                return `<q>「${p4.slice(1, -1)}」</q>`;
+                                            } else if (p5) {
+                                                // 中文书名号 『』
+                                                return `<q>『${p5.slice(1, -1)}』</q>`;
+                                            } else if (p6) {
+                                                // 全角引号 ＂＂
+                                                return `<q>＂${p6.slice(1, -1)}＂</q>`;
+                                            } else {
+                                                // 代码块等，保持原样
+                                                return match;
+                                            }
+                                        }
+                                    );
+                                    
+                                    // 1.5. 恢复 HTML 标签中的引号
+                                    processedContent = processedContent.replace(/\ufffe/g, '"');
+                                    
+                                    // 2. 处理 Markdown 动作：**...** 和 *...* → <em>...</em>
+                                    // 先处理双星号，再处理单星号
+                                    processedContent = processedContent.replace(
+                                        /(<[^>]+>)|(\*\*([^*]+)\*\*)|(\*([^*]+)\*)/g,
+                                        function(match, htmlTag, doubleAsterisk, doubleContent, singleAsterisk, singleContent) {
+                                            if (htmlTag) {
+                                                // HTML 标签，保持原样
+                                                return htmlTag;
+                                            } else if (doubleAsterisk) {
+                                                // **...** 转换为 <strong>（粗体）
+                                                return `<strong>${doubleContent}</strong>`;
+                                            } else if (singleAsterisk) {
+                                                // *...* 转换为 <em>（斜体）
+                                                return `<em>${singleContent}</em>`;
+                                            }
+                                            return match;
+                                        }
+                                    );
+                                    // 3. 转换换行符
+                                    const contentWithBreaks = processedContent
                                         .replace(/\r\n/g, '<br>')  // Windows换行
                                         .replace(/\r/g, '<br>')    // Mac换行
                                         .replace(/\n/g, '<br>');   // Unix/Linux换行
@@ -7874,17 +7958,45 @@ body {
                             }
                         }
                     } else {
-                        // 检查是否包含状态栏HTML
-                        if (finalContent.includes('stat-bar-container')) {
-                            // 包含状态栏,使用innerHTML渲染,但保留换行
-                            const contentWithBreaks = finalContent
+                        // 纯文本内容，应用 SillyTavern 风格处理
+                        let processedContent = finalContent;
+                        
+                        // 1. 处理引号
+                        processedContent = processedContent.replace(
+                            /<style>[\s\S]*?<\/style>|```[\s\S]*?```|~~~[\s\S]*?~~~|``[\s\S]*?``|`[\s\S]*?`|(".*?")|(\u201c.*?\u201d)|(\u00ab.*?\u00bb)|(\u300c.*?\u300d)|(\u300e.*?\u300f)|(\uff02.*?\uff02)/gim,
+                            function (match, p1, p2, p3, p4, p5, p6) {
+                                if (p1) return `<q>"${p1.slice(1, -1)}"</q>`;
+                                else if (p2) return `<q>"${p2.slice(1, -1)}"</q>`;
+                                else if (p3) return `<q>«${p3.slice(1, -1)}»</q>`;
+                                else if (p4) return `<q>「${p4.slice(1, -1)}」</q>`;
+                                else if (p5) return `<q>『${p5.slice(1, -1)}』</q>`;
+                                else if (p6) return `<q>＂${p6.slice(1, -1)}＂</q>`;
+                                else return match;
+                            }
+                        );
+                        
+                        // 2. 处理星号动作
+                        processedContent = processedContent.replace(
+                            /(<[^>]+>)|(\*\*([^*]+)\*\*)|(\*([^*]+)\*)/g,
+                            function(match, htmlTag, doubleAsterisk, doubleContent, singleAsterisk, singleContent) {
+                                if (htmlTag) return htmlTag;
+                                else if (doubleAsterisk) return `<strong>${doubleContent}</strong>`;
+                                else if (singleAsterisk) return `<em>${singleContent}</em>`;
+                                return match;
+                            }
+                        );
+                        
+                        // 3. 检查是否包含状态栏HTML或其他HTML
+                        if (processedContent.includes('stat-bar-container') || processedContent.includes('<')) {
+                            // 包含HTML,使用innerHTML渲染,但保留换行
+                            const contentWithBreaks = processedContent
                                 .replace(/\r\n/g, '<br>')
                                 .replace(/\r/g, '<br>')
                                 .replace(/\n/g, '<br>');
                             contentDiv.innerHTML = contentWithBreaks;
                         } else {
-                            // 否则使用textContent保持纯文本,保留换行
-                            contentDiv.textContent = finalContent;
+                            // 纯文本,使用textContent保持纯文本,保留换行
+                            contentDiv.textContent = processedContent;
                         }
                         messageBubble.appendChild(contentDiv);
                     }
