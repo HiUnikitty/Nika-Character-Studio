@@ -5867,7 +5867,7 @@ ${JSON.stringify({ fields: textObject, worldbook: wbTextObject }, null, 2)}
           renderAlternateGreetings();
         }
       }
-      
+
       // ===== 正则脚本管理函数 =====
 
       // 渲染正则脚本列表
@@ -5882,8 +5882,8 @@ ${JSON.stringify({ fields: textObject, worldbook: wbTextObject }, null, 2)}
           card.className = 'regex-card collapsed' + (script.disabled ? ' disabled' : '');
           
           // 确保placement是数组格式
-          const placements = Array.isArray(script.placement) ? script.placement : [0];
-          const isAiOutput = placements.includes(0);
+          const placements = Array.isArray(script.placement) ? script.placement : [2];
+          const isAiOutput = placements.includes(2);
           const isUserInput = placements.includes(1);
           
           const displayName = script.scriptName || t('regex-name');
@@ -5922,7 +5922,7 @@ ${JSON.stringify({ fields: textObject, worldbook: wbTextObject }, null, 2)}
             <div class="regex-options">
               <label class="regex-option">
                 <input type="checkbox" ${isAiOutput ? 'checked' : ''} 
-                  onchange="updateRegexPlacement(${index}, 0, this.checked)">
+                  onchange="updateRegexPlacement(${index}, 2, this.checked)">
                 ${t('regex-placement-ai')}
               </label>
               <label class="regex-option">
@@ -5965,14 +5965,6 @@ ${JSON.stringify({ fields: textObject, worldbook: wbTextObject }, null, 2)}
         headerSpan.textContent = name;
       }
       
-      // HTML转义函数
-      function escapeHtml(text) {
-        if (!text) return '';
-        const div = document.createElement('div');
-        div.textContent = text;
-        return div.innerHTML;
-      }
-      
       // 添加新的正则脚本
       function addRegexScript() {
         const newScript = {
@@ -5980,7 +5972,7 @@ ${JSON.stringify({ fields: textObject, worldbook: wbTextObject }, null, 2)}
           findRegex: '',
           replaceString: '',
           trimStrings: [],
-          placement: [0], // 默认AI输出
+          placement: [2], // 默认AI输出
           disabled: false,
           markdownOnly: true,
           promptOnly: false,
@@ -6022,7 +6014,7 @@ ${JSON.stringify({ fields: textObject, worldbook: wbTextObject }, null, 2)}
         
         // 确保至少有一个选中
         if (placements.length === 0) {
-          placements = [0]; // 默认AI输出
+          placements = [2]; // 默认AI输出
         }
         
         regexScriptsData[index].placement = placements;
