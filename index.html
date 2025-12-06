@@ -5869,7 +5869,7 @@ ${JSON.stringify({ fields: textObject, worldbook: wbTextObject }, null, 2)}
       }
       
       // ===== 正则脚本管理函数 =====
-      
+
       // 渲染正则脚本列表
       function renderRegexScripts() {
         const container = document.getElementById('regex-scripts-container');
@@ -5882,9 +5882,9 @@ ${JSON.stringify({ fields: textObject, worldbook: wbTextObject }, null, 2)}
           card.className = 'regex-card collapsed' + (script.disabled ? ' disabled' : '');
           
           // 确保placement是数组格式
-          const placements = Array.isArray(script.placement) ? script.placement : [1];
-          const isAiOutput = placements.includes(1);
-          const isUserInput = placements.includes(0);
+          const placements = Array.isArray(script.placement) ? script.placement : [0];
+          const isAiOutput = placements.includes(0);
+          const isUserInput = placements.includes(1);
           
           const displayName = script.scriptName || t('regex-name');
           
@@ -5922,12 +5922,12 @@ ${JSON.stringify({ fields: textObject, worldbook: wbTextObject }, null, 2)}
             <div class="regex-options">
               <label class="regex-option">
                 <input type="checkbox" ${isAiOutput ? 'checked' : ''} 
-                  onchange="updateRegexPlacement(${index}, 1, this.checked)">
+                  onchange="updateRegexPlacement(${index}, 0, this.checked)">
                 ${t('regex-placement-ai')}
               </label>
               <label class="regex-option">
                 <input type="checkbox" ${isUserInput ? 'checked' : ''} 
-                  onchange="updateRegexPlacement(${index}, 0, this.checked)">
+                  onchange="updateRegexPlacement(${index}, 1, this.checked)">
                 ${t('regex-placement-user')}
               </label>
               <label class="regex-option">
@@ -5980,7 +5980,7 @@ ${JSON.stringify({ fields: textObject, worldbook: wbTextObject }, null, 2)}
           findRegex: '',
           replaceString: '',
           trimStrings: [],
-          placement: [1], // 默认AI输出
+          placement: [0], // 默认AI输出
           disabled: false,
           markdownOnly: true,
           promptOnly: false,
@@ -6022,7 +6022,7 @@ ${JSON.stringify({ fields: textObject, worldbook: wbTextObject }, null, 2)}
         
         // 确保至少有一个选中
         if (placements.length === 0) {
-          placements = [1]; // 默认AI输出
+          placements = [0]; // 默认AI输出
         }
         
         regexScriptsData[index].placement = placements;
@@ -11804,7 +11804,7 @@ ${type === 'prefix' ? '\n---\n以下是用户的具体要求：\n' : ''}`;
 - 性别: ${currentCard.gender || '未指定'}
 - 角色描述: ${currentCard.description || '未指定'}
 - 分类标签: ${currentCard.tags && currentCard.tags.length > 0 ? currentCard.tags.join(', ') : '未指定'}
-- 个性: ${currentCard.personality || '未指定'}
+- 个性（包含MBTI性格类型）: ${currentCard.personality || '未指定'}
 - 场景设定: ${currentCard.scenario || '未指定'}
 - 首次发言: ${currentCard.first_mes || '未指定'}
 - 范例对话: ${currentCard.mes_example || '未指定'}
@@ -11818,37 +11818,6 @@ ${existingEntriesText || '无'}
 特别注意：你不是角色
 **Avoid** writing {{char}}'s words and thoughts
 `;
-
-          // 如果是描述字段，添加详细外貌特征要求
-          if (fieldId === 'description') {
-            prompt += `
-**重要：请在角色描述中包含以下详细信息：**
-
-1. **MBTI性格类型**（如INTJ、ENFP等）
-
-2. **外貌特征**：
-   - 身高
-   - 发色
-   - 发型
-   - 眼睛（颜色、形状）
-   - 鼻子
-   - 嘴唇
-   - 皮肤（肤色、质感）
-   - 身材（体型）
-   - 三围（胸围、腰围、臀围）
-
-3. **私密部位描写**（仅限女性角色，请根据上述角色信息判断性别）：
-   - 胸部
-   - 生殖器
-   - 屁眼
-   - 阴毛
-   - 大腿
-   - 屁股
-   - 足部
-
-请将以上细节自然地融入角色描述中，使描述既全面又具有文学性。
-`;
-          }
 
           if (userGuidance) {
             prompt += `\n用户的额外指令: ${userGuidance}\n`;
@@ -12668,12 +12637,8 @@ ${worldbookContextPrompt}
 **你的任务:**
 请为以下所有字段生成内容，并**严格以一个单一的JSON对象格式返回**，不要包含任何解释或Markdown标记。
 字段包括: "${fieldsToComplete.join('", "')}"
-- 对于 "description" 字段，请包含以下详细信息：
-  * MBTI性格类型（如INTJ、ENFP等）
-  * 外貌特征：身高、发色、发型、眼睛（颜色、形状）、鼻子、嘴唇、皮肤（肤色、质感）、身材（体型）、三围（胸围、腰围、臀围）
-  * 仅当角色为女性时，包含私密部位描写：胸部、生殖器、屁眼、阴毛、大腿、屁股、足部
-  * 请将以上细节自然地融入角色描述中
 - 对于 "tags" 字段, 请返回一个由逗号分隔的字符串。
+- 对于 "personality", 请返回一个包含MBTI性格类型的详细性格描述。
 - 对于 "mes_example", 请生成一段包含{{user}}和{{char}}的对话示例，对话开始另起一行以<START>开头。例如：
 <<START>
 {{user}}: 你好。
