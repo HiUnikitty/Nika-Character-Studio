@@ -159,8 +159,6 @@ document.querySelector('.generation-type-selector button[data-type="worldview"]'
     t('wb-ai-gen-type-btn-worldview');
 document.querySelector('.generation-type-selector button[data-type="main_plot"]').textContent =
     t('wb-ai-gen-type-btn-main-plot');
-document.querySelector('.generation-type-selector button[data-type="literary_style"]').textContent =
-    t('wb-ai-gen-type-btn-literary-style');
 document.getElementById('wb-ai-inject-btn').textContent = t('wb-ai-inject-btn');
 document.getElementById('wb-ai-regenerate-btn').textContent = t('wb-ai-regenerate-btn');
 document.getElementById('wb-ai-cancel-btn').textContent = t('wb-ai-close-btn');
