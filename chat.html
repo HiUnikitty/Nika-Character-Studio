@@ -5969,13 +5969,26 @@ body {
 
                         let newEntries;
                         if (importedData.entries && typeof importedData.entries === 'object') {
-                             newEntries = Object.values(importedData.entries).map((entry, idx) => ({
-                                id: `wi_${Date.now()}_${entry.uid || idx}`,
-                                name: entry.comment || '无标题',
-                                keys: (entry.key || []).join(', '),
-                                content: entry.content || '',
-                                enabled: !entry.disable,
-                            }));
+                             newEntries = Object.values(importedData.entries).map((entry, idx) => {
+                                // 标准化字段：key -> keys (字符串)
+                                const keysString = Array.isArray(entry.key) ? entry.key.join(', ') : '';
+                                // 优先从 extensions 读取，否则从外层读取
+                                const ext = entry.extensions || {};
+                                
+                                return {
+                                    ...entry,  // 保留所有原始字段
+                                    id: `wi_${Date.now()}_${entry.uid || idx}`,
+                                    name: entry.comment || '无标题',
+                                    keys: keysString,
+                                    enabled: !entry.disable,  // disable -> enabled
+                                    priority: entry.order || 100,  // order -> priority
+                                    secondary_keys: entry.keysecondary || [],
+                                    // 优先从 extensions 读取位置相关字段
+                                    position: ext.position !== undefined ? ext.position : (entry.position || 0),
+                                    depth: ext.depth !== undefined ? ext.depth : (entry.depth !== undefined ? entry.depth : 4),
+                                    role: ext.role !== undefined ? ext.role : (entry.role !== undefined ? entry.role : 0)
+                                };
+                            });
                         } else if (Array.isArray(importedData)) {
                             newEntries = importedData;
                         } else {
@@ -7147,15 +7160,64 @@ body {
                     });
                 }
                 
-                // 第二步:应用正则表达式(此时状态栏已被占位符保护)
+                // 第二步:应用自定义正则表达式
                 processedText = applyRegex(processedText);
                 
-                // 第三步:处理^^^包裹的HTML内容
+                // 第三步:应用Markdown渲染(加粗、斜体、引号颜色等) - 在自定义正则之后执行，避免破坏HTML标签
+                // 双星号加粗 **text**
+                processedText = processedText.replace(/\*\*(.+?)\*\*/g, function(match, content) {
+                    return '<strong>' + content + '</strong>';
+                });
+                
+                // 单星号斜体 *text*
+                processedText = processedText.replace(/(?<!\*)\*(?!\*)(.+?)(?<!\*)\*(?!\*)/g, function(match, content) {
+                    return '<em>' + content + '</em>';
+                });
+                
+                // 引号颜色渲染 - 使用CSS变量，智能跳过HTML标签内的引号
+                // 辅助函数：检查位置是否在HTML标签内
+                function isInsideHtmlTag(text, matchIndex) {
+                    // 向前查找最近的 < 和 >
+                    let lastOpenTag = text.lastIndexOf('<', matchIndex);
+                    let lastCloseTag = text.lastIndexOf('>', matchIndex);
+                    // 如果最近的 < 在最近的 > 之后，说明在标签内
+                    return lastOpenTag > lastCloseTag;
+                }
+                
+                // 中文直角引号
+                processedText = processedText.replace(/「([^」]+)」/g, function(match, content, offset, fullText) {
+                    if (isInsideHtmlTag(fullText, offset)) return match;
+                    return '<span style="color: var(--speaking-color);">「' + content + '」</span>';
+                });
+                processedText = processedText.replace(/『([^』]+)』/g, function(match, content, offset, fullText) {
+                    if (isInsideHtmlTag(fullText, offset)) return match;
+                    return '<span style="color: var(--speaking-color);">『' + content + '』</span>';
+                });
+                // 英文引号
+                processedText = processedText.replace(/"([^"]+)"/g, function(match, content, offset, fullText) {
+                    if (isInsideHtmlTag(fullText, offset)) return match;
+                    return '<span style="color: var(--speaking-color);">"' + content + '"</span>';
+                });
+                // processedText = processedText.replace(/'([^']+)'/g, function(match, content, offset, fullText) {
+                //     if (isInsideHtmlTag(fullText, offset)) return match;
+                //     return '<span style="color: var(--speaking-color);">\'' + content + '\'</span>';
+                // });
+                // 中文弯引号
+                processedText = processedText.replace(/“([^”]+)”/g, function(match, content, offset, fullText) {
+                    if (isInsideHtmlTag(fullText, offset)) return match;
+                    return '<span style="color: var(--speaking-color);">“' + content + '”</span>';
+                });
+                // processedText = processedText.replace(/‘([^’]+)’/g, function(match, content, offset, fullText) {
+                //     if (isInsideHtmlTag(fullText, offset)) return match;
+                //     return '<span style="color: var(--speaking-color);">‘' + content + '’</span>';
+                // });
+                
+                // 第四步:处理^^^包裹的HTML内容
                 processedText = processedText.replace(/\^\^\^([\s\S]*?)\^\^\^/g, function(match, htmlContent) {
                     return htmlContent;
                 });
                 
-                // 第四步:恢复并渲染状态栏
+                // 第五步:恢复并渲染状态栏
                 processedText = processedText.replace(/__STATBAR_PLACEHOLDER_(\d+)__/g, function(match, index) {
                     const statContent = statBarPlaceholders[parseInt(index)];
                     return renderStatBar(statContent);
@@ -8773,84 +8835,96 @@ body {
                 let worldInfoAfter = [];
                 let depthEntries = []; // position=4的深度插入条目
 
-                // 收集全局世界书
-                const selectedWorld = wi.worldSelect?.value;
-                if (selectedWorld && selectedWorld !== 'char_book' && wi.data[selectedWorld]) {
-                    const worldEntries = wi.data[selectedWorld];
-                    worldEntries.forEach(entry => {
-                        if (entry.enabled) {
-                            const keys = Array.isArray(entry.keys) ? entry.keys : (entry.keys || '').split(',').map(k => k.trim());
-                            let shouldInclude = entry.constant || false;
+                // 收集全局世界书 - 收集所有已导入的全局世界书
+                const globalWorldNames = Object.keys(wi.data || {});
+                if (globalWorldNames.length > 0) {
+                    if (devLogs.showWorldbookLogs) {
+                        console.log(`📚 发现 ${globalWorldNames.length} 个全局世界书，开始收集所有全局世界书`);
+                    }
+                    
+                    globalWorldNames.forEach(worldName => {
+                        const worldEntries = wi.data[worldName];
+                        if (!worldEntries || worldEntries.length === 0) return;
+                        
+                        if (devLogs.showWorldbookLogs) {
+                            console.log(`📚 收集全局世界书: ${worldName} (${worldEntries.length} 个条目)`);
+                        }
+                        
+                        worldEntries.forEach(entry => {
+                            if (entry.enabled) {
+                                const keys = Array.isArray(entry.keys) ? entry.keys : (entry.keys || '').split(',').map(k => k.trim());
+                                let shouldInclude = entry.constant || false;
 
-                            if (!shouldInclude) {
-                                const recentMessages = chatHistory.filter(m => !m.hidden).slice(-10).map(m => m.content).join(' ');
-                                const allContext = recentMessages;
+                                if (!shouldInclude) {
+                                    const recentMessages = chatHistory.filter(m => !m.hidden).slice(-10).map(m => m.content).join(' ');
+                                    const allContext = recentMessages;
 
-                                for (const key of keys) {
-                                    if (key && allContext.toLowerCase().includes(key.toLowerCase())) {
-                                        shouldInclude = true;
-                                        break;
+                                    for (const key of keys) {
+                                        if (key && allContext.toLowerCase().includes(key.toLowerCase())) {
+                                            shouldInclude = true;
+                                            break;
+                                        }
+                                    }
+                                }
+
+                                if (shouldInclude && entry.content) {
+                                    if (devLogs.showWorldbookLogs) {
+                                        console.log(`  🔍 [${worldName}] 条目匹配: keys=[${keys}]`);
+                                    }
+
+                                    // 优先从extensions.position读取，否则读取外层position
+                                    let position = entry.extensions?.position !== undefined 
+                                        ? entry.extensions.position 
+                                        : (entry.position !== undefined ? entry.position : 0);
+                                    
+                                    // 处理SillyTavern的字符串position映射
+                                    if (typeof position === 'string') {
+                                        const posMap = {
+                                            'before_char': 0,
+                                            'after_char': 1,
+                                            'an_top': 0, // Author's Note Top
+                                            'an_bottom': 1 // Author's Note Bottom
+                                        };
+                                        position = posMap[position] !== undefined ? posMap[position] : 0;
+                                    }
+                                    
+                                    // 确保position是数字
+                                    position = Number(position);
+                                    
+                                    // 如果是深度插入，读取extensions中的depth和role
+                                    let depth = 4;
+                                    let role = 0;
+                                    
+                                    if (position === 4) {
+                                        depth = entry.extensions?.depth !== undefined ? Number(entry.extensions.depth) : (entry.depth !== undefined ? Number(entry.depth) : 4);
+                                        role = entry.extensions?.role !== undefined ? Number(entry.extensions.role) : (entry.role !== undefined ? Number(entry.role) : 0);
+                                    }
+
+                                    if (devLogs.showWorldbookLogs) {
+                                        console.log(`    → pos=${position}, depth=${depth}, role=${role}`);
+                                    }
+                                    
+                                    if (position === 0) {
+                                        // Before character
+                                        worldInfoBefore.push(entry.content);
+                                    } else if (position === 1) {
+                                        // After character
+                                        worldInfoAfter.push(entry.content);
+                                    } else if (position === 4) {
+                                        // 深度插入
+                                        depthEntries.push({
+                                            content: entry.content,
+                                            depth: depth,
+                                            role: role, // 0=system, 1=user, 2=assistant
+                                            priority: entry.priority !== undefined ? Number(entry.priority) : 100
+                                        });
+                                    } else {
+                                        // 其他position默认放到before
+                                        worldInfoBefore.push(entry.content);
                                     }
                                 }
                             }
-
-                            if (shouldInclude && entry.content) {
-                                if (devLogs.showWorldbookLogs) {
-                                    console.log('Entry structure:', JSON.stringify(entry, null, 2));
-                                }
-
-                                // 优先从extensions.position读取，否则读取外层position
-                                let position = entry.extensions?.position !== undefined 
-                                    ? entry.extensions.position 
-                                    : (entry.position !== undefined ? entry.position : 0);
-                                
-                                // 处理SillyTavern的字符串position映射
-                                if (typeof position === 'string') {
-                                    const posMap = {
-                                        'before_char': 0,
-                                        'after_char': 1,
-                                        'an_top': 0, // Author's Note Top
-                                        'an_bottom': 1 // Author's Note Bottom
-                                    };
-                                    position = posMap[position] !== undefined ? posMap[position] : 0;
-                                }
-                                
-                                // 确保position是数字
-                                position = Number(position);
-                                
-                                // 如果是深度插入，读取extensions中的depth和role
-                                let depth = 4;
-                                let role = 0;
-                                
-                                if (position === 4) {
-                                    depth = entry.extensions?.depth !== undefined ? Number(entry.extensions.depth) : (entry.depth !== undefined ? Number(entry.depth) : 4);
-                                    role = entry.extensions?.role !== undefined ? Number(entry.extensions.role) : (entry.role !== undefined ? Number(entry.role) : 0);
-                                }
-
-                                if (devLogs.showWorldbookLogs) {
-                                    console.log(`  🔍 收集到条目: keys=[${keys}], pos=${position}, depth=${depth}, role=${role}`);
-                                }
-                                
-                                if (position === 0) {
-                                    // Before character
-                                    worldInfoBefore.push(entry.content);
-                                } else if (position === 1) {
-                                    // After character
-                                    worldInfoAfter.push(entry.content);
-                                } else if (position === 4) {
-                                    // 深度插入
-                                    depthEntries.push({
-                                        content: entry.content,
-                                        depth: depth,
-                                        role: role, // 0=system, 1=user, 2=assistant
-                                        priority: entry.priority !== undefined ? Number(entry.priority) : 100
-                                    });
-                                } else {
-                                    // 其他position默认放到before
-                                    worldInfoBefore.push(entry.content);
-                                }
-                            }
-                        }
+                        });
                     });
                 }
 

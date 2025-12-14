@@ -1966,6 +1966,7 @@ function handleLiteraryStyleFile(event) {
     
     const filenameSpan = document.getElementById('literary-style-filename');
     const textarea = document.getElementById('literary-style-reference');
+    const generateBtn = document.getElementById('literary-style-generate-btn');
     
     if (filenameSpan) {
         filenameSpan.textContent = `已选择: ${file.name}`;
@@ -1976,7 +1977,15 @@ function handleLiteraryStyleFile(event) {
         const content = e.target.result;
         if (textarea) {
             textarea.value = content;
+            // 触发input事件以启用生成按钮
+            textarea.dispatchEvent(new Event('input'));
         }
+        // 如果textarea没有触发事件,直接启用按钮
+        if (generateBtn && content.trim()) {
+            generateBtn.disabled = false;
+        }
+        // 重置文件input的value,允许重复选择同一文件
+        event.target.value = '';
     };
     reader.readAsText(file, 'UTF-8');
 }
@@ -1987,6 +1996,7 @@ function openLiteraryStyleModal(button) {
     const container = document.getElementById('literary-style-options-container');
     const injectBtn = document.getElementById('literary-style-inject-btn');
     const regenerateBtn = document.getElementById('literary-style-regenerate-btn');
+    const generateBtn = document.getElementById('literary-style-generate-btn');
     const textarea = document.getElementById('literary-style-reference');
     const filenameSpan = document.getElementById('literary-style-filename');
     
@@ -1994,6 +2004,7 @@ function openLiteraryStyleModal(button) {
     if (container) container.innerHTML = '';
     if (injectBtn) injectBtn.style.display = 'none';
     if (regenerateBtn) regenerateBtn.style.display = 'none';
+    if (generateBtn) generateBtn.disabled = true;
     if (textarea) textarea.value = '';
     if (filenameSpan) filenameSpan.textContent = '';
     
@@ -2009,6 +2020,7 @@ function initializeLiteraryStyleModal() {
     const injectBtn = document.getElementById('literary-style-inject-btn');
     const regenerateBtn = document.getElementById('literary-style-regenerate-btn');
     const cancelBtn = document.getElementById('literary-style-cancel-btn');
+    const textarea = document.getElementById('literary-style-reference');
     
     // 关闭按钮
     if (cancelBtn) {
@@ -2019,6 +2031,13 @@ function initializeLiteraryStyleModal() {
     modal.onclick = (e) => {
         if (e.target === modal) modal.style.display = 'none';
     };
+    
+    // 监听textarea输入,有内容时启用生成按钮
+    if (textarea && generateBtn) {
+        textarea.addEventListener('input', () => {
+            generateBtn.disabled = !textarea.value.trim();
+        });
+    }
     
     // 生成按钮
     if (generateBtn) {
@@ -2105,12 +2124,13 @@ async function generateLiteraryStyle(reference) {
 
 你的任务：为特定作家或文本生成结构化的**文风配置文件**（YAML格式），供AI写作系统使用。
 
-核心原则：
-- 所有示例必须引用原文（如果用户提供了文本）
+核心原则:
+- 示例必须体现文风特征,但需要抽象化处理,避免包含参考文本中的具体人名、地名、世界观设定
 - 格式严格遵循标准YAML结构
 - 理论描述简明可操作，避免学术冗余
 - 识别文化特定的叙事惯例与美学概念
 - 捕捉作家的根本立场与创作哲学
+- **重要**: 生成的配置应该是通用的文风指导,不应包含参考作品的专有名词和设定
 </system_identity>
 
 <execution_workflow>
@@ -2130,19 +2150,29 @@ ${reference}
 </thinking>
 
 <step_text_extraction>
-从提供的内容中识别：
-- 典型的叙事段落（展现结构特点）
-- 视角性段落（展现聚焦与距离）
-- 节奏性段落（展现句法变化）
-- 描写性段落（展现话语风格）
-- 对话性段落（展现对话特点）
-- 感官性段落（展现感官编织）
-- 美学性段落（综合展现美学效果）
+从提供的内容中识别文风特征：
+- 典型的叙事结构特点
+- 视角和聚焦方式
+- 句法节奏变化
+- 话语和描写风格
+- 对话特点
+- 感官编织方式
+- 美学效果
+
+<critical_instruction>
+**在提取示例时,必须进行抽象化处理:**
+- 将具体人名替换为通用角色描述(如"主人公""年轻女子""老人")
+- 将具体地名替换为通用场景描述(如"小镇""都市""乡村")
+- 移除特定世界观设定(如魔法体系、科技设定、历史背景等)
+- 保留文风的句式结构、修辞手法、节奏感、氛围营造等核心特征
+- 示例应该是"如何写"而非"写什么"
+</critical_instruction>
 
 <reflection>
-- 这些片段是否真的能代表风格？
+- 这些特征是否真的能代表风格？
 - 是否包含独特的、不可替代的特征？
 - 是否覆盖了需要说明的各个维度？
+- **示例是否已经去除了具体设定,只保留了文风特征?**
 </reflection>
 </step_text_extraction>
 
@@ -2307,9 +2337,10 @@ ${reference}
    - 避免空泛形容："善于""常用""富有"等
 
 2. 示例选择：
-   - 必须是原文，不是合成内容
+   - 基于原文风格特征创作示例，但必须抽象化处理
    - 每个示例50-150字
    - 示例应直接验证参数描述
+   - **关键**: 示例中不得出现参考文本的具体人名、地名、专有设定
 
 3. 文化术语：
    - 保留原文（如"間""陰翳礼讃""物哀"）
@@ -2358,7 +2389,8 @@ ${reference}
 1. 首先进行思考分析（在<thinking>标签中）
 2. 然后输出完整的YAML配置文件（用\`\`\`yaml包裹）
 3. YAML内容必须包含完整的三大系统结构
-4. 每个维度都要有example字段（使用原文片段）
+4. 每个维度都要有example字段（基于原文风格特征创作的抽象化示例）
+5. **关键**: 所有示例必须去除具体人名、地名、专有设定,只保留文风特征
 
 **YAML文件格式示例：**
 
@@ -2467,17 +2499,11 @@ aesthetics_system:
 
 </output_format>
 
-**角色设定（用于参考）:**
-- 角色名: ${characterContext.name || '未指定'}
-- 角色描述: ${characterContext.description || '未指定'}
-
-**已有的世界书条目（请勿重复）:**
-${existingEntriesText || '无'}
-
 **现在开始执行任务：**
 1. 先在<thinking>标签中进行深度分析
 2. 然后输出完整的YAML配置文件（用\`\`\`yaml包裹）
-3. 确保YAML格式正确，包含所有必需字段和原文示例
+3. 确保YAML格式正确，包含所有必需字段
+4. **再次强调**: 所有示例必须经过抽象化处理，不得包含参考文本的具体人名、地名、世界观设定
 
 </Literary_Style_Configuration_Generator>`;
     
@@ -2511,8 +2537,9 @@ ${existingEntriesText || '无'}
                     constant: true,
                     enabled: true,
                     selective: true,
-                    position: 'before_char',
-                    wb_depth: 4,
+                    position: 4,  // 深度插入位置
+                    role: 0,      // 系统角色
+                    depth: 0,
                 };
                 
                 container.innerHTML = '';

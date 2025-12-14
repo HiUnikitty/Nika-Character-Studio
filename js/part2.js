@@ -3095,7 +3095,6 @@ ctx.fillStyle = gradient;
 ctx.fillRect(0, 0, canvas.width, canvas.height);
 return canvas.toDataURL('image/png');
 }
-
 function addWorldbookEntry(entryData = null) {
 const worldbookData = buildWorldbookDataFromDOM();
 const newId = worldbookData.length > 0 ? Math.max(...worldbookData.map(e => e.id)) + 1 : 0;
@@ -3111,8 +3110,9 @@ if (entryData) {
         constant: entryData.constant !== undefined ? entryData.constant : false,
         enabled: entryData.enabled !== undefined ? entryData.enabled : true,
         selective: entryData.selective !== undefined ? entryData.selective : true,
-        position: entryData.position || 'before_char',
-        wb_depth: entryData.wb_depth || 4,
+        position: entryData.position !== undefined ? entryData.position : 0,
+        role: entryData.role !== undefined ? entryData.role : 0,
+        depth: entryData.depth !== undefined ? entryData.depth : (entryData.wb_depth !== undefined ? entryData.wb_depth : 4),
         children: entryData.children || []
     };
     worldbookData.push(newEntry);
