@@ -1959,17 +1959,27 @@ if (confirm(t('confirm-delete'))) {
     }
     })();
 
+// 保存当前文风参考文件，用于编码切换时重新读取
+let currentLiteraryStyleFile = null;
+
 // 处理文风参考文件上传
 function handleLiteraryStyleFile(event) {
     const file = event.target.files[0];
     if (!file) return;
     
+    // 保存文件引用
+    currentLiteraryStyleFile = file;
+    
     const filenameSpan = document.getElementById('literary-style-filename');
     const textarea = document.getElementById('literary-style-reference');
     const generateBtn = document.getElementById('literary-style-generate-btn');
+    const encodingSelect = document.getElementById('literary-style-encoding');
+    
+    // 获取用户选择的编码，默认UTF-8
+    const selectedEncoding = encodingSelect ? encodingSelect.value : 'UTF-8';
     
     if (filenameSpan) {
-        filenameSpan.textContent = `已选择: ${file.name}`;
+        filenameSpan.textContent = `已选择: ${file.name} (${selectedEncoding})`;
     }
     
     const reader = new FileReader();
@@ -1987,7 +1997,33 @@ function handleLiteraryStyleFile(event) {
         // 重置文件input的value,允许重复选择同一文件
         event.target.value = '';
     };
-    reader.readAsText(file, 'UTF-8');
+    reader.readAsText(file, selectedEncoding);
+}
+
+// 用指定编码重新加载文风参考文件
+function reloadLiteraryStyleFileWithEncoding(encoding) {
+    if (!currentLiteraryStyleFile) return;
+    
+    const filenameSpan = document.getElementById('literary-style-filename');
+    const textarea = document.getElementById('literary-style-reference');
+    const generateBtn = document.getElementById('literary-style-generate-btn');
+    
+    if (filenameSpan) {
+        filenameSpan.textContent = `已选择: ${currentLiteraryStyleFile.name} (${encoding})`;
+    }
+    
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        const content = e.target.result;
+        if (textarea) {
+            textarea.value = content;
+            textarea.dispatchEvent(new Event('input'));
+        }
+        if (generateBtn && content.trim()) {
+            generateBtn.disabled = false;
+        }
+    };
+    reader.readAsText(currentLiteraryStyleFile, encoding);
 }
 
 // 打开文风生成模态框

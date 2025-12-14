@@ -2487,9 +2487,16 @@
         <p class="help-text" style="text-align: center; margin-top: -15px; margin-bottom: 20px" data-i18n="literary-style-modal-desc">请提供参考内容或作者名称，系统将分析并生成文风配置</p>
         
         <div class="field-group">
-          <div style="margin-bottom: 10px;">
+          <div style="margin-bottom: 10px; display: flex; align-items: center; flex-wrap: wrap; gap: 10px;">
             <input type="file" id="literary-style-file" accept=".txt" style="display: none;" onchange="handleLiteraryStyleFile(event)">
-            <button onclick="document.getElementById('literary-style-file').click()" class="uniform-btn" style="margin-right: 10px;" data-i18n="literary-style-upload-btn">📁 上传参考文件</button>
+            <button onclick="document.getElementById('literary-style-file').click()" class="uniform-btn" data-i18n="literary-style-upload-btn">📁 上传参考文件</button>
+            <label style="color: #aaa; font-size: 14px;" data-i18n="literary-style-encoding-label">文件编码：</label>
+            <select id="literary-style-encoding" style="padding: 5px; background: rgba(0,0,0,0.3); border: 1px solid #555; border-radius: 4px; color: white;" onchange="reloadLiteraryStyleFileWithEncoding(this.value)">
+              <option value="UTF-8">UTF-8</option>
+              <option value="GBK">GBK</option>
+              <option value="GB2312">GB2312</option>
+              <option value="Big5">Big5</option>
+            </select>
             <span id="literary-style-filename" style="color: #aaa; font-size: 14px;"></span>
           </div>
           <textarea id="literary-style-reference" rows="8" data-i18n-placeholder="literary-style-reference-placeholder" placeholder="请输入参考内容或作者名称，例如：&#10;- 粘贴一段参考作品文本&#10;- 输入作者名称（如：村上春树）&#10;- 描述想要的文风特点&#10;&#10;系统将基于您提供的内容分析并生成文风配置" style="width: 100%; padding: 10px; background: rgba(0,0,0,0.3); border: 1px solid var(--input-border); border-radius: 5px; color: var(--text-color); font-size: 14px; line-height: 1.6; resize: vertical; font-family: inherit;"></textarea>
@@ -3496,6 +3503,7 @@
           'literary-style-modal-title': '📚 生成文风配置',
           'literary-style-modal-desc': '请提供参考内容或作者名称，系统将分析并生成文风配置',
           'literary-style-upload-btn': '📁 上传参考文件',
+          'literary-style-encoding-label': '文件编码（修复乱码）：',
           'literary-style-reference-placeholder': '请输入参考内容或作者名称，例如：\n- 粘贴一段参考作品文本\n- 输入作者名称（如：村上春树）\n- 描述想要的文风特点\n\n系统将基于您提供的内容分析并生成文风配置',
           'literary-style-generate-btn': '生成文风配置',
           'literary-style-inject-btn': '注入选中条目',
@@ -4095,6 +4103,7 @@
           'literary-style-modal-title': '📚 Generate Literary Style Config',
           'literary-style-modal-desc': 'Provide reference content or author name, the system will analyze and generate literary style configuration',
           'literary-style-upload-btn': '📁 Upload Reference File',
+          'literary-style-encoding-label': 'Encoding (Fix Garbled Text):',
           'literary-style-reference-placeholder': 'Enter reference content or author name, for example:\n- Paste a reference text excerpt\n- Enter author name (e.g., Haruki Murakami)\n- Describe desired literary style characteristics\n\nThe system will analyze and generate style configuration based on your input',
           'literary-style-generate-btn': 'Generate Style Config',
           'literary-style-inject-btn': 'Inject Selected',
