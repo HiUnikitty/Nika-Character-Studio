@@ -2820,15 +2820,12 @@
                   <button onclick="document.getElementById('advanced-novel-settings').style.display = document.getElementById('advanced-novel-settings').style.display === 'none' ? 'block' : 'none'; this.textContent = this.textContent.includes('▶') ? '▼ 高级设置' : '▶ 高级设置';" style="padding: 5px 10px; background: rgba(255,255,255,0.1); border: 1px solid var(--input-border); border-radius: 3px; color: var(--text-color); cursor: pointer; font-size: 13px;">▶ 高级设置</button>
                   
                   <div id="advanced-novel-settings" style="display: none; margin-top: 10px;">
-                    <!-- 文风配置开关（⚠️ 极不稳定，不推荐使用） -->
-                    <div style="padding: 10px; background: rgba(0,0,0,0.2); border-radius: 5px; border: 1px solid #ff6b6b;">
+                    <!-- 文风配置开关 -->
+                    <div style="padding: 10px; background: rgba(0,0,0,0.2); border-radius: 5px; border: 1px solid RGB(52,52,52);">
                       <label style="display: flex; align-items: center; gap: 10px; cursor: pointer;">
                         <input type="checkbox" id="enable-literary-style" style="width: 18px; height: 18px;">
                         <span style="color: var(--label-color); font-weight: bold;">📝 生成文风配置</span>
                       </label>
-                      <p style="font-size: 12px; color: #ff6b6b; margin-top: 5px; font-weight: bold;">
-                        ⚠️ 此功能不稳定，不推荐使用。小说转世界书应专注于细节提取，请使用编辑页独立的"生成文风"功能。
-                      </p>
                     </div>
                   </div>
                 </div>

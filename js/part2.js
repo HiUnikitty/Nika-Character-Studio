@@ -332,16 +332,99 @@ try {
         // 忽略
         }
         
-        // 如果还是不行，创建一个简单的默认结构
-        console.log('⚠️ 无法解析JSON，使用默认结构保存原始响应');
-        memoryUpdate = {
-        '知识书': {
-            [`第${index + 1}个记忆块_解析失败`]: {
-            '关键词': ['解析失败', '格式错误'],
-            '内容': `**解析失败原因**: ${secondError.message}\n\n**原始响应预览**:\n${response.substring(0, 1000)}...\n\n请检查AI返回格式是否正确。`
+        // 调用API纠正格式错误的JSON
+        console.log('🔧 尝试调用API纠正JSON格式...');
+        document.getElementById('progress-text').textContent = `JSON格式错误，正在调用AI纠正: ${memory.title} (${index + 1}/${memoryQueue.length})`;
+        
+        try {
+            // 构建纠正提示词（严格输出控制，参考世界书输出格式风格）
+            const fixPrompt = getLanguagePrefix() + `你是专业的JSON修复专家。请将下面“格式错误的JSON文本”修复为严格有效、可被 JavaScript 的 JSON.parse() 直接解析的JSON。
+
+## 📋 核心要求
+1. **只修复格式**：保持原有数据语义与内容不变，不要总结、不要改写字段名、不要增删字段。
+2. **输出必须是单个JSON对象**：返回内容必须从第一个字符“{”开始，到最后一个字符“}”结束。
+3. **禁止任何额外输出**：不要包含解释文字、不要包含Markdown、不要包含代码块标记、不要包含前后缀、不要输出多段内容。
+4. **严格JSON语法**：
+   - 所有key必须用双引号包裹
+   - 字符串必须使用双引号
+   - 不允许尾随逗号
+   - 不允许注释
+5. **字符串换行与特殊字符必须正确转义**：字符串中的换行必须使用 \\n，反斜杠与引号必须正确转义。
+
+## 🧩 世界书JSON基本嵌套结构（必须遵循）
+修复后的JSON应尽量保持/恢复为以下结构（允许只包含其中一部分分类，但结构层级必须一致）：
+
+{
+  "角色": {
+    "条目名": { "关键词": ["..."], "内容": "..." }
+  },
+  "地点": {
+    "条目名": { "关键词": ["..."], "内容": "..." }
+  },
+  "组织": {
+    "条目名": { "关键词": ["..."], "内容": "..." }
+  },
+  "剧情大纲": {
+    "主线剧情": { "关键词": ["..."], "内容": "..." },
+    "支线剧情": { "关键词": ["..."], "内容": "..." }
+  },
+  "知识书": {
+    "条目名": { "关键词": ["..."], "内容": "..." }
+  }${enableLiteraryStyle ? `,
+  "文风配置": {
+    "作品文风": { "关键词": ["文风", "写作风格", "叙事特点"], "内容": "..." }
+  }` : ''}
+}
+
+要求：
+- 顶层的每个分类（例如“角色/地点/组织/剧情大纲/知识书${enableLiteraryStyle ? `/文风配置` : ''}”）的值必须是对象。
+- 分类下每个条目的值必须是对象，且包含 "关键词"(数组) 与 "内容"(字符串) 两个字段。
+- 如果原文中某条目值不是对象（比如直接是字符串），请在不改变语义的前提下包装成 {"关键词":[], "内容":"原内容"}。
+
+## 📤 输出格式
+直接输出修复后的JSON（不要包含任何其他字符）。
+
+## 错误信息（用于定位，不需要复述）
+${secondError.message}
+
+## 需要修复的JSON文本
+${cleanResponse}
+`;
+
+            // 调用API进行格式纠正
+            const fixedResponse = await callSimpleAPI(fixPrompt);
+            console.log('API返回的纠正结果长度:', fixedResponse.length);
+
+            // 清理纠正后的响应
+            let cleanedFixedResponse = fixedResponse.trim();
+            cleanedFixedResponse = cleanedFixedResponse.replace(/```json\s*/gi, '').replace(/```\s*/g, '');
+
+            // 提取JSON主体（避免模型输出前后夹带内容）
+            const firstBrace = cleanedFixedResponse.indexOf('{');
+            const lastBrace = cleanedFixedResponse.lastIndexOf('}');
+            if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
+                cleanedFixedResponse = cleanedFixedResponse.substring(firstBrace, lastBrace + 1);
             }
+
+            // 解析纠正后的JSON
+            memoryUpdate = JSON.parse(cleanedFixedResponse);
+            console.log('✅ JSON格式纠正成功！');
+            document.getElementById('progress-text').textContent = `JSON格式已纠正: ${memory.title} (${index + 1}/${memoryQueue.length})`;
+
+        } catch (fixError) {
+            console.error('❌ JSON格式纠正也失败:', fixError.message);
+            
+            // 如果纠正也失败，创建一个简单的默认结构
+            console.log('⚠️ 无法解析JSON，使用默认结构保存原始响应');
+            memoryUpdate = {
+            '知识书': {
+                [`第${index + 1}个记忆块_解析失败`]: {
+                '关键词': ['解析失败', '格式错误'],
+                '内容': `**解析失败原因**: ${secondError.message}\n\n**纠正尝试失败**: ${fixError.message}\n\n**原始响应预览**:\n${response.substring(0, 1000)}...\n\n请检查AI返回格式是否正确。`
+                }
+            }
+            };
         }
-        };
     }
     }
     
@@ -822,7 +905,7 @@ const worldbookCard = {
     avatar: null,
     personality: '',
     scenario: '',
-    tags: ['世界书', '小说同人'],
+    tags: [],
     internalTags: [],
     worldbook: convertGeneratedWorldbookToStandard(generatedWorldbook),
     character_version: '1.0',
@@ -861,9 +944,15 @@ function convertGeneratedWorldbookToStandard(generatedWb) {
 const standardWorldbook = [];
 let entryId = 0;
 
+const triggerCategories = new Set(['地点', '剧情大纲']);
+
 // 遍历所有分类
 Object.keys(generatedWb).forEach(category => {
     const categoryData = generatedWb[category];
+
+    const isTriggerCategory = triggerCategories.has(category);
+    const constant = !isTriggerCategory;
+    const selective = isTriggerCategory;
     
     if (typeof categoryData === 'object' && categoryData !== null) {
     Object.keys(categoryData).forEach(itemName => {
@@ -880,8 +969,8 @@ Object.keys(generatedWb).forEach(category => {
             priority: 100,
             enabled: true,
             position: 'before_char',
-            constant: false,
-            selective: true,
+            constant,
+            selective,
             secondary_keys_logic: 'any',
             use_regex: false,
             prevent_recursion: false,
@@ -904,8 +993,8 @@ Object.keys(generatedWb).forEach(category => {
             priority: 100,
             enabled: true,
             position: 'before_char',
-            constant: false,
-            selective: true,
+            constant,
+            selective,
             secondary_keys_logic: 'any',
             use_regex: false,
             prevent_recursion: false,
@@ -931,10 +1020,16 @@ function convertToSillyTavernFormat(worldbook) {
 const entries = [];
 let entryId = 0;
 
+const triggerCategories = new Set(['地点', '剧情大纲']);
+
 // 处理新的世界书格式
 function processWorldbook(obj) {
     for (const [category, categoryData] of Object.entries(obj)) {
     if (typeof categoryData === 'object' && categoryData !== null) {
+        const isTriggerCategory = triggerCategories.has(category);
+        const constant = !isTriggerCategory;
+        const selective = isTriggerCategory;
+
         // 处理每个分类下的条目
         for (const [itemName, itemData] of Object.entries(categoryData)) {
         if (typeof itemData === 'object' && itemData !== null) {
@@ -974,8 +1069,8 @@ function processWorldbook(obj) {
                 keysecondary: [],
                 comment: `${category} - ${itemName}`,
                 content: content,
-                constant: false,
-                selective: true,
+                constant,
+                selective,
                 selectiveLogic: 0, // AND_ANY
                 addMemo: true,
                 order: entryId * 100,
@@ -1015,8 +1110,8 @@ function processWorldbook(obj) {
                 keysecondary: [],
                 comment: `${category} - ${itemName}`,
                 content: content,
-                constant: false,
-                selective: true,
+                constant,
+                selective,
                 selectiveLogic: 0,
                 addMemo: true,
                 order: entryId * 100,
@@ -2615,7 +2710,7 @@ const existingEntriesText = existingEntries
 
 const worldbookContextPrompt = `
 ---
-**已有的世界书条目 (用于参考):**
+**已有的信息 (用于参考):**
 ${existingEntriesText || '无'}
 ---`;
 
@@ -2634,7 +2729,7 @@ if (isAnythingFilled) {
         if (el) el.dataset.aiBackup = el.value;
         });
 
-        let prompt = getLanguagePrefix() + `你正在设计角色。请根据以下已经提供的角色信息，为角色补全剩余的空白字段。
+        let prompt = getLanguagePrefix() + `你正在设计角色/多角色世界。请根据以下已经提供的角色信息，为角色/世界补全剩余的空白字段。
 ---
 **已提供的信息:**
 ${Object.entries(filledFields)
