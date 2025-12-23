@@ -702,6 +702,98 @@
             font-weight: bold;
         }
 
+        /* 微信风格气泡样式 - 仅在微信主题下生效 */
+        body.wechat-theme .chat-message-group {
+            display: flex !important;
+            flex-direction: column !important;
+            align-items: flex-start !important;
+            margin-bottom: 16px !important;
+            width: 100% !important;
+        }
+        
+        /* 用户消息右对齐 */
+        body.wechat-theme .chat-message-group.user-message {
+            align-items: flex-end !important;
+        }
+        
+        /* 消息主体容器（头像+气泡） */
+        body.wechat-theme .chat-message-group > div:first-child {
+            display: flex !important;
+            flex-direction: row !important;
+            align-items: flex-start !important;
+            gap: 10px !important;
+            max-width: 80% !important;
+        }
+        
+        /* 用户消息的头像+气泡容器反向排列 */
+        body.wechat-theme .chat-message-group.user-message > div:first-child {
+            flex-direction: row-reverse !important;
+        }
+        
+        /* 头像样式 */
+        body.wechat-theme .chat-message-group img {
+            width: 44px !important;
+            height: 44px !important;
+            min-width: 44px !important;
+            min-height: 44px !important;
+            border-radius: 6px !important;
+            flex-shrink: 0 !important;
+        }
+        
+        /* 隐藏用户名 */
+        body.wechat-theme .chat-message-group span {
+            display: none !important;
+        }
+        
+        /* 气泡样式 */
+        body.wechat-theme .chat-bubble {
+            position: relative;
+            padding: 10px 14px !important;
+            border-radius: 6px !important;
+            max-width: 100% !important;
+            width: auto !important;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.05) !important;
+        }
+        
+        /* 微信风格气泡尖角 */
+        body.wechat-theme .chat-bubble::before {
+            content: '';
+            position: absolute;
+            top: 14px;
+            width: 10px;
+            height: 10px;
+            transform: rotate(45deg);
+            pointer-events: none;
+        }
+        
+        /* 用户气泡尖角（右侧绿色） */
+        body.wechat-theme .user-bubble::before {
+            right: -5px;
+            background-color: var(--user-bubble-color);
+        }
+        
+        /* AI气泡尖角（左侧白色带边框） */
+        body.wechat-theme .ai-bubble::before {
+            left: -6px;
+            background-color: var(--ai-bubble-color);
+            border-left: 1px solid var(--border-color);
+            border-bottom: 1px solid var(--border-color);
+        }
+        
+        body.wechat-theme .ai-bubble {
+            border: 1px solid var(--border-color) !important;
+        }
+        
+        /* 操作按钮容器 - 居中显示 */
+        body.wechat-theme .message-actions {
+            display: flex !important;
+            flex-direction: row !important;
+            gap: 8px !important;
+            margin-top: 8px !important;
+            justify-content: center !important;
+            width: 100% !important;
+        }
+
     </style>
 </head>
 <body>
@@ -1122,7 +1214,10 @@
                         <div class="flex items-start gap-4 flex-shrink-0">
                             <div class="flex-shrink-0 text-center">
                                 <img id="char-editor-avatar" src="https://placehold.co/128x128/5E5B9D/ffffff?text=AI" class="w-32 h-32 rounded-lg object-cover mx-auto">
-                                <label class="mt-2 text-sm text-primary-color hover:underline cursor-pointer" data-i18n="char.uploadAvatar">上传头像<input type="file" id="char-avatar-upload" class="hidden" accept="image/*"></label>
+                                <label class="mt-2 text-sm text-primary-color hover:underline cursor-pointer">
+                                    <span data-i18n="char.uploadAvatar">上传头像</span>
+                                    <input type="file" id="char-avatar-upload" class="hidden" accept="image/*">
+                                </label>
                             </div>
                             <div class="flex-1 space-y-3">
                                 <input id="char-editor-name" type="text" data-i18n-placeholder="char.name" placeholder="角色名称" class="w-full text-xl font-bold light-input rounded-md p-2">
@@ -1363,8 +1458,8 @@
                                 <div class="relative">
                                     <img id="user-editor-avatar" src="https://placehold.co/128x128/E4E6EB/1A1A1D?text=U"
                                          class="w-32 h-32 rounded-lg object-cover">
-                                    <label class="mt-2 text-sm text-primary-color hover:underline cursor-pointer block" data-i18n="user.uploadAvatar">
-                                        上传头像
+                                    <label class="mt-2 text-sm text-primary-color hover:underline cursor-pointer block">
+                                        <span data-i18n="user.uploadAvatar">上传头像</span>
                                         <input type="file" id="user-avatar-upload" class="hidden" accept="image/*">
                                     </label>
                                 </div>
@@ -1624,6 +1719,10 @@
                             <button class="theme-preset-btn p-3 rounded-lg text-sm" data-theme="green" data-i18n="theme.green">森林</button>
                             <button class="theme-preset-btn p-3 rounded-lg text-sm" data-theme="purple" data-i18n="theme.purple">紫罗兰</button>
                             <button class="theme-preset-btn p-3 rounded-lg text-sm" data-theme="pink" data-i18n="theme.pink">樱花</button>
+                            <button class="theme-preset-btn p-3 rounded-lg text-sm relative" data-theme="wechat" data-i18n="theme.wechat" title="由类脑粉丝某不科学的高数提供">
+                                微信
+                                <span class="absolute -top-1 -right-1 bg-gradient-to-r from-purple-500 to-pink-500 text-white text-[10px] px-1.5 py-0.5 rounded transform rotate-12 shadow-sm font-bold">粉丝特供</span>
+                            </button>
                         </div>
                     </div>
                     <hr>
@@ -2357,6 +2456,7 @@ body {
                     'theme.violet': '紫罗兰',
                     'theme.pink': '樱花',
                     'theme.sakura': '樱花',
+                    'theme.wechat': '微信',
                     'theme.colorSettings': '颜色设置',
                     'theme.primary': '主色调',
                     'theme.primaryColor': '主色调',
@@ -7233,7 +7333,7 @@ body {
 
                 const group = document.createElement('div');
                 group.id = id;
-                group.className = `chat-message-group flex flex-col items-center gap-1 mb-3`;
+                group.className = `chat-message-group flex flex-col items-center gap-1 mb-3 ${isUser ? 'user-message' : 'ai-message'}`;
                 group.style.position = 'relative';
 
                 // 获取用户头像
@@ -7242,7 +7342,11 @@ body {
                 const charAvatarSrc = (charAvatar && charAvatar !== 'none') ? charAvatar : 'https://placehold.co/40x40/5E5B9D/ffffff?text=AI';
                 let avatarSrc = isUser ? (currentUser?.avatar || 'https://placehold.co/40x40/E4E6EB/1A1A1D?text=U') : charAvatarSrc;
 
-                // 头像和名称
+                // 创建消息主体容器（头像+气泡）
+                const messageMainContainer = document.createElement('div');
+                messageMainContainer.className = 'flex items-start gap-2';
+
+                // 头像容器
                 const avatarContainer = document.createElement('div');
                 avatarContainer.className = 'flex flex-col items-center gap-1';
 
@@ -7258,50 +7362,15 @@ body {
                 userName.className = 'text-xs text-gray-500 font-medium';
                 userName.textContent = isUser ? (userManagement.getCurrentUser()?.name || '用户') : (char.data[char.activeCharacterId]?.name || 'AI');
 
-                // 添加消息操作栏（放在头像下方，横向排列）
-                const actionsBar = document.createElement('div');
-                actionsBar.className = 'message-actions flex flex-row gap-1 mt-1';
-
-                // 编辑按钮
-                const editBtn = document.createElement('button');
-                editBtn.className = 'message-action-btn text-xs px-1.5 py-1';
-                editBtn.innerHTML = '<i class="fas fa-pen text-xs"></i>';
-                editBtn.title = '编辑';
-                editBtn.onclick = () => startEditMessage(id);
-                actionsBar.appendChild(editBtn);
-
-                // 重新生成按钮 (仅AI消息)
-                if (!isUser) {
-                    const regenBtn = document.createElement('button');
-                    regenBtn.className = 'message-action-btn text-xs px-1.5 py-1';
-                    regenBtn.innerHTML = '<i class="fas fa-sync-alt text-xs"></i>';
-                    regenBtn.title = '重新生成';
-                    regenBtn.onclick = () => regenerateMessage(id);
-                    actionsBar.appendChild(regenBtn);
-                }
-
-                // 删除按钮
-                const deleteBtn = document.createElement('button');
-                deleteBtn.className = 'message-action-btn danger text-xs px-1.5 py-1';
-                deleteBtn.innerHTML = '<i class="fas fa-trash text-xs"></i>';
-                deleteBtn.title = '删除';
-                deleteBtn.onclick = () => {
-                    if (confirm('确定要删除这条消息吗？')) {
-                        deleteMessage(id);
-                    }
-                };
-                actionsBar.appendChild(deleteBtn);
-
                 avatarContainer.appendChild(avatarImg);
                 avatarContainer.appendChild(userName);
-                avatarContainer.appendChild(actionsBar);
-                group.appendChild(avatarContainer);
 
+                // 气泡容器
                 const messageContentContainer = document.createElement('div');
-                messageContentContainer.className = `flex flex-col w-full`;
+                messageContentContainer.className = `flex flex-col`;
 
                 const messageBubble = document.createElement('div');
-                messageBubble.className = `chat-bubble rounded-lg p-3 w-full ${isUser ? 'user-bubble' : 'ai-bubble'}`;
+                messageBubble.className = `chat-bubble rounded-lg p-3 ${isUser ? 'user-bubble' : 'ai-bubble'}`;
                 messageBubble.dataset.messageId = id;
 
                 if (replyTo) {
@@ -8078,7 +8147,47 @@ body {
 
                 messageContentContainer.appendChild(messageBubble);
 
-                group.appendChild(messageContentContainer);
+                // 组装消息主体（头像+气泡）
+                messageMainContainer.appendChild(avatarContainer);
+                messageMainContainer.appendChild(messageContentContainer);
+                
+                // 添加消息操作栏（独立一行，居中）
+                const actionsBar = document.createElement('div');
+                actionsBar.className = 'message-actions flex flex-row gap-2 mt-2';
+
+                // 编辑按钮
+                const editBtn = document.createElement('button');
+                editBtn.className = 'message-action-btn text-xs px-2 py-1';
+                editBtn.innerHTML = '<i class="fas fa-pen text-xs"></i>';
+                editBtn.title = '编辑';
+                editBtn.onclick = () => startEditMessage(id);
+                actionsBar.appendChild(editBtn);
+
+                // 重新生成按钮 (仅AI消息)
+                if (!isUser) {
+                    const regenBtn = document.createElement('button');
+                    regenBtn.className = 'message-action-btn text-xs px-2 py-1';
+                    regenBtn.innerHTML = '<i class="fas fa-sync-alt text-xs"></i>';
+                    regenBtn.title = '重新生成';
+                    regenBtn.onclick = () => regenerateMessage(id);
+                    actionsBar.appendChild(regenBtn);
+                }
+
+                // 删除按钮
+                const deleteBtn = document.createElement('button');
+                deleteBtn.className = 'message-action-btn danger text-xs px-2 py-1';
+                deleteBtn.innerHTML = '<i class="fas fa-trash text-xs"></i>';
+                deleteBtn.title = '删除';
+                deleteBtn.onclick = () => {
+                    if (confirm('确定要删除这条消息吗？')) {
+                        deleteMessage(id);
+                    }
+                };
+                actionsBar.appendChild(deleteBtn);
+
+                // 组装完整消息组
+                group.appendChild(messageMainContainer);
+                group.appendChild(actionsBar);
                 chatMessages.appendChild(group);
             }
 
@@ -9052,6 +9161,10 @@ body {
 
                 sendButton.disabled = true;
                 sendButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+                
+                // 创建AbortController用于终止流式输出
+                let abortController = new AbortController();
+                let isStreaming = false;
 
                 try {
                     const urlObj = new URL(apiConfig.url);
@@ -9122,10 +9235,23 @@ body {
 
                     // 处理流式响应
                     if (apiConfig.streaming && !urlObj.hostname.includes('google')) {
+                        isStreaming = true;
+                        
+                        // 更改按钮为暂停图标
+                        sendButton.disabled = false;
+                        sendButton.innerHTML = '<i class="fas fa-stop"></i>';
+                        sendButton.onclick = () => {
+                            abortController.abort();
+                            sendButton.disabled = true;
+                            sendButton.innerHTML = '<i class="fas fa-paper-plane"></i>';
+                            sendButton.onclick = null;
+                        };
+                        
                         const response = await fetch(endpoint, {
                             method: 'POST',
                             headers: headers,
-                            body: JSON.stringify(body)
+                            body: JSON.stringify(body),
+                            signal: abortController.signal
                         });
 
                         if (!response.ok) {
@@ -9169,29 +9295,38 @@ body {
                             });
                         };
 
-                        while (true) {
-                            const { done, value } = await reader.read();
-                            if (done) break;
+                        try {
+                            while (true) {
+                                const { done, value } = await reader.read();
+                                if (done) break;
 
-                            const chunk = decoder.decode(value, { stream: true });
-                            const lines = chunk.split('\n').filter(line => line.trim() !== '');
+                                const chunk = decoder.decode(value, { stream: true });
+                                const lines = chunk.split('\n').filter(line => line.trim() !== '');
 
-                            for (const line of lines) {
-                                if (line.startsWith('data: ')) {
-                                    const data = line.slice(6);
-                                    if (data === '[DONE]') continue;
+                                for (const line of lines) {
+                                    if (line.startsWith('data: ')) {
+                                        const data = line.slice(6);
+                                        if (data === '[DONE]') continue;
 
-                                    try {
-                                        const json = JSON.parse(data);
-                                        const delta = json.choices?.[0]?.delta?.content;
-                                        if (delta) {
-                                            fullContent += delta;
-                                            scheduleUpdate();
+                                        try {
+                                            const json = JSON.parse(data);
+                                            const delta = json.choices?.[0]?.delta?.content;
+                                            if (delta) {
+                                                fullContent += delta;
+                                                scheduleUpdate();
+                                            }
+                                        } catch (e) {
+                                            // 忽略解析错误
                                         }
-                                    } catch (e) {
-                                        // 忽略解析错误
                                     }
                                 }
+                            }
+                        } catch (error) {
+                            if (error.name === 'AbortError') {
+                                console.log('流式输出已被用户终止');
+                                // 不抛出错误，保留已生成的内容
+                            } else {
+                                throw error;
                             }
                         }
 
@@ -9241,11 +9376,14 @@ body {
                     }
 
                 } catch (error) {
-                    addMessageToHistory({role: 'assistant', content: `API Error: ${error.message}`, type: 'text'});
-                    console.error("API Error:", error);
+                    if (error.name !== 'AbortError') {
+                        addMessageToHistory({role: 'assistant', content: `API Error: ${error.message}`, type: 'text'});
+                        console.error("API Error:", error);
+                    }
                 } finally {
                     sendButton.disabled = false;
                     sendButton.innerHTML = '<i class="fas fa-paper-plane"></i>';
+                    sendButton.onclick = null;
                 }
             }
             
@@ -10627,6 +10765,23 @@ You must structure your entire output strictly in the following format, without 
                         userBubbleTextColor: '#FFFFFF',
                         speakingColor: '#ff6b9d',
                         starColor: '#c2185b'
+                    },
+                    wechat: {
+                        primaryColor: '#5E5B9D',
+                        bgColor: '#f0f2f5',
+                        userBubbleColor: '#95ec69',
+                        aiBubbleColor: '#ffffff',
+                        cardBgColor: '#ffffff',
+                        textColor: '#1a1a1d',
+                        borderColor: '#dcdfe3',
+                        inputBgColor: '#ffffff',
+                        textSecondaryColor: '#65676b',
+                        primaryHoverColor: '#7875b3',
+                        bubbleTextColor: '#1a1a1d',
+                        userBubbleTextColor: '#1a1a1d',
+                        bubbleOpacity: '1',
+                        speakingColor: '#ff8c42',
+                        starColor: '#8e8e93'
                     }
                 },
 
@@ -10695,7 +10850,7 @@ You must structure your entire output strictly in the following format, without 
                     };
                 },
 
-                applyTheme(themeData) {
+                applyTheme(themeData, themeName = null) {
                     const root = document.documentElement;
 
                     if (themeData.primaryColor) root.style.setProperty('--primary-color', themeData.primaryColor);
@@ -10722,6 +10877,14 @@ You must structure your entire output strictly in the following format, without 
                         root.style.setProperty('--text-secondary-color', this.adjustBrightness(themeData.textColor, 40));
                     }
 
+                    // 微信主题特殊处理：添加body类名以启用特殊样式
+                    const actualThemeName = themeName || this.currentTheme;
+                    if (actualThemeName === 'wechat') {
+                        document.body.classList.add('wechat-theme');
+                    } else {
+                        document.body.classList.remove('wechat-theme');
+                    }
+
                     if (themeData.customCss) {
                         this.saveCustomCss(themeData.customCss);
                     }
@@ -10732,11 +10895,11 @@ You must structure your entire output strictly in the following format, without 
                 applyCurrentTheme() {
                     // 首先尝试加载保存的主题
                     if (this.themes[this.currentTheme]) {
-                        this.applyTheme(this.themes[this.currentTheme]);
+                        this.applyTheme(this.themes[this.currentTheme], this.currentTheme);
                     }
                     // 然后检查是否是预设主题
                     else if (this.defaultPresets[this.currentTheme]) {
-                        this.applyTheme(this.defaultPresets[this.currentTheme]);
+                        this.applyTheme(this.defaultPresets[this.currentTheme], this.currentTheme);
                     }
                     
                     // 更新预设主题按钮的激活状态
@@ -10812,7 +10975,7 @@ You must structure your entire output strictly in the following format, without 
 
                     if (this.currentTheme === name) {
                         this.currentTheme = 'default';
-                        this.applyTheme(this.defaultPresets.default);
+                        this.applyTheme(this.defaultPresets.default, 'default');
                     }
 
                     this.saveThemes();
@@ -10871,7 +11034,7 @@ You must structure your entire output strictly in the following format, without 
 
                             if (confirm(`主题 "${name}" 已导入！是否立即应用？`)) {
                                 this.currentTheme = name;
-                                this.applyTheme(data.theme);
+                                this.applyTheme(data.theme, name);
                                 this.saveThemes();
                             }
                         } catch (err) {
@@ -10936,7 +11099,7 @@ You must structure your entire output strictly in the following format, without 
                                 e.stopPropagation();
                                 const themeName = btn.dataset.theme;
                                 this.currentTheme = themeName;
-                                this.applyTheme(this.themes[themeName]);
+                                this.applyTheme(this.themes[themeName], themeName);
                                 this.saveThemes();
                                 this.renderSavedThemes();
                             });
@@ -11068,7 +11231,7 @@ You must structure your entire output strictly in the following format, without 
                         btn.addEventListener('click', () => {
                             const themeName = btn.dataset.theme;
                             if (this.defaultPresets[themeName]) {
-                                this.applyTheme(this.defaultPresets[themeName]);
+                                this.applyTheme(this.defaultPresets[themeName], themeName);
                                 this.currentTheme = themeName;
                                 this.saveThemes();
 
@@ -11134,7 +11297,7 @@ You must structure your entire output strictly in the following format, without 
                     if (resetBtn) {
                         resetBtn.addEventListener('click', () => {
                             this.currentTheme = 'default';
-                            this.applyTheme(this.defaultPresets.default);
+                            this.applyTheme(this.defaultPresets.default, 'default');
                             this.saveCustomCss('');
                             this.saveThemes();
                             document.getElementById('custom-css-editor').value = '';
