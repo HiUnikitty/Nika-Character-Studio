@@ -4189,6 +4189,9 @@ startAIProcessing();
             // 触发input事件
             targetTextarea.dispatchEvent(new Event('input'));
             
+            // 自动调整textarea高度
+            autoResizeTextarea(targetTextarea);
+            
             // 关闭维基百科模态框
             closeWikipediaModal();
             
@@ -4197,6 +4200,13 @@ startAIProcessing();
             alert('无法找到目标输入框');
         }
     };
+
+    // 自动调整textarea高度函数
+    function autoResizeTextarea(textarea) {
+        const maxHeight = window.innerHeight * 0.5;
+        textarea.style.height = 'auto';
+        textarea.style.height = Math.min(textarea.scrollHeight, maxHeight) + 'px';
+    }
 
     // 文件上传处理函数
     function handleFileUpload(event) {

@@ -781,12 +781,12 @@ content.appendChild(textarea);
 modal.appendChild(content);
 document.body.appendChild(modal);
 
-// 点击模态窗口外部关闭
-modal.onclick = (e) => {
-    if (e.target === modal) {
-    document.body.removeChild(modal);
-    }
-};
+// // 点击模态窗口外部关闭
+// modal.onclick = (e) => {
+//     if (e.target === modal) {
+//     document.body.removeChild(modal);
+//     }
+// };
 }
 
 // 导出数据
@@ -2184,9 +2184,9 @@ const cancelBtn = document.getElementById('wb-ai-cancel-btn');
 const genTypeButtons = modal.querySelectorAll('.generation-type-selector button');
 
 cancelBtn.onclick = () => (modal.style.display = 'none');
-modal.onclick = e => {
-    if (e.target === modal) modal.style.display = 'none';
-};
+// modal.onclick = e => {
+//     if (e.target === modal) modal.style.display = 'none';
+// };
 
 // 新增：快速生成世界书条目按钮事件
 generateBtn.onclick = () => {
@@ -2310,7 +2310,7 @@ ${existingEntriesText || '无'}
 请按照JSON格式返回一个数组，包含多个世界书条目对象。每个条目对象必须包含以下字段：
 {
 "comment": "条目的简短注释（越简洁越好）",
-"content": "详细内容（100-400字）",
+"content": "详细内容（字数越多越好）",
 "keys": ["关键词1", "关键词2"],
 "selective": true,
 "constant": false,
@@ -2407,6 +2407,12 @@ try {
         if (desc) desc.textContent = `AI已根据你的要求生成了 ${generatedEntries.length} 个世界书条目，请选择需要注入的条目。`;
         if (injectBtn) injectBtn.style.display = 'inline-block';
         if (regenerateBtn) regenerateBtn.style.display = 'inline-block';
+        
+        // 生成完成后自动缩小引导词输入框
+        const requestInput = document.getElementById('wb-ai-request-input');
+        if (requestInput) {
+            requestInput.style.height = '100px'; // 设置为默认高度
+        }
         } else {
         throw new Error('生成的数据格式不正确');
         }
