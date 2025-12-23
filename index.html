@@ -2820,12 +2820,22 @@
                   <button onclick="document.getElementById('advanced-novel-settings').style.display = document.getElementById('advanced-novel-settings').style.display === 'none' ? 'block' : 'none'; this.textContent = this.textContent.includes('▶') ? '▼ 高级设置' : '▶ 高级设置';" style="padding: 5px 10px; background: rgba(255,255,255,0.1); border: 1px solid var(--input-border); border-radius: 3px; color: var(--text-color); cursor: pointer; font-size: 13px;">▶ 高级设置</button>
                   
                   <div id="advanced-novel-settings" style="display: none; margin-top: 10px;">
+                    <!-- 剧情大纲开关 -->
+                    <div style="padding: 10px; background: rgba(0,0,0,0.2); border-radius: 5px; border: 1px solid RGB(52,52,52); margin-bottom: 10px;">
+                      <label style="display: flex; align-items: center; gap: 10px; cursor: pointer;">
+                        <input type="checkbox" id="enable-plot-outline" style="width: 18px; height: 18px;" checked>
+                        <span style="color: var(--label-color); font-weight: bold;">📖 生成剧情大纲</span>
+                      </label>
+                      <p style="margin: 5px 0 0 28px; font-size: 12px; color: var(--text-secondary-color);">提取主线、支线、转折点等剧情信息</p>
+                    </div>
+                    
                     <!-- 文风配置开关 -->
                     <div style="padding: 10px; background: rgba(0,0,0,0.2); border-radius: 5px; border: 1px solid RGB(52,52,52);">
                       <label style="display: flex; align-items: center; gap: 10px; cursor: pointer;">
                         <input type="checkbox" id="enable-literary-style" style="width: 18px; height: 18px;">
                         <span style="color: var(--label-color); font-weight: bold;">📝 生成文风配置</span>
                       </label>
+                      <p style="margin: 5px 0 0 28px; font-size: 12px; color: var(--text-secondary-color);">分析叙事系统、表达系统、美学系统</p>
                     </div>
                   </div>
                 </div>
