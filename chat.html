@@ -702,6 +702,21 @@
             font-weight: bold;
         }
 
+        /* 非微信主题的消息布局样式 */
+        .chat-message-group {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            max-width: 100%;
+        }
+        
+        /* 操作按钮容器居中 */
+        .message-actions {
+            display: flex;
+            justify-content: center;
+            width: 100%;
+        }
+
         /* 微信风格气泡样式 - 仅在微信主题下生效 */
         body.wechat-theme .chat-message-group {
             display: flex !important;
@@ -7327,13 +7342,13 @@ body {
             }
 
             function renderMessage(message) {
-                 const { id, role, content, type = 'text', replyTo, imageUrl, description } = message;
+                const { id, role, content, type = 'text', replyTo, imageUrl, description } = message;
 
                 const isUser = role === 'user';
 
                 const group = document.createElement('div');
                 group.id = id;
-                group.className = `chat-message-group flex flex-col items-center gap-1 mb-3 ${isUser ? 'user-message' : 'ai-message'}`;
+                group.className = `chat-message-group flex flex-col gap-1 mb-3 ${isUser ? 'user-message items-end' : 'ai-message items-start'}`;
                 group.style.position = 'relative';
 
                 // 获取用户头像
@@ -7344,15 +7359,15 @@ body {
 
                 // 创建消息主体容器（头像+气泡）
                 const messageMainContainer = document.createElement('div');
-                messageMainContainer.className = 'flex items-start gap-2';
+                messageMainContainer.className = `flex items-start ${isUser ? 'gap-2 flex-row-reverse' : 'gap-1.5 flex-row'}`;
 
                 // 头像容器
                 const avatarContainer = document.createElement('div');
-                avatarContainer.className = 'flex flex-col items-center gap-1';
+                avatarContainer.className = 'flex flex-col items-center gap-1 flex-shrink-0';
 
                 const avatarImg = document.createElement('img');
                 avatarImg.src = avatarSrc;
-                avatarImg.className = 'w-12 h-12 rounded-full object-cover';
+                avatarImg.className = 'w-12 h-12 rounded-full object-cover flex-shrink-0';
                 avatarImg.addEventListener('dblclick', () => {
                     avatarImg.classList.add('patted');
                     setTimeout(() => avatarImg.classList.remove('patted'), 600);
@@ -7367,7 +7382,7 @@ body {
 
                 // 气泡容器
                 const messageContentContainer = document.createElement('div');
-                messageContentContainer.className = `flex flex-col`;
+                messageContentContainer.className = `flex flex-col flex-1 min-w-0`;
 
                 const messageBubble = document.createElement('div');
                 messageBubble.className = `chat-bubble rounded-lg p-3 ${isUser ? 'user-bubble' : 'ai-bubble'}`;
@@ -8189,6 +8204,180 @@ body {
                 group.appendChild(messageMainContainer);
                 group.appendChild(actionsBar);
                 chatMessages.appendChild(group);
+            }
+
+            // 保存默认的renderMessage函数
+            const defaultRenderMessage = renderMessage;
+
+            // 微信样式的renderMessage函数
+            function wechatRenderMessage(message) {
+                const { id, role, content, type = 'text', replyTo, imageUrl, description } = message;
+                const isUser = role === 'user';
+
+                // 获取头像URL
+                const currentUser = userManagement.getCurrentUser();
+                const charAvatar = char.data[char.activeCharacterId]?.avatar;
+                const charAvatarSrc = (charAvatar && charAvatar !== 'none') ? charAvatar : 'https://placehold.co/44x44/5E5B9D/ffffff?text=AI';
+                const userAvatarSrc = (currentUser?.avatar && currentUser.avatar !== 'none') ? currentUser.avatar : 'https://placehold.co/44x44/E4E6EB/1A1A1D?text=U';
+                
+                const currentAvatarSrc = isUser ? userAvatarSrc : charAvatarSrc;
+
+                // 预处理内容 (正则, 宏替换)
+                let processedContent = content;
+                if (type === 'text') {
+                    if (!isUser) {
+                        const currentUserName = currentUser?.name || '用户';
+                        processedContent = processedContent.replace(/\{\{user\}\}/gi, currentUserName);
+                    }
+                    
+                    // 提取状态栏保护
+                    const statBarPlaceholders = [];
+                    const statBarRegex = /```([^`]*)```/gs;
+                    processedContent = processedContent.replace(statBarRegex, (match, statContent) => {
+                        const trimmedContent = statContent.trim();
+                        if (trimmedContent && !/<[^>]+>/.test(trimmedContent)) {
+                            const placeholder = `__STATBAR_PLACEHOLDER_${statBarPlaceholders.length}__`;
+                            statBarPlaceholders.push(trimmedContent);
+                            return placeholder;
+                        }
+                        return match;
+                    });
+
+                    if (!isUser) {
+                        processedContent = applyRegex(processedContent);
+                    }
+                    
+                    // 恢复状态栏
+                    processedContent = processedContent.replace(/__STATBAR_PLACEHOLDER_(\d+)__/g, (match, index) => {
+                        const statContent = statBarPlaceholders[parseInt(index)];
+                        return renderStatBar(statContent);
+                    });
+                } else if (type === 'image') {
+                    processedContent = `<img src="${imageUrl || content}" class="rounded-lg max-w-full cursor-pointer" onclick="showImagePreview('${imageUrl || content}')">`;
+                    if (description) {
+                        processedContent += `<div class="text-xs text-gray-500 mt-1"><i class="fas fa-robot mr-1"></i>${description}</div>`;
+                    }
+                }
+
+                // 决定如何分割消息
+                let segments = [];
+                
+                const hasComplexContent = /<div|<iframe|<table|```/i.test(processedContent) || type === 'image';
+                
+                if (hasComplexContent) {
+                    segments = [processedContent];
+                } else {
+                    segments = processedContent.split('\n').filter(line => line.trim() !== '');
+                    if (segments.length === 0) segments = [processedContent];
+                }
+
+                // 为每个段落渲染一行
+                segments.forEach((segmentHtml, index) => {
+                    const row = document.createElement('div');
+                    row.className = `chat-row ${isUser ? 'user-row' : 'ai-row'}`;
+                    row.dataset.messageId = id; 
+                    row.dataset.partIndex = index;
+
+                    if (index === 0) {
+                        row.id = id;
+                    }
+
+                    // 头像容器
+                    const avatarContainer = document.createElement('div');
+                    avatarContainer.className = 'chat-avatar-container';
+                    const avatarImg = document.createElement('img');
+                    avatarImg.src = currentAvatarSrc;
+                    avatarImg.className = 'chat-avatar-img';
+                    
+                    avatarImg.addEventListener('dblclick', () => {
+                        avatarImg.classList.add('patted');
+                        setTimeout(() => avatarImg.classList.remove('patted'), 600);
+                    });
+                    
+                    avatarContainer.appendChild(avatarImg);
+
+                    // 气泡容器
+                    const bubbleContainer = document.createElement('div');
+                    bubbleContainer.className = 'chat-bubble-container';
+
+                    const bubble = document.createElement('div');
+                    bubble.className = `chat-bubble ${isUser ? 'user-bubble' : 'ai-bubble'}`;
+                    
+                    const contentDiv = document.createElement('div');
+                    contentDiv.className = 'message-content';
+                    
+                    if (!hasComplexContent && type === 'text') {
+                        let formattedHtml = segmentHtml;
+                        formattedHtml = formattedHtml.replace(
+                            /(".*?")|(".*?")|(«.*?»)|(「.*?」)|(『.*?』)/g,
+                            match => `<q>${match}</q>`
+                        );
+                        formattedHtml = formattedHtml.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+                        formattedHtml = formattedHtml.replace(/\*(.+?)\*/g, '<em>$1</em>');
+                        
+                        contentDiv.innerHTML = formattedHtml;
+                    } else {
+                        if (segmentHtml.trim().startsWith('<!DOCTYPE') || segmentHtml.includes('<iframe')) {
+                            const iframe = document.createElement('iframe');
+                            iframe.className = 'rendered-html-iframe';
+                            iframe.style.height = '400px';
+                            iframe.sandbox = 'allow-scripts allow-same-origin allow-forms';
+                            iframe.srcdoc = segmentHtml;
+                            contentDiv.appendChild(iframe);
+                        } else {
+                            contentDiv.innerHTML = segmentHtml;
+                        }
+                    }
+                    
+                    bubble.appendChild(contentDiv);
+
+                    // 操作按钮
+                    const actionsDiv = document.createElement('div');
+                    actionsDiv.className = 'message-actions-hover';
+                    
+                    const editBtn = document.createElement('div');
+                    editBtn.className = 'action-icon-btn';
+                    editBtn.innerHTML = '<i class="fas fa-pen"></i>';
+                    editBtn.onclick = () => startEditMessage(id);
+                    actionsDiv.appendChild(editBtn);
+
+                    if (!isUser) {
+                        const regenBtn = document.createElement('div');
+                        regenBtn.className = 'action-icon-btn';
+                        regenBtn.innerHTML = '<i class="fas fa-sync-alt"></i>';
+                        regenBtn.onclick = () => regenerateMessage(id);
+                        actionsDiv.appendChild(regenBtn);
+                    }
+
+                    const delBtn = document.createElement('div');
+                    delBtn.className = 'action-icon-btn danger';
+                    delBtn.innerHTML = '<i class="fas fa-trash"></i>';
+                    delBtn.onclick = () => {
+                        if(confirm('删除此消息?')) deleteMessage(id);
+                    };
+                    actionsDiv.appendChild(delBtn);
+
+                    bubbleContainer.appendChild(bubble);
+                    bubbleContainer.appendChild(actionsDiv);
+
+                    row.appendChild(avatarContainer);
+                    row.appendChild(bubbleContainer);
+
+                    chatMessages.appendChild(row);
+                });
+            }
+
+            // 主题切换时更新renderMessage函数
+            function switchRenderMessageByTheme(themeName) {
+                if (themeName === 'wechat') {
+                    // 微信主题:使用内置的微信样式renderMessage
+                    window.renderMessage = wechatRenderMessage;
+                    console.log('[主题切换] 已切换到微信样式renderMessage');
+                } else {
+                    // 其他主题:使用默认renderMessage
+                    window.renderMessage = defaultRenderMessage;
+                    console.log('[主题切换] 已切换到默认renderMessage');
+                }
             }
 
             async function deleteMessage(id) {
