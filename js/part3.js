@@ -457,11 +457,11 @@ const cancelBtn = modal.querySelector('#cancel-beautify-btn');
 generateBtn.addEventListener('click', generateBeautifiedStyles);
 cancelBtn.addEventListener('click', closeFrontendBeautifyModal);
 
-modal.addEventListener('click', e => {
-    if (e.target === modal) {
-    closeFrontendBeautifyModal();
-    }
-});
+// modal.addEventListener('click', e => {
+//     if (e.target === modal) {
+//     closeFrontendBeautifyModal();
+//     }
+// });
 }
 
 function closeFrontendBeautifyModal() {
@@ -3930,3 +3930,291 @@ memoryQueue = chunks.map((chunk, index) => ({
 updateMemoryQueueUI();
 startAIProcessing();
 }
+
+// 基础配置：默认使用中文维基百科
+    const API_ENDPOINT = "https://zh.wikipedia.org/w/api.php";
+
+    function handleKeyPress(event) {
+        if (event.key === 'Enter') {
+            startSearch();
+        }
+    }
+
+    async function startSearch() {
+        const input = document.getElementById('searchInput');
+        const query = input.value.trim();
+        const statusDiv = document.getElementById('status');
+        const contentDiv = document.getElementById('content');
+        const btn = document.getElementById('searchBtn');
+
+        if (!query) {
+            alert("请输入搜索内容");
+            return;
+        }
+
+        // 重置界面状态
+        statusDiv.textContent = "正在搜索...";
+        contentDiv.innerHTML = "";
+        btn.disabled = true;
+
+        try {
+            // 第一步：搜索最匹配的页面标题
+            // 使用 opensearch 或 query list=search
+            const searchUrl = `${API_ENDPOINT}?action=query&list=search&srsearch=${encodeURIComponent(query)}&format=json&origin=*`;
+            
+            const searchResponse = await fetch(searchUrl);
+            const searchData = await searchResponse.json();
+
+            if (!searchData.query || searchData.query.search.length === 0) {
+                statusDiv.textContent = "未找到相关结果，请尝试其他关键词。";
+                btn.disabled = false;
+                return;
+            }
+
+            // 获取第一个结果的标题
+            const bestMatchTitle = searchData.query.search[0].title;
+            statusDiv.textContent = `找到词条：${bestMatchTitle}，正在加载详细内容...`;
+
+            // 第二步：根据标题获取页面 HTML 内容
+            // 使用 action=parse 获取解析后的 HTML
+            const parseUrl = `${API_ENDPOINT}?action=parse&page=${encodeURIComponent(bestMatchTitle)}&prop=text&format=json&origin=*&disableeditsection=true`;
+
+            const contentResponse = await fetch(parseUrl);
+            const contentData = await contentResponse.json();
+
+            if (contentData.error) {
+                statusDiv.textContent = `错误：${contentData.error.info}`;
+            } else {
+                statusDiv.textContent = ""; // 清空状态
+                
+                // 获取原始 HTML
+                let rawHtml = contentData.parse.text['*'];
+
+                // 第三步：处理 HTML 中的相对链接
+                // 维基百科的链接通常是 /wiki/xxx，我们需要把它变成 https://zh.wikipedia.org/wiki/xxx
+                // 这样用户点击链接时会跳转到维基百科官网，而不是本地报错
+                const processedHtml = fixLinks(rawHtml);
+
+                contentDiv.innerHTML = `<h2>${contentData.parse.title}</h2>` + processedHtml;
+            }
+
+        } catch (error) {
+            console.error(error);
+            statusDiv.textContent = "请求失败，请检查网络连接（可能需要科学上网访问维基百科）。";
+        } finally {
+            btn.disabled = false;
+        }
+    }
+
+    function fixLinks(html) {
+        // 创建一个临时的 DOM 元素来解析 HTML
+        const tempDiv = document.createElement('div');
+        tempDiv.innerHTML = html;
+
+        // 1. 修复超链接 (a 标签)
+        const links = tempDiv.querySelectorAll('a');
+        links.forEach(link => {
+            const href = link.getAttribute('href');
+            if (href && href.startsWith('/wiki/')) {
+                link.setAttribute('href', `https://zh.wikipedia.org${href}`);
+                link.setAttribute('target', '_blank'); // 在新标签页打开
+            }
+            // 处理以 # 开头的锚点链接（页面内跳转），防止跳转失效
+            if (href && href.startsWith('#')) {
+                link.removeAttribute('href'); // 简单处理：移除锚点跳转，或者你可以保留
+            }
+        });
+
+        // 2. 修复图片链接 (img 标签)
+        // 维基百科图片通常是 //upload.wikimedia.org... 这种协议相对路径
+        // 在本地文件打开时 (file://) 会出错，需要补全 https:
+        const images = tempDiv.querySelectorAll('img');
+        images.forEach(img => {
+            const src = img.getAttribute('src');
+            if (src && src.startsWith('//')) {
+                img.setAttribute('src', `https:${src}`);
+            }
+            // 移除 srcset 以防止浏览器加载错误的相对路径资源
+            img.removeAttribute('srcset');
+        });
+
+        return tempDiv.innerHTML;
+    }
+
+    // 维基百科模态框控制
+    let currentWikipediaSource = null; // 记录从哪个模态框打开的
+    let currentWikipediaContent = ''; // 保存当前维基百科内容
+    let cachedWikipediaQuery = ''; // 缓存搜索关键词
+    let cachedWikipediaHtml = ''; // 缓存HTML内容
+    let cachedWikipediaStatus = ''; // 缓存状态文本
+
+    window.openWikipediaModal = function(source) {
+        currentWikipediaSource = source;
+        const modal = document.getElementById('wikipedia-modal');
+        const searchInput = document.getElementById('wikipedia-search-input');
+        const statusDiv = document.getElementById('wikipedia-status');
+        const contentDiv = document.getElementById('wikipedia-content');
+        const importBtn = document.getElementById('wikipedia-import-btn');
+        
+        // 不重置状态,保留上次搜索结果
+        if (searchInput && cachedWikipediaQuery) {
+            searchInput.value = cachedWikipediaQuery;
+        }
+        if (statusDiv && cachedWikipediaStatus) {
+            statusDiv.textContent = cachedWikipediaStatus;
+        }
+        if (contentDiv && cachedWikipediaHtml) {
+            contentDiv.innerHTML = cachedWikipediaHtml;
+        }
+        if (importBtn && currentWikipediaContent) {
+            importBtn.style.display = 'inline-block';
+        }
+        
+        if (modal) modal.style.display = 'flex';
+    };
+
+    window.closeWikipediaModal = function() {
+        const modal = document.getElementById('wikipedia-modal');
+        if (modal) modal.style.display = 'none';
+        // 不清空缓存,保留搜索结果
+    };
+
+    window.handleWikipediaKeyPress = function(event) {
+        if (event.key === 'Enter') {
+            startWikipediaSearch();
+        }
+    };
+
+    window.startWikipediaSearch = async function() {
+        const input = document.getElementById('wikipedia-search-input');
+        const query = input.value.trim();
+        const statusDiv = document.getElementById('wikipedia-status');
+        const contentDiv = document.getElementById('wikipedia-content');
+        const btn = document.getElementById('wikipedia-search-btn');
+        const importBtn = document.getElementById('wikipedia-import-btn');
+
+        if (!query) {
+            alert("请输入搜索内容");
+            return;
+        }
+
+        // 重置界面状态
+        statusDiv.textContent = "正在搜索...";
+        contentDiv.innerHTML = "";
+        btn.disabled = true;
+        if (importBtn) importBtn.style.display = 'none';
+        currentWikipediaContent = '';
+        
+        try {
+            const searchUrl = `${API_ENDPOINT}?action=query&list=search&srsearch=${encodeURIComponent(query)}&format=json&origin=*`;
+            
+            const searchResponse = await fetch(searchUrl);
+            const searchData = await searchResponse.json();
+
+            if (!searchData.query || searchData.query.search.length === 0) {
+                statusDiv.textContent = "未找到相关结果，请尝试其他关键词。";
+                btn.disabled = false;
+                return;
+            }
+
+            const bestMatchTitle = searchData.query.search[0].title;
+            statusDiv.textContent = `找到词条：${bestMatchTitle}，正在加载详细内容...`;
+
+            const parseUrl = `${API_ENDPOINT}?action=parse&page=${encodeURIComponent(bestMatchTitle)}&prop=text&format=json&origin=*&disableeditsection=true`;
+
+            const contentResponse = await fetch(parseUrl);
+            const contentData = await contentResponse.json();
+
+            if (contentData.error) {
+                statusDiv.textContent = `错误：${contentData.error.info}`;
+                // 缓存错误状态
+                cachedWikipediaStatus = statusDiv.textContent;
+            } else {
+                statusDiv.textContent = "加载完成";
+                
+                let rawHtml = contentData.parse.text['*'];
+                const processedHtml = fixLinks(rawHtml);
+
+                const fullHtml = `<h2>${contentData.parse.title}</h2>` + processedHtml;
+                contentDiv.innerHTML = fullHtml;
+                
+                // 提取纯文本内容用于导入
+                const tempDiv = document.createElement('div');
+                tempDiv.innerHTML = processedHtml;
+                currentWikipediaContent = tempDiv.textContent || tempDiv.innerText || '';
+                
+                // 缓存搜索结果
+                cachedWikipediaQuery = query;
+                cachedWikipediaHtml = fullHtml;
+                cachedWikipediaStatus = statusDiv.textContent;
+                
+                // 显示导入按钮
+                if (importBtn) importBtn.style.display = 'inline-block';
+            }
+
+        } catch (error) {
+            console.error(error);
+            statusDiv.textContent = "请求失败，请检查魔法连接（需要科学上网访问维基百科）。";
+        } finally {
+            btn.disabled = false;
+        }
+    };
+
+    window.importWikipediaToGuidance = function() {
+        if (!currentWikipediaContent) {
+            alert('没有可导入的内容');
+            return;
+        }
+
+        let targetTextarea = null;
+        
+        // 根据来源确定目标textarea
+        if (currentWikipediaSource === 'ai-guidance') {
+            targetTextarea = document.getElementById('ai-guidance-input');
+        } else if (currentWikipediaSource === 'wb-ai') {
+            targetTextarea = document.getElementById('wb-ai-request-input');
+        } else if (currentWikipediaSource === 'literary-style') {
+            targetTextarea = document.getElementById('literary-style-reference');
+        }
+
+        if (targetTextarea) {
+            // 追加内容而不是覆盖
+            const currentValue = targetTextarea.value.trim();
+            if (currentValue) {
+                targetTextarea.value = currentValue + '\n\n' + currentWikipediaContent;
+            } else {
+                targetTextarea.value = currentWikipediaContent;
+            }
+            
+            // 触发input事件
+            targetTextarea.dispatchEvent(new Event('input'));
+            
+            // 关闭维基百科模态框
+            closeWikipediaModal();
+            
+            alert('维基百科内容已导入到输入框');
+        } else {
+            alert('无法找到目标输入框');
+        }
+    };
+
+    // 文件上传处理函数
+    function handleFileUpload(event) {
+        const fileInput = event.target;
+        const file = fileInput.files[0];
+        const reader = new FileReader();
+
+        reader.onload = function(event) {
+            const fileContent = event.target.result;
+            // 处理文件内容
+            console.log(fileContent);
+        };
+
+        reader.readAsText(file);
+    }
+
+    // 绑定文件上传事件
+    const fileInput = document.getElementById('file-input');
+    if (fileInput) {
+        fileInput.addEventListener('change', handleFileUpload);
+    }

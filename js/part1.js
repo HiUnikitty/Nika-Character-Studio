@@ -2026,6 +2026,110 @@ function reloadLiteraryStyleFileWithEncoding(encoding) {
     reader.readAsText(currentLiteraryStyleFile, encoding);
 }
 
+// AI指引文件上传处理
+let currentAiGuidanceFile = null;
+
+function handleAiGuidanceFile(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    
+    currentAiGuidanceFile = file;
+    
+    const filenameSpan = document.getElementById('ai-guidance-filename');
+    const textarea = document.getElementById('ai-guidance-input');
+    const encodingSelect = document.getElementById('ai-guidance-encoding');
+    
+    const selectedEncoding = encodingSelect ? encodingSelect.value : 'UTF-8';
+    
+    if (filenameSpan) {
+        filenameSpan.textContent = `已选择: ${file.name} (${selectedEncoding})`;
+    }
+    
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        const content = e.target.result;
+        if (textarea) {
+            textarea.value = content;
+            textarea.dispatchEvent(new Event('input'));
+        }
+        event.target.value = '';
+    };
+    reader.readAsText(file, selectedEncoding);
+}
+
+function reloadAiGuidanceFileWithEncoding(encoding) {
+    if (!currentAiGuidanceFile) return;
+    
+    const filenameSpan = document.getElementById('ai-guidance-filename');
+    const textarea = document.getElementById('ai-guidance-input');
+    
+    if (filenameSpan) {
+        filenameSpan.textContent = `已选择: ${currentAiGuidanceFile.name} (${encoding})`;
+    }
+    
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        const content = e.target.result;
+        if (textarea) {
+            textarea.value = content;
+            textarea.dispatchEvent(new Event('input'));
+        }
+    };
+    reader.readAsText(currentAiGuidanceFile, encoding);
+}
+
+// 世界书AI文件上传处理
+let currentWbAiFile = null;
+
+function handleWbAiFile(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    
+    currentWbAiFile = file;
+    
+    const filenameSpan = document.getElementById('wb-ai-filename');
+    const textarea = document.getElementById('wb-ai-request-input');
+    const encodingSelect = document.getElementById('wb-ai-encoding');
+    
+    const selectedEncoding = encodingSelect ? encodingSelect.value : 'UTF-8';
+    
+    if (filenameSpan) {
+        filenameSpan.textContent = `已选择: ${file.name} (${selectedEncoding})`;
+    }
+    
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        const content = e.target.result;
+        if (textarea) {
+            textarea.value = content;
+            textarea.dispatchEvent(new Event('input'));
+        }
+        event.target.value = '';
+    };
+    reader.readAsText(file, selectedEncoding);
+}
+
+function reloadWbAiFileWithEncoding(encoding) {
+    if (!currentWbAiFile) return;
+    
+    const filenameSpan = document.getElementById('wb-ai-filename');
+    const textarea = document.getElementById('wb-ai-request-input');
+    
+    if (filenameSpan) {
+        filenameSpan.textContent = `已选择: ${currentWbAiFile.name} (${encoding})`;
+    }
+    
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        const content = e.target.result;
+        if (textarea) {
+            textarea.value = content;
+            textarea.dispatchEvent(new Event('input'));
+        }
+    };
+    reader.readAsText(currentWbAiFile, encoding);
+}
+
 // 打开文风生成模态框
 function openLiteraryStyleModal(button) {
     const modal = document.getElementById('literary-style-modal');
@@ -2063,10 +2167,10 @@ function initializeLiteraryStyleModal() {
         cancelBtn.onclick = () => modal.style.display = 'none';
     }
     
-    // 点击模态框外部关闭
-    modal.onclick = (e) => {
-        if (e.target === modal) modal.style.display = 'none';
-    };
+    // 点击模态框外部关闭 - 已禁用
+    // modal.onclick = (e) => {
+    //     if (e.target === modal) modal.style.display = 'none';
+    // };
     
     // 监听textarea输入,有内容时启用生成按钮
     if (textarea && generateBtn) {

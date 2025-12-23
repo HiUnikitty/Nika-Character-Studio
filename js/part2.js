@@ -2076,9 +2076,9 @@ const modal = document.getElementById('ai-guidance-modal');
 const generateBtn = document.getElementById('ai-guidance-generate-btn');
 const cancelBtn = document.getElementById('ai-guidance-cancel-btn');
 
-modal.onclick = e => {
-    if (e.target === modal) modal.style.display = 'none';
-};
+// modal.onclick = e => {
+//     if (e.target === modal) modal.style.display = 'none';
+// };
 cancelBtn.onclick = () => (modal.style.display = 'none');
 }
 
