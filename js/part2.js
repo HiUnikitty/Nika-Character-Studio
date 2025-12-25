@@ -306,9 +306,9 @@ try {
         memoryUpdate = JSON.parse(cleanResponse);
         console.log('✅ JSON清理后解析成功');
     } catch (secondError) {
-        console.error('❌ JSON解析仍然失败');
-        console.error('错误信息:', secondError.message);
-        console.error('错误位置:', secondError.stack);
+    console.error('❌ JSON解析仍然失败');
+    console.error('错误信息:', secondError.message);
+    console.error('错误位置:', secondError.stack);
         console.error('清理后响应长度:', cleanResponse.length);
         console.error('清理后响应开头:', cleanResponse.substring(0, 500));
         console.error('清理后响应结尾:', cleanResponse.substring(cleanResponse.length - 500));
@@ -411,8 +411,8 @@ ${cleanResponse}
             memoryUpdate = {
             '知识书': {
                 [`第${index + 1}个记忆块_解析失败`]: {
-                '关键词': ['解析失败', '格式错误'],
-                '内容': `**解析失败原因**: ${secondError.message}\n\n**纠正尝试失败**: ${fixError.message}\n\n**原始响应预览**:\n${response.substring(0, 1000)}...\n\n请检查AI返回格式是否正确。`
+                '关键词': [],
+                '内容': `**解析失败原因**: ${secondError.message}\n\n**纠正失败原因**: ${fixError.message}\n\n**原始响应（完整）**:\n${response}\n\n`
                 }
             }
             };

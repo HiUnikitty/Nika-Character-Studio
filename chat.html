@@ -2060,10 +2060,11 @@ body {
         </div>
     </div>
 
-    <!-- 总结聊天配置模态框 -->
+    <!-- 总结聊天配置模态框 (修复版) -->
     <div id="summarize-modal" class="modal-overlay">
-        <div class="modal-content card overflow-y-auto" style="max-width: 1400px; max-height: 90vh; width: 95vw;">
-            <div class="flex justify-between items-center mb-6 pt-2 px-2">
+        <div class="modal-content card flex flex-col" style="max-width: 800px; max-height: 90vh; width: 95vw;">
+            
+            <div class="flex justify-between items-center mb-4 pt-6 px-6 flex-shrink-0">
                 <h2 class="text-xl font-bold primary-gradient-text" data-i18n="summary.title">
                     总结聊天设置
                 </h2>
@@ -2072,11 +2073,11 @@ body {
                 </button>
             </div>
 
-            <div class="space-y-4">
+            <div class="flex-1 overflow-y-auto p-6 pt-0 space-y-4">
                 <!-- API配置 -->
-                <div class="card p-4">
-                    <h3 class="font-bold mb-3 flex items-center gap-2">
-                        <i class="fas fa-server text-purple-500"></i>
+                <div class="card p-4 border theme-border">
+                    <h3 class="font-bold mb-3 flex items-center gap-2 primary-gradient-text">
+                        <i class="fas fa-server"></i>
                         <span data-i18n="summary.apiConfig">总结API配置</span>
                     </h3>
                     <div class="space-y-3">
@@ -2085,7 +2086,8 @@ body {
                             <input type="text" id="summarize-api-url"
                                    class="w-full light-input rounded-md p-2"
                                    data-i18n-placeholder="summary.apiUrlPlaceholder"
-                                   placeholder="https://api.openai.com/v1/chat/completions">
+                                   placeholder="https://api.openai.com/v1">
+                            <div class="text-xs text-gray-500 mt-1">支持 OpenAI, DeepSeek, Google Gemini 等格式</div>
                         </div>
                         <div>
                             <label class="block text-sm font-medium mb-1" data-i18n="summary.apiKey">API密钥</label>
@@ -2094,121 +2096,105 @@ body {
                                    data-i18n-placeholder="summary.apiKeyPlaceholder"
                                    placeholder="sk-...">
                         </div>
+                        
+                        <!-- 模型选择区域 (修复版) -->
                         <div>
                             <label class="block text-sm font-medium mb-1" data-i18n="summary.model">模型</label>
-                            <div class="flex gap-2">
-                                <select id="summarize-api-model-select" class="flex-1 light-input rounded-md p-2">
-                                    <option value="" data-i18n="summary.selectModel">选择模型...</option>
-                                    <option value="gpt-4o">gpt-4o</option>
-                                    <option value="gpt-4o-mini" selected>gpt-4o-mini</option>
-                                    <option value="gpt-4-turbo">gpt-4-turbo</option>
-                                    <option value="gpt-4">gpt-4</option>
-                                    <option value="gpt-3.5-turbo">gpt-3.5-turbo</option>
-                                    <option value="custom" data-i18n="summary.customModel">自定义...</option>
-                                </select>
-                                <button id="fetch-models-btn" class="px-3 py-2 btn-secondary rounded-md" data-i18n-title="summary.loadConfig" title="从API获取模型列表">
-                                    <i class="fas fa-sync-alt"></i>
-                                </button>
+                            <div class="flex flex-col gap-2">
+                                <div class="flex gap-2">
+                                    <!-- 下拉框: 默认隐藏，点击刷新后显示 -->
+                                    <select id="summarize-api-model-select" class="flex-1 light-input rounded-md p-2 hidden">
+                                        <option value="" data-i18n="summary.selectModel">-- 选择模型 --</option>
+                                    </select>
+                                    <!-- 输入框: 默认显示，用于手动输入 -->
+                                    <input type="text" id="summarize-api-model"
+                                           class="flex-1 light-input rounded-md p-2"
+                                           data-i18n-placeholder="summary.customModelPlaceholder"
+                                           placeholder="例如 gpt-4o-mini">
+                                           
+                                    <button id="fetch-models-btn" class="px-3 py-2 btn-secondary rounded-md whitespace-nowrap" title="刷新模型列表">
+                                        <i class="fas fa-sync-alt mr-1"></i>刷新
+                                    </button>
+                                </div>
                             </div>
-                            <input type="text" id="summarize-api-model"
-                                   class="w-full light-input rounded-md p-2 mt-2 hidden"
-                                   data-i18n-placeholder="summary.customModelPlaceholder"
-                                   placeholder="输入自定义模型名称"
-                                   value="gpt-4o-mini">
                         </div>
-                        <div class="flex gap-2">
-                            <button id="save-summarize-api-config-btn" class="flex-1 py-2 btn-secondary rounded-lg" data-i18n-title="summary.saveConfig" title="保存API配置">
-                                <i class="fas fa-save mr-2"></i><span data-i18n="summary.saveConfig">保存配置</span>
+
+                        <div class="flex gap-2 pt-2">
+                            <button id="save-summarize-api-config-btn" class="flex-1 py-2 btn-primary rounded-lg text-sm">
+                                <i class="fas fa-save mr-2"></i>保存配置
                             </button>
-                            <button id="load-summarize-api-config-btn" class="flex-1 py-2 btn-secondary rounded-lg" data-i18n-title="summary.loadConfig" title="加载API配置">
-                                <i class="fas fa-upload mr-2"></i><span data-i18n="summary.loadConfig">加载配置</span>
+                            <button id="test-summarize-api-btn" class="flex-1 py-2 btn-secondary rounded-lg text-sm">
+                                <i class="fas fa-vial mr-2"></i>测试连接
                             </button>
                         </div>
+                        <div id="summarize-api-test-result" class="text-xs mt-1 text-center h-4"></div>
                     </div>
                 </div>
 
                 <!-- 总结设置 -->
-                <div class="card p-4">
-                    <h3 class="font-bold mb-3 flex items-center gap-2">
-                        <i class="fas fa-cog text-blue-500"></i>
-                        <span data-i18n="summary.settings">总结设置</span>
+                <div class="card p-4 border theme-border">
+                    <h3 class="font-bold mb-3 flex items-center gap-2 primary-gradient-text">
+                        <i class="fas fa-cog"></i>
+                        <span data-i18n="summary.settings">总结参数</span>
                     </h3>
                     <div class="space-y-3">
-                        <div>
-                            <label class="block text-sm font-medium mb-1" data-i18n="summary.messageCount">总结楼层数</label>
-                            <input type="number" id="summarize-floor-count"
-                                   class="w-full light-input rounded-md p-2"
-                                   placeholder="10"
-                                   value="10"
-                                   min="1">
-                            <p class="text-xs text-gray-500 mt-1" data-i18n="summary.messageCountHint">总结最近的N条消息</p>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium mb-1" data-i18n="summary.messageCount">总结楼层数</label>
+                                <input type="number" id="summarize-floor-count" class="w-full light-input rounded-md p-2" value="10" min="1">
+                            </div>
+                            <div class="flex flex-col justify-end pb-2">
+                                <label class="flex items-center gap-2 cursor-pointer">
+                                    <input type="checkbox" id="summarize-auto-hide" class="w-4 h-4 accent-primary-color" checked>
+                                    <span class="text-sm" data-i18n="summary.autoHide">完成后隐藏原消息</span>
+                                </label>
+                            </div>
                         </div>
+                        
                         <div>
-                            <label class="flex items-center gap-2 cursor-pointer">
-                                <input type="checkbox" id="summarize-auto-enable"
-                                       class="w-4 h-4 accent-primary-color">
+                            <label class="flex items-center gap-2 cursor-pointer mb-1">
+                                <input type="checkbox" id="summarize-auto-enable" class="w-4 h-4 accent-primary-color">
                                 <span class="text-sm font-medium" data-i18n="summary.autoEnable">启用自动总结</span>
                             </label>
-                            <p class="text-xs text-gray-500 mt-1 ml-6" data-i18n="summary.autoEnableHint">达到设置的楼层数后自动触发总结</p>
-                        </div>
-                        <div>
-                            <label class="flex items-center gap-2 cursor-pointer">
-                                <input type="checkbox" id="summarize-auto-hide"
-                                       class="w-4 h-4 accent-primary-color" checked>
-                                <span class="text-sm" data-i18n="summary.autoHide">自动隐藏已总结的消息</span>
-                            </label>
-                            <p class="text-xs text-gray-500 mt-1 ml-6" data-i18n="summary.autoHideHint">隐藏的消息不会发送给AI</p>
+                            <p class="text-xs text-gray-500 pl-6">当未隐藏的消息数量达到"总结楼层数"时自动触发。</p>
                         </div>
                     </div>
                 </div>
 
                 <!-- 提示词模板 -->
-                <div class="card p-4">
-                    <h3 class="font-bold mb-3 flex items-center gap-2">
-                        <i class="fas fa-file-alt text-green-500"></i>
-                        <span data-i18n="summary.promptTemplates">提示词模板</span>
-                    </h3>
-                    <div class="space-y-3">
-                        <div class="flex gap-2">
-                            <select id="summarize-prompt-templates" class="flex-1 light-input rounded-md p-2">
-                                <option value="" data-i18n="summary.selectTemplate">选择模板...</option>
-                            </select>
-                            <button id="load-prompt-template-btn" class="px-3 py-2 btn-secondary rounded-md" data-i18n-title="summary.loadTemplate" title="加载模板">
-                                <i class="fas fa-download"></i>
-                            </button>
-                            <button id="save-prompt-template-btn" class="px-3 py-2 btn-secondary rounded-md" data-i18n-title="summary.saveTemplate" title="保存为新模板">
-                                <i class="fas fa-save"></i>
-                            </button>
-                            <button id="delete-prompt-template-btn" class="px-3 py-2 btn-secondary rounded-md hover:bg-red-100 hover:text-red-600" data-i18n-title="summary.deleteTemplate" title="删除模板">
-                                <i class="fas fa-trash"></i>
-                            </button>
+                <div class="card p-4 border theme-border">
+                    <div class="flex justify-between items-center mb-3">
+                        <h3 class="font-bold flex items-center gap-2 primary-gradient-text">
+                            <i class="fas fa-file-alt"></i>
+                            <span data-i18n="summary.promptTemplates">提示词模板</span>
+                        </h3>
+                        <div class="flex gap-1">
+                            <button id="load-prompt-template-btn" class="w-8 h-8 btn-secondary rounded flex items-center justify-center" title="加载"><i class="fas fa-upload"></i></button>
+                            <button id="save-prompt-template-btn" class="w-8 h-8 btn-secondary rounded flex items-center justify-center" title="保存"><i class="fas fa-save"></i></button>
+                            <button id="delete-prompt-template-btn" class="w-8 h-8 btn-secondary rounded flex items-center justify-center text-red-500 hover:bg-red-100" title="删除"><i class="fas fa-trash"></i></button>
                         </div>
-                        <div>
-                            <label class="block text-sm font-medium mb-1" data-i18n="summary.prompt">总结提示词</label>
-                            <textarea id="summarize-prompt"
-                                      class="w-full light-input rounded-md p-2 resize-y font-mono text-sm"
-                                      rows="8"
-                                      data-i18n-placeholder="summary.promptPlaceholder"
-                                      placeholder="请总结以下对话内容...">请简明扼要地总结以下对话的关键信息、重要事件和角色状态变化。注意：
+                    </div>
+                    
+                    <div class="space-y-3">
+                        <select id="summarize-prompt-templates" class="w-full light-input rounded-md p-2 text-sm mb-2">
+                            <option value="">选择模板...</option>
+                        </select>
+                        <textarea id="summarize-prompt"
+                                  class="w-full light-input rounded-md p-2 resize-y font-mono text-sm"
+                                  rows="6"
+                                  placeholder="请输入总结提示词...">请简明扼要地总结以下对话的关键信息、重要事件和角色状态变化。注意：
 1. 保留重要的细节和情节发展
 2. 记录角色的情绪和关系变化
 3. 使用第三人称视角
 4. 保持客观中立的语气
 5. 控制在200字以内</textarea>
-                        </div>
                     </div>
                 </div>
 
-                <!-- 操作按钮 -->
-                <div class="flex flex-col sm:flex-row gap-3 mt-4">
-                    <button id="start-summarize-btn" class="flex-1 py-3 btn-primary rounded-lg text-base">
-                        <i class="fas fa-play mr-2"></i><span data-i18n="summary.start">开始总结</span>
-                    </button>
-                    <button id="test-summarize-api-btn" class="flex-1 py-3 btn-secondary rounded-lg text-base">
-                        <i class="fas fa-vial mr-2"></i><span data-i18n="summary.test">测试API</span>
-                    </button>
-                </div>
-                <div id="summarize-api-test-result" class="text-sm mt-3 text-center h-auto min-h-[1rem]"></div>
+                <!-- 底部大按钮 -->
+                <button id="start-summarize-btn" class="w-full py-3 btn-primary rounded-lg text-lg font-bold shadow-lg mt-2">
+                    <i class="fas fa-play mr-2"></i><span data-i18n="summary.start">立即开始总结</span>
+                </button>
             </div>
         </div>
     </div>
@@ -11631,299 +11617,185 @@ You must structure your entire output strictly in the following format, without 
                 setTimeout(updatePresetTokenEstimate, 100);
             };
 
-            // --- 总结聊天功能 ---
+            // --- 总结聊天功能 (修复版) ---
             const summarizeConfig = {
                 apiUrl: document.getElementById('summarize-api-url'),
                 apiKey: document.getElementById('summarize-api-key'),
-                apiModel: document.getElementById('summarize-api-model'),
-                apiModelSelect: document.getElementById('summarize-api-model-select'),
+                apiModel: document.getElementById('summarize-api-model'), // 输入框
+                apiModelSelect: document.getElementById('summarize-api-model-select'), // 下拉框
+                fetchModelsBtn: document.getElementById('fetch-models-btn'),
                 floorCount: document.getElementById('summarize-floor-count'),
                 prompt: document.getElementById('summarize-prompt'),
                 autoHide: document.getElementById('summarize-auto-hide'),
                 autoEnable: document.getElementById('summarize-auto-enable'),
                 templatesSelect: document.getElementById('summarize-prompt-templates'),
-                modal: document.getElementById('summarize-modal')
+                modal: document.getElementById('summarize-modal'),
+                resultDiv: document.getElementById('summarize-api-test-result')
             };
 
-            // 验证所有必需的元素都存在
-            const missingElements = Object.entries(summarizeConfig).filter(([key, el]) => !el).map(([key]) => key);
-            if (missingElements.length > 0) {
-                console.warn('[总结配置] 缺少以下元素:', missingElements);
-            }
-
-            // 加载提示词模板列表
-            async function loadPromptTemplates() {
-                const templatesData = await idbStorage.getItem('summarize_prompt_templates');
-                const templates = templatesData ? JSON.parse(templatesData) : {};
-                summarizeConfig.templatesSelect.innerHTML = '<option value="">选择模板...</option>';
-
-                Object.keys(templates).forEach(name => {
-                    const option = document.createElement('option');
-                    option.value = name;
-                    option.textContent = name;
-                    summarizeConfig.templatesSelect.appendChild(option);
-                });
-            }
-
-            // 保存提示词模板
-            document.getElementById('save-prompt-template-btn').addEventListener('click', async () => {
-                const templateName = prompt('请输入模板名称:');
-                if (!templateName || !templateName.trim()) return;
-
-                const templatesData = await idbStorage.getItem('summarize_prompt_templates');
-                const templates = templatesData ? JSON.parse(templatesData) : {};
-                templates[templateName.trim()] = summarizeConfig.prompt.value;
-                await idbStorage.setItem('summarize_prompt_templates', JSON.stringify(templates));
-
-                await loadPromptTemplates();
-                summarizeConfig.templatesSelect.value = templateName.trim();
-                alert(`模板 "${templateName}" 已保存！`);
-            });
-
-            // 加载提示词模板
-            document.getElementById('load-prompt-template-btn').addEventListener('click', async () => {
-                const selectedTemplate = summarizeConfig.templatesSelect.value;
-                if (!selectedTemplate) {
-                    alert('请先选择一个模板！');
-                    return;
-                }
-
-                const templatesData = await idbStorage.getItem('summarize_prompt_templates');
-                const templates = templatesData ? JSON.parse(templatesData) : {};
-                if (templates[selectedTemplate]) {
-                    summarizeConfig.prompt.value = templates[selectedTemplate];
-                    alert(`已加载模板 "${selectedTemplate}"`);
-                }
-            });
-
-            // 删除提示词模板
-            document.getElementById('delete-prompt-template-btn').addEventListener('click', async () => {
-                const selectedTemplate = summarizeConfig.templatesSelect.value;
-                if (!selectedTemplate) {
-                    alert('请先选择一个模板！');
-                    return;
-                }
-
-                if (!confirm(`确定要删除模板 "${selectedTemplate}" 吗？`)) return;
-
-                const templatesData = await idbStorage.getItem('summarize_prompt_templates');
-                const templates = templatesData ? JSON.parse(templatesData) : {};
-                delete templates[selectedTemplate];
-                await idbStorage.setItem('summarize_prompt_templates', JSON.stringify(templates));
-
-                await loadPromptTemplates();
-                alert(`模板 "${selectedTemplate}" 已删除！`);
-            });
-
-            // 模型选择器变化事件
-            summarizeConfig.apiModelSelect.addEventListener('change', () => {
-                const selected = summarizeConfig.apiModelSelect.value;
-                if (selected === 'custom') {
-                    summarizeConfig.apiModel.classList.remove('hidden');
-                    summarizeConfig.apiModel.value = '';
-                    summarizeConfig.apiModel.focus();
-                } else if (selected) {
-                    summarizeConfig.apiModel.classList.add('hidden');
-                    summarizeConfig.apiModel.value = selected;
-                }
-            });
-
-            // 从API获取模型列表
-            document.getElementById('fetch-models-btn').addEventListener('click', async () => {
-                const btn = document.getElementById('fetch-models-btn');
-                const resultDiv = document.getElementById('summarize-api-test-result');
-                const icon = btn.querySelector('i');
-
-                if (!summarizeConfig.apiUrl.value) {
-                    resultDiv.innerHTML = '请先填写API地址！';
-                    resultDiv.className = 'text-sm mt-2 text-center h-auto min-h-[1rem] text-red-500';
-                    return;
-                }
-
-                if (!summarizeConfig.apiKey.value) {
-                    resultDiv.innerHTML = '请先填写API密钥！';
-                    resultDiv.className = 'text-sm mt-2 text-center h-auto min-h-[1rem] text-red-500';
-                    return;
-                }
-
-                try {
-                    resultDiv.innerHTML = '加载中...';
-                    resultDiv.className = 'text-sm mt-2 text-center h-auto min-h-[1rem] text-yellow-500';
-                    icon.classList.add('fa-spin');
-                    btn.disabled = true;
-
-                    // 参考主API实现
-                    const urlObj = new URL(summarizeConfig.apiUrl.value);
-                    let modelsUrl;
-                    let headers = {};
-
-                    if (urlObj.hostname.includes('google')) {
-                        modelsUrl = `${urlObj.origin}/v1beta/models?key=${summarizeConfig.apiKey.value}`;
-                    } else {
-                        const baseUrl = summarizeConfig.apiUrl.value.replace(/\/chat\/completions.*$/, '');
-                        modelsUrl = `${baseUrl}/models`;
-                        headers['Authorization'] = `Bearer ${summarizeConfig.apiKey.value}`;
-                    }
-
-                    const response = await fetch(modelsUrl, {
-                        method: 'GET',
-                        headers: headers
-                    });
-
-                    if (!response.ok) {
-                        const error = await response.json().catch(() => ({ error: { message: response.statusText } }));
-                        throw new Error(`HTTP ${response.status}: ${error.error?.message || response.statusText}`);
-                    }
-
-                    const data = await response.json();
-                    let models = [];
-
-                    if (data.data) {
-                        models = data.data; // OpenAI格式
-                    } else if (data.models) {
-                        models = data.models.map(m => ({ id: m.name.replace('models/', '') })); // Google格式
-                    }
-
-                    if (models.length > 0) {
-                        // 清空现有选项
-                        summarizeConfig.apiModelSelect.innerHTML = '<option value="">选择模型...</option>';
-
-                        // 添加获取到的模型
-                        models
-                            .sort((a, b) => a.id.localeCompare(b.id))
-                            .forEach(model => {
-                                const option = document.createElement('option');
-                                option.value = model.id;
-                                option.textContent = model.id;
-                                summarizeConfig.apiModelSelect.appendChild(option);
-                            });
-
-                        // 添加自定义选项
-                        const customOption = document.createElement('option');
-                        customOption.value = 'custom';
-                        customOption.textContent = '自定义...';
-                        summarizeConfig.apiModelSelect.appendChild(customOption);
-
-                        // 如果之前有选中的模型，尝试保持选中
-                        const currentModel = summarizeConfig.apiModel.value;
-                        const matchingOption = Array.from(summarizeConfig.apiModelSelect.options).find(opt => opt.value === currentModel);
-                        if (matchingOption) {
-                            summarizeConfig.apiModelSelect.value = currentModel;
-                        }
-
-                        resultDiv.innerHTML = `成功加载 ${models.length} 个模型！`;
-                        resultDiv.className = 'text-sm mt-2 text-center h-auto min-h-[1rem] text-green-500';
-                    } else {
-                        throw new Error('未找到可用模型');
-                    }
-                } catch (error) {
-                    resultDiv.innerHTML = `获取模型列表失败: ${error.message}`;
-                    resultDiv.className = 'text-sm mt-2 text-center h-auto min-h-[1rem] text-red-500';
-                } finally {
-                    icon.classList.remove('fa-spin');
-                    btn.disabled = false;
-                }
-            });
-
-            // 保存API配置
-            document.getElementById('save-summarize-api-config-btn').addEventListener('click', () => {
-                saveSummarizeConfig();
-                alert('API配置已保存！');
-            });
-
-            // 加载API配置
-            document.getElementById('load-summarize-api-config-btn').addEventListener('click', () => {
-                loadSummarizeConfig();
-                alert('API配置已加载！');
-            });
-
-            // 加载总结配置
+            // 1. 加载配置
             async function loadSummarizeConfig() {
                 const saved = await idbStorage.getItem('summarize_config');
                 if (saved) {
                     const config = JSON.parse(saved);
                     summarizeConfig.apiUrl.value = config.apiUrl || '';
                     summarizeConfig.apiKey.value = config.apiKey || '';
-
-                    // 设置模型
-                    const modelValue = config.apiModel || 'gpt-4o-mini';
-                    summarizeConfig.apiModel.value = modelValue;
-
-                    // 检查下拉列表中是否有这个模型
-                    const options = Array.from(summarizeConfig.apiModelSelect.options);
-                    const matchingOption = options.find(opt => opt.value === modelValue);
-
-                    if (matchingOption) {
-                        summarizeConfig.apiModelSelect.value = modelValue;
-                        summarizeConfig.apiModel.classList.add('hidden');
-                    } else {
-                        // 如果下拉列表中没有，选择"自定义"
-                        summarizeConfig.apiModelSelect.value = 'custom';
-                        summarizeConfig.apiModel.classList.remove('hidden');
-                    }
-
+                    summarizeConfig.apiModel.value = config.apiModel || 'gpt-4o-mini';
                     summarizeConfig.floorCount.value = config.floorCount || 10;
-                    summarizeConfig.prompt.value = config.prompt || summarizeConfig.prompt.value;
+                    summarizeConfig.prompt.value = config.prompt || summarizeConfig.prompt.value; // 保留默认值
                     summarizeConfig.autoHide.checked = config.autoHide !== false;
                     summarizeConfig.autoEnable.checked = config.autoEnable || false;
+                    
+                    // 重置模型选择器状态：默认显示输入框，隐藏下拉框
+                    summarizeConfig.apiModel.classList.remove('hidden');
+                    summarizeConfig.apiModelSelect.classList.add('hidden');
                 }
                 await loadPromptTemplates();
             }
 
-            // 保存总结配置
+            // 2. 保存配置
             async function saveSummarizeConfig() {
-                // 确保使用正确的模型值
-                const selectedModel = summarizeConfig.apiModelSelect.value;
-                if (selectedModel && selectedModel !== 'custom') {
-                    summarizeConfig.apiModel.value = selectedModel;
+                // 如果下拉框可见且有值，优先使用下拉框的值
+                let finalModel = summarizeConfig.apiModel.value;
+                if (!summarizeConfig.apiModelSelect.classList.contains('hidden') && summarizeConfig.apiModelSelect.value) {
+                    finalModel = summarizeConfig.apiModelSelect.value;
                 }
 
                 const config = {
-                    apiUrl: summarizeConfig.apiUrl.value,
-                    apiKey: summarizeConfig.apiKey.value,
-                    apiModel: summarizeConfig.apiModel.value,
+                    apiUrl: summarizeConfig.apiUrl.value.trim(),
+                    apiKey: summarizeConfig.apiKey.value.trim(),
+                    apiModel: finalModel.trim(),
                     floorCount: parseInt(summarizeConfig.floorCount.value) || 10,
                     prompt: summarizeConfig.prompt.value,
                     autoHide: summarizeConfig.autoHide.checked,
                     autoEnable: summarizeConfig.autoEnable.checked
                 };
                 await idbStorage.setItem('summarize_config', JSON.stringify(config));
+                return config;
             }
 
-            // 执行总结的核心函数
-            async function performSummarize(isAuto = false) {
+            // 3. 获取模型列表逻辑 (完全参考主API设置)
+            summarizeConfig.fetchModelsBtn.addEventListener('click', async () => {
+                const url = summarizeConfig.apiUrl.value.trim();
+                const key = summarizeConfig.apiKey.value.trim();
+                const btn = summarizeConfig.fetchModelsBtn;
+                const select = summarizeConfig.apiModelSelect;
+                const input = summarizeConfig.apiModel;
+                const resultDiv = summarizeConfig.resultDiv;
+
+                if (!url || !key) {
+                    resultDiv.innerHTML = '<span class="text-red-500">请先填写URL和Key</span>';
+                    return;
+                }
+
+                const originalBtnContent = btn.innerHTML;
+                btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+                btn.disabled = true;
+                resultDiv.textContent = '';
+
                 try {
-                    const configData = await idbStorage.getItem('summarize_config');
-                    const config = configData ? JSON.parse(configData) : {};
+                    const urlObj = new URL(url);
+                    let modelsUrl;
+                    let headers = {};
 
-                    if (!config.apiUrl || !config.apiKey || !config.apiModel) {
-                        if (!isAuto) alert('请先配置完整的API设置（URL、密钥、模型）！');
-                        return false;
+                    // Google Gemini 特殊处理
+                    if (urlObj.hostname.includes('google')) {
+                        modelsUrl = `${urlObj.origin}/v1beta/models?key=${key}`;
+                    } else {
+                        // 标准 OpenAI 格式
+                        // 尝试移除 /chat/completions 后缀
+                        const baseUrl = url.replace(/\/chat\/completions.*$/, '').replace(/\/$/, '');
+                        modelsUrl = `${baseUrl}/models`;
+                        headers['Authorization'] = `Bearer ${key}`;
                     }
 
-                    const floorCount = parseInt(config.floorCount) || 10;
-                    const visibleMessages = chatHistory.filter(m => !m.hidden);
-                    // 从第1条开始往后取,而不是从后往前取
-                    const messagesToSummarize = visibleMessages.slice(0, Math.min(floorCount, visibleMessages.length));
-
-                    if (messagesToSummarize.length === 0) {
-                        if (!isAuto) alert('没有可总结的消息！');
-                        return false;
+                    const response = await fetch(modelsUrl, { method: 'GET', headers: headers });
+                    
+                    if (!response.ok) {
+                        throw new Error(`HTTP ${response.status}`);
                     }
 
-                    console.log(`[总结] ${isAuto ? '自动' : '手动'}总结 ${messagesToSummarize.length} 条消息`);
+                    const data = await response.json();
+                    let models = [];
 
-                    // 构建总结请求 - 参考主API的实现
-                    const conversationText = messagesToSummarize.map(msg =>
-                        `${msg.role === 'user' ? '用户' : '助手'}: ${msg.content}`
-                    ).join('\n\n');
+                    if (data.data) {
+                        models = data.data; // OpenAI 格式
+                    } else if (data.models) {
+                        models = data.models.map(m => ({ id: m.name.replace('models/', '') })); // Google 格式
+                    }
 
-                    // 参考主API构建endpoint和headers
+                    if (models.length > 0) {
+                        // 填充下拉框
+                        select.innerHTML = '<option value="">-- 选择模型 --</option>';
+                        models.sort((a, b) => a.id.localeCompare(b.id)).forEach(m => {
+                            const opt = document.createElement('option');
+                            opt.value = m.id;
+                            opt.textContent = m.id;
+                            select.appendChild(opt);
+                        });
+                        
+                        // 添加“自定义”选项，以便切回输入框
+                        const customOpt = document.createElement('option');
+                        customOpt.value = "custom_manual_input";
+                        customOpt.textContent = "✎ 手动输入...";
+                        select.appendChild(customOpt);
+
+                        // 切换显示状态
+                        input.classList.add('hidden');
+                        select.classList.remove('hidden');
+                        
+                        // 如果输入框已有值且在列表中，自动选中
+                        if (input.value && models.some(m => m.id === input.value)) {
+                            select.value = input.value;
+                        }
+
+                        resultDiv.innerHTML = `<span class="text-green-500">成功加载 ${models.length} 个模型</span>`;
+                    } else {
+                        throw new Error('未找到模型数据');
+                    }
+
+                } catch (error) {
+                    console.error('Fetch Models Error:', error);
+                    // 失败时回退到输入框
+                    select.classList.add('hidden');
+                    input.classList.remove('hidden');
+                    resultDiv.innerHTML = `<span class="text-red-500">加载失败: ${error.message} (已切换回手动输入)</span>`;
+                } finally {
+                    btn.innerHTML = originalBtnContent;
+                    btn.disabled = false;
+                }
+            });
+
+            // 监听下拉框变化：如果选择“手动输入”，则切换回 input
+            summarizeConfig.apiModelSelect.addEventListener('change', () => {
+                if (summarizeConfig.apiModelSelect.value === 'custom_manual_input') {
+                    summarizeConfig.apiModelSelect.classList.add('hidden');
+                    summarizeConfig.apiModel.classList.remove('hidden');
+                    summarizeConfig.apiModel.focus();
+                } else {
+                    // 同步值到隐藏的input，保证保存时获取正确
+                    summarizeConfig.apiModel.value = summarizeConfig.apiModelSelect.value;
+                }
+            });
+
+            // 4. 测试连接 (简单的聊天请求测试)
+            document.getElementById('test-summarize-api-btn').addEventListener('click', async () => {
+                const config = await saveSummarizeConfig(); // 先保存
+                const resultDiv = summarizeConfig.resultDiv;
+                
+                if (!config.apiUrl || !config.apiKey || !config.apiModel) {
+                    resultDiv.innerHTML = '<span class="text-red-500">配置不完整</span>';
+                    return;
+                }
+
+                resultDiv.innerHTML = '<span class="text-yellow-600"><i class="fas fa-spinner fa-spin"></i> 测试中...</span>';
+
+                try {
                     const urlObj = new URL(config.apiUrl);
-                    let endpoint = `${config.apiUrl.replace(/\/$/, '')}`;
-                    // 如果URL不包含chat/completions，添加它
-                    if (!endpoint.includes('/chat/completions')) {
-                        endpoint = `${endpoint}/chat/completions`;
+                    let endpoint = config.apiUrl;
+                    // 智能补全 endpoint
+                    if (!urlObj.hostname.includes('google') && !endpoint.endsWith('/chat/completions')) {
+                        endpoint = endpoint.replace(/\/$/, '') + '/chat/completions';
                     }
 
                     let headers = {
@@ -11933,296 +11805,224 @@ You must structure your entire output strictly in the following format, without 
 
                     let body = {
                         model: config.apiModel,
-                        messages: [
-                            {
-                                role: 'system',
-                                content: config.prompt || '请简明扼要地总结以下对话内容。'
-                            },
-                            {
-                                role: 'user',
-                                content: conversationText
-                            }
-                        ],
-                        temperature: 0.7,
-                        max_tokens: 500
+                        messages: [{ role: 'user', content: 'Hi' }],
+                        max_tokens: 5
                     };
 
-                    // 支持Google API格式
+                    // Google 格式处理
                     if (urlObj.hostname.includes('google')) {
                         endpoint = `${urlObj.origin}/v1beta/models/${config.apiModel}:generateContent?key=${config.apiKey}`;
                         delete headers.Authorization;
-
                         body = {
-                            contents: [
-                                {
-                                    role: 'user',
-                                    parts: [{ text: `${config.prompt}\n\n${conversationText}` }]
-                                }
-                            ],
-                            generationConfig: {
-                                temperature: 0.7,
-                                maxOutputTokens: 500,
-                            }
+                            contents: [{ parts: [{ text: 'Hi' }] }]
                         };
                     }
 
-                    const response = await fetch(endpoint, {
+                    const res = await fetch(endpoint, {
                         method: 'POST',
                         headers: headers,
                         body: JSON.stringify(body)
                     });
 
-                    if (!response.ok) {
-                        const error = await response.json().catch(() => ({ error: { message: response.statusText } }));
-                        throw new Error(error.error?.message || `HTTP ${response.status}: ${response.statusText}`);
+                    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                    
+                    resultDiv.innerHTML = '<span class="text-green-500"><i class="fas fa-check"></i> 连接成功!</span>';
+                    setTimeout(() => { resultDiv.innerHTML = ''; }, 3000);
+
+                } catch (e) {
+                    resultDiv.innerHTML = `<span class="text-red-500">错误: ${e.message}</span>`;
+                }
+            });
+
+            // 5. 提示词模板功能
+            async function loadPromptTemplates() {
+                const data = await idbStorage.getItem('summarize_prompt_templates');
+                const templates = data ? JSON.parse(data) : {};
+                const select = summarizeConfig.templatesSelect;
+                
+                select.innerHTML = '<option value="">选择模板...</option>';
+                Object.keys(templates).forEach(name => {
+                    const opt = document.createElement('option');
+                    opt.value = name;
+                    opt.textContent = name;
+                    select.appendChild(opt);
+                });
+            }
+
+            document.getElementById('save-prompt-template-btn').addEventListener('click', async () => {
+                const name = prompt('输入模板名称:');
+                if(!name) return;
+                const data = await idbStorage.getItem('summarize_prompt_templates');
+                const templates = data ? JSON.parse(data) : {};
+                templates[name] = summarizeConfig.prompt.value;
+                await idbStorage.setItem('summarize_prompt_templates', JSON.stringify(templates));
+                loadPromptTemplates();
+                summarizeConfig.templatesSelect.value = name;
+            });
+
+            document.getElementById('load-prompt-template-btn').addEventListener('click', async () => {
+                const name = summarizeConfig.templatesSelect.value;
+                if(!name) return;
+                const data = await idbStorage.getItem('summarize_prompt_templates');
+                const templates = data ? JSON.parse(data) : {};
+                if(templates[name]) summarizeConfig.prompt.value = templates[name];
+            });
+
+            document.getElementById('delete-prompt-template-btn').addEventListener('click', async () => {
+                const name = summarizeConfig.templatesSelect.value;
+                if(!name || !confirm('确定删除?')) return;
+                const data = await idbStorage.getItem('summarize_prompt_templates');
+                let templates = data ? JSON.parse(data) : {};
+                delete templates[name];
+                await idbStorage.setItem('summarize_prompt_templates', JSON.stringify(templates));
+                loadPromptTemplates();
+            });
+
+            // 保存配置按钮
+            document.getElementById('save-summarize-api-config-btn').addEventListener('click', async () => {
+                await saveSummarizeConfig();
+                const div = summarizeConfig.resultDiv;
+                div.innerHTML = '<span class="text-green-500">配置已保存</span>';
+                setTimeout(() => div.innerHTML = '', 2000);
+            });
+
+            // 打开模态框时加载配置
+            document.getElementById('menu-summarize-btn').addEventListener('click', () => {
+                loadSummarizeConfig();
+                summarizeConfig.modal.classList.add('active');
+                document.getElementById('menu-dropdown')?.classList.remove('active'); // 关闭可能存在的下拉菜单
+                document.getElementById('chat-menu-panel').classList.add('hidden'); // 关闭聊天菜单
+            });
+
+            // 关闭按钮
+            document.getElementById('summarize-modal-close').addEventListener('click', () => {
+                summarizeConfig.modal.classList.remove('active');
+            });
+
+            // 6. 执行总结核心逻辑
+            async function performSummarize(isAuto = false) {
+                const config = await saveSummarizeConfig(); // 获取最新配置
+                
+                if (!config.apiUrl || !config.apiKey || !config.apiModel) {
+                    if (!isAuto) alert('请先完善总结API配置！');
+                    return false;
+                }
+
+                const visibleMessages = chatHistory.filter(m => !m.hidden);
+                // 简单的切片逻辑：总结前 N 条
+                const count = config.floorCount;
+                if (visibleMessages.length < count) {
+                    if(!isAuto) alert('消息数量不足，无法总结');
+                    return false;
+                }
+
+                const msgsToSummarize = visibleMessages.slice(0, count);
+                const conversationText = msgsToSummarize.map(m => `${m.role}: ${m.content}`).join('\n\n');
+
+                try {
+                    // 构建请求 (复用测试连接中的逻辑)
+                    const urlObj = new URL(config.apiUrl);
+                    let endpoint = config.apiUrl;
+                    if (!urlObj.hostname.includes('google') && !endpoint.endsWith('/chat/completions')) {
+                        endpoint = endpoint.replace(/\/$/, '') + '/chat/completions';
                     }
 
-                    const result = await response.json();
-                    let summary = '';
+                    let headers = { 'Content-Type': 'application/json', 'Authorization': `Bearer ${config.apiKey}` };
+                    let body = {
+                        model: config.apiModel,
+                        messages: [
+                            { role: 'system', content: config.prompt },
+                            { role: 'user', content: conversationText }
+                        ],
+                        temperature: 0.7
+                    };
 
-                    // 处理不同格式的响应
-                    if (result.choices) {
-                        // OpenAI格式
-                        summary = result.choices[0].message.content;
-                    } else if (result.candidates) {
-                        // Google格式
-                        summary = result.candidates[0].content.parts[0].text;
-                    } else {
-                        throw new Error('无法解析API响应格式');
+                    if (urlObj.hostname.includes('google')) {
+                        endpoint = `${urlObj.origin}/v1beta/models/${config.apiModel}:generateContent?key=${config.apiKey}`;
+                        delete headers.Authorization;
+                        body = {
+                            contents: [{ parts: [{ text: config.prompt + "\n\n" + conversationText }] }]
+                        };
                     }
 
-                    console.log('[总结] 总结结果:', summary);
+                    const res = await fetch(endpoint, {
+                        method: 'POST', headers: headers, body: JSON.stringify(body)
+                    });
 
-                    // 添加总结到角色世界书
+                    if (!res.ok) throw new Error(`API Error: ${res.status}`);
+                    const data = await res.json();
+                    
+                    let summaryText = "";
+                    if (data.choices) summaryText = data.choices[0].message.content;
+                    else if (data.candidates) summaryText = data.candidates[0].content.parts[0].text;
+
+                    // 处理结果：添加到世界书
                     const activeChar = char.data[char.activeCharacterId];
                     if (activeChar) {
-                        if (!activeChar.data.character_book) {
-                            activeChar.data.character_book = {
-                                name: `${activeChar.name}的记忆`,
-                                entries: []
+                        if (!activeChar.data.character_book) activeChar.data.character_book = { entries: [], name: "Memory" };
+                        
+                        // 寻找或创建总结条目
+                        let entry = activeChar.data.character_book.entries.find(e => e.keys.includes('summary') || e.comment === 'Auto Summary');
+                        if (!entry) {
+                            entry = {
+                                id: Date.now(), keys: ['summary', 'previous_story'], 
+                                content: summaryText, enabled: true, 
+                                constant: true, comment: 'Auto Summary', priority: 10
                             };
-                        }
-
-                        // 查找是否已存在总结条目
-                        let summaryEntry = activeChar.data.character_book.entries.find(
-                            entry => entry.keys && entry.keys.includes('总结')
-                        );
-
-                        if (summaryEntry) {
-                            // 已存在总结条目,追加新内容
-                            const timestamp = new Date().toLocaleString();
-                            summaryEntry.content += `\n\n---[${isAuto ? '自动' : '手动'}总结 ${timestamp}]---\n${summary}`;
-                            summaryEntry.name = `聊天总结 (最后更新: ${timestamp})`;
-                            console.log('[总结] 已追加到现有总结条目');
+                            activeChar.data.character_book.entries.push(entry);
                         } else {
-                            // 不存在总结条目,创建新的
-                            summaryEntry = {
-                                id: `summary_${Date.now()}`,
-                                enabled: true,
-                                name: `聊天总结 (创建: ${new Date().toLocaleString()})`,
-                                keys: ['总结', '记忆', '回忆'],
-                                content: summary,
-                                case_sensitive: false,
-                                whole_word: false,
-                                position: 0,
-                                role: 0,
-                                scan_depth: 100,
-                                use_regex: false
-                            };
-                            activeChar.data.character_book.entries.push(summaryEntry);
-                            console.log('[总结] 已创建新的总结条目');
+                            entry.content = summaryText; // 覆盖旧总结
                         }
-
-                        saveCharacters();
-                        console.log('[总结] 已保存到角色世界书');
+                        await saveCharacters();
                     }
 
-                    // 隐藏已总结的消息
+                    // 隐藏旧消息
                     if (config.autoHide) {
-                        messagesToSummarize.forEach(msg => {
-                            msg.hidden = true;
-                        });
-                        saveChat();
-                        renderMessages();
-                        console.log(`[总结] 已隐藏 ${messagesToSummarize.length} 条消息`);
+                        msgsToSummarize.forEach(m => m.hidden = true);
+                        await saveChat();
+                        // 刷新界面
+                        document.getElementById('chat-messages').innerHTML = '';
+                        loadChatHistory(char.activeCharacterId); 
                     }
 
-                    if (!isAuto) {
-                        alert(`总结成功！\n\n已总结 ${messagesToSummarize.length} 条消息，并添加到角色世界书。\n\n${config.autoHide ? '已隐藏总结过的消息。' : ''}`);
-                    }
-
+                    if (!isAuto) alert('总结成功！已更新世界书并隐藏旧消息。');
                     return true;
-                } catch (error) {
-                    console.error('[总结] 失败:', error);
-                    if (!isAuto) {
-                        alert(`总结失败: ${error.message}`);
-                    }
+
+                } catch (e) {
+                    console.error(e);
+                    if (!isAuto) alert(`总结失败: ${e.message}`);
                     return false;
                 }
             }
 
-            // 检查是否需要自动总结
-            async function checkAutoSummarize() {
-                const configData = await idbStorage.getItem('summarize_config');
-                const config = configData ? JSON.parse(configData) : {};
-
-                if (!config.autoEnable) return;
-                if (!config.apiUrl || !config.apiKey) return;
-
-                const floorCount = parseInt(config.floorCount) || 10;
-                const visibleMessages = chatHistory.filter(m => !m.hidden);
-
-                if (visibleMessages.length >= floorCount) {
-                    console.log('[自动总结] 达到触发条件，开始总结...');
-                    await performSummarize(true);
-                }
-            }
-
-            // 打开总结模态框
-            document.getElementById('menu-summarize-btn').addEventListener('click', () => {
-                loadSummarizeConfig();
-                if (summarizeConfig.modal) {
-                    summarizeConfig.modal.classList.add('active');
-                }
-                const menuDropdown = document.getElementById('menu-dropdown');
-                if (menuDropdown) {
-                    menuDropdown.classList.remove('active');
-                }
-            });
-
-            // 总结聊天弹窗关闭按钮
-            document.getElementById('summarize-modal-close').addEventListener('click', () => {
-                const modal = document.getElementById('summarize-modal');
-                if (modal) {
-                    modal.classList.remove('active');
-                }
-            });
-
-            // 点击弹窗背景关闭
-            document.getElementById('summarize-modal').addEventListener('click', (e) => {
-                if (e.target.id === 'summarize-modal') {
-                    e.target.classList.remove('active');
-                }
-            });
-
-            // 测试API - 发送测试消息
-            document.getElementById('test-summarize-api-btn').addEventListener('click', async () => {
-                const btn = document.getElementById('test-summarize-api-btn');
-                const resultDiv = document.getElementById('summarize-api-test-result');
-                const originalHtml = btn.innerHTML;
-
-                // 先保存配置
-                saveSummarizeConfig();
-
-                // 验证必填项
-                if (!summarizeConfig.apiUrl.value || !summarizeConfig.apiKey.value) {
-                    resultDiv.innerHTML = '请先填写API地址和密钥！';
-                    resultDiv.className = 'text-sm mt-2 text-center h-auto min-h-[1rem] text-red-500';
-                    return;
-                }
-
-                if (!summarizeConfig.apiModel.value) {
-                    resultDiv.innerHTML = '请先选择模型！';
-                    resultDiv.className = 'text-sm mt-2 text-center h-auto min-h-[1rem] text-red-500';
-                    return;
-                }
-
-                try {
-                    resultDiv.innerHTML = '测试中...';
-                    resultDiv.className = 'text-sm mt-2 text-center h-auto min-h-[1rem] text-yellow-500';
-                    btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>测试中...';
-                    btn.disabled = true;
-
-                    // 参考主API的实现构建请求
-                    const urlObj = new URL(summarizeConfig.apiUrl.value);
-                    let endpoint = `${summarizeConfig.apiUrl.value.replace(/\/$/, '')}`;
-                    if (!endpoint.includes('/chat/completions')) {
-                        endpoint = `${endpoint}/chat/completions`;
-                    }
-
-                    let headers = {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${summarizeConfig.apiKey.value}`
-                    };
-
-                    let body = {
-                        model: summarizeConfig.apiModel.value,
-                        messages: [{
-                            role: 'user',
-                            content: '你好，这是一个API连接测试，请简单回复"连接成功"。'
-                        }],
-                        max_tokens: 50
-                    };
-
-                    // 支持Google API
-                    if (urlObj.hostname.includes('google')) {
-                        endpoint = `${urlObj.origin}/v1beta/models/${summarizeConfig.apiModel.value}:generateContent?key=${summarizeConfig.apiKey.value}`;
-                        delete headers.Authorization;
-
-                        body = {
-                            contents: [{
-                                role: 'user',
-                                parts: [{ text: '你好，这是一个API连接测试，请简单回复"连接成功"。' }]
-                            }],
-                            generationConfig: {
-                                maxOutputTokens: 50
-                            }
-                        };
-                    }
-
-                    const response = await fetch(endpoint, {
-                        method: 'POST',
-                        headers: headers,
-                        body: JSON.stringify(body)
-                    });
-
-                    if (response.ok) {
-                        const data = await response.json();
-                        let reply = '';
-
-                        if (data.choices) {
-                            reply = data.choices[0].message.content;
-                        } else if (data.candidates) {
-                            reply = data.candidates[0].content.parts[0].text;
-                        }
-
-                        resultDiv.innerHTML = `测试成功！回复: ${reply.substring(0, 50)}...`;
-                        resultDiv.className = 'text-sm mt-2 text-center h-auto min-h-[1rem] text-green-500';
-                    } else {
-                        const error = await response.json().catch(() => ({ error: { message: response.statusText } }));
-                        throw new Error(`HTTP ${response.status}: ${error.error?.message || response.statusText}`);
-                    }
-                } catch (error) {
-                    resultDiv.innerHTML = `测试失败: ${error.message}`;
-                    resultDiv.className = 'text-sm mt-2 text-center h-auto min-h-[1rem] text-red-500';
-                } finally {
-                    btn.innerHTML = originalHtml;
-                    btn.disabled = false;
-                }
-            });
-
-            // 开始总结
+            // 点击开始总结按钮
             document.getElementById('start-summarize-btn').addEventListener('click', async () => {
                 const btn = document.getElementById('start-summarize-btn');
                 const originalHtml = btn.innerHTML;
-
-                try {
-                    // 保存配置
-                    saveSummarizeConfig();
-
-                    btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>总结中...';
-                    btn.disabled = true;
-
-                    const success = await performSummarize(false);
-
-                    if (success) {
-                        summarizeConfig.modal.classList.remove('active');
-                    }
-                } finally {
-                    btn.innerHTML = originalHtml;
-                    btn.disabled = false;
-                }
+                btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 处理中...';
+                btn.disabled = true;
+                
+                await performSummarize(false);
+                
+                btn.innerHTML = originalHtml;
+                btn.disabled = false;
+                summarizeConfig.modal.classList.remove('active');
             });
+
+            // 自动总结检查
+            async function checkAutoSummarize() {
+                const data = await idbStorage.getItem('summarize_config');
+                if (!data) return;
+                const config = JSON.parse(data);
+                if (!config.autoEnable) return;
+
+                const visibleCount = chatHistory.filter(m => !m.hidden).length;
+                if (visibleCount >= (config.floorCount || 10) + 2) { // 稍微多一点余量避免过于频繁
+                    console.log('触发自动总结...');
+                    performSummarize(true);
+                }
+            }
+
 
             // 在发送消息后检查自动总结
             const originalSendMessage = sendMessage;
