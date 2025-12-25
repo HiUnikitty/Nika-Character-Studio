@@ -921,7 +921,13 @@
                 const { stream = false, onMessage = null } = options;
                 const url = new URL(this.config.url);
 
-                let endpoint = `${this.config.url.replace(/\/$/, '')}/chat/completions`;
+                // 智能处理 endpoint：只有以 /v1 或 /v1/ 结尾时才自动添加 /chat/completions
+                let endpoint = this.config.url;
+                const trimmedUrl = endpoint.replace(/\/$/, '');
+                if (trimmedUrl.endsWith('/v1')) {
+                    endpoint = `${trimmedUrl}/chat/completions`;
+                }
+                
                 let headers = {
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${this.config.key}`
@@ -11793,9 +11799,12 @@ You must structure your entire output strictly in the following format, without 
                 try {
                     const urlObj = new URL(config.apiUrl);
                     let endpoint = config.apiUrl;
-                    // 智能补全 endpoint
-                    if (!urlObj.hostname.includes('google') && !endpoint.endsWith('/chat/completions')) {
-                        endpoint = endpoint.replace(/\/$/, '') + '/chat/completions';
+                    // 智能补全 endpoint：只有以 /v1 或 /v1/ 结尾时才自动添加 /chat/completions
+                    if (!urlObj.hostname.includes('google')) {
+                        const trimmedUrl = endpoint.replace(/\/$/, '');
+                        if (trimmedUrl.endsWith('/v1')) {
+                            endpoint = `${trimmedUrl}/chat/completions`;
+                        }
                     }
 
                     let headers = {
@@ -11923,8 +11932,12 @@ You must structure your entire output strictly in the following format, without 
                     // 构建请求 (复用测试连接中的逻辑)
                     const urlObj = new URL(config.apiUrl);
                     let endpoint = config.apiUrl;
-                    if (!urlObj.hostname.includes('google') && !endpoint.endsWith('/chat/completions')) {
-                        endpoint = endpoint.replace(/\/$/, '') + '/chat/completions';
+                    // 智能补全 endpoint：只有以 /v1 或 /v1/ 结尾时才自动添加 /chat/completions
+                    if (!urlObj.hostname.includes('google')) {
+                        const trimmedUrl = endpoint.replace(/\/$/, '');
+                        if (trimmedUrl.endsWith('/v1')) {
+                            endpoint = `${trimmedUrl}/chat/completions`;
+                        }
                     }
 
                     let headers = { 'Content-Type': 'application/json', 'Authorization': `Bearer ${config.apiKey}` };
