@@ -6,12 +6,16 @@ A one-stop free AI role-playing studio inspired by Silly Tavern.
 
 ## 🌐 在线体验
 
-**在线网站**: [妮卡角色工作室Pro](https://mocards.netlify.app) - 无需下载，直接使用
+**在线网站**: 
+
+[妮卡角色工作室Pro](https://mocards.netlify.app) - 无需下载，直接使用
+
+[微信聊天主题体验](https://aliya.pengcyril.dpdns.org/) - chat_wechat_theme.html是基于chat.html重构的微信聊天主题，本主题为沉浸式聊天，适合对话型角色卡。已内置自制角色卡Aliya，可直接体验。
 
 ## 📢 反馈与交流
 
-**百度贴吧**: [自制了一个全中文的编卡器，支持AI补全 ](https://tieba.baidu.com/p/8123456789)
-- 欢迎在贴吧分享使用体验
+**Discord**: [妮卡角色工作室 - AI编卡器+内置mini酒馆 开源 | 纯前端 | 无需安装](https://discord.com/channels/1134557553011998840/1443997397415104623)
+- 欢迎在discord分享使用体验
 - 反馈问题和建议
 - 与其他用户交流编卡心得
 
