@@ -1132,75 +1132,107 @@
             </div>
         </div>
     </div>
+    <!-- AI 预设模态框 (统一滚动版) -->
     <div id="presets-modal" class="modal-overlay">
-        <div class="modal-content w-full h-full card p-6 rounded-2xl flex flex-col">
-            <div class="flex justify-between items-center mb-4 flex-shrink-0"><h2 class="text-2xl font-bold primary-gradient-text" data-i18n="presets.title">AI 预设</h2><button class="close-modal-btn text-gray-400 hover:text-gray-800"><i class="fas fa-times text-xl"></i></button></div>
-            <div class="flex flex-1 flex-col gap-6 overflow-hidden">
-                <div class="w-full flex flex-col border-b theme-border-b pb-4">
-                    <div class="flex gap-2 mb-4"><button class="flex-1 py-2 text-sm btn-secondary rounded" onclick="document.getElementById('preset-import-json').click()" data-i18n="presets.import">导入</button><input type="file" id="preset-import-json" accept=".json" class="hidden"><button id="preset-export-json" class="flex-1 py-2 text-sm btn-secondary rounded" data-i18n="presets.export">导出</button></div>
-                    <div id="preset-list" class="flex-1 overflow-y-auto space-y-2 pr-2"></div>
-                    <div class="mt-4"><button id="save-as-preset-btn" class="w-full py-2 btn-primary rounded-lg" data-i18n="presets.saveAsNew">另存为新预设</button></div>
-                </div>
-                <div class="w-full flex flex-1 flex-col gap-6 overflow-hidden">
-                    <div id="preset-editor" class="w-full overflow-y-auto pr-2 space-y-4">
-                        <div class="flex justify-between items-center">
-                            <h3 class="font-bold text-lg mb-2" data-i18n="presets.samplingParams">采样参数</h3>
-                            <div class="text-sm theme-text-secondary">
-                                <i class="fas fa-calculator mr-1"></i>
-                                <span data-i18n="presets.estimatedTokens">预估Token:</span> <span id="preset-token-estimate" class="font-bold text-primary-color">0</span>
-                            </div>
-                        </div>
-                        <div class="grid grid-cols-5 gap-4 items-center"><label class="text-sm col-span-2">Temperature</label><div class="col-span-3 flex items-center gap-2"><input type="range" id="param-temp" min="0" max="2" step="0.01"><input type="number" id="param-temp-value" min="0" max="2" step="0.01" class="w-20 rounded-md p-1 text-center light-input"></div></div>
-                        <div class="grid grid-cols-5 gap-4 items-center"><label class="text-sm col-span-2">Top P</label><div class="col-span-3 flex items-center gap-2"><input type="range" id="param-top-p" min="0" max="1" step="0.01"><input type="number" id="param-top-p-value" min="0" max="1" step="0.01" class="w-20 rounded-md p-1 text-center light-input"></div></div>
-                        <div class="grid grid-cols-5 gap-4 items-center"><label class="text-sm col-span-2">Top K</label><div class="col-span-3 flex items-center gap-2"><input type="range" id="param-top-k" min="0" max="100" step="1"><input type="number" id="param-top-k-value" min="0" max="100" step="1" class="w-20 rounded-md p-1 text-center light-input"></div></div>
-                        <div class="grid grid-cols-5 gap-4 items-center"><label class="text-sm col-span-2">Frequency Penalty</label><div class="col-span-3 flex items-center gap-2"><input type="range" id="param-freq-pen" min="-2" max="2" step="0.01"><input type="number" id="param-freq-pen-value" min="-2" max="2" step="0.01" class="w-20 rounded-md p-1 text-center light-input"></div></div>
-                        <div class="grid grid-cols-5 gap-4 items-center"><label class="text-sm col-span-2">Presence Penalty</label><div class="col-span-3 flex items-center gap-2"><input type="range" id="param-pres-pen" min="-2" max="2" step="0.01"><input type="number" id="param-pres-pen-value" min="-2" max="2" step="0.01" class="w-20 rounded-md p-1 text-center light-input"></div></div>
-                        <div class="grid grid-cols-5 gap-4 items-center"><label class="text-sm col-span-2">Repetition Penalty</label><div class="col-span-3 flex items-center gap-2"><input type="range" id="param-rep-pen" min="0" max="2" step="0.01"><input type="number" id="param-rep-pen-value" min="0" max="2" step="0.01" class="w-20 rounded-md p-1 text-center light-input"></div></div>
-                        <hr class="theme-border">
-                        <div class="grid grid-cols-5 gap-4 items-center">
-                            <label class="text-sm col-span-2">Max Response Tokens</label>
-                            <input type="number" id="param-max-tokens" min="1" max="8192" step="1" class="light-input rounded-md p-1 col-span-3">
-                        </div>
-                        <div class="grid grid-cols-5 gap-4 items-center">
-                            <label class="text-sm col-span-2">Context Size (Tokens)</label>
-                            <input type="number" id="param-context-size" min="1" max="32768" step="1" class="light-input rounded-md p-1 col-span-3">
-                        </div>
-                        <div class="p-3 theme-info-bg rounded-lg text-xs theme-text-secondary">
-                            <div class="flex justify-between mb-1">
-                                <span data-i18n="presets.remainingContext">剩余上下文：</span>
-                                <span id="remaining-context" class="font-bold">0</span>
-                            </div>
-                            <div class="w-full bg-gray-300 rounded-full h-2">
-                                <div id="context-usage-bar" class="bg-primary-color h-2 rounded-full" style="width: 0%"></div>
-                            </div>
-                        </div>
+        <div class="modal-content w-full h-full card flex flex-col">
+            
+            <!-- 标题栏 (固定) -->
+            <div class="flex justify-between items-center p-6 pb-2 flex-shrink-0">
+                <h2 class="text-2xl font-bold primary-gradient-text" data-i18n="presets.title">AI 预设</h2>
+                <button class="close-modal-btn text-gray-400 hover:text-gray-800"><i class="fas fa-times text-xl"></i></button>
+            </div>
+
+            <!-- 统一的滚动容器 (包含列表、参数和提示词) -->
+            <div class="flex-1 overflow-y-auto p-6 space-y-8">
+                
+                <!-- 1. 预设列表管理区域 -->
+                <div class="w-full flex flex-col border-b theme-border-b pb-6">
+                    <div class="flex gap-2 mb-4">
+                        <button class="flex-1 py-2 text-sm btn-secondary rounded" onclick="document.getElementById('preset-import-json').click()" data-i18n="presets.import">导入</button>
+                        <input type="file" id="preset-import-json" accept=".json" class="hidden">
+                        <button id="preset-export-json" class="flex-1 py-2 text-sm btn-secondary rounded" data-i18n="presets.export">导出</button>
                     </div>
-                    <div id="prompt-editor" class="w-full flex flex-col overflow-hidden theme-border">
-                        <div class="flex justify-between items-center mb-2 flex-shrink-0">
-                             <h3 class="font-bold text-lg" data-i18n="presets.promptEntries">提示词条目</h3>
-                             <div class="flex items-center gap-2">
-                                <button id="add-prompt-btn" class="w-8 h-8 flex items-center justify-center btn-secondary rounded-md" data-i18n-title="presets.addEntry" title="添加新条目"><i class="fas fa-plus"></i></button>
-                                <button id="restore-prompts-btn" class="w-8 h-8 flex items-center justify-center btn-secondary rounded-md" data-i18n-title="presets.restoreDefaults" title="恢复默认"><i class="fas fa-undo"></i></button>
-                             </div>
-                        </div>
-                        <div id="prompt-list" class="flex-1 overflow-y-auto space-y-2 pr-2"></div>
+                    
+                    <!-- 预设列表：限制最大高度200px，避免列表太长占满屏幕，但它是页面流的一部分 -->
+                    <label class="block text-sm font-medium mb-2 text-gray-500">选择预设</label>
+                    <div id="preset-list" class="overflow-y-auto space-y-2 pr-2 border theme-border rounded-lg p-2" style="max-height: 200px; min-height: 100px;"></div>
+                    
+                    <div class="mt-4">
+                        <button id="save-as-preset-btn" class="w-full py-2 btn-primary rounded-lg" data-i18n="presets.saveAsNew">另存为新预设</button>
                     </div>
                 </div>
+
+                <!-- 2. 采样参数区域 (移除独立滚动，随页面滚动) -->
+                <div id="preset-editor" class="w-full space-y-4">
+                    <div class="flex justify-between items-center">
+                        <h3 class="font-bold text-lg mb-2" data-i18n="presets.samplingParams">采样参数</h3>
+                        <div class="text-sm theme-text-secondary">
+                            <i class="fas fa-calculator mr-1"></i>
+                            <span data-i18n="presets.estimatedTokens">预估Token:</span> <span id="preset-token-estimate" class="font-bold text-primary-color">0</span>
+                        </div>
+                    </div>
+                    
+                    <div class="grid grid-cols-5 gap-4 items-center"><label class="text-sm col-span-2">Temperature</label><div class="col-span-3 flex items-center gap-2"><input type="range" id="param-temp" min="0" max="2" step="0.01"><input type="number" id="param-temp-value" min="0" max="2" step="0.01" class="w-20 rounded-md p-1 text-center light-input"></div></div>
+                    <div class="grid grid-cols-5 gap-4 items-center"><label class="text-sm col-span-2">Top P</label><div class="col-span-3 flex items-center gap-2"><input type="range" id="param-top-p" min="0" max="1" step="0.01"><input type="number" id="param-top-p-value" min="0" max="1" step="0.01" class="w-20 rounded-md p-1 text-center light-input"></div></div>
+                    <div class="grid grid-cols-5 gap-4 items-center"><label class="text-sm col-span-2">Top K</label><div class="col-span-3 flex items-center gap-2"><input type="range" id="param-top-k" min="0" max="100" step="1"><input type="number" id="param-top-k-value" min="0" max="100" step="1" class="w-20 rounded-md p-1 text-center light-input"></div></div>
+                    <div class="grid grid-cols-5 gap-4 items-center"><label class="text-sm col-span-2">Frequency Penalty</label><div class="col-span-3 flex items-center gap-2"><input type="range" id="param-freq-pen" min="-2" max="2" step="0.01"><input type="number" id="param-freq-pen-value" min="-2" max="2" step="0.01" class="w-20 rounded-md p-1 text-center light-input"></div></div>
+                    <div class="grid grid-cols-5 gap-4 items-center"><label class="text-sm col-span-2">Presence Penalty</label><div class="col-span-3 flex items-center gap-2"><input type="range" id="param-pres-pen" min="-2" max="2" step="0.01"><input type="number" id="param-pres-pen-value" min="-2" max="2" step="0.01" class="w-20 rounded-md p-1 text-center light-input"></div></div>
+                    <div class="grid grid-cols-5 gap-4 items-center"><label class="text-sm col-span-2">Repetition Penalty</label><div class="col-span-3 flex items-center gap-2"><input type="range" id="param-rep-pen" min="0" max="2" step="0.01"><input type="number" id="param-rep-pen-value" min="0" max="2" step="0.01" class="w-20 rounded-md p-1 text-center light-input"></div></div>
+                    
+                    <hr class="theme-border">
+                    
+                    <div class="grid grid-cols-5 gap-4 items-center">
+                        <label class="text-sm col-span-2">Max Response Tokens</label>
+                        <input type="number" id="param-max-tokens" min="1" max="8192" step="1" class="light-input rounded-md p-1 col-span-3">
+                    </div>
+                    <div class="grid grid-cols-5 gap-4 items-center">
+                        <label class="text-sm col-span-2">Context Size (Tokens)</label>
+                        <input type="number" id="param-context-size" min="1" max="32768" step="1" class="light-input rounded-md p-1 col-span-3">
+                    </div>
+                    <div class="p-3 theme-info-bg rounded-lg text-xs theme-text-secondary">
+                        <div class="flex justify-between mb-1">
+                            <span data-i18n="presets.remainingContext">剩余上下文：</span>
+                            <span id="remaining-context" class="font-bold">0</span>
+                        </div>
+                        <div class="w-full bg-gray-300 rounded-full h-2">
+                            <div id="context-usage-bar" class="bg-primary-color h-2 rounded-full" style="width: 0%"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 3. 提示词条目区域 (移除独立滚动，完全展开) -->
+                <div id="prompt-editor" class="w-full flex flex-col border-t theme-border pt-6">
+                    <div class="flex justify-between items-center mb-4 flex-shrink-0">
+                         <h3 class="font-bold text-lg" data-i18n="presets.promptEntries">提示词条目</h3>
+                         <div class="flex items-center gap-2">
+                            <button id="add-prompt-btn" class="w-8 h-8 flex items-center justify-center btn-secondary rounded-md" data-i18n-title="presets.addEntry" title="添加新条目"><i class="fas fa-plus"></i></button>
+                            <button id="restore-prompts-btn" class="w-8 h-8 flex items-center justify-center btn-secondary rounded-md" data-i18n-title="presets.restoreDefaults" title="恢复默认"><i class="fas fa-undo"></i></button>
+                         </div>
+                    </div>
+                    <!-- 关键修改：移除 flex-1 和 overflow-y-auto，让高度自适应 -->
+                    <div id="prompt-list" class="space-y-2 w-full"></div>
+                </div>
+
             </div>
         </div>
     </div>
+    <!-- 角色管理模态框 (统一滚动版) -->
     <div id="character-modal" class="modal-overlay">
         <div class="modal-content w-full h-full card p-0 flex flex-col">
-            <header class="flex justify-between items-center p-4 border-b theme-border-b flex-shrink-0">
+            <!-- 1. 标题栏 (固定) -->
+            <header class="flex justify-between items-center p-4 border-b theme-border-b flex-shrink-0 bg-opacity-90 backdrop-blur-sm z-10">
                 <h2 class="text-2xl font-bold primary-gradient-text flex items-center gap-3"><i class="fas fa-user-astronaut"></i><span data-i18n="char.title">角色管理</span></h2>
                 <button class="close-modal-btn text-gray-400 hover:text-gray-800"><i class="fas fa-times text-xl"></i></button>
             </header>
-            <div class="flex-1 flex flex-col gap-0 overflow-hidden">
-                <!-- 角色选择区域 -->
-                <div class="p-4 space-y-3 flex-shrink-0 border-b theme-border-b">
+
+            <!-- 2. 统一滚动区域 -->
+            <div class="flex-1 overflow-y-auto">
+                
+                <!-- A. 角色选择区域 (现在随页面滚动) -->
+                <div class="p-4 space-y-3 border-b theme-border-b bg-gray-50 bg-opacity-50">
                     <label class="block text-sm font-medium" data-i18n="char.current">当前角色</label>
 
-                    <!-- 角色预览卡片（点击打开弹窗） -->
+                    <!-- 角色预览卡片 -->
                     <div id="char-preview-card" class="p-3 rounded-lg border-2 theme-border hover:border-primary-color cursor-pointer transition-all bg-white">
                         <div class="flex items-center gap-3">
                             <img id="current-char-avatar-preview" src="https://placehold.co/48x48/5E5B9D/ffffff?text=AI" class="w-12 h-12 rounded-full object-cover border-2 border-primary-color">
@@ -1224,34 +1256,43 @@
                     </div>
                 </div>
 
-                <!-- 角色编辑器 -->
-                <div id="char-editor-panel" class="w-full flex-1 flex flex-col overflow-y-auto p-4">
-                    <div id="char-editor-placeholder" class="text-center text-gray-500 my-auto">
+                <!-- B. 角色编辑器 (现在自然展开) -->
+                <div id="char-editor-panel" class="w-full p-4 min-h-[400px]">
+                    <div id="char-editor-placeholder" class="text-center text-gray-500 py-20">
                         <i class="fas fa-users fa-3x mb-4"></i>
                         <p data-i18n="char.selectTip">选择一个角色进行编辑，或导入/新建一个角色。</p>
                     </div>
-                    <div id="char-editor-content" class="hidden w-full h-full flex flex-col gap-4">
+                    
+                    <div id="char-editor-content" class="hidden w-full flex-col gap-6">
                         <input type="hidden" id="char-editing-id">
-                        <div class="flex items-start gap-4 flex-shrink-0">
+                        
+                        <!-- 头像和基本信息 -->
+                        <div class="flex flex-col sm:flex-row items-center sm:items-start gap-6">
                             <div class="flex-shrink-0 text-center">
-                                <img id="char-editor-avatar" src="https://placehold.co/128x128/5E5B9D/ffffff?text=AI" class="w-32 h-32 rounded-lg object-cover mx-auto">
-                                <label class="mt-2 text-sm text-primary-color hover:underline cursor-pointer">
+                                <img id="char-editor-avatar" src="https://placehold.co/128x128/5E5B9D/ffffff?text=AI" class="w-32 h-32 rounded-lg object-cover mx-auto shadow-md">
+                                <label class="mt-2 text-sm text-primary-color hover:underline cursor-pointer block">
                                     <span data-i18n="char.uploadAvatar">上传头像</span>
                                     <input type="file" id="char-avatar-upload" class="hidden" accept="image/*">
                                 </label>
                             </div>
-                            <div class="flex-1 space-y-3">
-                                <input id="char-editor-name" type="text" data-i18n-placeholder="char.name" placeholder="角色名称" class="w-full text-xl font-bold light-input rounded-md p-2">
-                                <input id="char-editor-tags" type="text" data-i18n-placeholder="char.tags" placeholder="标签（用逗号分隔，如: 女性, 助手, 幻想）" class="w-full text-sm light-input rounded-md p-2">
+                            <div class="flex-1 space-y-4 w-full">
+                                <div>
+                                    <input id="char-editor-name" type="text" data-i18n-placeholder="char.name" placeholder="角色名称" class="w-full text-xl font-bold light-input rounded-md p-2">
+                                </div>
+                                <div>
+                                    <input id="char-editor-tags" type="text" data-i18n-placeholder="char.tags" placeholder="标签（用逗号分隔，如: 女性, 助手, 幻想）" class="w-full text-sm light-input rounded-md p-2">
+                                </div>
                                 <div class="flex flex-wrap items-center gap-2">
-                                     <button id="char-save-btn" class="py-1.5 px-4 text-sm btn-primary rounded-lg"><i class="fas fa-save mr-2"></i><span data-i18n="char.save">保存</span></button>
-                                     <button id="char-export-btn" data-i18n-title="char.export" title="导出为 .json" class="w-9 h-9 btn-secondary rounded-lg"><i class="fas fa-download"></i></button>
-                                     <button id="char-duplicate-btn" data-i18n-title="char.duplicate" title="复制" class="w-9 h-9 btn-secondary rounded-lg"><i class="fas fa-clone"></i></button>
-                                     <button id="char-delete-btn" data-i18n-title="char.delete" title="删除" class="w-9 h-9 btn-secondary rounded-lg hover:bg-red-100 hover:text-red-600"><i class="fas fa-trash"></i></button>
+                                     <button id="char-save-btn" class="flex-1 py-2 px-4 text-sm btn-primary rounded-lg"><i class="fas fa-save mr-2"></i><span data-i18n="char.save">保存</span></button>
+                                     <button id="char-export-btn" data-i18n-title="char.export" title="导出为 .json" class="w-10 h-10 btn-secondary rounded-lg"><i class="fas fa-download"></i></button>
+                                     <button id="char-duplicate-btn" data-i18n-title="char.duplicate" title="复制" class="w-10 h-10 btn-secondary rounded-lg"><i class="fas fa-clone"></i></button>
+                                     <button id="char-delete-btn" data-i18n-title="char.delete" title="删除" class="w-10 h-10 btn-secondary rounded-lg hover:bg-red-100 hover:text-red-600"><i class="fas fa-trash"></i></button>
                                 </div>
                             </div>
                         </div>
-                        <div class="flex flex-col gap-3 flex-1 overflow-y-auto">
+
+                        <!-- 详细编辑卡片堆叠 (移除 overflow, 让页面变长) -->
+                        <div class="flex flex-col gap-4 w-full">
                             <div class="card p-4">
                                 <div class="flex justify-between items-center mb-2">
                                     <label for="char-editor-desc" class="block text-sm font-medium" data-i18n="char.description">角色描述 (性格, 外貌, 对话示例等)</label>
@@ -1259,7 +1300,7 @@
                                         <i class="fas fa-expand-alt"></i>
                                     </button>
                                 </div>
-                                <textarea id="char-editor-desc" class="w-full light-input rounded-md p-2 resize-y" rows="6"></textarea>
+                                <textarea id="char-editor-desc" class="w-full light-input rounded-md p-2 resize-y font-mono text-sm" rows="10"></textarea>
                             </div>
                             <div class="card p-4">
                                 <div class="flex justify-between items-center mb-2">
@@ -1268,7 +1309,7 @@
                                         <i class="fas fa-expand-alt"></i>
                                     </button>
                                 </div>
-                                <textarea id="char-editor-first-mes" class="w-full light-input rounded-md p-2 resize-y" rows="4"></textarea>
+                                <textarea id="char-editor-first-mes" class="w-full light-input rounded-md p-2 resize-y text-sm" rows="6"></textarea>
                             </div>
                             <div class="card p-4">
                                 <div class="flex justify-between items-center mb-3">
@@ -1277,7 +1318,8 @@
                                         <i class="fas fa-plus mr-1"></i><span data-i18n="char.addGreeting">添加</span>
                                     </button>
                                 </div>
-                                <div id="alternate-greetings-list" class="space-y-2 max-h-64 overflow-y-auto">
+                                <!-- 给列表一个最大高度，防止这一项变得太长难以管理，但整体仍然在页面内 -->
+                                <div id="alternate-greetings-list" class="space-y-2 max-h-96 overflow-y-auto border rounded-md p-2 theme-border bg-gray-50">
                                     <!-- 备选开场白列表将在这里显示 -->
                                 </div>
                             </div>
@@ -1288,7 +1330,7 @@
                                         <i class="fas fa-expand-alt"></i>
                                     </button>
                                 </div>
-                                <textarea id="char-editor-creator-notes" class="w-full light-input rounded-md p-2 resize-y" rows="3"></textarea>
+                                <textarea id="char-editor-creator-notes" class="w-full light-input rounded-md p-2 resize-y text-sm" rows="4"></textarea>
                             </div>
                         </div>
                     </div>
@@ -1427,21 +1469,25 @@
             </div>
         </div>
     </div>
+    <!-- 用户管理模态框 (统一滚动版) -->
     <div id="user-profile-modal" class="modal-overlay">
         <div class="modal-content w-full h-full card p-0 flex flex-col">
-            <header class="flex justify-between items-center p-4 border-b theme-border-b flex-shrink-0">
+            <!-- 1. 标题栏 (固定) -->
+            <header class="flex justify-between items-center p-4 border-b theme-border-b flex-shrink-0 bg-opacity-90 backdrop-blur-sm z-10">
                 <h2 class="text-2xl font-bold primary-gradient-text flex items-center gap-3">
                     <i class="fas fa-users"></i><span data-i18n="user.title">用户管理</span>
                 </h2>
                 <button class="close-modal-btn text-gray-400 hover:text-gray-800"><i class="fas fa-times text-xl"></i></button>
             </header>
 
-            <div class="flex-1 flex flex-col gap-0 overflow-hidden">
-                <!-- 用户选择区域 -->
-                <div class="p-4 space-y-3 flex-shrink-0 border-b theme-border-b">
+            <!-- 2. 统一滚动区域 -->
+            <div class="flex-1 overflow-y-auto">
+                
+                <!-- A. 用户选择区域 (现在随页面滚动) -->
+                <div class="p-4 space-y-3 border-b theme-border-b bg-gray-50 bg-opacity-50">
                     <label class="block text-sm font-medium" data-i18n="user.currentUser">当前用户</label>
 
-                    <!-- 用户预览卡片（点击打开弹窗） -->
+                    <!-- 用户预览卡片 -->
                     <div id="user-preview-card" class="p-3 rounded-lg border-2 theme-border hover:border-primary-color cursor-pointer transition-all" style="background-color: var(--card-bg-color);">
                         <div class="flex items-center gap-3">
                             <img id="current-user-avatar-preview" src="https://placehold.co/48x48/E4E6EB/1A1A1D?text=U" class="w-12 h-12 rounded-full object-cover border-2 border-primary-color">
@@ -1463,22 +1509,22 @@
                     </div>
                 </div>
 
-                <!-- 用户编辑器 -->
-                <div class="w-full flex-1 flex flex-col overflow-y-auto p-4">
-                    <div id="user-editor-placeholder" class="text-center text-gray-500 my-auto">
+                <!-- B. 用户编辑器 (现在自然展开) -->
+                <div class="w-full p-4 min-h-[400px]">
+                    <div id="user-editor-placeholder" class="text-center text-gray-500 py-20">
                         <i class="fas fa-user-circle fa-3x mb-4"></i>
                         <p data-i18n="user.selectTip">选择一个用户进行编辑，或创建新用户。</p>
                     </div>
 
-                    <div id="user-editor-content" class="hidden w-full h-full flex flex-col gap-4">
+                    <div id="user-editor-content" class="hidden w-full flex-col gap-6">
                         <input type="hidden" id="user-editing-id">
 
                         <!-- 头像和基本信息 -->
-                        <div class="flex items-start gap-4 flex-shrink-0">
+                        <div class="flex flex-col sm:flex-row items-center sm:items-start gap-6">
                             <div class="flex-shrink-0 text-center">
                                 <div class="relative">
                                     <img id="user-editor-avatar" src="https://placehold.co/128x128/E4E6EB/1A1A1D?text=U"
-                                         class="w-32 h-32 rounded-lg object-cover">
+                                         class="w-32 h-32 rounded-lg object-cover shadow-md">
                                     <label class="mt-2 text-sm text-primary-color hover:underline cursor-pointer block">
                                         <span data-i18n="user.uploadAvatar">上传头像</span>
                                         <input type="file" id="user-avatar-upload" class="hidden" accept="image/*">
@@ -1486,20 +1532,24 @@
                                 </div>
                             </div>
 
-                            <div class="flex-1 space-y-3">
-                                <input id="user-editor-name" type="text" data-i18n-placeholder="user.name" placeholder="用户名称" class="w-full text-xl font-bold light-input rounded-md p-2">
-                                <input id="user-editor-status" type="text" data-i18n-placeholder="user.status" placeholder="状态/心情" class="w-full light-input rounded-md p-2">
+                            <div class="flex-1 space-y-4 w-full">
+                                <div>
+                                    <input id="user-editor-name" type="text" data-i18n-placeholder="user.name" placeholder="用户名称" class="w-full text-xl font-bold light-input rounded-md p-2">
+                                </div>
+                                <div>
+                                    <input id="user-editor-status" type="text" data-i18n-placeholder="user.status" placeholder="状态/心情" class="w-full light-input rounded-md p-2">
+                                </div>
                                 <div class="flex flex-wrap items-center gap-2">
-                                    <button id="user-save-btn" class="py-1.5 px-4 text-sm btn-primary rounded-lg"><i class="fas fa-save mr-2"></i><span data-i18n="user.save">保存</span></button>
-                                    <button id="user-use-btn" class="py-1.5 px-4 text-sm btn-secondary rounded-lg"><i class="fas fa-user-check mr-1"></i><span data-i18n="user.use">使用</span></button>
-                                    <button id="user-duplicate-btn" data-i18n-title="user.duplicate" title="复制" class="w-9 h-9 btn-secondary rounded-lg"><i class="fas fa-clone"></i></button>
-                                    <button id="user-delete-btn" data-i18n-title="user.delete" title="删除" class="w-9 h-9 btn-secondary rounded-lg hover:bg-red-100 hover:text-red-600"><i class="fas fa-trash"></i></button>
+                                    <button id="user-save-btn" class="flex-1 py-2 px-4 text-sm btn-primary rounded-lg"><i class="fas fa-save mr-2"></i><span data-i18n="user.save">保存</span></button>
+                                    <button id="user-use-btn" class="flex-1 py-2 px-4 text-sm btn-secondary rounded-lg"><i class="fas fa-user-check mr-1"></i><span data-i18n="user.use">使用</span></button>
+                                    <button id="user-duplicate-btn" data-i18n-title="user.duplicate" title="复制" class="w-10 h-10 btn-secondary rounded-lg"><i class="fas fa-clone"></i></button>
+                                    <button id="user-delete-btn" data-i18n-title="user.delete" title="删除" class="w-10 h-10 btn-secondary rounded-lg hover:bg-red-100 hover:text-red-600"><i class="fas fa-trash"></i></button>
                                 </div>
                             </div>
                         </div>
 
-                        <!-- 详细设定区域 - 使用卡片网格布局 -->
-                        <div class="grid grid-cols-1 gap-4 flex-1 overflow-y-auto">
+                        <!-- 详细设定区域 - 使用卡片堆叠，自然向下排列 -->
+                        <div class="flex flex-col gap-4 w-full">
                             <div class="card p-4 flex flex-col">
                                 <div class="flex justify-between items-center mb-2">
                                     <label for="user-editor-description" class="block text-sm font-medium" data-i18n="user.description">用户角色描述（将发送给AI）</label>
@@ -1510,7 +1560,7 @@
                                 <textarea id="user-editor-description"
                                           data-i18n-placeholder="user.descriptionPlaceholder"
                                           placeholder="描述您的角色设定，例如：你是一名程序员，喜欢技术讨论..."
-                                          class="w-full flex-1 light-input rounded-md p-2 resize-none min-h-[120px]"></textarea>
+                                          class="w-full flex-1 light-input rounded-md p-2 resize-none min-h-[150px]"></textarea>
                             </div>
 
                             <div class="card p-4 flex flex-col">
@@ -1523,7 +1573,7 @@
                                 <textarea id="user-editor-system-prompt"
                                           data-i18n-placeholder="user.systemPromptPlaceholder"
                                           placeholder="例如：请以专业的方式回答技术问题..."
-                                          class="w-full flex-1 light-input rounded-md p-2 resize-none min-h-[100px]"></textarea>
+                                          class="w-full flex-1 light-input rounded-md p-2 resize-none min-h-[120px]"></textarea>
                             </div>
 
                             <!-- 用户偏好设置 -->
