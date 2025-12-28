@@ -1,3 +1,124 @@
+// ========== 正则回退解析函数 ==========
+// 当JSON.parse失败时，使用正则表达式提取世界书数据
+function extractWorldbookDataByRegex(jsonString) {
+    console.log('🔧 开始正则提取世界书数据...');
+    const result = {};
+    
+    // 定义要提取的分类
+    const categories = ['角色', '地点', '组织', '剧情大纲', '知识书', '文风配置'];
+    
+    for (const category of categories) {
+        // 匹配分类块: "分类名": { ... }
+        // 使用非贪婪匹配找到分类的开始位置
+        const categoryPattern = new RegExp(`"${category}"\\s*:\\s*\\{`, 'g');
+        const categoryMatch = categoryPattern.exec(jsonString);
+        
+        if (!categoryMatch) continue;
+        
+        const startPos = categoryMatch.index + categoryMatch[0].length;
+        
+        // 找到这个分类块的结束位置（匹配括号）
+        let braceCount = 1;
+        let endPos = startPos;
+        while (braceCount > 0 && endPos < jsonString.length) {
+            if (jsonString[endPos] === '{') braceCount++;
+            if (jsonString[endPos] === '}') braceCount--;
+            endPos++;
+        }
+        
+        if (braceCount !== 0) {
+            console.log(`⚠️ 分类 "${category}" 括号不匹配，跳过`);
+            continue;
+        }
+        
+        const categoryContent = jsonString.substring(startPos, endPos - 1);
+        result[category] = {};
+        
+        // 在分类内容中提取条目
+        // 匹配条目: "条目名": { "关键词": [...], "内容": "..." }
+        const entryPattern = /"([^"]+)"\s*:\s*\{/g;
+        let entryMatch;
+        
+        while ((entryMatch = entryPattern.exec(categoryContent)) !== null) {
+            const entryName = entryMatch[1];
+            const entryStartPos = entryMatch.index + entryMatch[0].length;
+            
+            // 找到条目块的结束位置
+            let entryBraceCount = 1;
+            let entryEndPos = entryStartPos;
+            while (entryBraceCount > 0 && entryEndPos < categoryContent.length) {
+                if (categoryContent[entryEndPos] === '{') entryBraceCount++;
+                if (categoryContent[entryEndPos] === '}') entryBraceCount--;
+                entryEndPos++;
+            }
+            
+            if (entryBraceCount !== 0) continue;
+            
+            const entryContent = categoryContent.substring(entryStartPos, entryEndPos - 1);
+            
+            // 提取关键词数组
+            let keywords = [];
+            const keywordsMatch = entryContent.match(/"关键词"\s*:\s*\[([\s\S]*?)\]/);
+            if (keywordsMatch) {
+                // 提取数组中的字符串
+                const keywordStrings = keywordsMatch[1].match(/"([^"]+)"/g);
+                if (keywordStrings) {
+                    keywords = keywordStrings.map(s => s.replace(/"/g, ''));
+                }
+            }
+            
+            // 提取内容字段 - 这是最复杂的部分，因为内容可能包含转义字符
+            let content = '';
+            const contentMatch = entryContent.match(/"内容"\s*:\s*"/);
+            if (contentMatch) {
+                const contentStartPos = contentMatch.index + contentMatch[0].length;
+                // 找到内容字符串的结束位置（未转义的引号）
+                let contentEndPos = contentStartPos;
+                let escaped = false;
+                while (contentEndPos < entryContent.length) {
+                    const char = entryContent[contentEndPos];
+                    if (escaped) {
+                        escaped = false;
+                    } else if (char === '\\') {
+                        escaped = true;
+                    } else if (char === '"') {
+                        break;
+                    }
+                    contentEndPos++;
+                }
+                content = entryContent.substring(contentStartPos, contentEndPos);
+                // 处理转义字符
+                try {
+                    content = JSON.parse(`"${content}"`);
+                } catch (e) {
+                    // 如果解析失败，保持原样但做基本处理
+                    content = content.replace(/\\n/g, '\n').replace(/\\"/g, '"').replace(/\\\\/g, '\\');
+                }
+            }
+            
+            // 只有当有有效内容时才添加条目
+            if (content || keywords.length > 0) {
+                result[category][entryName] = {
+                    '关键词': keywords,
+                    '内容': content
+                };
+                console.log(`  ✓ 提取条目: ${category} -> ${entryName} (关键词: ${keywords.length}个, 内容: ${content.length}字)`);
+            }
+        }
+        
+        // 如果分类下没有提取到任何条目，删除该分类
+        if (Object.keys(result[category]).length === 0) {
+            delete result[category];
+        }
+    }
+    
+    const extractedCategories = Object.keys(result);
+    const totalEntries = extractedCategories.reduce((sum, cat) => sum + Object.keys(result[cat]).length, 0);
+    console.log(`🔧 正则提取完成: ${extractedCategories.length}个分类, ${totalEntries}个条目`);
+    
+    return result;
+}
+
 // 按章节切分文本
 function splitByChapters(content, regex) {
 const chapters = [];
@@ -21,12 +142,83 @@ memoryQueue.forEach((memory, index) => {
     const memoryItem = document.createElement('div');
     memoryItem.className = 'memory-item';
     memoryItem.style.opacity = memory.processed ? '0.6' : '1';
+    
+    // 检查是否是失败的记忆
+    const isFailed = memory.failed === true;
+    let statusIcon = memory.processed ? '✅' : '⏳';
+    if (isFailed) {
+        statusIcon = '❗';
+        memoryItem.style.cursor = 'pointer';
+        memoryItem.style.border = '1px solid #ff6b6b';
+        memoryItem.style.borderRadius = '4px';
+        memoryItem.style.padding = '4px 8px';
+        memoryItem.title = '点击一键修复此记忆';
+        memoryItem.onclick = () => showRepairMemoryConfirm();
+    }
+    
     memoryItem.innerHTML = `
-    ${memory.processed ? '✅' : '⏳'} ${memory.title}
+    ${statusIcon} ${memory.title}
     <small>(${memory.content.length.toLocaleString()}字)</small>
     `;
     queueContainer.appendChild(memoryItem);
 });
+
+// 如果有失败的记忆，显示一键修复按钮
+updateRepairButton();
+}
+
+// 更新一键修复按钮
+function updateRepairButton() {
+const failedCount = memoryQueue.filter(m => m.failed === true).length;
+const existingBtn = document.getElementById('repair-memory-btn');
+const existingHint = document.getElementById('repair-memory-hint');
+
+if (failedCount > 0) {
+    // 确保进度区域可见
+    const progressSection = document.getElementById('progress-section');
+    if (progressSection) {
+        progressSection.style.display = 'block';
+    }
+    
+    if (!existingBtn) {
+        const repairBtn = document.createElement('button');
+        repairBtn.id = 'repair-memory-btn';
+        repairBtn.textContent = `🔧 一键修复记忆 (${failedCount}个)`;
+        repairBtn.style.cssText = 'background: #ff6b35; color: white; padding: 8px 16px; border: none; border-radius: 5px; margin-top: 10px; margin-left: 10px; cursor: pointer; font-size: 14px;';
+        repairBtn.onclick = () => startRepairFailedMemories();
+        progressSection.appendChild(repairBtn);
+        
+        // 添加提示文字
+        if (!existingHint) {
+            const hintText = document.createElement('p');
+            hintText.id = 'repair-memory-hint';
+            hintText.textContent = '💡 请转化完毕再使用修复功能';
+            hintText.style.cssText = 'color: #aaa; font-size: 12px; margin-top: 8px; margin-left: 10px;';
+            progressSection.appendChild(hintText);
+        }
+    } else {
+        existingBtn.textContent = `🔧 一键修复记忆 (${failedCount}个)`;
+    }
+} else {
+    if (existingBtn) {
+        existingBtn.remove();
+    }
+    if (existingHint) {
+        existingHint.remove();
+    }
+}
+}
+
+// 显示修复确认
+function showRepairMemoryConfirm() {
+const failedCount = memoryQueue.filter(m => m.failed === true).length;
+if (failedCount === 0) {
+    alert('没有需要修复的记忆');
+    return;
+}
+if (confirm(`检测到 ${failedCount} 个失败的记忆块，是否开始一键修复？`)) {
+    startRepairFailedMemories();
+}
 }
 
 // 开始AI处理
@@ -36,108 +228,140 @@ document.getElementById('progress-section').style.display = 'block';
 // 重置停止标志
 isProcessingStopped = false;
 
-generatedWorldbook = {
-    地图环境: {},
-    剧情节点: {},
-    角色: {},
-    知识书: {}
-};
+    generatedWorldbook = {
+        地图环境: {},
+        剧情节点: {},
+        角色: {},
+        知识书: {}
+    };
 
-// 添加停止按钮
-addStopButton();
+    // 添加停止按钮
+    addStopButton();
 
-// 保存初始状态
-await NovelState.saveState(0);
+    // 保存初始状态
+    await NovelState.saveState(0);
 
-try {
-    for (let i = 0; i < memoryQueue.length; i++) {
-    // 检查是否用户要求停止
-    if (isProcessingStopped) {
-        console.log('处理被用户停止');
-        document.getElementById('progress-text').textContent = `⏸️ 已暂停处理 (${i}/${memoryQueue.length})`;
+    try {
+        for (let i = 0; i < memoryQueue.length; i++) {
+            // 检查是否用户要求停止
+            if (isProcessingStopped) {
+                console.log('处理被用户停止');
+                document.getElementById('progress-text').textContent = `⏸️ 已暂停处理 (${i}/${memoryQueue.length})`;
+                
+                // 转换为继续按钮
+                convertToResumeButton(i);
+                
+                alert(`处理已暂停！\n当前进度: ${i}/${memoryQueue.length}\n\n进度已保存，点击"继续处理"按钮可以继续。`);
+                break;
+            }
+            
+            // 检查是否正在修复记忆
+            if (isRepairingMemories) {
+                console.log(`检测到修复模式，暂停当前处理于索引 ${i}`);
+                currentProcessingIndex = i; // 记录当前索引
+                document.getElementById('progress-text').textContent = `⏸️ 修复记忆中，已暂停处理 (${i}/${memoryQueue.length})`;
+                
+                // 等待修复完成
+                while (isRepairingMemories) {
+                    await new Promise(resolve => setTimeout(resolve, 500));
+                }
+                
+                console.log(`修复完成，从索引 ${i} 继续处理`);
+                document.getElementById('progress-text').textContent = `继续处理: ${memoryQueue[i].title} (${i + 1}/${memoryQueue.length})`;
+            }
+            
+            await processMemoryChunk(i);
+            
+            // 每处理完一个记忆块就保存状态
+            await NovelState.saveState(i + 1);
+        }
         
-        // 转换为继续按钮
-        convertToResumeButton(i);
+        // 完成处理
+        const failedCount = memoryQueue.filter(m => m.failed === true).length;
         
-        alert(`处理已暂停！\n当前进度: ${i}/${memoryQueue.length}\n\n进度已保存，点击"继续处理"按钮可以继续。`);
-        break;
+        if (failedCount > 0) {
+            document.getElementById('progress-text').textContent = `⚠️ 处理完成，但有 ${failedCount} 个记忆块失败，请点击修复`;
+        } else {
+            document.getElementById('progress-text').textContent = '✅ 所有记忆块处理完成！';
+        }
+        document.getElementById('progress-fill').style.width = '100%';
+        
+        // 显示结果
+        document.getElementById('result-section').style.display = 'block';
+        document.getElementById('worldbook-preview').textContent = JSON.stringify(generatedWorldbook, null, 2);
+        
+        console.log('AI记忆大师处理完成，共生成条目:', Object.keys(generatedWorldbook).length);
+        
+        // 完成后清除保存的状态（只有没有失败记忆时才清除）
+        if (!isProcessingStopped && failedCount === 0) {
+            await NovelState.clearState();
+        }
+        
+    } catch (error) {
+        console.error('AI处理过程中发生错误:', error);
+        document.getElementById('progress-text').textContent = `❌ 处理过程出错: ${error.message}`;
+        alert(`处理失败: ${error.message}\n\n进度已保存，可以稍后继续。`);
+    } finally {
+        const hasFailedMemories = memoryQueue.some(m => m.failed === true);
+        
+        // 只有在完成且没有失败记忆时才移除停止按钮，暂停时或有失败记忆时不移除
+        if (!isProcessingStopped && !hasFailedMemories) {
+            removeStopButton();
+        }
+        
+        // 确保进度条在3秒后隐藏（除非被停止或有失败记忆）
+        if (!isProcessingStopped && !hasFailedMemories) {
+            setTimeout(() => {
+                document.getElementById('progress-section').style.display = 'none';
+            }, 3000);
+        }
+        
+        // 如果有失败记忆，确保修复按钮显示
+        if (hasFailedMemories) {
+            updateRepairButton();
+            updateMemoryQueueUI();
+        }
     }
-    
-    await processMemoryChunk(i);
-    
-    // 每处理完一个记忆块就保存状态
-    await NovelState.saveState(i + 1);
-    }
-    
-    // 完成处理
-    document.getElementById('progress-text').textContent = '✅ 所有记忆块处理完成！';
-    document.getElementById('progress-fill').style.width = '100%';
-    
-    // 显示结果
-    document.getElementById('result-section').style.display = 'block';
-    document.getElementById('worldbook-preview').textContent = JSON.stringify(generatedWorldbook, null, 2);
-    
-    console.log('AI记忆大师处理完成，共生成条目:', Object.keys(generatedWorldbook).length);
-    
-    // 完成后清除保存的状态
-    if (!isProcessingStopped) {
-    await NovelState.clearState();
-    }
-    
-} catch (error) {
-    console.error('AI处理过程中发生错误:', error);
-    document.getElementById('progress-text').textContent = `❌ 处理过程出错: ${error.message}`;
-    alert(`处理失败: ${error.message}\n\n进度已保存，可以稍后继续。`);
-} finally {
-    // 只有在完成或出错时才移除停止按钮，暂停时不移除
-    if (!isProcessingStopped) {
-    removeStopButton();
-    }
-    
-    // 确保进度条在3秒后隐藏（除非被停止）
-    if (!isProcessingStopped) {
-    setTimeout(() => {
-        document.getElementById('progress-section').style.display = 'none';
-    }, 3000);
-    }
-}
 }
 
 // 添加停止按钮
 function addStopButton() {
-// 避免重复添加
-if (document.getElementById('stop-processing-btn')) return;
+    // 避免重复添加
+    if (document.getElementById('stop-processing-btn')) return;
 
-const progressSection = document.getElementById('progress-section');
-const stopBtn = document.createElement('button');
-stopBtn.id = 'stop-processing-btn';
-stopBtn.textContent = '⏸️ 保存并暂停（刷新网页）';
-stopBtn.style.cssText = 'background: #6c757d; color: white; padding: 8px 16px; border: none; border-radius: 5px; margin-top: 10px; cursor: pointer; font-size: 14px;';
-stopBtn.onclick = stopProcessing;
+    const progressSection = document.getElementById('progress-section');
+    const stopBtn = document.createElement('button');
+    stopBtn.id = 'stop-processing-btn';
+    stopBtn.textContent = '⏸️ 保存并暂停（刷新网页）';
+    stopBtn.style.cssText = 'background: #6c757d; color: white; padding: 8px 16px; border: none; border-radius: 5px; margin-top: 10px; cursor: pointer; font-size: 14px;';
+    stopBtn.onclick = stopProcessing;
 
-// 插入到进度条下方
-progressSection.appendChild(stopBtn);
+    // 插入到进度条下方
+    progressSection.appendChild(stopBtn);
+
+    // 同时添加查看世界书按钮
+    addViewWorldbookButton();
 }
 
 // 移除停止按钮
 function removeStopButton() {
-const stopBtn = document.getElementById('stop-processing-btn');
-if (stopBtn) {
-    stopBtn.remove();
-}
+    const stopBtn = document.getElementById('stop-processing-btn');
+    if (stopBtn) {
+        stopBtn.remove();
+    }
 }
 
 // 将停止按钮转换为继续按钮
 function convertToResumeButton(currentIndex) {
-const stopBtn = document.getElementById('stop-processing-btn');
-if (stopBtn) {
-    stopBtn.textContent = '▶️ 继续处理';
-    stopBtn.style.cssText = 'background: #28a745; color: white; padding: 8px 16px; border: none; border-radius: 5px; margin-top: 10px; cursor: pointer; font-size: 14px;';
-    stopBtn.onclick = () => {
-    stopBtn.remove();
-    continueProcessing(currentIndex);
-    };
-}
+    const stopBtn = document.getElementById('stop-processing-btn');
+    if (stopBtn) {
+        stopBtn.textContent = '▶️ 继续处理';
+        stopBtn.style.cssText = 'background: #28a745; color: white; padding: 8px 16px; border: none; border-radius: 5px; margin-top: 10px; cursor: pointer; font-size: 14px;';
+        stopBtn.onclick = () => {
+            stopBtn.remove();
+            continueProcessing(currentIndex);
+        };
+    }
 }
 
 // 停止处理并刷新页面
@@ -310,8 +534,7 @@ try {
     console.error('错误信息:', secondError.message);
     console.error('错误位置:', secondError.stack);
         console.error('清理后响应长度:', cleanResponse.length);
-        console.error('清理后响应开头:', cleanResponse.substring(0, 500));
-        console.error('清理后响应结尾:', cleanResponse.substring(cleanResponse.length - 500));
+        console.error('🔍 完整AI响应内容（点击展开）:', cleanResponse);
         
         // 尝试找到具体的错误位置
         try {
@@ -323,6 +546,33 @@ try {
         } catch (e) {
         // 忽略
         }
+        
+        // ========== 新增：正则回退解析机制 ==========
+        console.log('🔄 尝试使用正则表达式提取内容...');
+        document.getElementById('progress-text').textContent = `JSON解析失败，尝试正则提取: ${memory.title} (${index + 1}/${memoryQueue.length})`;
+        
+        // 检查内容完整性：是否有正确的闭合符
+        const openBraces = (cleanResponse.match(/{/g) || []).length;
+        const closeBraces = (cleanResponse.match(/}/g) || []).length;
+        const isIncomplete = openBraces > closeBraces;
+        
+        if (isIncomplete) {
+            console.log(`⚠️ 检测到内容不完整：开括号${openBraces}个，闭括号${closeBraces}个，需要重新请求API`);
+            // 内容不完整，抛出错误触发重试机制
+            throw new Error(`JSON内容不完整（缺少${openBraces - closeBraces}个闭合括号），需要重新请求API`);
+        }
+        
+        // 尝试使用正则提取世界书条目
+        const regexExtractedData = extractWorldbookDataByRegex(cleanResponse);
+        
+        if (regexExtractedData && Object.keys(regexExtractedData).length > 0) {
+            // 正则提取成功
+            console.log('✅ 正则提取成功！提取到的分类:', Object.keys(regexExtractedData));
+            memoryUpdate = regexExtractedData;
+            document.getElementById('progress-text').textContent = `正则提取成功: ${memory.title} (${index + 1}/${memoryQueue.length})`;
+        } else {
+            // 正则提取失败，继续使用API纠正
+            console.log('⚠️ 正则提取未能获取有效数据，尝试API纠正...');
         
         // 调用API纠正格式错误的JSON
         console.log('🔧 尝试调用API纠正JSON格式...');
@@ -411,13 +661,14 @@ ${cleanResponse}
             memoryUpdate = {
             '知识书': {
                 [`第${index + 1}个记忆块_解析失败`]: {
-                '关键词': [],
-                '内容': `**解析失败原因**: ${secondError.message}\n\n**纠正失败原因**: ${fixError.message}\n\n**原始响应（完整）**:\n${response}\n\n`
+                '关键词': ['解析失败', '格式错误'],
+                '内容': `**解析失败原因**: ${secondError.message}\n\n**纠正尝试失败**: ${fixError.message}\n\n**原始响应预览**:\n${cleanResponse.substring(0, 2000)}${cleanResponse.length > 2000 ? '...[' + (cleanResponse.length - 2000) + ' bytes truncated]' : ''}`
                 }
             }
             };
-        }
-    }
+        } // 关闭 try-catch (fixError) 块
+        } // 关闭 else 块（正则提取失败时的API纠正分支）
+        } // 关闭 catch (secondError) 块
     }
     
     // 合并到主世界书
@@ -431,7 +682,48 @@ ${cleanResponse}
 } catch (error) {
     console.error(`处理记忆块 ${index + 1} 时出错 (第${retryCount + 1}次尝试):`, error);
     
-    // 如果未达到最大重试次数，则进行重试
+    // 检查是否是token超限错误 - 如果是，直接分裂而不重试
+    const errorMsg = error.message || '';
+    const isTokenLimitError = errorMsg.includes('max_prompt_tokens') || 
+                               errorMsg.includes('exceeded') ||
+                               errorMsg.includes('input tokens') ||
+                               (errorMsg.includes('20015') && errorMsg.includes('limit'));
+    
+    if (isTokenLimitError) {
+        console.log(`⚠️ 检测到token超限错误，直接分裂记忆: ${memory.title}`);
+        document.getElementById('progress-text').textContent = `🔀 字数超限，正在分裂记忆: ${memory.title}`;
+        
+        // 直接分裂记忆
+        const splitResult = splitMemoryIntoTwo(index);
+        if (splitResult) {
+            console.log(`✅ 记忆分裂成功: ${splitResult.part1.title} 和 ${splitResult.part2.title}`);
+            updateMemoryQueueUI();
+            await new Promise(resolve => setTimeout(resolve, 500));
+            
+            // 递归处理第一个分裂记忆
+            const part1Index = memoryQueue.indexOf(splitResult.part1);
+            await processMemoryChunk(part1Index, 0);
+            
+            // 第一个完全处理完后，再处理第二个
+            const part2Index = memoryQueue.indexOf(splitResult.part2);
+            await processMemoryChunk(part2Index, 0);
+            
+            return; // 分裂处理完成，直接返回
+        } else {
+            console.error(`❌ 记忆分裂失败: ${memory.title}`);
+            // 分裂失败，标记为失败
+            memory.processed = true;
+            memory.failed = true;
+            memory.failedError = error.message;
+            if (!failedMemoryQueue.find(m => m.index === index)) {
+                failedMemoryQueue.push({ index, memory, error: error.message });
+            }
+            updateMemoryQueueUI();
+            return;
+        }
+    }
+    
+    // 非token超限错误，使用原有的重试机制
     if (retryCount < maxRetries) {
     console.log(`准备重试，当前重试次数: ${retryCount + 1}/${maxRetries}`);
     const retryDelay = Math.min(1000 * Math.pow(2, retryCount), 10000); // 指数退避，最大10秒
@@ -446,14 +738,20 @@ ${cleanResponse}
     console.error(`记忆块 ${index + 1} 重试${maxRetries}次后仍然失败`);
     document.getElementById('progress-text').textContent = `处理失败 (已重试${maxRetries}次): ${memory.title}`;
     
-    // 即使失败也添加一个空的记忆条目
-    generatedWorldbook['知识书'] = generatedWorldbook['知识书'] || {};
-    generatedWorldbook['知识书'][`失败的记忆块_${index + 1}`] = `处理失败 (重试${maxRetries}次): ${error.message}`;
+    // 标记为失败并加入失败队列
     memory.processed = true;
+    memory.failed = true;
+    memory.failedError = error.message;
+    
+    // 添加到失败队列
+    if (!failedMemoryQueue.find(m => m.index === index)) {
+        failedMemoryQueue.push({ index, memory, error: error.message });
+    }
+    
     updateMemoryQueueUI();
     
     // 显示错误详情
-    alert(`记忆块 ${index + 1} 处理失败！\n已重试 ${maxRetries} 次仍然失败\n错误: ${error.message}\n\n将继续处理下一个记忆块。`);
+    console.log(`记忆块 ${index + 1} 处理失败，已加入修复队列，可点击❗一键修复`);
     }
 }
 
@@ -5372,4 +5670,389 @@ if (searchPanel && searchPanel.classList.contains('open')) {
     refreshBtn.click();
     }
 }
+}
+
+// ========== 一键修复失败记忆功能 ==========
+
+// 将记忆分裂为两个（当token超限时使用）
+function splitMemoryIntoTwo(memoryIndex) {
+    const memory = memoryQueue[memoryIndex];
+    if (!memory) {
+        console.error('❌ 无法找到要分裂的记忆');
+        return null;
+    }
+    
+    const content = memory.content;
+    const halfLength = Math.floor(content.length / 2);
+    
+    // 尝试在中间位置附近找到一个合适的分割点（段落或句子结束）
+    let splitPoint = halfLength;
+    
+    // 向后查找段落分隔符
+    const paragraphBreak = content.indexOf('\n\n', halfLength);
+    if (paragraphBreak !== -1 && paragraphBreak < halfLength + 5000) {
+        splitPoint = paragraphBreak + 2;
+    } else {
+        // 向后查找句号
+        const sentenceBreak = content.indexOf('。', halfLength);
+        if (sentenceBreak !== -1 && sentenceBreak < halfLength + 1000) {
+            splitPoint = sentenceBreak + 1;
+        }
+    }
+    
+    const content1 = content.substring(0, splitPoint);
+    const content2 = content.substring(splitPoint);
+    
+    // 解析原标题，获取基础名称和编号
+    const originalTitle = memory.title;
+    let baseName = originalTitle;
+    let suffix1, suffix2;
+    
+    // 检查是否已经是分裂后的记忆（如 "记忆7-1"）
+    const splitMatch = originalTitle.match(/^(.+)-(\d+)$/);
+    if (splitMatch) {
+        // 已经是分裂记忆，继续分裂
+        baseName = splitMatch[1];
+        const currentNum = parseInt(splitMatch[2]);
+        suffix1 = `-${currentNum}-1`;
+        suffix2 = `-${currentNum}-2`;
+    } else {
+        // 首次分裂
+        suffix1 = '-1';
+        suffix2 = '-2';
+    }
+    
+    // 创建两个新的记忆对象
+    const memory1 = {
+        title: baseName + suffix1,
+        content: content1,
+        processed: false,
+        failed: true,  // 标记为失败，等待修复
+        failedError: null
+    };
+    
+    const memory2 = {
+        title: baseName + suffix2,
+        content: content2,
+        processed: false,
+        failed: true,  // 标记为失败，等待修复
+        failedError: null
+    };
+    
+    // 从队列中移除原记忆，插入两个新记忆
+    memoryQueue.splice(memoryIndex, 1, memory1, memory2);
+    
+    console.log(`🔀 记忆分裂完成: "${originalTitle}" -> "${memory1.title}" (${content1.length}字) + "${memory2.title}" (${content2.length}字)`);
+    
+    return {
+        part1: memory1,
+        part2: memory2
+    };
+}
+
+// 递归修复单个记忆（处理分裂情况）
+async function repairMemoryWithSplit(memoryIndex, stats) {
+    const memory = memoryQueue[memoryIndex];
+    if (!memory) return;
+    
+    document.getElementById('progress-text').textContent = `正在修复: ${memory.title}`;
+    
+    try {
+        await repairSingleMemory(memoryIndex);
+        memory.failed = false;
+        memory.failedError = null;
+        stats.successCount++;
+        console.log(`✅ 修复成功: ${memory.title}`);
+        updateMemoryQueueUI();
+        await new Promise(resolve => setTimeout(resolve, 1000));
+    } catch (error) {
+        // 检查是否是token超限错误
+        const errorMsg = error.message || '';
+        const isTokenLimitError = errorMsg.includes('max_prompt_tokens') || 
+                                   errorMsg.includes('exceeded') ||
+                                   errorMsg.includes('input tokens') ||
+                                   (errorMsg.includes('20015') && errorMsg.includes('limit'));
+        
+        if (isTokenLimitError) {
+            console.log(`⚠️ 检测到token超限错误，开始分裂记忆: ${memory.title}`);
+            document.getElementById('progress-text').textContent = `🔀 正在分裂记忆: ${memory.title}`;
+            
+            // 分裂记忆
+            const splitResult = splitMemoryIntoTwo(memoryIndex);
+            if (splitResult) {
+                console.log(`✅ 记忆分裂成功: ${splitResult.part1.title} 和 ${splitResult.part2.title}`);
+                updateMemoryQueueUI();
+                await new Promise(resolve => setTimeout(resolve, 500));
+                
+                // 递归处理第一个分裂记忆（如果还是超限会继续分裂）
+                const part1Index = memoryQueue.indexOf(splitResult.part1);
+                await repairMemoryWithSplit(part1Index, stats);
+                
+                // 第一个完全处理完后，再处理第二个
+                const part2Index = memoryQueue.indexOf(splitResult.part2);
+                await repairMemoryWithSplit(part2Index, stats);
+            } else {
+                stats.stillFailedCount++;
+                memory.failedError = error.message;
+                console.error(`❌ 记忆分裂失败: ${memory.title}`);
+            }
+        } else {
+            stats.stillFailedCount++;
+            memory.failedError = error.message;
+            console.error(`❌ 修复失败: ${memory.title}`, error);
+            updateMemoryQueueUI();
+            await new Promise(resolve => setTimeout(resolve, 1000));
+        }
+    }
+}
+
+// 一键修复失败的记忆
+async function startRepairFailedMemories() {
+    const failedMemories = memoryQueue.filter(m => m.failed === true);
+    if (failedMemories.length === 0) {
+        alert('没有需要修复的记忆');
+        return;
+    }
+
+// 设置修复模式标志
+isRepairingMemories = true;
+console.log(`🔧 开始一键修复 ${failedMemories.length} 个失败的记忆...`);
+console.log(`当前正在处理的索引: ${currentProcessingIndex}`);
+
+document.getElementById('progress-section').style.display = 'block';
+document.getElementById('progress-text').textContent = `正在修复失败的记忆 (0/${failedMemories.length})`;
+
+const repairBtn = document.getElementById('repair-memory-btn');
+if (repairBtn) {
+    repairBtn.disabled = true;
+    repairBtn.textContent = '🔧 修复中...';
+}
+
+// 统计对象，用于在递归中累计
+const stats = {
+    successCount: 0,
+    stillFailedCount: 0
+};
+
+// 按顺序处理每个失败的记忆
+for (let i = 0; i < failedMemories.length; i++) {
+    const memory = failedMemories[i];
+    const memoryIndex = memoryQueue.indexOf(memory);
+    
+    if (memoryIndex === -1) continue; // 可能已被分裂替换
+    
+    document.getElementById('progress-fill').style.width = ((i + 1) / failedMemories.length * 100) + '%';
+    
+    // 使用递归方式处理，确保分裂后按顺序处理
+    await repairMemoryWithSplit(memoryIndex, stats);
+}
+
+failedMemoryQueue = failedMemoryQueue.filter(item => {
+    const memory = memoryQueue[item.index];
+    return memory && memory.failed === true;
+});
+
+document.getElementById('progress-text').textContent = `修复完成: 成功 ${stats.successCount} 个, 仍失败 ${stats.stillFailedCount} 个`;
+
+if (repairBtn) repairBtn.disabled = false;
+updateRepairButton();
+await NovelState.saveState(memoryQueue.length);
+
+// 清除修复模式标志，允许继续处理
+isRepairingMemories = false;
+console.log(`🔧 修复模式结束，继续处理标志已清除`);
+
+if (stats.stillFailedCount > 0) {
+    alert(`修复完成！\n成功: ${stats.successCount} 个\n仍失败: ${stats.stillFailedCount} 个\n\n失败的记忆仍显示❗，可继续点击修复。`);
+} else {
+    alert(`全部修复成功！共修复 ${stats.successCount} 个记忆块。`);
+}
+}
+
+// 修复单个失败的记忆
+async function repairSingleMemory(index) {
+    const memory = memoryQueue[index];
+    const enableLiteraryStyle = document.getElementById('enable-literary-style')?.checked ?? false;
+    const enablePlotOutline = document.getElementById('enable-plot-outline')?.checked ?? true;
+
+    let prompt = getLanguagePrefix() + `你是专业的小说世界书生成专家。请仔细阅读提供的小说内容，提取关键信息，生成世界书条目。
+
+## 输出格式
+请生成标准JSON格式：
+{
+"角色": { "角色名": { "关键词": ["..."], "内容": "..." } },
+"地点": { "地点名": { "关键词": ["..."], "内容": "..." } },
+"组织": { "组织名": { "关键词": ["..."], "内容": "..." } }${enablePlotOutline ? `,
+"剧情大纲": { "主线剧情": { "关键词": ["主线"], "内容": "..." } }` : ''}${enableLiteraryStyle ? `,
+"文风配置": { "作品文风": { "关键词": ["文风"], "内容": "..." } }` : ''}
+}
+
+直接输出更新后的JSON，保持一致性，不要包含代码块标记。
+`;
+
+if (Object.keys(generatedWorldbook).length > 0) {
+    prompt += `当前记忆：\n${JSON.stringify(generatedWorldbook, null, 2)}\n\n`;
+}
+
+prompt += `阅读内容：\n---\n${memory.content}\n---\n\n请基于内容更新世界书，直接输出JSON。`;
+
+// 添加prompt查看功能（与普通处理一致）
+console.log(`=== 修复记忆 第${index + 1}步 Prompt ===`);
+console.log(prompt);
+console.log('=====================');
+
+const response = await callSimpleAPI(prompt);
+let memoryUpdate;
+
+try {
+    memoryUpdate = JSON.parse(response);
+} catch (jsonError) {
+    let cleanResponse = response.trim().replace(/```json\s*/gi, '').replace(/```\s*/g, '');
+    const firstBrace = cleanResponse.indexOf('{');
+    const lastBrace = cleanResponse.lastIndexOf('}');
+    if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
+        cleanResponse = cleanResponse.substring(firstBrace, lastBrace + 1);
+    }
+    
+    try {
+        memoryUpdate = JSON.parse(cleanResponse);
+    } catch (secondError) {
+        // 尝试添加闭合括号
+        const openBraces = (cleanResponse.match(/{/g) || []).length;
+        const closeBraces = (cleanResponse.match(/}/g) || []).length;
+        if (openBraces > closeBraces) {
+            try {
+                memoryUpdate = JSON.parse(cleanResponse + '}'.repeat(openBraces - closeBraces));
+            } catch (e) {
+                const regexData = extractWorldbookDataByRegex(cleanResponse);
+                if (regexData && Object.keys(regexData).length > 0) {
+                    memoryUpdate = regexData;
+                } else {
+                    throw new Error(`JSON解析失败: ${secondError.message}`);
+                }
+            }
+        } else {
+            const regexData = extractWorldbookDataByRegex(cleanResponse);
+            if (regexData && Object.keys(regexData).length > 0) {
+                memoryUpdate = regexData;
+            } else {
+                throw new Error(`JSON解析失败: ${secondError.message}`);
+            }
+        }
+    }
+}
+
+mergeWorldbookData(generatedWorldbook, memoryUpdate);
+console.log(`记忆块 ${index + 1} 修复完成`);
+}
+
+// ========== 查看世界书功能 ==========
+
+// 显示查看世界书模态框
+function showViewWorldbookModal() {
+const existingModal = document.getElementById('view-worldbook-modal');
+if (existingModal) existingModal.remove();
+
+const modal = document.createElement('div');
+modal.id = 'view-worldbook-modal';
+modal.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 10000; display: flex; justify-content: center; align-items: center;';
+
+const content = document.createElement('div');
+content.style.cssText = 'background: #2d2d2d; border-radius: 10px; padding: 20px; width: 90%; max-width: 900px; max-height: 85vh; display: flex; flex-direction: column;';
+
+const header = document.createElement('div');
+header.style.cssText = 'display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;';
+header.innerHTML = `
+    <h3 style="color: #e67e22; margin: 0;">📖 查看世界书</h3>
+    <div>
+        <button id="export-current-worldbook" style="background: #28a745; color: white; padding: 8px 16px; border: none; border-radius: 5px; cursor: pointer; margin-right: 10px;">📥 导出世界书</button>
+        <button id="close-worldbook-modal" style="background: #6c757d; color: white; padding: 8px 16px; border: none; border-radius: 5px; cursor: pointer;">关闭</button>
+    </div>
+`;
+
+const previewContainer = document.createElement('div');
+previewContainer.id = 'worldbook-modal-preview';
+previewContainer.style.cssText = 'flex: 1; overflow-y: auto; background: #1c1c1c; padding: 15px; border-radius: 8px; font-family: monospace; font-size: 13px; white-space: pre-wrap; color: #f0f0f0;';
+
+// 格式化显示世界书内容（将\n转换为换行）
+const formattedContent = formatWorldbookForDisplay(generatedWorldbook);
+previewContainer.textContent = formattedContent;
+
+content.appendChild(header);
+content.appendChild(previewContainer);
+modal.appendChild(content);
+document.body.appendChild(modal);
+
+// 绑定事件
+document.getElementById('close-worldbook-modal').onclick = () => modal.remove();
+document.getElementById('export-current-worldbook').onclick = () => {
+    exportWorldbook();
+    modal.remove();
+};
+
+modal.onclick = (e) => { if (e.target === modal) modal.remove(); };
+
+// 设置定时刷新（实时更新）
+const refreshInterval = setInterval(() => {
+    if (!document.getElementById('view-worldbook-modal')) {
+        clearInterval(refreshInterval);
+        return;
+    }
+    const preview = document.getElementById('worldbook-modal-preview');
+    if (preview) {
+        preview.textContent = formatWorldbookForDisplay(generatedWorldbook);
+    }
+}, 2000);
+}
+
+// 格式化世界书内容用于显示
+function formatWorldbookForDisplay(worldbook) {
+if (!worldbook || Object.keys(worldbook).length === 0) {
+    return '暂无世界书数据';
+}
+
+let result = '';
+for (const category in worldbook) {
+    result += `【${category}】\n`;
+    const entries = worldbook[category];
+    if (typeof entries === 'object') {
+        for (const entryName in entries) {
+            const entry = entries[entryName];
+            result += `  ├─ ${entryName}\n`;
+            if (entry && typeof entry === 'object') {
+                if (entry['关键词']) {
+                    result += `  │   关键词: ${Array.isArray(entry['关键词']) ? entry['关键词'].join(', ') : entry['关键词']}\n`;
+                }
+                if (entry['内容']) {
+                    // 将\n转换为实际换行
+                    const content = String(entry['内容']).replace(/\\n/g, '\n');
+                    const lines = content.split('\n');
+                    lines.forEach((line, i) => {
+                        result += `  │   ${i === 0 ? '内容: ' : '       '}${line}\n`;
+                    });
+                }
+            } else {
+                result += `  │   ${entry}\n`;
+            }
+            result += `  │\n`;
+        }
+    }
+    result += '\n';
+}
+return result;
+}
+
+// 添加查看世界书按钮到停止按钮旁边
+function addViewWorldbookButton() {
+if (document.getElementById('view-worldbook-btn')) return;
+
+const progressSection = document.getElementById('progress-section');
+if (!progressSection) return;
+
+const viewBtn = document.createElement('button');
+viewBtn.id = 'view-worldbook-btn';
+viewBtn.textContent = '📖 查看世界书';
+viewBtn.style.cssText = 'background: #e67e22; color: white; padding: 8px 16px; border: none; border-radius: 5px; margin-top: 10px; margin-left: 10px; cursor: pointer; font-size: 14px;';
+viewBtn.onclick = showViewWorldbookModal;
+progressSection.appendChild(viewBtn);
 }

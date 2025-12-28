@@ -3328,6 +3328,9 @@ let currentNovelContent = '';
 let memoryQueue = [];
 let generatedWorldbook = {};
 let isProcessingStopped = false; // 停止处理标志
+let failedMemoryQueue = []; // 失败的记忆队列，用于一键修复
+let isRepairingMemories = false; // 是否正在修复记忆
+let currentProcessingIndex = -1; // 当前正在处理的记忆块索引
 
 // IndexedDB 辅助类
 const IndexedDBHelper = {
@@ -3532,9 +3535,26 @@ if (isCompleted) {
 
 // 显示已完成的结果
 function showCompletedResult() {
+// 检查是否有失败的记忆
+const failedCount = memoryQueue.filter(m => m.failed === true).length;
+
+// 显示进度区域
+document.getElementById('progress-section').style.display = 'block';
+
 // 显示进度为100%
 document.getElementById('progress-fill').style.width = '100%';
-document.getElementById('progress-text').textContent = '✅ 转换已完成（已恢复）';
+
+if (failedCount > 0) {
+    document.getElementById('progress-text').textContent = `⚠️ 转换已完成（已恢复），但有 ${failedCount} 个记忆块失败，请点击修复`;
+} else {
+    document.getElementById('progress-text').textContent = '✅ 转换已完成（已恢复）';
+}
+
+// 如果有失败记忆，显示修复按钮和记忆队列
+if (failedCount > 0) {
+    updateRepairButton();
+    updateMemoryQueueUI();
+}
 
 // 显示操作按钮
 const container = document.querySelector('.conversion-controls') || document.querySelector('.worldbook-body');
