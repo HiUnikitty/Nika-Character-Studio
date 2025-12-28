@@ -710,43 +710,22 @@
         .chat-message-group {
             display: flex;
             flex-direction: column;
+            align-items: center;
             max-width: 100%;
             width: 100%;
         }
         
-        /* AI消息左对齐 */
-        .chat-message-group.ai-message {
-            align-items: flex-start;
-        }
-        
-        /* 用户消息右对齐 */
-        .chat-message-group.user-message {
-            align-items: flex-end;
-        }
-        
-        /* 消息主体容器（头像+气泡）*/
-        .chat-message-group > div:first-child {
+        /* 头像容器居中 */
+        .avatar-container {
             display: flex;
-            align-items: flex-start;
-        }
-
-        /* 改聊天气泡的边距 */
-        /* AI消息：头像在左，气泡在右，气泡右边缘对齐输入框右边缘 */
-        .chat-message-group.ai-message > div:first-child {
-            /* 头像(48px) + gap(6px) + 气泡最大宽度 = 100% - 右侧留白(28px，对齐输入框右边缘) */
-            max-width: calc(100% - 28px);
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
         }
         
-        /* 用户消息：头像在右，气泡在左，气泡左边缘对齐输入框左边缘 */
-        .chat-message-group.user-message > div:first-child {
-            /* 气泡最大宽度 + gap(8px) + 头像(48px) = 100% - 左侧留白(48px，对齐输入框左边缘) */
-            max-width: calc(100% - 48px);
-        }
-        
-        /* 聊天气泡宽度 */
+        /* 气泡宽度100% */
         .chat-bubble {
-            width: auto;
-            max-width: 100%;
+            width: 100%;
             box-sizing: border-box;
         }
         
@@ -1172,75 +1151,107 @@
             </div>
         </div>
     </div>
+    <!-- AI 预设模态框 (统一滚动版) -->
     <div id="presets-modal" class="modal-overlay">
-        <div class="modal-content w-full h-full card p-6 rounded-2xl flex flex-col">
-            <div class="flex justify-between items-center mb-4 flex-shrink-0"><h2 class="text-2xl font-bold primary-gradient-text" data-i18n="presets.title">AI 预设</h2><button class="close-modal-btn text-gray-400 hover:text-gray-800"><i class="fas fa-times text-xl"></i></button></div>
-            <div class="flex flex-1 flex-col gap-6 overflow-hidden">
-                <div class="w-full flex flex-col border-b theme-border-b pb-4">
-                    <div class="flex gap-2 mb-4"><button class="flex-1 py-2 text-sm btn-secondary rounded" onclick="document.getElementById('preset-import-json').click()" data-i18n="presets.import">导入</button><input type="file" id="preset-import-json" accept=".json" class="hidden"><button id="preset-export-json" class="flex-1 py-2 text-sm btn-secondary rounded" data-i18n="presets.export">导出</button></div>
-                    <div id="preset-list" class="flex-1 overflow-y-auto space-y-2 pr-2"></div>
-                    <div class="mt-4"><button id="save-as-preset-btn" class="w-full py-2 btn-primary rounded-lg" data-i18n="presets.saveAsNew">另存为新预设</button></div>
-                </div>
-                <div class="w-full flex flex-1 flex-col gap-6 overflow-hidden">
-                    <div id="preset-editor" class="w-full overflow-y-auto pr-2 space-y-4">
-                        <div class="flex justify-between items-center">
-                            <h3 class="font-bold text-lg mb-2" data-i18n="presets.samplingParams">采样参数</h3>
-                            <div class="text-sm theme-text-secondary">
-                                <i class="fas fa-calculator mr-1"></i>
-                                <span data-i18n="presets.estimatedTokens">预估Token:</span> <span id="preset-token-estimate" class="font-bold text-primary-color">0</span>
-                            </div>
-                        </div>
-                        <div class="grid grid-cols-5 gap-4 items-center"><label class="text-sm col-span-2">Temperature</label><div class="col-span-3 flex items-center gap-2"><input type="range" id="param-temp" min="0" max="2" step="0.01"><input type="number" id="param-temp-value" min="0" max="2" step="0.01" class="w-20 rounded-md p-1 text-center light-input"></div></div>
-                        <div class="grid grid-cols-5 gap-4 items-center"><label class="text-sm col-span-2">Top P</label><div class="col-span-3 flex items-center gap-2"><input type="range" id="param-top-p" min="0" max="1" step="0.01"><input type="number" id="param-top-p-value" min="0" max="1" step="0.01" class="w-20 rounded-md p-1 text-center light-input"></div></div>
-                        <div class="grid grid-cols-5 gap-4 items-center"><label class="text-sm col-span-2">Top K</label><div class="col-span-3 flex items-center gap-2"><input type="range" id="param-top-k" min="0" max="100" step="1"><input type="number" id="param-top-k-value" min="0" max="100" step="1" class="w-20 rounded-md p-1 text-center light-input"></div></div>
-                        <div class="grid grid-cols-5 gap-4 items-center"><label class="text-sm col-span-2">Frequency Penalty</label><div class="col-span-3 flex items-center gap-2"><input type="range" id="param-freq-pen" min="-2" max="2" step="0.01"><input type="number" id="param-freq-pen-value" min="-2" max="2" step="0.01" class="w-20 rounded-md p-1 text-center light-input"></div></div>
-                        <div class="grid grid-cols-5 gap-4 items-center"><label class="text-sm col-span-2">Presence Penalty</label><div class="col-span-3 flex items-center gap-2"><input type="range" id="param-pres-pen" min="-2" max="2" step="0.01"><input type="number" id="param-pres-pen-value" min="-2" max="2" step="0.01" class="w-20 rounded-md p-1 text-center light-input"></div></div>
-                        <div class="grid grid-cols-5 gap-4 items-center"><label class="text-sm col-span-2">Repetition Penalty</label><div class="col-span-3 flex items-center gap-2"><input type="range" id="param-rep-pen" min="0" max="2" step="0.01"><input type="number" id="param-rep-pen-value" min="0" max="2" step="0.01" class="w-20 rounded-md p-1 text-center light-input"></div></div>
-                        <hr class="theme-border">
-                        <div class="grid grid-cols-5 gap-4 items-center">
-                            <label class="text-sm col-span-2">Max Response Tokens</label>
-                            <input type="number" id="param-max-tokens" min="1" max="8192" step="1" class="light-input rounded-md p-1 col-span-3">
-                        </div>
-                        <div class="grid grid-cols-5 gap-4 items-center">
-                            <label class="text-sm col-span-2">Context Size (Tokens)</label>
-                            <input type="number" id="param-context-size" min="1" max="32768" step="1" class="light-input rounded-md p-1 col-span-3">
-                        </div>
-                        <div class="p-3 theme-info-bg rounded-lg text-xs theme-text-secondary">
-                            <div class="flex justify-between mb-1">
-                                <span data-i18n="presets.remainingContext">剩余上下文：</span>
-                                <span id="remaining-context" class="font-bold">0</span>
-                            </div>
-                            <div class="w-full bg-gray-300 rounded-full h-2">
-                                <div id="context-usage-bar" class="bg-primary-color h-2 rounded-full" style="width: 0%"></div>
-                            </div>
-                        </div>
+        <div class="modal-content w-full h-full card flex flex-col">
+            
+            <!-- 标题栏 (固定) -->
+            <div class="flex justify-between items-center p-6 pb-2 flex-shrink-0">
+                <h2 class="text-2xl font-bold primary-gradient-text" data-i18n="presets.title">AI 预设</h2>
+                <button class="close-modal-btn text-gray-400 hover:text-gray-800"><i class="fas fa-times text-xl"></i></button>
+            </div>
+
+            <!-- 统一的滚动容器 (包含列表、参数和提示词) -->
+            <div class="flex-1 overflow-y-auto p-6 space-y-8">
+                
+                <!-- 1. 预设列表管理区域 -->
+                <div class="w-full flex flex-col border-b theme-border-b pb-6">
+                    <div class="flex gap-2 mb-4">
+                        <button class="flex-1 py-2 text-sm btn-secondary rounded" onclick="document.getElementById('preset-import-json').click()" data-i18n="presets.import">导入</button>
+                        <input type="file" id="preset-import-json" accept=".json" class="hidden">
+                        <button id="preset-export-json" class="flex-1 py-2 text-sm btn-secondary rounded" data-i18n="presets.export">导出</button>
                     </div>
-                    <div id="prompt-editor" class="w-full flex flex-col overflow-hidden theme-border">
-                        <div class="flex justify-between items-center mb-2 flex-shrink-0">
-                             <h3 class="font-bold text-lg" data-i18n="presets.promptEntries">提示词条目</h3>
-                             <div class="flex items-center gap-2">
-                                <button id="add-prompt-btn" class="w-8 h-8 flex items-center justify-center btn-secondary rounded-md" data-i18n-title="presets.addEntry" title="添加新条目"><i class="fas fa-plus"></i></button>
-                                <button id="restore-prompts-btn" class="w-8 h-8 flex items-center justify-center btn-secondary rounded-md" data-i18n-title="presets.restoreDefaults" title="恢复默认"><i class="fas fa-undo"></i></button>
-                             </div>
-                        </div>
-                        <div id="prompt-list" class="flex-1 overflow-y-auto space-y-2 pr-2"></div>
+                    
+                    <!-- 预设列表：限制最大高度200px，避免列表太长占满屏幕，但它是页面流的一部分 -->
+                    <label class="block text-sm font-medium mb-2 text-gray-500">选择预设</label>
+                    <div id="preset-list" class="overflow-y-auto space-y-2 pr-2 border theme-border rounded-lg p-2" style="max-height: 200px; min-height: 100px;"></div>
+                    
+                    <div class="mt-4">
+                        <button id="save-as-preset-btn" class="w-full py-2 btn-primary rounded-lg" data-i18n="presets.saveAsNew">另存为新预设</button>
                     </div>
                 </div>
+
+                <!-- 2. 采样参数区域 (移除独立滚动，随页面滚动) -->
+                <div id="preset-editor" class="w-full space-y-4">
+                    <div class="flex justify-between items-center">
+                        <h3 class="font-bold text-lg mb-2" data-i18n="presets.samplingParams">采样参数</h3>
+                        <div class="text-sm theme-text-secondary">
+                            <i class="fas fa-calculator mr-1"></i>
+                            <span data-i18n="presets.estimatedTokens">预估Token:</span> <span id="preset-token-estimate" class="font-bold text-primary-color">0</span>
+                        </div>
+                    </div>
+                    
+                    <div class="grid grid-cols-5 gap-4 items-center"><label class="text-sm col-span-2">Temperature</label><div class="col-span-3 flex items-center gap-2"><input type="range" id="param-temp" min="0" max="2" step="0.01"><input type="number" id="param-temp-value" min="0" max="2" step="0.01" class="w-20 rounded-md p-1 text-center light-input"></div></div>
+                    <div class="grid grid-cols-5 gap-4 items-center"><label class="text-sm col-span-2">Top P</label><div class="col-span-3 flex items-center gap-2"><input type="range" id="param-top-p" min="0" max="1" step="0.01"><input type="number" id="param-top-p-value" min="0" max="1" step="0.01" class="w-20 rounded-md p-1 text-center light-input"></div></div>
+                    <div class="grid grid-cols-5 gap-4 items-center"><label class="text-sm col-span-2">Top K</label><div class="col-span-3 flex items-center gap-2"><input type="range" id="param-top-k" min="0" max="100" step="1"><input type="number" id="param-top-k-value" min="0" max="100" step="1" class="w-20 rounded-md p-1 text-center light-input"></div></div>
+                    <div class="grid grid-cols-5 gap-4 items-center"><label class="text-sm col-span-2">Frequency Penalty</label><div class="col-span-3 flex items-center gap-2"><input type="range" id="param-freq-pen" min="-2" max="2" step="0.01"><input type="number" id="param-freq-pen-value" min="-2" max="2" step="0.01" class="w-20 rounded-md p-1 text-center light-input"></div></div>
+                    <div class="grid grid-cols-5 gap-4 items-center"><label class="text-sm col-span-2">Presence Penalty</label><div class="col-span-3 flex items-center gap-2"><input type="range" id="param-pres-pen" min="-2" max="2" step="0.01"><input type="number" id="param-pres-pen-value" min="-2" max="2" step="0.01" class="w-20 rounded-md p-1 text-center light-input"></div></div>
+                    <div class="grid grid-cols-5 gap-4 items-center"><label class="text-sm col-span-2">Repetition Penalty</label><div class="col-span-3 flex items-center gap-2"><input type="range" id="param-rep-pen" min="0" max="2" step="0.01"><input type="number" id="param-rep-pen-value" min="0" max="2" step="0.01" class="w-20 rounded-md p-1 text-center light-input"></div></div>
+                    
+                    <hr class="theme-border">
+                    
+                    <div class="grid grid-cols-5 gap-4 items-center">
+                        <label class="text-sm col-span-2">Max Response Tokens</label>
+                        <input type="number" id="param-max-tokens" min="1" max="8192" step="1" class="light-input rounded-md p-1 col-span-3">
+                    </div>
+                    <div class="grid grid-cols-5 gap-4 items-center">
+                        <label class="text-sm col-span-2">Context Size (Tokens)</label>
+                        <input type="number" id="param-context-size" min="1" max="32768" step="1" class="light-input rounded-md p-1 col-span-3">
+                    </div>
+                    <div class="p-3 theme-info-bg rounded-lg text-xs theme-text-secondary">
+                        <div class="flex justify-between mb-1">
+                            <span data-i18n="presets.remainingContext">剩余上下文：</span>
+                            <span id="remaining-context" class="font-bold">0</span>
+                        </div>
+                        <div class="w-full bg-gray-300 rounded-full h-2">
+                            <div id="context-usage-bar" class="bg-primary-color h-2 rounded-full" style="width: 0%"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 3. 提示词条目区域 (移除独立滚动，完全展开) -->
+                <div id="prompt-editor" class="w-full flex flex-col border-t theme-border pt-6">
+                    <div class="flex justify-between items-center mb-4 flex-shrink-0">
+                         <h3 class="font-bold text-lg" data-i18n="presets.promptEntries">提示词条目</h3>
+                         <div class="flex items-center gap-2">
+                            <button id="add-prompt-btn" class="w-8 h-8 flex items-center justify-center btn-secondary rounded-md" data-i18n-title="presets.addEntry" title="添加新条目"><i class="fas fa-plus"></i></button>
+                            <button id="restore-prompts-btn" class="w-8 h-8 flex items-center justify-center btn-secondary rounded-md" data-i18n-title="presets.restoreDefaults" title="恢复默认"><i class="fas fa-undo"></i></button>
+                         </div>
+                    </div>
+                    <!-- 关键修改：移除 flex-1 和 overflow-y-auto，让高度自适应 -->
+                    <div id="prompt-list" class="space-y-2 w-full"></div>
+                </div>
+
             </div>
         </div>
     </div>
+    <!-- 角色管理模态框 (统一滚动版) -->
     <div id="character-modal" class="modal-overlay">
         <div class="modal-content w-full h-full card p-0 flex flex-col">
-            <header class="flex justify-between items-center p-4 border-b theme-border-b flex-shrink-0">
+            <!-- 1. 标题栏 (固定) -->
+            <header class="flex justify-between items-center p-4 border-b theme-border-b flex-shrink-0 bg-opacity-90 backdrop-blur-sm z-10">
                 <h2 class="text-2xl font-bold primary-gradient-text flex items-center gap-3"><i class="fas fa-user-astronaut"></i><span data-i18n="char.title">角色管理</span></h2>
                 <button class="close-modal-btn text-gray-400 hover:text-gray-800"><i class="fas fa-times text-xl"></i></button>
             </header>
-            <div class="flex-1 flex flex-col gap-0 overflow-hidden">
-                <!-- 角色选择区域 -->
-                <div class="p-4 space-y-3 flex-shrink-0 border-b theme-border-b">
+
+            <!-- 2. 统一滚动区域 -->
+            <div class="flex-1 overflow-y-auto">
+                
+                <!-- A. 角色选择区域 (现在随页面滚动) -->
+                <div class="p-4 space-y-3 border-b theme-border-b bg-gray-50 bg-opacity-50">
                     <label class="block text-sm font-medium" data-i18n="char.current">当前角色</label>
 
-                    <!-- 角色预览卡片（点击打开弹窗） -->
+                    <!-- 角色预览卡片 -->
                     <div id="char-preview-card" class="p-3 rounded-lg border-2 theme-border hover:border-primary-color cursor-pointer transition-all bg-white">
                         <div class="flex items-center gap-3">
                             <img id="current-char-avatar-preview" src="https://placehold.co/48x48/5E5B9D/ffffff?text=AI" class="w-12 h-12 rounded-full object-cover border-2 border-primary-color">
@@ -1264,34 +1275,43 @@
                     </div>
                 </div>
 
-                <!-- 角色编辑器 -->
-                <div id="char-editor-panel" class="w-full flex-1 flex flex-col overflow-y-auto p-4">
-                    <div id="char-editor-placeholder" class="text-center text-gray-500 my-auto">
+                <!-- B. 角色编辑器 (现在自然展开) -->
+                <div id="char-editor-panel" class="w-full p-4 min-h-[400px]">
+                    <div id="char-editor-placeholder" class="text-center text-gray-500 py-20">
                         <i class="fas fa-users fa-3x mb-4"></i>
                         <p data-i18n="char.selectTip">选择一个角色进行编辑，或导入/新建一个角色。</p>
                     </div>
-                    <div id="char-editor-content" class="hidden w-full h-full flex flex-col gap-4">
+                    
+                    <div id="char-editor-content" class="hidden w-full flex-col gap-6">
                         <input type="hidden" id="char-editing-id">
-                        <div class="flex items-start gap-4 flex-shrink-0">
+                        
+                        <!-- 头像和基本信息 -->
+                        <div class="flex flex-col sm:flex-row items-center sm:items-start gap-6">
                             <div class="flex-shrink-0 text-center">
-                                <img id="char-editor-avatar" src="https://placehold.co/128x128/5E5B9D/ffffff?text=AI" class="w-32 h-32 rounded-lg object-cover mx-auto">
-                                <label class="mt-2 text-sm text-primary-color hover:underline cursor-pointer">
+                                <img id="char-editor-avatar" src="https://placehold.co/128x128/5E5B9D/ffffff?text=AI" class="w-32 h-32 rounded-lg object-cover mx-auto shadow-md">
+                                <label class="mt-2 text-sm text-primary-color hover:underline cursor-pointer block">
                                     <span data-i18n="char.uploadAvatar">上传头像</span>
                                     <input type="file" id="char-avatar-upload" class="hidden" accept="image/*">
                                 </label>
                             </div>
-                            <div class="flex-1 space-y-3">
-                                <input id="char-editor-name" type="text" data-i18n-placeholder="char.name" placeholder="角色名称" class="w-full text-xl font-bold light-input rounded-md p-2">
-                                <input id="char-editor-tags" type="text" data-i18n-placeholder="char.tags" placeholder="标签（用逗号分隔，如: 女性, 助手, 幻想）" class="w-full text-sm light-input rounded-md p-2">
+                            <div class="flex-1 space-y-4 w-full">
+                                <div>
+                                    <input id="char-editor-name" type="text" data-i18n-placeholder="char.name" placeholder="角色名称" class="w-full text-xl font-bold light-input rounded-md p-2">
+                                </div>
+                                <div>
+                                    <input id="char-editor-tags" type="text" data-i18n-placeholder="char.tags" placeholder="标签（用逗号分隔，如: 女性, 助手, 幻想）" class="w-full text-sm light-input rounded-md p-2">
+                                </div>
                                 <div class="flex flex-wrap items-center gap-2">
-                                     <button id="char-save-btn" class="py-1.5 px-4 text-sm btn-primary rounded-lg"><i class="fas fa-save mr-2"></i><span data-i18n="char.save">保存</span></button>
-                                     <button id="char-export-btn" data-i18n-title="char.export" title="导出为 .json" class="w-9 h-9 btn-secondary rounded-lg"><i class="fas fa-download"></i></button>
-                                     <button id="char-duplicate-btn" data-i18n-title="char.duplicate" title="复制" class="w-9 h-9 btn-secondary rounded-lg"><i class="fas fa-clone"></i></button>
-                                     <button id="char-delete-btn" data-i18n-title="char.delete" title="删除" class="w-9 h-9 btn-secondary rounded-lg hover:bg-red-100 hover:text-red-600"><i class="fas fa-trash"></i></button>
+                                     <button id="char-save-btn" class="flex-1 py-2 px-4 text-sm btn-primary rounded-lg"><i class="fas fa-save mr-2"></i><span data-i18n="char.save">保存</span></button>
+                                     <button id="char-export-btn" data-i18n-title="char.export" title="导出为 .json" class="w-10 h-10 btn-secondary rounded-lg"><i class="fas fa-download"></i></button>
+                                     <button id="char-duplicate-btn" data-i18n-title="char.duplicate" title="复制" class="w-10 h-10 btn-secondary rounded-lg"><i class="fas fa-clone"></i></button>
+                                     <button id="char-delete-btn" data-i18n-title="char.delete" title="删除" class="w-10 h-10 btn-secondary rounded-lg hover:bg-red-100 hover:text-red-600"><i class="fas fa-trash"></i></button>
                                 </div>
                             </div>
                         </div>
-                        <div class="flex flex-col gap-3 flex-1 overflow-y-auto">
+
+                        <!-- 详细编辑卡片堆叠 (移除 overflow, 让页面变长) -->
+                        <div class="flex flex-col gap-4 w-full">
                             <div class="card p-4">
                                 <div class="flex justify-between items-center mb-2">
                                     <label for="char-editor-desc" class="block text-sm font-medium" data-i18n="char.description">角色描述 (性格, 外貌, 对话示例等)</label>
@@ -1299,7 +1319,7 @@
                                         <i class="fas fa-expand-alt"></i>
                                     </button>
                                 </div>
-                                <textarea id="char-editor-desc" class="w-full light-input rounded-md p-2 resize-y" rows="6"></textarea>
+                                <textarea id="char-editor-desc" class="w-full light-input rounded-md p-2 resize-y font-mono text-sm" rows="10"></textarea>
                             </div>
                             <div class="card p-4">
                                 <div class="flex justify-between items-center mb-2">
@@ -1308,7 +1328,7 @@
                                         <i class="fas fa-expand-alt"></i>
                                     </button>
                                 </div>
-                                <textarea id="char-editor-first-mes" class="w-full light-input rounded-md p-2 resize-y" rows="4"></textarea>
+                                <textarea id="char-editor-first-mes" class="w-full light-input rounded-md p-2 resize-y text-sm" rows="6"></textarea>
                             </div>
                             <div class="card p-4">
                                 <div class="flex justify-between items-center mb-3">
@@ -1317,7 +1337,8 @@
                                         <i class="fas fa-plus mr-1"></i><span data-i18n="char.addGreeting">添加</span>
                                     </button>
                                 </div>
-                                <div id="alternate-greetings-list" class="space-y-2 max-h-64 overflow-y-auto">
+                                <!-- 给列表一个最大高度，防止这一项变得太长难以管理，但整体仍然在页面内 -->
+                                <div id="alternate-greetings-list" class="space-y-2 max-h-96 overflow-y-auto border rounded-md p-2 theme-border bg-gray-50">
                                     <!-- 备选开场白列表将在这里显示 -->
                                 </div>
                             </div>
@@ -1328,7 +1349,7 @@
                                         <i class="fas fa-expand-alt"></i>
                                     </button>
                                 </div>
-                                <textarea id="char-editor-creator-notes" class="w-full light-input rounded-md p-2 resize-y" rows="3"></textarea>
+                                <textarea id="char-editor-creator-notes" class="w-full light-input rounded-md p-2 resize-y text-sm" rows="4"></textarea>
                             </div>
                         </div>
                     </div>
@@ -1467,21 +1488,25 @@
             </div>
         </div>
     </div>
+    <!-- 用户管理模态框 (统一滚动版) -->
     <div id="user-profile-modal" class="modal-overlay">
         <div class="modal-content w-full h-full card p-0 flex flex-col">
-            <header class="flex justify-between items-center p-4 border-b theme-border-b flex-shrink-0">
+            <!-- 1. 标题栏 (固定) -->
+            <header class="flex justify-between items-center p-4 border-b theme-border-b flex-shrink-0 bg-opacity-90 backdrop-blur-sm z-10">
                 <h2 class="text-2xl font-bold primary-gradient-text flex items-center gap-3">
                     <i class="fas fa-users"></i><span data-i18n="user.title">用户管理</span>
                 </h2>
                 <button class="close-modal-btn text-gray-400 hover:text-gray-800"><i class="fas fa-times text-xl"></i></button>
             </header>
 
-            <div class="flex-1 flex flex-col gap-0 overflow-hidden">
-                <!-- 用户选择区域 -->
-                <div class="p-4 space-y-3 flex-shrink-0 border-b theme-border-b">
+            <!-- 2. 统一滚动区域 -->
+            <div class="flex-1 overflow-y-auto">
+                
+                <!-- A. 用户选择区域 (现在随页面滚动) -->
+                <div class="p-4 space-y-3 border-b theme-border-b bg-gray-50 bg-opacity-50">
                     <label class="block text-sm font-medium" data-i18n="user.currentUser">当前用户</label>
 
-                    <!-- 用户预览卡片（点击打开弹窗） -->
+                    <!-- 用户预览卡片 -->
                     <div id="user-preview-card" class="p-3 rounded-lg border-2 theme-border hover:border-primary-color cursor-pointer transition-all" style="background-color: var(--card-bg-color);">
                         <div class="flex items-center gap-3">
                             <img id="current-user-avatar-preview" src="https://placehold.co/48x48/E4E6EB/1A1A1D?text=U" class="w-12 h-12 rounded-full object-cover border-2 border-primary-color">
@@ -1503,22 +1528,22 @@
                     </div>
                 </div>
 
-                <!-- 用户编辑器 -->
-                <div class="w-full flex-1 flex flex-col overflow-y-auto p-4">
-                    <div id="user-editor-placeholder" class="text-center text-gray-500 my-auto">
+                <!-- B. 用户编辑器 (现在自然展开) -->
+                <div class="w-full p-4 min-h-[400px]">
+                    <div id="user-editor-placeholder" class="text-center text-gray-500 py-20">
                         <i class="fas fa-user-circle fa-3x mb-4"></i>
                         <p data-i18n="user.selectTip">选择一个用户进行编辑，或创建新用户。</p>
                     </div>
 
-                    <div id="user-editor-content" class="hidden w-full h-full flex flex-col gap-4">
+                    <div id="user-editor-content" class="hidden w-full flex-col gap-6">
                         <input type="hidden" id="user-editing-id">
 
                         <!-- 头像和基本信息 -->
-                        <div class="flex items-start gap-4 flex-shrink-0">
+                        <div class="flex flex-col sm:flex-row items-center sm:items-start gap-6">
                             <div class="flex-shrink-0 text-center">
                                 <div class="relative">
                                     <img id="user-editor-avatar" src="https://placehold.co/128x128/E4E6EB/1A1A1D?text=U"
-                                         class="w-32 h-32 rounded-lg object-cover">
+                                         class="w-32 h-32 rounded-lg object-cover shadow-md">
                                     <label class="mt-2 text-sm text-primary-color hover:underline cursor-pointer block">
                                         <span data-i18n="user.uploadAvatar">上传头像</span>
                                         <input type="file" id="user-avatar-upload" class="hidden" accept="image/*">
@@ -1526,20 +1551,24 @@
                                 </div>
                             </div>
 
-                            <div class="flex-1 space-y-3">
-                                <input id="user-editor-name" type="text" data-i18n-placeholder="user.name" placeholder="用户名称" class="w-full text-xl font-bold light-input rounded-md p-2">
-                                <input id="user-editor-status" type="text" data-i18n-placeholder="user.status" placeholder="状态/心情" class="w-full light-input rounded-md p-2">
+                            <div class="flex-1 space-y-4 w-full">
+                                <div>
+                                    <input id="user-editor-name" type="text" data-i18n-placeholder="user.name" placeholder="用户名称" class="w-full text-xl font-bold light-input rounded-md p-2">
+                                </div>
+                                <div>
+                                    <input id="user-editor-status" type="text" data-i18n-placeholder="user.status" placeholder="状态/心情" class="w-full light-input rounded-md p-2">
+                                </div>
                                 <div class="flex flex-wrap items-center gap-2">
-                                    <button id="user-save-btn" class="py-1.5 px-4 text-sm btn-primary rounded-lg"><i class="fas fa-save mr-2"></i><span data-i18n="user.save">保存</span></button>
-                                    <button id="user-use-btn" class="py-1.5 px-4 text-sm btn-secondary rounded-lg"><i class="fas fa-user-check mr-1"></i><span data-i18n="user.use">使用</span></button>
-                                    <button id="user-duplicate-btn" data-i18n-title="user.duplicate" title="复制" class="w-9 h-9 btn-secondary rounded-lg"><i class="fas fa-clone"></i></button>
-                                    <button id="user-delete-btn" data-i18n-title="user.delete" title="删除" class="w-9 h-9 btn-secondary rounded-lg hover:bg-red-100 hover:text-red-600"><i class="fas fa-trash"></i></button>
+                                    <button id="user-save-btn" class="flex-1 py-2 px-4 text-sm btn-primary rounded-lg"><i class="fas fa-save mr-2"></i><span data-i18n="user.save">保存</span></button>
+                                    <button id="user-use-btn" class="flex-1 py-2 px-4 text-sm btn-secondary rounded-lg"><i class="fas fa-user-check mr-1"></i><span data-i18n="user.use">使用</span></button>
+                                    <button id="user-duplicate-btn" data-i18n-title="user.duplicate" title="复制" class="w-10 h-10 btn-secondary rounded-lg"><i class="fas fa-clone"></i></button>
+                                    <button id="user-delete-btn" data-i18n-title="user.delete" title="删除" class="w-10 h-10 btn-secondary rounded-lg hover:bg-red-100 hover:text-red-600"><i class="fas fa-trash"></i></button>
                                 </div>
                             </div>
                         </div>
 
-                        <!-- 详细设定区域 - 使用卡片网格布局 -->
-                        <div class="grid grid-cols-1 gap-4 flex-1 overflow-y-auto">
+                        <!-- 详细设定区域 - 使用卡片堆叠，自然向下排列 -->
+                        <div class="flex flex-col gap-4 w-full">
                             <div class="card p-4 flex flex-col">
                                 <div class="flex justify-between items-center mb-2">
                                     <label for="user-editor-description" class="block text-sm font-medium" data-i18n="user.description">用户角色描述（将发送给AI）</label>
@@ -1550,7 +1579,7 @@
                                 <textarea id="user-editor-description"
                                           data-i18n-placeholder="user.descriptionPlaceholder"
                                           placeholder="描述您的角色设定，例如：你是一名程序员，喜欢技术讨论..."
-                                          class="w-full flex-1 light-input rounded-md p-2 resize-none min-h-[120px]"></textarea>
+                                          class="w-full flex-1 light-input rounded-md p-2 resize-none min-h-[150px]"></textarea>
                             </div>
 
                             <div class="card p-4 flex flex-col">
@@ -1563,7 +1592,7 @@
                                 <textarea id="user-editor-system-prompt"
                                           data-i18n-placeholder="user.systemPromptPlaceholder"
                                           placeholder="例如：请以专业的方式回答技术问题..."
-                                          class="w-full flex-1 light-input rounded-md p-2 resize-none min-h-[100px]"></textarea>
+                                          class="w-full flex-1 light-input rounded-md p-2 resize-none min-h-[120px]"></textarea>
                             </div>
 
                             <!-- 用户偏好设置 -->
@@ -1780,9 +1809,10 @@
                             <button class="theme-preset-btn p-3 rounded-lg text-sm" data-theme="green" data-i18n="theme.green">森林</button>
                             <button class="theme-preset-btn p-3 rounded-lg text-sm" data-theme="purple" data-i18n="theme.purple">紫罗兰</button>
                             <button class="theme-preset-btn p-3 rounded-lg text-sm" data-theme="pink" data-i18n="theme.pink">樱花</button>
-                            <!-- 
+                            <!-- 这功能先隐藏，等待更多完善后再启用，相关代码暂时保留
                             <button class="theme-preset-btn p-3 rounded-lg text-sm relative" data-theme="wechat" data-i18n="theme.wechat" title="由类脑粉丝某不科学的高数提供">
                                 微信
+                                <span class="absolute -top-1 -right-1 bg-gradient-to-r from-purple-500 to-pink-500 text-white text-[10px] px-1.5 py-0.5 rounded transform rotate-12 shadow-sm font-bold">粉丝特供</span>
                             </button>
                             -->
                         </div>
@@ -3757,7 +3787,7 @@ body {
                 });
             }
             
-            // --- Advanced API Logic (Enhanced from Tea House) ---
+            // 聊天页API设置 ---
             const api = {
                 configName: document.getElementById('apiConfigNameInput'),
                 url: document.getElementById('api-url'),
@@ -3788,11 +3818,30 @@ body {
                 currentId: null,
             };
 
+            // 辅助函数：从当前UI界面获取配置数据（所见即所得）
+            function getApiValuesFromUI(isVision = false) {
+                const url = isVision ? api.visionUrl.value.trim() : api.url.value.trim();
+                const key = isVision ? api.visionKey.value.trim() : api.key.value.trim();
+                
+                // 智能判断模型：如果下拉框可见且有值，取下拉框；否则取输入框
+                let model = '';
+                if (isVision) {
+                    model = (!api.visionModelSelect.classList.contains('hidden') && api.visionModelSelect.value) 
+                            ? api.visionModelSelect.value 
+                            : ''; // 识图通常不需要手动输入模型，除非特殊情况，这里简化处理
+                } else {
+                    model = (!api.modelSelect.classList.contains('hidden') && api.modelSelect.value)
+                            ? api.modelSelect.value
+                            : api.modelName.value.trim();
+                }
+
+                return { url, key, model };
+            }
+
             async function loadApiConfigs() {
                 const configsData = await idbStorage.getItem('api_configs_v1');
                 api.configs = configsData ? JSON.parse(configsData) : {};
                 api.currentId = await idbStorage.getItem('current_api_id_v1');
-                
                 // 从 index.html 继承 API 配置
                 try {
                     const indexApiSettings = localStorage.getItem('apiSettings');
@@ -3921,23 +3970,26 @@ body {
                 api.url.value = config.url || '';
                 api.key.value = config.key || '';
                 api.modelName.value = config.model || '';
-                api.streaming.checked = config.streaming === undefined ? true : config.streaming; // Default to true
+                api.streaming.checked = config.streaming === undefined ? true : config.streaming; 
                 api.visionUrl.value = config.visionUrl || '';
                 api.visionKey.value = config.visionKey || '';
 
+                // 加载模型列表下拉框
                 api.modelSelect.innerHTML = '';
                 (config.models || []).forEach(m => {
                     const opt = document.createElement('option');
                     opt.value = opt.textContent = m;
                     api.modelSelect.appendChild(opt);
                 });
+                // 如果当前配置的模型在列表里，选中它
                 if(config.model) api.modelSelect.value = config.model;
 
-                // 如果有模型列表，显示下拉框，隐藏输入框；否则相反
+                // UI逻辑：如果有模型列表，显示下拉框；否则显示输入框
                 const hasModels = config.models && config.models.length > 0;
                 api.modelSelect.classList.toggle('hidden', !hasModels);
                 api.modelName.classList.toggle('hidden', hasModels);
 
+                // 识图模型列表
                 api.visionModelSelect.innerHTML = '';
                  (config.visionModels || []).forEach(m => {
                     const opt = document.createElement('option');
@@ -3950,21 +4002,22 @@ body {
                 api.currentId = id;
                 api.savedSelect.value = id;
                 updateApiButtons();
-                
-                // 保存当前选中的 API 配置 ID
                 await saveApiConfigs();
             }
 
             function getCurrentApiConfigFromForm() {
+                const { url, key, model } = getApiValuesFromUI(false);
+                const visionValues = getApiValuesFromUI(true);
+
                 return {
                     name: api.configName.value.trim(),
-                    url: api.url.value.trim(),
-                    key: api.key.value.trim(),
-                    model: api.modelName.value.trim(),
+                    url: url,
+                    key: key,
+                    model: model, // 保存时优先存当前选中的值
                     streaming: api.streaming.checked,
-                    visionUrl: api.visionUrl.value.trim(),
-                    visionKey: api.visionKey.value.trim(),
-                    visionModel: api.visionModelSelect.value,
+                    visionUrl: visionValues.url,
+                    visionKey: visionValues.key,
+                    visionModel: visionValues.model || api.visionModelSelect.value, // 识图特殊处理
                     models: [...api.modelSelect.options].map(o => o.value).filter(o => o),
                     visionModels: [...api.visionModelSelect.options].map(o => o.value).filter(o => o),
                 };
@@ -3987,39 +4040,23 @@ body {
             });
             api.deleteBtn.addEventListener('click', async () => {
                 const id = api.savedSelect.value;
-                if(!id) {
-                    alert('请先选择要删除的配置');
-                    return;
-                }
+                if(!id) return alert('请先选择要删除的配置');
                 
-                const configToDelete = api.configs[id];
-                if(!configToDelete) {
-                    alert('配置不存在');
-                    return;
-                }
-                
-                if(confirm(`确定要删除配置 "${configToDelete.name}" 吗?`)){
+                if(confirm(`确定要删除配置吗?`)){
                     delete api.configs[id];
                     if(api.currentId === id) {
                          api.currentId = null;
-                         // 清空表单
-                         api.configName.value = '';
+                         api.configName.value = ''; // 清空
                          api.url.value = '';
-                         api.key.value = '';
-                         api.modelName.value = '';
-                         api.streaming.checked = true;
-                         api.visionUrl.value = '';
-                         api.visionKey.value = '';
-                         api.modelSelect.innerHTML = '';
-                         api.visionModelSelect.innerHTML = '';
                     }
                     await saveApiConfigs();
-                    await loadApiConfigs();
+                    updateApiSelect();
+                    updateApiButtons();
                 }
             });
             api.saveAsNewBtn.addEventListener('click', async () => {
                 const newConfig = getCurrentApiConfigFromForm();
-                if(!newConfig.name) { alert("请输入配置名称"); return; }
+                if(!newConfig.name) return alert("请输入配置名称");
                 const newId = `api_${Date.now()}`;
                 api.configs[newId] = newConfig;
                 api.currentId = newId;
@@ -4031,36 +4068,26 @@ body {
             });
             api.updateCurrentBtn.addEventListener('click', async () => {
                 const id = api.currentId;
-                if (!id) { alert("没有活动的配置可更新。请先加载一个或新建。"); return; }
+                if (!id) return alert("没有活动的配置可更新。");
                 const updatedConfig = getCurrentApiConfigFromForm();
-                if(!updatedConfig.name) { alert("请输入配置名称"); return; }
+                if(!updatedConfig.name) return alert("请输入配置名称");
 
-                console.log('[API配置] 准备更新配置:', id, updatedConfig);
                 api.configs[id] = updatedConfig;
                 await saveApiConfigs();
-                console.log('[API配置] 配置已保存到存储');
-
                 updateApiSelect();
                 showApiResult("配置已更新！", "success", "api-test-result");
-
-                // 验证保存
-                const savedConfigs = await idbStorage.getItem('api_configs_v1');
-                console.log('[API配置] 验证保存后的配置:', JSON.parse(savedConfigs));
             });
 
             function showApiResult(message, type, elementId) {
                 const div = document.getElementById(elementId);
-                if (!div) {
-                    console.warn('[API配置] 找不到结果显示元素:', elementId);
-                    return;
-                }
+                if (!div) return;
                 div.innerHTML = message;
                 div.className = `text-sm mt-2 text-center h-auto min-h-[1rem] ${type === 'success' ? 'text-green-500' : type === 'error' ? 'text-red-500' : 'text-yellow-500'}`;
             }
 
+            // 修改后的测试连接：直接读取 UI
             async function testConnection(isVision = false, isDebug = false) {
-                const url = isVision ? api.visionUrl.value.trim() : api.url.value.trim();
-                const key = isVision ? api.visionKey.value.trim() : api.key.value.trim();
+                const { url, key } = getApiValuesFromUI(isVision);
                 const resultDivId = isVision ? 'vision-api-test-result' : 'api-test-result';
                 const btn = isDebug ? api.debugModelsBtn : api.testBtn;
 
@@ -4068,7 +4095,7 @@ body {
                     showApiResult('请填写 API URL 和 Key。', 'error', resultDivId);
                     return;
                 }
-                showApiResult('测试中...', 'info', resultDivId);
+                showApiResult('测试连接/获取模型列表...', 'info', resultDivId);
                 btn.disabled = true;
                 
                 try {
@@ -4076,10 +4103,13 @@ body {
                     let headers = {};
                     const urlObj = new URL(url);
 
+                    // 自动处理结尾
+                    const baseUrl = urlObj.hostname.includes('google') ? url : url.replace(/\/chat\/completions\/?$/, '').replace(/\/$/, '');
+
                     if (urlObj.hostname.includes('google')) {
                          modelsUrl = `${urlObj.origin}/v1beta/models?key=${key}`;
                     } else {
-                        modelsUrl = `${url.replace(/\/$/, '')}/models`;
+                        modelsUrl = `${baseUrl}/models`;
                         headers['Authorization'] = `Bearer ${key}`;
                     }
                     
@@ -4087,50 +4117,51 @@ body {
                     if (response.ok) {
                         const data = await response.json();
                         let models = [];
-                        if (data.data) models = data.data; // OpenAI format
-                        else if (data.models) models = data.models.map(m => ({ id: m.name.replace('models/', '') })); // Google format
+                        if (data.data) models = data.data; // OpenAI
+                        else if (data.models) models = data.models.map(m => ({ id: m.name.replace('models/', '') })); // Google
 
+                        const msg = `连接成功！发现 ${models.length} 个模型。`;
                         if (isDebug) {
                              const allModelIds = models.map(m => m.id).sort();
-                             const debugHtml = `<details class="text-left"><summary>发现 ${allModelIds.length} 个模型</summary><pre class="theme-info-bg p-2 rounded-md max-h-40 overflow-y-auto text-xs">${JSON.stringify(allModelIds, null, 2)}</pre></details>`;
+                             const debugHtml = `<details class="text-left"><summary>${msg}</summary><pre class="theme-info-bg p-2 rounded-md max-h-40 overflow-y-auto text-xs">${JSON.stringify(allModelIds, null, 2)}</pre></details>`;
                              showApiResult(debugHtml, 'success', resultDivId);
                         } else {
-                            showApiResult(`连接成功！发现 ${models.length} 个模型`, 'success', resultDivId);
+                            showApiResult(msg, 'success', resultDivId);
                         }
                     } else {
-                        const error = await response.json().catch(() => ({ error: { message: response.statusText } }));
-                        throw new Error(`HTTP ${response.status}: ${error.error?.message || response.statusText}`);
+                        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
                     }
                 } catch (error) {
-                    showApiResult(`连接失败: ${error.message}`, 'error', resultDivId);
+                    showApiResult(`连接失败: ${error.message} (请检查URL是否支持 /models 端点)`, 'error', resultDivId);
                 } finally {
                     btn.disabled = false;
                 }
             }
 
+            // 修改后的加载模型：直接读取 UI 并更新 UI
             async function loadModels(isVision = false) {
-                const url = isVision ? api.visionUrl.value.trim() : api.url.value.trim();
-                const key = isVision ? api.visionKey.value.trim() : api.key.value.trim();
+                const { url, key } = getApiValuesFromUI(isVision);
                 const btn = isVision ? api.loadVisionModelsBtn : api.loadModelsBtn;
                 const select = isVision ? api.visionModelSelect : api.modelSelect;
-                const input = isVision ? null : api.modelName; // 主模型有输入框
+                const input = isVision ? null : api.modelName; 
                 const resultDivId = isVision ? 'vision-api-test-result' : 'api-test-result';
 
+                if(!url || !key) return showApiResult('请填写 URL 和 Key', 'error', resultDivId);
+
                 const originalBtnText = btn.innerHTML;
-                btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i>加载中...';
+                btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
                 btn.disabled = true;
-                select.classList.add('hidden');
-                if (input) input.classList.remove('hidden');
 
                 try {
                     let modelsUrl;
                     let headers = {};
                     const urlObj = new URL(url);
+                    const baseUrl = urlObj.hostname.includes('google') ? url : url.replace(/\/chat\/completions\/?$/, '').replace(/\/$/, '');
 
                     if (urlObj.hostname.includes('google')) {
                          modelsUrl = `${urlObj.origin}/v1beta/models?key=${key}`;
                     } else {
-                        modelsUrl = `${url.replace(/\/$/, '')}/models`;
+                        modelsUrl = `${baseUrl}/models`;
                         headers['Authorization'] = `Bearer ${key}`;
                     }
 
@@ -4139,10 +4170,10 @@ body {
 
                     const data = await response.json();
                     let models = [];
-                    if (data.data) models = data.data; // OpenAI format
-                    else if (data.models) models = data.models.map(m => ({ id: m.name.replace('models/', '') })); // Google format
+                    if (data.data) models = data.data; 
+                    else if (data.models) models = data.models.map(m => ({ id: m.name.replace('models/', '') })); 
 
-                    select.innerHTML = '<option value="">--选择一个模型--</option>';
+                    select.innerHTML = '<option value="">--选择模型--</option>';
                     models.sort((a,b) => a.id.localeCompare(b.id)).forEach(model => {
                         const option = document.createElement('option');
                         option.value = model.id;
@@ -4150,136 +4181,90 @@ body {
                         select.appendChild(option);
                     });
 
-                    if (api.currentId && api.configs[api.currentId]) {
-                        const currentConfig = api.configs[api.currentId];
-                        const modelToSelect = isVision ? currentConfig.visionModel : currentConfig.model;
-                        if(modelToSelect) select.value = modelToSelect;
-                    }
-
+                    // 切换到下拉框模式
                     select.classList.remove('hidden');
-                    if (input) input.classList.add('hidden'); // 加载成功后隐藏输入框，显示下拉框
-                    showApiResult(`模型加载成功！共 ${models.length} 个`, 'success', resultDivId);
-
-                    // Save to current config
-                     const currentConfig = getCurrentApiConfigFromForm();
-                     if (isVision) {
-                        currentConfig.visionModels = models.map(m => m.id);
-                     } else {
-                        currentConfig.models = models.map(m => m.id);
-                     }
-                      if (api.currentId) {
-                         api.configs[api.currentId] = {...api.configs[api.currentId], ...currentConfig};
-                         await saveApiConfigs();
-                     }
-
+                    if (input) input.classList.add('hidden');
+                    
+                    showApiResult(`成功加载 ${models.length} 个模型`, 'success', resultDivId);
 
                 } catch(e) {
-                    showApiResult(`加载模型失败: ${e.message}`, 'error', resultDivId);
+                    showApiResult(`加载失败: ${e.message}`, 'error', resultDivId);
+                    // 失败时切回输入框模式
+                    select.classList.add('hidden');
+                    if(input) input.classList.remove('hidden');
                 } finally {
                     btn.innerHTML = originalBtnText;
                     btn.disabled = false;
                 }
             }
             
+            // 修改后的直接聊天测试：测试当前选中的模型
             async function directChatTest() {
-                 const url = api.url.value.trim();
-                 const key = api.key.value.trim();
+                 const { url, key, model } = getApiValuesFromUI(false);
 
                  if (!url || !key) {
                      showApiResult('请填写 API URL 和 Key。', 'error', 'api-test-result');
                      return;
                  }
+                 if (!model) {
+                     showApiResult('请填写或选择一个模型名称。', 'error', 'api-test-result');
+                     return;
+                 }
 
-                 showApiResult('直接测试中...', 'info', 'api-test-result');
+                 showApiResult(`正在使用模型 [${model}] 测试对话...`, 'info', 'api-test-result');
                  api.directChatTestBtn.disabled = true;
 
-                 // 测试多个常见模型
-                 const testModels = [
-                     'gpt-3.5-turbo',
-                     'gpt-4',
-                     'gpt-4-turbo-preview',
-                     'deepseek-chat',
-                     'gemini-pro',
-                     'gemini-1.5-flash',
-                     'qwen-turbo',
-                     'claude-3-haiku',
-                     'llama-3.1-8b-instant',
-                     'mixtral-8x7b-instruct'
-                 ];
+                 try {
+                     const urlObj = new URL(url);
+                     let endpoint, headers, body;
 
-                 let successModel = null;
-                 let successResponse = null;
-
-                 for (const model of testModels) {
-                     try {
-                         console.log(`Testing model: ${model}`);
-                         const urlObj = new URL(url);
-                         let endpoint, headers, body;
-
-                         if (urlObj.hostname.includes('google')) {
-                             endpoint = `${urlObj.origin}/v1beta/models/${model}:generateContent?key=${key}`;
-                             headers = { 'Content-Type': 'application/json' };
-                             body = {
-                                 contents: [{
-                                     role: 'user',
-                                     parts: [{ text: 'Say "Hello" and nothing else.' }]
-                                 }],
-                                 generationConfig: {
-                                     maxOutputTokens: 10,
-                                     temperature: 0.1
-                                 }
-                             };
-                         } else {
-                             endpoint = `${url.replace(/\/$/, '')}/chat/completions`;
-                             headers = {
-                                 'Content-Type': 'application/json',
-                                 'Authorization': `Bearer ${key}`
-                             };
-                             body = {
-                                 model: model,
-                                 messages: [{role: 'user', content: 'Say "Hello" and nothing else.'}],
-                                 max_tokens: 10,
-                                 temperature: 0.1
-                             };
-                         }
-
-                         const response = await fetch(endpoint, {
-                             method: 'POST',
-                             headers: headers,
-                             body: JSON.stringify(body)
-                         });
-
-                         if (response.ok) {
-                             successModel = model;
-                             successResponse = await response.json();
-                             console.log(`Success with model: ${model}`);
-                             break;
-                         }
-                     } catch (e) {
-                         console.log(`Failed with model ${model}:`, e.message);
-                     }
-                 }
-
-                 if (successModel) {
-                     api.modelName.value = successModel;
-
-                     // 自动保存配置
-                     const newConfig = getCurrentApiConfigFromForm();
-                     if (!api.currentId) {
-                         const newId = `api_${Date.now()}`;
-                         api.configs[newId] = newConfig;
-                         api.currentId = newId;
+                     // 处理 endpoint (如果用户只填了 base url)
+                     if (!urlObj.hostname.includes('google') && !url.endsWith('/chat/completions')) {
+                         endpoint = `${url.replace(/\/$/, '')}/chat/completions`;
                      } else {
-                         api.configs[api.currentId] = newConfig;
+                         endpoint = url;
                      }
-                     await saveApiConfigs();
-                     updateApiSelect();
 
-                     showApiResult(`✅ 直接测试成功！可用模型: ${successModel}`, 'success', 'api-test-result');
-                 } else {
-                     showApiResult('❌ 直接测试失败，请检查URL/Key或手动指定模型', 'error', 'api-test-result');
+                     if (urlObj.hostname.includes('google')) {
+                         endpoint = `${urlObj.origin}/v1beta/models/${model}:generateContent?key=${key}`;
+                         headers = { 'Content-Type': 'application/json' };
+                         body = {
+                             contents: [{ role: 'user', parts: [{ text: 'Hi' }] }]
+                         };
+                     } else {
+                         headers = {
+                             'Content-Type': 'application/json',
+                             'Authorization': `Bearer ${key}`
+                         };
+                         body = {
+                             model: model,
+                             messages: [{role: 'user', content: 'Hi, say hello.'}],
+                             max_tokens: 10
+                         };
+                     }
+
+                     const response = await fetch(endpoint, {
+                         method: 'POST',
+                         headers: headers,
+                         body: JSON.stringify(body)
+                     });
+
+                     if (response.ok) {
+                         const data = await response.json();
+                         let reply = "";
+                         if(data.choices) reply = data.choices[0].message.content;
+                         else if(data.candidates) reply = data.candidates[0].content.parts[0].text;
+                         
+                         showApiResult(`✅ 测试成功！模型 [${model}] 回复: "${reply}"`, 'success', 'api-test-result');
+                     } else {
+                         const err = await response.json().catch(()=>({}));
+                         throw new Error(`HTTP ${response.status}: ${err.error?.message || response.statusText}`);
+                     }
+                 } catch (e) {
+                     showApiResult(`❌ 测试失败: ${e.message}`, 'error', 'api-test-result');
+                 } finally {
+                     api.directChatTestBtn.disabled = false;
                  }
-                 api.directChatTestBtn.disabled = false;
             }
 
             api.testBtn.addEventListener('click', () => testConnection(false));
@@ -4287,17 +4272,21 @@ body {
             api.directChatTestBtn.addEventListener('click', directChatTest);
             api.loadModelsBtn.addEventListener('click', () => loadModels(false));
             api.loadVisionModelsBtn.addEventListener('click', () => loadModels(true));
-            api.modelSelect.addEventListener('change', () => { if (api.modelSelect.value) api.modelName.value = api.modelSelect.value; });
-            api.visionModelSelect.addEventListener('change', () => { 
-                const config = api.configs[api.currentId];
-                if(config) config.visionModel = api.visionModelSelect.value;
-             });
+            
+            // 同步输入框和下拉框的值 (UI 优化)
+            api.modelSelect.addEventListener('change', () => { 
+                if (api.modelSelect.value) api.modelName.value = api.modelSelect.value; 
+            });
 
             function getCurrentApiConfig() {
+                // 如果有激活的配置 ID，返回保存的配置
                 if (api.currentId && api.configs[api.currentId]) {
+                    // 为了确保使用的是最新保存的数据，这里也可以选择混合当前 UI 数据
+                    // 但通常 chat 页面使用的是已保存的数据
                     return api.configs[api.currentId];
                 }
-                return null;
+                // 如果没有保存的配置，临时返回 UI 上的数据（允许未保存直接聊天）
+                return getCurrentApiConfigFromForm(); 
             }
 
             // --- Preset Logic ---
@@ -7381,7 +7370,7 @@ body {
 
                 const group = document.createElement('div');
                 group.id = id;
-                group.className = `chat-message-group flex flex-col gap-1 mb-3 ${isUser ? 'user-message items-end' : 'ai-message items-start'}`;
+                group.className = `chat-message-group flex flex-col items-center gap-1 mb-3`;
                 group.style.position = 'relative';
 
                 // 获取用户头像
@@ -7390,17 +7379,13 @@ body {
                 const charAvatarSrc = (charAvatar && charAvatar !== 'none') ? charAvatar : 'https://placehold.co/40x40/5E5B9D/ffffff?text=AI';
                 let avatarSrc = isUser ? (currentUser?.avatar || 'https://placehold.co/40x40/E4E6EB/1A1A1D?text=U') : charAvatarSrc;
 
-                // 创建消息主体容器（头像+气泡）
-                const messageMainContainer = document.createElement('div');
-                messageMainContainer.className = `flex items-start ${isUser ? 'gap-2 flex-row-reverse' : 'gap-1.5 flex-row'}`;
-
-                // 头像容器
+                // 头像和名称容器（居中）
                 const avatarContainer = document.createElement('div');
-                avatarContainer.className = 'flex flex-col items-center gap-1 flex-shrink-0';
+                avatarContainer.className = 'flex flex-col items-center gap-1';
 
                 const avatarImg = document.createElement('img');
                 avatarImg.src = avatarSrc;
-                avatarImg.className = 'w-12 h-12 rounded-full object-cover flex-shrink-0';
+                avatarImg.className = 'w-12 h-12 rounded-full object-cover';
                 avatarImg.addEventListener('dblclick', () => {
                     avatarImg.classList.add('patted');
                     setTimeout(() => avatarImg.classList.remove('patted'), 600);
@@ -7410,15 +7395,50 @@ body {
                 userName.className = 'text-xs text-gray-500 font-medium';
                 userName.textContent = isUser ? (userManagement.getCurrentUser()?.name || '用户') : (char.data[char.activeCharacterId]?.name || 'AI');
 
+                // 添加消息操作栏（放在头像下方，横向排列）
+                const actionsBar = document.createElement('div');
+                actionsBar.className = 'message-actions flex flex-row gap-1 mt-1';
+
+                // 编辑按钮
+                const editBtn = document.createElement('button');
+                editBtn.className = 'message-action-btn text-xs px-1.5 py-1';
+                editBtn.innerHTML = '<i class="fas fa-pen text-xs"></i>';
+                editBtn.title = '编辑';
+                editBtn.onclick = () => startEditMessage(id);
+                actionsBar.appendChild(editBtn);
+
+                // 重新生成按钮 (仅AI消息)
+                if (!isUser) {
+                    const regenBtn = document.createElement('button');
+                    regenBtn.className = 'message-action-btn text-xs px-1.5 py-1';
+                    regenBtn.innerHTML = '<i class="fas fa-sync-alt text-xs"></i>';
+                    regenBtn.title = '重新生成';
+                    regenBtn.onclick = () => regenerateMessage(id);
+                    actionsBar.appendChild(regenBtn);
+                }
+
+                // 删除按钮
+                const deleteBtn = document.createElement('button');
+                deleteBtn.className = 'message-action-btn danger text-xs px-1.5 py-1';
+                deleteBtn.innerHTML = '<i class="fas fa-trash text-xs"></i>';
+                deleteBtn.title = '删除';
+                deleteBtn.onclick = () => {
+                    if (confirm('确定要删除这条消息吗？')) {
+                        deleteMessage(id);
+                    }
+                };
+                actionsBar.appendChild(deleteBtn);
+
                 avatarContainer.appendChild(avatarImg);
                 avatarContainer.appendChild(userName);
+                avatarContainer.appendChild(actionsBar);
+                group.appendChild(avatarContainer);
 
-                // 气泡容器
                 const messageContentContainer = document.createElement('div');
-                messageContentContainer.className = `flex flex-col flex-1 min-w-0`;
+                messageContentContainer.className = `flex flex-col w-full`;
 
                 const messageBubble = document.createElement('div');
-                messageBubble.className = `chat-bubble rounded-lg p-3 ${isUser ? 'user-bubble' : 'ai-bubble'}`;
+                messageBubble.className = `chat-bubble rounded-lg p-3 w-full ${isUser ? 'user-bubble' : 'ai-bubble'}`;
                 messageBubble.dataset.messageId = id;
 
                 if (replyTo) {
@@ -8195,47 +8215,8 @@ body {
 
                 messageContentContainer.appendChild(messageBubble);
 
-                // 组装消息主体（头像+气泡）
-                messageMainContainer.appendChild(avatarContainer);
-                messageMainContainer.appendChild(messageContentContainer);
-                
-                // 添加消息操作栏（独立一行，居中）
-                const actionsBar = document.createElement('div');
-                actionsBar.className = 'message-actions flex flex-row gap-2 mt-2';
-
-                // 编辑按钮
-                const editBtn = document.createElement('button');
-                editBtn.className = 'message-action-btn text-xs px-2 py-1';
-                editBtn.innerHTML = '<i class="fas fa-pen text-xs"></i>';
-                editBtn.title = '编辑';
-                editBtn.onclick = () => startEditMessage(id);
-                actionsBar.appendChild(editBtn);
-
-                // 重新生成按钮 (仅AI消息)
-                if (!isUser) {
-                    const regenBtn = document.createElement('button');
-                    regenBtn.className = 'message-action-btn text-xs px-2 py-1';
-                    regenBtn.innerHTML = '<i class="fas fa-sync-alt text-xs"></i>';
-                    regenBtn.title = '重新生成';
-                    regenBtn.onclick = () => regenerateMessage(id);
-                    actionsBar.appendChild(regenBtn);
-                }
-
-                // 删除按钮
-                const deleteBtn = document.createElement('button');
-                deleteBtn.className = 'message-action-btn danger text-xs px-2 py-1';
-                deleteBtn.innerHTML = '<i class="fas fa-trash text-xs"></i>';
-                deleteBtn.title = '删除';
-                deleteBtn.onclick = () => {
-                    if (confirm('确定要删除这条消息吗？')) {
-                        deleteMessage(id);
-                    }
-                };
-                actionsBar.appendChild(deleteBtn);
-
-                // 组装完整消息组
-                group.appendChild(messageMainContainer);
-                group.appendChild(actionsBar);
+                // 组装完整消息组（头像容器已在前面添加到group）
+                group.appendChild(messageContentContainer);
                 chatMessages.appendChild(group);
             }
 
