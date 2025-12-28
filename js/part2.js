@@ -6078,7 +6078,6 @@ console.log(`记忆块 ${index + 1} 修复完成`);
 
 // ========== 查看世界书功能 ==========
 
-// 显示查看世界书模态框
 function showViewWorldbookModal() {
 const existingModal = document.getElementById('view-worldbook-modal');
 if (existingModal) existingModal.remove();
@@ -6093,93 +6092,249 @@ content.style.cssText = 'background: #2d2d2d; border-radius: 10px; padding: 20px
 const header = document.createElement('div');
 header.style.cssText = 'display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;';
 header.innerHTML = `
-    <h3 style="color: #e67e22; margin: 0;">📖 查看世界书</h3>
-    <div>
-        <button id="export-current-worldbook" style="background: #28a745; color: white; padding: 8px 16px; border: none; border-radius: 5px; cursor: pointer; margin-right: 10px;">📥 导出世界书</button>
-        <button id="close-worldbook-modal" style="background: #6c757d; color: white; padding: 8px 16px; border: none; border-radius: 5px; cursor: pointer;">关闭</button>
-    </div>
-`;
+        <h3 style="color: #e67e22; margin: 0;">📖 查看世界书</h3>
+        <div>
+            <button id="export-current-worldbook" style="background: #28a745; color: white; padding: 8px 16px; border: none; border-radius: 5px; cursor: pointer; margin-right: 10px;">📥 导出世界书</button>
+            <button id="close-worldbook-modal" style="background: #6c757d; color: white; padding: 8px 16px; border: none; border-radius: 5px; cursor: pointer;">关闭</button>
+        </div>
+    </div>`; // 在这里添加了闭合的div标签
 
-const previewContainer = document.createElement('div');
-previewContainer.id = 'worldbook-modal-preview';
-previewContainer.style.cssText = 'flex: 1; overflow-y: auto; background: #1c1c1c; padding: 15px; border-radius: 8px; font-family: monospace; font-size: 13px; white-space: pre-wrap; color: #f0f0f0;';
+    const previewContainer = document.createElement('div');
+    previewContainer.id = 'worldbook-modal-preview';
+    previewContainer.style.cssText = 'flex: 1; overflow-y: auto; background: #1c1c1c; padding: 15px; border-radius: 8px; color: #f0f0f0;';
 
-// 格式化显示世界书内容（将\n转换为换行）
-const formattedContent = formatWorldbookForDisplay(generatedWorldbook);
-previewContainer.textContent = formattedContent;
+    // 生成嵌套卡片结构
+    previewContainer.innerHTML = formatWorldbookAsCards(generatedWorldbook);
 
-content.appendChild(header);
-content.appendChild(previewContainer);
-modal.appendChild(content);
-document.body.appendChild(modal);
+    content.appendChild(header);
+    content.appendChild(previewContainer);
+    modal.appendChild(content);
+    document.body.appendChild(modal);
 
-// 绑定事件
-document.getElementById('close-worldbook-modal').onclick = () => modal.remove();
-document.getElementById('export-current-worldbook').onclick = () => {
-    exportWorldbook();
-    modal.remove();
-};
+    // 绑定事件
+    document.getElementById('close-worldbook-modal').onclick = () => modal.remove();
+    document.getElementById('export-current-worldbook').onclick = () => {
+        exportWorldbook();
+        modal.remove();
+    };
 
-modal.onclick = (e) => { if (e.target === modal) modal.remove(); };
+    modal.onclick = (e) => { if (e.target === modal) modal.remove(); };
 
-// 设置定时刷新（实时更新）
-const refreshInterval = setInterval(() => {
-    if (!document.getElementById('view-worldbook-modal')) {
-        clearInterval(refreshInterval);
-        return;
-    }
-    const preview = document.getElementById('worldbook-modal-preview');
-    if (preview) {
-        preview.textContent = formatWorldbookForDisplay(generatedWorldbook);
-    }
-}, 2000);
-}
-
-// 格式化世界书内容用于显示
-function formatWorldbookForDisplay(worldbook) {
-if (!worldbook || Object.keys(worldbook).length === 0) {
-    return '暂无世界书数据';
-}
-
-let result = '';
-for (const category in worldbook) {
-    result += `【${category}】\n`;
-    const entries = worldbook[category];
-    if (typeof entries === 'object') {
-        for (const entryName in entries) {
-            const entry = entries[entryName];
-            result += `  ├─ ${entryName}\n`;
-            if (entry && typeof entry === 'object') {
-                if (entry['关键词']) {
-                    result += `  │   关键词: ${Array.isArray(entry['关键词']) ? entry['关键词'].join(', ') : entry['关键词']}\n`;
-                }
-                if (entry['内容']) {
-                    // 将\n转换为实际换行
-                    const content = String(entry['内容']).replace(/\\n/g, '\n');
-                    const lines = content.split('\n');
-                    lines.forEach((line, i) => {
-                        if (i === 0) {
-                            result += `  │   内容: ${line}\n`;
-                        } else {
-                            result += `  │         ${line}\n`;
+    // 设置定时刷新（实时更新）- 保持展开状态
+    const refreshInterval = setInterval(() => {
+        if (!document.getElementById('view-worldbook-modal')) {
+            clearInterval(refreshInterval);
+            return;
+        }
+        const preview = document.getElementById('worldbook-modal-preview');
+        if (preview) {
+            // 保存当前展开状态
+            const expandedStates = {};
+            preview.querySelectorAll('[data-category]').forEach(cat => {
+                const categoryName = cat.getAttribute('data-category');
+                const isExpanded = cat.querySelector('.category-content').style.display !== 'none';
+                expandedStates[categoryName] = { category: isExpanded, entries: {} };
+                
+                cat.querySelectorAll('[data-entry]').forEach(entry => {
+                    const entryName = entry.getAttribute('data-entry');
+                    const isEntryExpanded = entry.querySelector('.entry-content').style.display !== 'none';
+                    expandedStates[categoryName].entries[entryName] = isEntryExpanded;
+                });
+            });
+            
+            // 重新渲染
+            preview.innerHTML = formatWorldbookAsCards(generatedWorldbook);
+            
+            // 恢复展开状态
+            preview.querySelectorAll('[data-category]').forEach(cat => {
+                const categoryName = cat.getAttribute('data-category');
+                if (expandedStates[categoryName]) {
+                    if (expandedStates[categoryName].category) {
+                        cat.querySelector('.category-content').style.display = 'block';
+                    }
+                    
+                    cat.querySelectorAll('[data-entry]').forEach(entry => {
+                        const entryName = entry.getAttribute('data-entry');
+                        if (expandedStates[categoryName].entries[entryName]) {
+                            entry.querySelector('.entry-content').style.display = 'block';
                         }
                     });
                 }
-            } else {
-                result += `  │   ${entry}\n`;
-            }
-            result += `  │\n`;
+            });
         }
-    }
-    result += '\n';
+    }, 2000);
 }
-return result;
+
+// 简单的 Markdown 渲染函数
+function renderMarkdown(text) {
+    if (!text) return '';
+    
+    let html = String(text);
+    
+    // 转义 HTML 特殊字符（除了已经是 HTML 的部分）
+    html = html.replace(/&/g, '&amp;')
+               .replace(/</g, '&lt;')
+               .replace(/>/g, '&gt;');
+    
+    // 处理换行符
+    html = html.replace(/\\n/g, '\n');
+    
+    // 标题 (### 标题)
+    html = html.replace(/^### (.+)$/gm, '<h3 style="color: #e67e22; margin: 10px 0 5px 0; font-size: 16px;">$1</h3>');
+    html = html.replace(/^## (.+)$/gm, '<h2 style="color: #e67e22; margin: 12px 0 6px 0; font-size: 18px;">$1</h2>');
+    html = html.replace(/^# (.+)$/gm, '<h1 style="color: #e67e22; margin: 15px 0 8px 0; font-size: 20px;">$1</h1>');
+    
+    // 粗体 **文字**
+    html = html.replace(/\*\*(.+?)\*\*/g, '<strong style="color: #3498db; font-weight: bold;">$1</strong>');
+    
+    // 斜体 *文字*
+    html = html.replace(/\*(.+?)\*/g, '<em style="font-style: italic;">$1</em>');
+    
+    // 代码块 ```代码```
+    html = html.replace(/```([^`]+)```/g, '<pre style="background: #1a1a1a; padding: 8px; border-radius: 4px; overflow-x: auto; margin: 8px 0;"><code style="color: #a9b7c6;">$1</code></pre>');
+    
+    // 行内代码 `代码`
+    html = html.replace(/`([^`]+)`/g, '<code style="background: #1a1a1a; padding: 2px 6px; border-radius: 3px; color: #a9b7c6; font-family: monospace;">$1</code>');
+    
+    // 无序列表 - 项目
+    html = html.replace(/^- (.+)$/gm, '<li style="margin-left: 20px; list-style-type: disc;">$1</li>');
+    html = html.replace(/(<li[^>]*>.*<\/li>\n?)+/g, '<ul style="margin: 8px 0; padding-left: 20px;">$&</ul>');
+    
+    // 有序列表 1. 项目
+    html = html.replace(/^\d+\. (.+)$/gm, '<li style="margin-left: 20px;">$1</li>');
+    
+    // 链接 [文字](URL)
+    html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" style="color: #3498db; text-decoration: underline;">$1</a>');
+    
+    // 分割线 ---
+    html = html.replace(/^---$/gm, '<hr style="border: none; border-top: 1px solid #555; margin: 10px 0;">');
+    
+    // 换行转为 <br>
+    html = html.replace(/\n/g, '<br>');
+    
+    return html;
+}
+
+// 格式化世界书为嵌套卡片结构
+function formatWorldbookAsCards(worldbook) {
+    if (!worldbook || Object.keys(worldbook).length === 0) {
+        return '<div style="text-align: center; color: #888; padding: 40px;">暂无世界书数据</div>';
+    }
+
+    let html = '';
+
+    for (const category in worldbook) {
+        const entries = worldbook[category];
+        const entryCount = typeof entries === 'object' ? Object.keys(entries).length : 0;
+        
+        // 过滤空分类（地图环境、剧情节点等）
+        if (entryCount === 0) {
+            continue;
+        }
+
+        html += `
+        <div data-category="${category}" style="margin-bottom: 15px; border: 2px solid #e67e22; border-radius: 8px; overflow: hidden;">
+            <div onclick="this.nextElementSibling.style.display = this.nextElementSibling.style.display === 'none' ? 'block' : 'none'" 
+                 style="background: linear-gradient(135deg, #e67e22 0%, #d35400 100%); padding: 12px 15px; cursor: pointer; font-weight: bold; font-size: 15px; display: flex; justify-content: space-between; align-items: center;">
+                <span>📁 ${category}</span>
+                <span style="font-size: 12px; opacity: 0.9;">${entryCount} 条目</span>
+            </div>
+            <div class="category-content" style="display: block; background: #2d2d2d;">`;
+
+        if (typeof entries === 'object') {
+            for (const entryName in entries) {
+                const entry = entries[entryName];
+
+                html += `
+                <div data-entry="${entryName}" style="margin: 10px; border: 1px solid #555; border-radius: 6px; overflow: hidden;">
+                    <div onclick="this.nextElementSibling.style.display = this.nextElementSibling.style.display === 'none' ? 'block' : 'none'"
+                         style="background: #3a3a3a; padding: 10px 12px; cursor: pointer; font-weight: 500; display: flex; justify-content: space-between; align-items: center; border-left: 3px solid #3498db;">
+                        <span>📄 ${entryName}</span>
+                        <span style="font-size: 11px; color: #888;">▼</span>
+                    </div>
+                    <div class="entry-content" style="display: none; background: #1c1c1c; padding: 12px; border-top: 1px solid #444;">`;
+
+                if (entry && typeof entry === 'object') {
+                    if (entry['关键词']) {
+                        const keywords = Array.isArray(entry['关键词']) ? entry['关键词'].join(', ') : entry['关键词'];
+                        html += `
+                        <div style="margin-bottom: 10px; padding: 8px; background: #252525; border-left: 3px solid #9b59b6; border-radius: 4px;">
+                            <div style="color: #9b59b6; font-size: 12px; font-weight: bold; margin-bottom: 4px;">🔑 关键词</div>
+                            <div style="color: #ddd; font-size: 13px;">${keywords}</div>
+                        </div>`;
+                    }
+
+                    if (entry['内容']) {
+                        const content = renderMarkdown(entry['内容']);
+                        html += `
+                        <div style="padding: 8px; background: #252525; border-left: 3px solid #27ae60; border-radius: 4px;">
+                            <div style="color: #27ae60; font-size: 12px; font-weight: bold; margin-bottom: 6px;">📝 内容</div>
+                            <div style="color: #f0f0f0; font-size: 13px; line-height: 1.6;">${content}</div>
+                        </div>`;
+                    }
+                } else {
+                    html += `<div style="color: #aaa; font-size: 13px;">${entry}</div>`;
+                }
+
+                html += `
+                    </div>
+                </div>`;
+            }
+        }
+
+        html += `
+            </div>
+        </div>`;
+    }
+
+    return html;
+}
+
+// 保留旧函数用于导出
+function formatWorldbookForDisplay(worldbook) {
+    if (!worldbook || Object.keys(worldbook).length === 0) {
+        return '暂无世界书数据';
+    }
+
+    let result = '';
+    for (const category in worldbook) {
+        result += `【${category}】\n`;
+        const entries = worldbook[category];
+        if (typeof entries === 'object') {
+            for (const entryName in entries) {
+                const entry = entries[entryName];
+                result += `  ├─ ${entryName}\n`;
+                if (entry && typeof entry === 'object') {
+                    if (entry['关键词']) {
+                        result += `  │   关键词: ${Array.isArray(entry['关键词']) ? entry['关键词'].join(', ') : entry['关键词']}\n`;
+                    }
+                    if (entry['内容']) {
+                        const content = String(entry['内容']).replace(/\\n/g, '\n');
+                        const lines = content.split('\n');
+                        lines.forEach((line, i) => {
+                            if (i === 0) {
+                                result += `  │   内容: ${line}\n`;
+                            } else {
+                                result += `  │         ${line}\n`;
+                            }
+                        });
+                    }
+                } else {
+                    result += `  │   ${entry}\n`;
+                }
+                result += `  │\n`;
+            }
+        }
+        result += '\n';
+    }
+    return result;
 }
 
 // 添加查看世界书按钮到停止按钮旁边
 function addViewWorldbookButton() {
-if (document.getElementById('view-worldbook-btn')) return;
+    if (document.getElementById('view-worldbook-btn')) return;
 
+    // ... (其他代码保持不变)
 const progressSection = document.getElementById('progress-section');
 if (!progressSection) return;
 
