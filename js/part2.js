@@ -552,35 +552,55 @@ try {
         document.getElementById('progress-text').textContent = `JSON解析失败，尝试正则提取: ${memory.title} (${index + 1}/${memoryQueue.length})`;
         
         // 检查内容完整性：是否有正确的闭合符
-        const openBraces = (cleanResponse.match(/{/g) || []).length;
-        const closeBraces = (cleanResponse.match(/}/g) || []).length;
-        const isIncomplete = openBraces > closeBraces;
-        
-        if (isIncomplete) {
-            console.log(`⚠️ 检测到内容不完整：开括号${openBraces}个，闭括号${closeBraces}个，需要重新请求API`);
-            // 内容不完整，抛出错误触发重试机制
-            throw new Error(`JSON内容不完整（缺少${openBraces - closeBraces}个闭合括号），需要重新请求API`);
+const openBraces = (cleanResponse.match(/{/g) || []).length;
+const closeBraces = (cleanResponse.match(/}/g) || []).length;
+const missingBraces = openBraces - closeBraces;
+
+if (missingBraces > 0) {
+    console.log(`⚠️ 检测到内容不完整：开括号${openBraces}个，闭括号${closeBraces}个，缺少${missingBraces}个`);
+    
+    // 尝试自动添加缺少的闭合括号
+    console.log(`🔧 尝试自动添加${missingBraces}个闭合括号...`);
+    try {
+        memoryUpdate = JSON.parse(cleanResponse + '}'.repeat(missingBraces));
+        console.log(`✅ 自动添加${missingBraces}个闭合括号后解析成功`);
+        // 成功解析，不需要继续后续处理
+    } catch (autoFixError) {
+        console.log('❌ 自动添加闭合括号后仍然失败，检测是否上下文超限...');
+        // 检测是否是上下文超限
+        document.getElementById('progress-text').textContent = `🔍 检测是否上下文超限: ${memory.title}`;
+        const isOverflow = await checkIfContextOverflow(prompt, cleanResponse);
+        if (isOverflow) {
+            console.log('⚠️ 确认是上下文超限，分裂所有后续记忆...');
+            document.getElementById('progress-text').textContent = `🔀 上下文超限，分裂所有后续记忆...`;
+            splitAllRemainingMemories(index);
+            updateMemoryQueueUI();
+            console.log(`💾 分裂后保存状态，队列长度: ${memoryQueue.length}，队列标题: ${memoryQueue.map(m => m.title).join(', ')}`);
+            await NovelState.saveState(memoryQueue.filter(m => m.processed).length);
+            throw new Error(`上下文超限，已分裂所有后续记忆`);
         }
-        
-        // 尝试使用正则提取世界书条目
-        const regexExtractedData = extractWorldbookDataByRegex(cleanResponse);
-        
-        if (regexExtractedData && Object.keys(regexExtractedData).length > 0) {
-            // 正则提取成功
-            console.log('✅ 正则提取成功！提取到的分类:', Object.keys(regexExtractedData));
-            memoryUpdate = regexExtractedData;
-            document.getElementById('progress-text').textContent = `正则提取成功: ${memory.title} (${index + 1}/${memoryQueue.length})`;
-        } else {
-            // 正则提取失败，继续使用API纠正
-            console.log('⚠️ 正则提取未能获取有效数据，尝试API纠正...');
-        
-        // 调用API纠正格式错误的JSON
-        console.log('🔧 尝试调用API纠正JSON格式...');
-        document.getElementById('progress-text').textContent = `JSON格式错误，正在调用AI纠正: ${memory.title} (${index + 1}/${memoryQueue.length})`;
-        
-        try {
-            // 构建纠正提示词（严格输出控制，参考世界书输出格式风格）
-            const fixPrompt = getLanguagePrefix() + `你是专业的JSON修复专家。请将下面“格式错误的JSON文本”修复为严格有效、可被 JavaScript 的 JSON.parse() 直接解析的JSON。
+        throw new Error(`JSON内容不完整（缺少${missingBraces}个闭合括号），自动修复失败`);
+    }
+} else {
+    // 尝试使用正则提取世界书条目
+    const regexExtractedData = extractWorldbookDataByRegex(cleanResponse);
+    
+    if (regexExtractedData && Object.keys(regexExtractedData).length > 0) {
+        // 正则提取成功
+        console.log('✅ 正则提取成功！提取到的分类:', Object.keys(regexExtractedData));
+        memoryUpdate = regexExtractedData;
+        document.getElementById('progress-text').textContent = `正则提取成功: ${memory.title} (${index + 1}/${memoryQueue.length})`;
+    } else {
+        // 正则提取失败，继续使用API纠正
+        console.log('⚠️ 正则提取未能获取有效数据，尝试API纠正...');
+    
+    // 调用API纠正格式错误的JSON
+    console.log('🔧 尝试调用API纠正JSON格式...');
+    document.getElementById('progress-text').textContent = `JSON格式错误，正在调用AI纠正: ${memory.title} (${index + 1}/${memoryQueue.length})`;
+    
+    try {
+        // 构建纠正提示词（严格输出控制，参考世界书输出格式风格）
+        const fixPrompt = getLanguagePrefix() + `你是专业的JSON修复专家。请将下面“格式错误的JSON文本”修复为严格有效、可被 JavaScript 的 JSON.parse() 直接解析的JSON。
 
 ## 📋 核心要求
 1. **只修复格式**：保持原有数据语义与内容不变，不要总结、不要改写字段名、不要增删字段。
@@ -668,8 +688,9 @@ ${cleanResponse}
             };
         } // 关闭 try-catch (fixError) 块
         } // 关闭 else 块（正则提取失败时的API纠正分支）
-        } // 关闭 catch (secondError) 块
-    }
+    } // 关闭 if-else (missingBraces > 0)
+    } // 关闭 catch (secondError) 块
+}
     
     // 合并到主世界书
     mergeWorldbookData(generatedWorldbook, memoryUpdate);
@@ -698,6 +719,8 @@ ${cleanResponse}
         if (splitResult) {
             console.log(`✅ 记忆分裂成功: ${splitResult.part1.title} 和 ${splitResult.part2.title}`);
             updateMemoryQueueUI();
+            // 分裂后立即保存状态，确保刷新后能恢复
+            await NovelState.saveState(memoryQueue.filter(m => m.processed).length);
             await new Promise(resolve => setTimeout(resolve, 500));
             
             // 递归处理第一个分裂记忆
@@ -5750,6 +5773,108 @@ function splitMemoryIntoTwo(memoryIndex) {
     };
 }
 
+// 分裂从指定索引开始的所有后续记忆（当检测到上下文超限时使用）
+function splitAllRemainingMemories(startIndex) {
+    console.log(`🔀 开始分裂从索引 ${startIndex} 开始的所有后续记忆...`);
+    const originalLength = memoryQueue.length;
+    let splitCount = 0;
+    
+    // 从后往前分裂，避免索引混乱
+    for (let i = memoryQueue.length - 1; i >= startIndex; i--) {
+        const memory = memoryQueue[i];
+        if (!memory || memory.processed) continue;
+        
+        const content = memory.content;
+        const halfLength = Math.floor(content.length / 2);
+        
+        // 找分割点
+        let splitPoint = halfLength;
+        const paragraphBreak = content.indexOf('\n\n', halfLength);
+        if (paragraphBreak !== -1 && paragraphBreak < halfLength + 5000) {
+            splitPoint = paragraphBreak + 2;
+        } else {
+            const sentenceBreak = content.indexOf('。', halfLength);
+            if (sentenceBreak !== -1 && sentenceBreak < halfLength + 1000) {
+                splitPoint = sentenceBreak + 1;
+            }
+        }
+        
+        const content1 = content.substring(0, splitPoint);
+        const content2 = content.substring(splitPoint);
+        
+        // 解析标题
+        const originalTitle = memory.title;
+        let baseName = originalTitle;
+        let suffix1, suffix2;
+        
+        const splitMatch = originalTitle.match(/^(.+)-(\d+)$/);
+        if (splitMatch) {
+            baseName = splitMatch[1];
+            const currentNum = parseInt(splitMatch[2]);
+            suffix1 = `-${currentNum}-1`;
+            suffix2 = `-${currentNum}-2`;
+        } else {
+            suffix1 = '-1';
+            suffix2 = '-2';
+        }
+        
+        const memory1 = {
+            title: baseName + suffix1,
+            content: content1,
+            processed: false,
+            failed: false,
+            failedError: null
+        };
+        
+        const memory2 = {
+            title: baseName + suffix2,
+            content: content2,
+            processed: false,
+            failed: false,
+            failedError: null
+        };
+        
+        memoryQueue.splice(i, 1, memory1, memory2);
+        splitCount++;
+        console.log(`  🔀 ${originalTitle} -> ${memory1.title} + ${memory2.title}`);
+    }
+    
+    console.log(`✅ 分裂完成: 原${originalLength - startIndex}个记忆 -> 现${memoryQueue.length - startIndex}个记忆 (分裂了${splitCount}个)`);
+    console.log(`📋 分裂后队列: ${memoryQueue.map(m => m.title).join(', ')}`);
+    return splitCount;
+}
+
+// 检测是否是上下文超限导致的输出截断
+async function checkIfContextOverflow(originalPrompt, truncatedResponse) {
+    console.log('🔍 检测是否是上下文超限...');
+    
+    // 直接把原始prompt和截断的响应拼接在一起发送请求
+    // 如果返回token超限错误，说明确实是上下文超限
+    const testPrompt = originalPrompt + '\n\n' + truncatedResponse;
+    
+    try {
+        await callSimpleAPI(testPrompt);
+        // 如果请求成功，说明不是上下文超限
+        console.log('🔍 上下文超限检测结果: 否（请求成功）');
+        return false;
+    } catch (e) {
+        const errorMsg = e.message || '';
+        // 检查错误信息是否包含token超限相关关键词
+        const isTokenLimitError = errorMsg.includes('max_prompt_tokens') || 
+                                   errorMsg.includes('exceeded') ||
+                                   errorMsg.includes('input tokens') ||
+                                   (errorMsg.includes('20015') && errorMsg.includes('limit'));
+        
+        if (isTokenLimitError) {
+            console.log('🔍 上下文超限检测结果: 是（' + errorMsg.substring(0, 100) + '...）');
+            return true;
+        } else {
+            console.log('🔍 上下文超限检测结果: 否（其他错误: ' + errorMsg.substring(0, 50) + '）');
+            return false;
+        }
+    }
+}
+
 // 递归修复单个记忆（处理分裂情况）
 async function repairMemoryWithSplit(memoryIndex, stats) {
     const memory = memoryQueue[memoryIndex];
@@ -5761,9 +5886,12 @@ async function repairMemoryWithSplit(memoryIndex, stats) {
         await repairSingleMemory(memoryIndex);
         memory.failed = false;
         memory.failedError = null;
+        memory.processed = true;  // 确保标记为已处理，UI会显示正常样式
         stats.successCount++;
         console.log(`✅ 修复成功: ${memory.title}`);
         updateMemoryQueueUI();
+        // 保存状态，确保分裂后的记忆状态被保存
+        await NovelState.saveState(memoryQueue.filter(m => m.processed).length);
         await new Promise(resolve => setTimeout(resolve, 1000));
     } catch (error) {
         // 检查是否是token超限错误
@@ -5782,6 +5910,8 @@ async function repairMemoryWithSplit(memoryIndex, stats) {
             if (splitResult) {
                 console.log(`✅ 记忆分裂成功: ${splitResult.part1.title} 和 ${splitResult.part2.title}`);
                 updateMemoryQueueUI();
+                // 分裂后立即保存状态，确保刷新后能恢复
+                await NovelState.saveState(memoryQueue.filter(m => m.processed).length);
                 await new Promise(resolve => setTimeout(resolve, 500));
                 
                 // 递归处理第一个分裂记忆（如果还是超限会继续分裂）
