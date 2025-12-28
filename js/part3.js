@@ -3618,8 +3618,25 @@ document.getElementById('progress-section').style.display = 'block';
 isProcessingStopped = false;
 addStopButton();
 
+// 找到第一个未处理的记忆索引（考虑分裂后队列变化的情况）
+let startIndex = 0;
+for (let i = 0; i < memoryQueue.length; i++) {
+    if (!memoryQueue[i].processed) {
+        startIndex = i;
+        break;
+    }
+}
+console.log(`📋 继续处理：队列长度=${memoryQueue.length}，从索引${startIndex}开始（原索引${fromIndex}）`);
+console.log(`📋 队列标题: ${memoryQueue.map(m => m.title).join(', ')}`);
+
 try {
-    for (let i = fromIndex; i < memoryQueue.length; i++) {
+    for (let i = startIndex; i < memoryQueue.length; i++) {
+    // 跳过已处理的记忆
+    if (memoryQueue[i].processed) {
+        console.log(`⏭️ 跳过已处理的记忆: ${memoryQueue[i].title}`);
+        continue;
+    }
+    
     // 检查是否用户要求停止
     if (isProcessingStopped) {
         console.log('继续处理被用户停止');
@@ -3634,8 +3651,8 @@ try {
     
     await processMemoryChunk(i);
     
-    // 每处理完一个记忆块就保存状态
-    await NovelState.saveState(i + 1);
+    // 每处理完一个记忆块就保存状态（使用已处理数量而非索引）
+    await NovelState.saveState(memoryQueue.filter(m => m.processed).length);
     }
     
     // 完成处理
