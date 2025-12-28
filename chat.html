@@ -3768,7 +3768,7 @@ body {
                 });
             }
             
-            // --- Advanced API Logic (Enhanced from Tea House) ---
+            // 聊天页API设置 ---
             const api = {
                 configName: document.getElementById('apiConfigNameInput'),
                 url: document.getElementById('api-url'),
@@ -3799,103 +3799,30 @@ body {
                 currentId: null,
             };
 
+            // 辅助函数：从当前UI界面获取配置数据（所见即所得）
+            function getApiValuesFromUI(isVision = false) {
+                const url = isVision ? api.visionUrl.value.trim() : api.url.value.trim();
+                const key = isVision ? api.visionKey.value.trim() : api.key.value.trim();
+                
+                // 智能判断模型：如果下拉框可见且有值，取下拉框；否则取输入框
+                let model = '';
+                if (isVision) {
+                    model = (!api.visionModelSelect.classList.contains('hidden') && api.visionModelSelect.value) 
+                            ? api.visionModelSelect.value 
+                            : ''; // 识图通常不需要手动输入模型，除非特殊情况，这里简化处理
+                } else {
+                    model = (!api.modelSelect.classList.contains('hidden') && api.modelSelect.value)
+                            ? api.modelSelect.value
+                            : api.modelName.value.trim();
+                }
+
+                return { url, key, model };
+            }
+
             async function loadApiConfigs() {
                 const configsData = await idbStorage.getItem('api_configs_v1');
                 api.configs = configsData ? JSON.parse(configsData) : {};
                 api.currentId = await idbStorage.getItem('current_api_id_v1');
-                
-                // 从 index.html 继承 API 配置
-                try {
-                    const indexApiSettings = localStorage.getItem('apiSettings');
-                    if (indexApiSettings) {
-                        const settings = JSON.parse(indexApiSettings);
-                        const provider = settings.provider;
-                        
-                        // 根据不同的服务商转换配置
-                        let importedConfig = null;
-                        
-                        if (provider === 'deepseek' && settings.deepseek?.apiKey) {
-                            importedConfig = {
-                                name: 'DeepSeek',
-                                url: 'https://api.deepseek.com/v1',
-                                key: settings.deepseek.apiKey,
-                                model: 'deepseek-chat',
-                                streaming: true,
-                                visionUrl: '',
-                                visionKey: ''
-                            };
-                        } else if (provider === 'gemini' && settings.gemini?.apiKey) {
-                            importedConfig = {
-                                name: 'Google Gemini',
-                                url: `https://generativelanguage.googleapis.com/v1beta/models/${settings.gemini.model || 'gemini-2.5-flash'}:generateContent`,
-                                key: settings.gemini.apiKey,
-                                model: settings.gemini.model || 'gemini-2.5-flash',
-                                streaming: true,
-                                visionUrl: '',
-                                visionKey: ''
-                            };
-                        } else if (provider === 'gemini-proxy' && settings['gemini-proxy']?.endpoint) {
-                            importedConfig = {
-                                name: 'Gemini Proxy',
-                                url: settings['gemini-proxy'].endpoint,
-                                key: settings['gemini-proxy'].apiKey || '',
-                                model: settings['gemini-proxy'].model || 'gemini-2.5-flash',
-                                streaming: true,
-                                visionUrl: '',
-                                visionKey: ''
-                            };
-                        } else if (provider === 'tavern' && settings.tavern) {
-                            const tavern = settings.tavern;
-                            if (tavern.connectionType === 'reverse-proxy' && tavern.proxyUrl) {
-                                importedConfig = {
-                                    name: 'Tavern Proxy',
-                                    url: tavern.proxyUrl,
-                                    key: tavern.proxyPassword || '',
-                                    model: tavern.proxyModel || '',
-                                    streaming: true,
-                                    visionUrl: '',
-                                    visionKey: ''
-                                };
-                            } else if (tavern.endpoint) {
-                                importedConfig = {
-                                    name: 'Tavern Direct',
-                                    url: tavern.endpoint,
-                                    key: tavern.apiKey || '',
-                                    model: tavern.model || '',
-                                    streaming: true,
-                                    visionUrl: '',
-                                    visionKey: ''
-                                };
-                            }
-                        } else if (provider === 'local' && settings.local?.endpoint) {
-                            importedConfig = {
-                                name: 'Local API',
-                                url: settings.local.endpoint,
-                                key: '',
-                                model: '',
-                                streaming: true,
-                                visionUrl: '',
-                                visionKey: ''
-                            };
-                        }
-                        
-                        // 如果成功转换配置，添加到配置列表中（如果不存在同名配置）
-                        if (importedConfig) {
-                            const existingId = Object.keys(api.configs).find(id => 
-                                api.configs[id].name === importedConfig.name
-                            );
-                            
-                            if (!existingId) {
-                                const importId = `api_imported_${provider}_${Date.now()}`;
-                                api.configs[importId] = importedConfig;
-                                console.log('[API配置] 从 index.html 导入配置:', importedConfig.name);
-                                await saveApiConfigs();
-                            }
-                        }
-                    }
-                } catch (error) {
-                    console.warn('[API配置] 从 index.html 导入配置失败:', error);
-                }
                 
                 updateApiSelect();
                 if (api.currentId && api.configs[api.currentId]) {
@@ -3932,23 +3859,26 @@ body {
                 api.url.value = config.url || '';
                 api.key.value = config.key || '';
                 api.modelName.value = config.model || '';
-                api.streaming.checked = config.streaming === undefined ? true : config.streaming; // Default to true
+                api.streaming.checked = config.streaming === undefined ? true : config.streaming; 
                 api.visionUrl.value = config.visionUrl || '';
                 api.visionKey.value = config.visionKey || '';
 
+                // 加载模型列表下拉框
                 api.modelSelect.innerHTML = '';
                 (config.models || []).forEach(m => {
                     const opt = document.createElement('option');
                     opt.value = opt.textContent = m;
                     api.modelSelect.appendChild(opt);
                 });
+                // 如果当前配置的模型在列表里，选中它
                 if(config.model) api.modelSelect.value = config.model;
 
-                // 如果有模型列表，显示下拉框，隐藏输入框；否则相反
+                // UI逻辑：如果有模型列表，显示下拉框；否则显示输入框
                 const hasModels = config.models && config.models.length > 0;
                 api.modelSelect.classList.toggle('hidden', !hasModels);
                 api.modelName.classList.toggle('hidden', hasModels);
 
+                // 识图模型列表
                 api.visionModelSelect.innerHTML = '';
                  (config.visionModels || []).forEach(m => {
                     const opt = document.createElement('option');
@@ -3961,21 +3891,22 @@ body {
                 api.currentId = id;
                 api.savedSelect.value = id;
                 updateApiButtons();
-                
-                // 保存当前选中的 API 配置 ID
                 await saveApiConfigs();
             }
 
             function getCurrentApiConfigFromForm() {
+                const { url, key, model } = getApiValuesFromUI(false);
+                const visionValues = getApiValuesFromUI(true);
+
                 return {
                     name: api.configName.value.trim(),
-                    url: api.url.value.trim(),
-                    key: api.key.value.trim(),
-                    model: api.modelName.value.trim(),
+                    url: url,
+                    key: key,
+                    model: model, // 保存时优先存当前选中的值
                     streaming: api.streaming.checked,
-                    visionUrl: api.visionUrl.value.trim(),
-                    visionKey: api.visionKey.value.trim(),
-                    visionModel: api.visionModelSelect.value,
+                    visionUrl: visionValues.url,
+                    visionKey: visionValues.key,
+                    visionModel: visionValues.model || api.visionModelSelect.value, // 识图特殊处理
                     models: [...api.modelSelect.options].map(o => o.value).filter(o => o),
                     visionModels: [...api.visionModelSelect.options].map(o => o.value).filter(o => o),
                 };
@@ -3998,39 +3929,23 @@ body {
             });
             api.deleteBtn.addEventListener('click', async () => {
                 const id = api.savedSelect.value;
-                if(!id) {
-                    alert('请先选择要删除的配置');
-                    return;
-                }
+                if(!id) return alert('请先选择要删除的配置');
                 
-                const configToDelete = api.configs[id];
-                if(!configToDelete) {
-                    alert('配置不存在');
-                    return;
-                }
-                
-                if(confirm(`确定要删除配置 "${configToDelete.name}" 吗?`)){
+                if(confirm(`确定要删除配置吗?`)){
                     delete api.configs[id];
                     if(api.currentId === id) {
                          api.currentId = null;
-                         // 清空表单
-                         api.configName.value = '';
+                         api.configName.value = ''; // 清空
                          api.url.value = '';
-                         api.key.value = '';
-                         api.modelName.value = '';
-                         api.streaming.checked = true;
-                         api.visionUrl.value = '';
-                         api.visionKey.value = '';
-                         api.modelSelect.innerHTML = '';
-                         api.visionModelSelect.innerHTML = '';
                     }
                     await saveApiConfigs();
-                    await loadApiConfigs();
+                    updateApiSelect();
+                    updateApiButtons();
                 }
             });
             api.saveAsNewBtn.addEventListener('click', async () => {
                 const newConfig = getCurrentApiConfigFromForm();
-                if(!newConfig.name) { alert("请输入配置名称"); return; }
+                if(!newConfig.name) return alert("请输入配置名称");
                 const newId = `api_${Date.now()}`;
                 api.configs[newId] = newConfig;
                 api.currentId = newId;
@@ -4042,36 +3957,26 @@ body {
             });
             api.updateCurrentBtn.addEventListener('click', async () => {
                 const id = api.currentId;
-                if (!id) { alert("没有活动的配置可更新。请先加载一个或新建。"); return; }
+                if (!id) return alert("没有活动的配置可更新。");
                 const updatedConfig = getCurrentApiConfigFromForm();
-                if(!updatedConfig.name) { alert("请输入配置名称"); return; }
+                if(!updatedConfig.name) return alert("请输入配置名称");
 
-                console.log('[API配置] 准备更新配置:', id, updatedConfig);
                 api.configs[id] = updatedConfig;
                 await saveApiConfigs();
-                console.log('[API配置] 配置已保存到存储');
-
                 updateApiSelect();
                 showApiResult("配置已更新！", "success", "api-test-result");
-
-                // 验证保存
-                const savedConfigs = await idbStorage.getItem('api_configs_v1');
-                console.log('[API配置] 验证保存后的配置:', JSON.parse(savedConfigs));
             });
 
             function showApiResult(message, type, elementId) {
                 const div = document.getElementById(elementId);
-                if (!div) {
-                    console.warn('[API配置] 找不到结果显示元素:', elementId);
-                    return;
-                }
+                if (!div) return;
                 div.innerHTML = message;
                 div.className = `text-sm mt-2 text-center h-auto min-h-[1rem] ${type === 'success' ? 'text-green-500' : type === 'error' ? 'text-red-500' : 'text-yellow-500'}`;
             }
 
+            // 修改后的测试连接：直接读取 UI
             async function testConnection(isVision = false, isDebug = false) {
-                const url = isVision ? api.visionUrl.value.trim() : api.url.value.trim();
-                const key = isVision ? api.visionKey.value.trim() : api.key.value.trim();
+                const { url, key } = getApiValuesFromUI(isVision);
                 const resultDivId = isVision ? 'vision-api-test-result' : 'api-test-result';
                 const btn = isDebug ? api.debugModelsBtn : api.testBtn;
 
@@ -4079,7 +3984,7 @@ body {
                     showApiResult('请填写 API URL 和 Key。', 'error', resultDivId);
                     return;
                 }
-                showApiResult('测试中...', 'info', resultDivId);
+                showApiResult('测试连接/获取模型列表...', 'info', resultDivId);
                 btn.disabled = true;
                 
                 try {
@@ -4087,10 +3992,13 @@ body {
                     let headers = {};
                     const urlObj = new URL(url);
 
+                    // 自动处理结尾
+                    const baseUrl = urlObj.hostname.includes('google') ? url : url.replace(/\/chat\/completions\/?$/, '').replace(/\/$/, '');
+
                     if (urlObj.hostname.includes('google')) {
                          modelsUrl = `${urlObj.origin}/v1beta/models?key=${key}`;
                     } else {
-                        modelsUrl = `${url.replace(/\/$/, '')}/models`;
+                        modelsUrl = `${baseUrl}/models`;
                         headers['Authorization'] = `Bearer ${key}`;
                     }
                     
@@ -4098,50 +4006,51 @@ body {
                     if (response.ok) {
                         const data = await response.json();
                         let models = [];
-                        if (data.data) models = data.data; // OpenAI format
-                        else if (data.models) models = data.models.map(m => ({ id: m.name.replace('models/', '') })); // Google format
+                        if (data.data) models = data.data; // OpenAI
+                        else if (data.models) models = data.models.map(m => ({ id: m.name.replace('models/', '') })); // Google
 
+                        const msg = `连接成功！发现 ${models.length} 个模型。`;
                         if (isDebug) {
                              const allModelIds = models.map(m => m.id).sort();
-                             const debugHtml = `<details class="text-left"><summary>发现 ${allModelIds.length} 个模型</summary><pre class="theme-info-bg p-2 rounded-md max-h-40 overflow-y-auto text-xs">${JSON.stringify(allModelIds, null, 2)}</pre></details>`;
+                             const debugHtml = `<details class="text-left"><summary>${msg}</summary><pre class="theme-info-bg p-2 rounded-md max-h-40 overflow-y-auto text-xs">${JSON.stringify(allModelIds, null, 2)}</pre></details>`;
                              showApiResult(debugHtml, 'success', resultDivId);
                         } else {
-                            showApiResult(`连接成功！发现 ${models.length} 个模型`, 'success', resultDivId);
+                            showApiResult(msg, 'success', resultDivId);
                         }
                     } else {
-                        const error = await response.json().catch(() => ({ error: { message: response.statusText } }));
-                        throw new Error(`HTTP ${response.status}: ${error.error?.message || response.statusText}`);
+                        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
                     }
                 } catch (error) {
-                    showApiResult(`连接失败: ${error.message}`, 'error', resultDivId);
+                    showApiResult(`连接失败: ${error.message} (请检查URL是否支持 /models 端点)`, 'error', resultDivId);
                 } finally {
                     btn.disabled = false;
                 }
             }
 
+            // 修改后的加载模型：直接读取 UI 并更新 UI
             async function loadModels(isVision = false) {
-                const url = isVision ? api.visionUrl.value.trim() : api.url.value.trim();
-                const key = isVision ? api.visionKey.value.trim() : api.key.value.trim();
+                const { url, key } = getApiValuesFromUI(isVision);
                 const btn = isVision ? api.loadVisionModelsBtn : api.loadModelsBtn;
                 const select = isVision ? api.visionModelSelect : api.modelSelect;
-                const input = isVision ? null : api.modelName; // 主模型有输入框
+                const input = isVision ? null : api.modelName; 
                 const resultDivId = isVision ? 'vision-api-test-result' : 'api-test-result';
 
+                if(!url || !key) return showApiResult('请填写 URL 和 Key', 'error', resultDivId);
+
                 const originalBtnText = btn.innerHTML;
-                btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i>加载中...';
+                btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
                 btn.disabled = true;
-                select.classList.add('hidden');
-                if (input) input.classList.remove('hidden');
 
                 try {
                     let modelsUrl;
                     let headers = {};
                     const urlObj = new URL(url);
+                    const baseUrl = urlObj.hostname.includes('google') ? url : url.replace(/\/chat\/completions\/?$/, '').replace(/\/$/, '');
 
                     if (urlObj.hostname.includes('google')) {
                          modelsUrl = `${urlObj.origin}/v1beta/models?key=${key}`;
                     } else {
-                        modelsUrl = `${url.replace(/\/$/, '')}/models`;
+                        modelsUrl = `${baseUrl}/models`;
                         headers['Authorization'] = `Bearer ${key}`;
                     }
 
@@ -4150,10 +4059,10 @@ body {
 
                     const data = await response.json();
                     let models = [];
-                    if (data.data) models = data.data; // OpenAI format
-                    else if (data.models) models = data.models.map(m => ({ id: m.name.replace('models/', '') })); // Google format
+                    if (data.data) models = data.data; 
+                    else if (data.models) models = data.models.map(m => ({ id: m.name.replace('models/', '') })); 
 
-                    select.innerHTML = '<option value="">--选择一个模型--</option>';
+                    select.innerHTML = '<option value="">--选择模型--</option>';
                     models.sort((a,b) => a.id.localeCompare(b.id)).forEach(model => {
                         const option = document.createElement('option');
                         option.value = model.id;
@@ -4161,136 +4070,90 @@ body {
                         select.appendChild(option);
                     });
 
-                    if (api.currentId && api.configs[api.currentId]) {
-                        const currentConfig = api.configs[api.currentId];
-                        const modelToSelect = isVision ? currentConfig.visionModel : currentConfig.model;
-                        if(modelToSelect) select.value = modelToSelect;
-                    }
-
+                    // 切换到下拉框模式
                     select.classList.remove('hidden');
-                    if (input) input.classList.add('hidden'); // 加载成功后隐藏输入框，显示下拉框
-                    showApiResult(`模型加载成功！共 ${models.length} 个`, 'success', resultDivId);
-
-                    // Save to current config
-                     const currentConfig = getCurrentApiConfigFromForm();
-                     if (isVision) {
-                        currentConfig.visionModels = models.map(m => m.id);
-                     } else {
-                        currentConfig.models = models.map(m => m.id);
-                     }
-                      if (api.currentId) {
-                         api.configs[api.currentId] = {...api.configs[api.currentId], ...currentConfig};
-                         await saveApiConfigs();
-                     }
-
+                    if (input) input.classList.add('hidden');
+                    
+                    showApiResult(`成功加载 ${models.length} 个模型`, 'success', resultDivId);
 
                 } catch(e) {
-                    showApiResult(`加载模型失败: ${e.message}`, 'error', resultDivId);
+                    showApiResult(`加载失败: ${e.message}`, 'error', resultDivId);
+                    // 失败时切回输入框模式
+                    select.classList.add('hidden');
+                    if(input) input.classList.remove('hidden');
                 } finally {
                     btn.innerHTML = originalBtnText;
                     btn.disabled = false;
                 }
             }
             
+            // 修改后的直接聊天测试：测试当前选中的模型
             async function directChatTest() {
-                 const url = api.url.value.trim();
-                 const key = api.key.value.trim();
+                 const { url, key, model } = getApiValuesFromUI(false);
 
                  if (!url || !key) {
                      showApiResult('请填写 API URL 和 Key。', 'error', 'api-test-result');
                      return;
                  }
+                 if (!model) {
+                     showApiResult('请填写或选择一个模型名称。', 'error', 'api-test-result');
+                     return;
+                 }
 
-                 showApiResult('直接测试中...', 'info', 'api-test-result');
+                 showApiResult(`正在使用模型 [${model}] 测试对话...`, 'info', 'api-test-result');
                  api.directChatTestBtn.disabled = true;
 
-                 // 测试多个常见模型
-                 const testModels = [
-                     'gpt-3.5-turbo',
-                     'gpt-4',
-                     'gpt-4-turbo-preview',
-                     'deepseek-chat',
-                     'gemini-pro',
-                     'gemini-1.5-flash',
-                     'qwen-turbo',
-                     'claude-3-haiku',
-                     'llama-3.1-8b-instant',
-                     'mixtral-8x7b-instruct'
-                 ];
+                 try {
+                     const urlObj = new URL(url);
+                     let endpoint, headers, body;
 
-                 let successModel = null;
-                 let successResponse = null;
-
-                 for (const model of testModels) {
-                     try {
-                         console.log(`Testing model: ${model}`);
-                         const urlObj = new URL(url);
-                         let endpoint, headers, body;
-
-                         if (urlObj.hostname.includes('google')) {
-                             endpoint = `${urlObj.origin}/v1beta/models/${model}:generateContent?key=${key}`;
-                             headers = { 'Content-Type': 'application/json' };
-                             body = {
-                                 contents: [{
-                                     role: 'user',
-                                     parts: [{ text: 'Say "Hello" and nothing else.' }]
-                                 }],
-                                 generationConfig: {
-                                     maxOutputTokens: 10,
-                                     temperature: 0.1
-                                 }
-                             };
-                         } else {
-                             endpoint = `${url.replace(/\/$/, '')}/chat/completions`;
-                             headers = {
-                                 'Content-Type': 'application/json',
-                                 'Authorization': `Bearer ${key}`
-                             };
-                             body = {
-                                 model: model,
-                                 messages: [{role: 'user', content: 'Say "Hello" and nothing else.'}],
-                                 max_tokens: 10,
-                                 temperature: 0.1
-                             };
-                         }
-
-                         const response = await fetch(endpoint, {
-                             method: 'POST',
-                             headers: headers,
-                             body: JSON.stringify(body)
-                         });
-
-                         if (response.ok) {
-                             successModel = model;
-                             successResponse = await response.json();
-                             console.log(`Success with model: ${model}`);
-                             break;
-                         }
-                     } catch (e) {
-                         console.log(`Failed with model ${model}:`, e.message);
-                     }
-                 }
-
-                 if (successModel) {
-                     api.modelName.value = successModel;
-
-                     // 自动保存配置
-                     const newConfig = getCurrentApiConfigFromForm();
-                     if (!api.currentId) {
-                         const newId = `api_${Date.now()}`;
-                         api.configs[newId] = newConfig;
-                         api.currentId = newId;
+                     // 处理 endpoint (如果用户只填了 base url)
+                     if (!urlObj.hostname.includes('google') && !url.endsWith('/chat/completions')) {
+                         endpoint = `${url.replace(/\/$/, '')}/chat/completions`;
                      } else {
-                         api.configs[api.currentId] = newConfig;
+                         endpoint = url;
                      }
-                     await saveApiConfigs();
-                     updateApiSelect();
 
-                     showApiResult(`✅ 直接测试成功！可用模型: ${successModel}`, 'success', 'api-test-result');
-                 } else {
-                     showApiResult('❌ 直接测试失败，请检查URL/Key或手动指定模型', 'error', 'api-test-result');
+                     if (urlObj.hostname.includes('google')) {
+                         endpoint = `${urlObj.origin}/v1beta/models/${model}:generateContent?key=${key}`;
+                         headers = { 'Content-Type': 'application/json' };
+                         body = {
+                             contents: [{ role: 'user', parts: [{ text: 'Hi' }] }]
+                         };
+                     } else {
+                         headers = {
+                             'Content-Type': 'application/json',
+                             'Authorization': `Bearer ${key}`
+                         };
+                         body = {
+                             model: model,
+                             messages: [{role: 'user', content: 'Hi, say hello.'}],
+                             max_tokens: 10
+                         };
+                     }
+
+                     const response = await fetch(endpoint, {
+                         method: 'POST',
+                         headers: headers,
+                         body: JSON.stringify(body)
+                     });
+
+                     if (response.ok) {
+                         const data = await response.json();
+                         let reply = "";
+                         if(data.choices) reply = data.choices[0].message.content;
+                         else if(data.candidates) reply = data.candidates[0].content.parts[0].text;
+                         
+                         showApiResult(`✅ 测试成功！模型 [${model}] 回复: "${reply}"`, 'success', 'api-test-result');
+                     } else {
+                         const err = await response.json().catch(()=>({}));
+                         throw new Error(`HTTP ${response.status}: ${err.error?.message || response.statusText}`);
+                     }
+                 } catch (e) {
+                     showApiResult(`❌ 测试失败: ${e.message}`, 'error', 'api-test-result');
+                 } finally {
+                     api.directChatTestBtn.disabled = false;
                  }
-                 api.directChatTestBtn.disabled = false;
             }
 
             api.testBtn.addEventListener('click', () => testConnection(false));
@@ -4298,17 +4161,21 @@ body {
             api.directChatTestBtn.addEventListener('click', directChatTest);
             api.loadModelsBtn.addEventListener('click', () => loadModels(false));
             api.loadVisionModelsBtn.addEventListener('click', () => loadModels(true));
-            api.modelSelect.addEventListener('change', () => { if (api.modelSelect.value) api.modelName.value = api.modelSelect.value; });
-            api.visionModelSelect.addEventListener('change', () => { 
-                const config = api.configs[api.currentId];
-                if(config) config.visionModel = api.visionModelSelect.value;
-             });
+            
+            // 同步输入框和下拉框的值 (UI 优化)
+            api.modelSelect.addEventListener('change', () => { 
+                if (api.modelSelect.value) api.modelName.value = api.modelSelect.value; 
+            });
 
             function getCurrentApiConfig() {
+                // 如果有激活的配置 ID，返回保存的配置
                 if (api.currentId && api.configs[api.currentId]) {
+                    // 为了确保使用的是最新保存的数据，这里也可以选择混合当前 UI 数据
+                    // 但通常 chat 页面使用的是已保存的数据
                     return api.configs[api.currentId];
                 }
-                return null;
+                // 如果没有保存的配置，临时返回 UI 上的数据（允许未保存直接聊天）
+                return getCurrentApiConfigFromForm(); 
             }
 
             // --- Preset Logic ---
