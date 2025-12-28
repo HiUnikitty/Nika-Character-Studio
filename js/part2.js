@@ -6158,7 +6158,11 @@ for (const category in worldbook) {
                     const content = String(entry['内容']).replace(/\\n/g, '\n');
                     const lines = content.split('\n');
                     lines.forEach((line, i) => {
-                        result += `  │   ${i === 0 ? '内容: ' : '       '}${line}\n`;
+                        if (i === 0) {
+                            result += `  │   内容: ${line}\n`;
+                        } else {
+                            result += `  │         ${line}\n`;
+                        }
                     });
                 }
             } else {

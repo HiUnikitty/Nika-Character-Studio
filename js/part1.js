@@ -1,3 +1,36 @@
+// 优化版自动编码检测函数 - 选择解码后字数最少的编码（乱码字数更多）
+async function detectBestEncoding(file) {
+    const encodings = ['UTF-8', 'GBK', 'GB2312', 'Big5'];
+    let bestEncoding = 'UTF-8';
+    let minLength = Infinity;
+    let bestContent = null;
+    
+    const promises = encodings.map(encoding => {
+        return new Promise((resolve) => {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const content = e.target.result;
+                const length = content.length;
+                console.log(`编码 ${encoding} 解码后字数: ${length}`);
+                
+                if (length < minLength) {
+                    minLength = length;
+                    bestEncoding = encoding;
+                    bestContent = content;
+                }
+                resolve();
+            };
+            reader.onerror = () => resolve();
+            reader.readAsText(file, encoding);
+        });
+    });
+    
+    await Promise.all(promises);
+    console.log(`最佳编码: ${bestEncoding}, 字数: ${minLength}`);
+    
+    return { encoding: bestEncoding, content: bestContent };
+}
+
 // 获取AI提示词的语言前缀
 function getLanguagePrefix() {
 const prefix = currentLanguage === 'zh' 
@@ -1963,7 +1996,7 @@ if (confirm(t('confirm-delete'))) {
 let currentLiteraryStyleFile = null;
 
 // 处理文风参考文件上传
-function handleLiteraryStyleFile(event) {
+async function handleLiteraryStyleFile(event) {
     const file = event.target.files[0];
     if (!file) return;
     
@@ -1978,26 +2011,36 @@ function handleLiteraryStyleFile(event) {
     // 获取用户选择的编码，默认UTF-8
     const selectedEncoding = encodingSelect ? encodingSelect.value : 'UTF-8';
     
-    if (filenameSpan) {
-        filenameSpan.textContent = `已选择: ${file.name} (${selectedEncoding})`;
+    let content;
+    let detectedEncoding = selectedEncoding;
+    
+    // 如果选择了自动检测，使用优化版检测
+    if (selectedEncoding === 'UTF-8' && encodingSelect) {
+        const result = await detectBestEncoding(file);
+        content = result.content;
+        detectedEncoding = result.encoding;
+        encodingSelect.value = detectedEncoding;
+    } else {
+        // 使用用户指定的编码
+        const reader = new FileReader();
+        content = await new Promise((resolve) => {
+            reader.onload = (e) => resolve(e.target.result);
+            reader.readAsText(file, selectedEncoding);
+        });
     }
     
-    const reader = new FileReader();
-    reader.onload = function(e) {
-        const content = e.target.result;
-        if (textarea) {
-            textarea.value = content;
-            // 触发input事件以启用生成按钮
-            textarea.dispatchEvent(new Event('input'));
-        }
-        // 如果textarea没有触发事件,直接启用按钮
-        if (generateBtn && content.trim()) {
-            generateBtn.disabled = false;
-        }
-        // 重置文件input的value,允许重复选择同一文件
-        event.target.value = '';
-    };
-    reader.readAsText(file, selectedEncoding);
+    if (filenameSpan) {
+        filenameSpan.textContent = `已选择: ${file.name} (${detectedEncoding})`;
+    }
+    
+    if (textarea) {
+        textarea.value = content;
+        textarea.dispatchEvent(new Event('input'));
+    }
+    if (generateBtn && content.trim()) {
+        generateBtn.disabled = false;
+    }
+    event.target.value = '';
 }
 
 // 用指定编码重新加载文风参考文件
@@ -2006,7 +2049,6 @@ function reloadLiteraryStyleFileWithEncoding(encoding) {
     
     const filenameSpan = document.getElementById('literary-style-filename');
     const textarea = document.getElementById('literary-style-reference');
-    const generateBtn = document.getElementById('literary-style-generate-btn');
     
     if (filenameSpan) {
         filenameSpan.textContent = `已选择: ${currentLiteraryStyleFile.name} (${encoding})`;
@@ -2019,9 +2061,6 @@ function reloadLiteraryStyleFileWithEncoding(encoding) {
             textarea.value = content;
             textarea.dispatchEvent(new Event('input'));
         }
-        if (generateBtn && content.trim()) {
-            generateBtn.disabled = false;
-        }
     };
     reader.readAsText(currentLiteraryStyleFile, encoding);
 }
@@ -2029,7 +2068,7 @@ function reloadLiteraryStyleFileWithEncoding(encoding) {
 // AI指引文件上传处理
 let currentAiGuidanceFile = null;
 
-function handleAiGuidanceFile(event) {
+async function handleAiGuidanceFile(event) {
     const file = event.target.files[0];
     if (!file) return;
     
@@ -2041,20 +2080,32 @@ function handleAiGuidanceFile(event) {
     
     const selectedEncoding = encodingSelect ? encodingSelect.value : 'UTF-8';
     
-    if (filenameSpan) {
-        filenameSpan.textContent = `已选择: ${file.name} (${selectedEncoding})`;
+    let content;
+    let detectedEncoding = selectedEncoding;
+    
+    // 如果选择了默认UTF-8，使用优化版自动检测
+    if (selectedEncoding === 'UTF-8' && encodingSelect) {
+        const result = await detectBestEncoding(file);
+        content = result.content;
+        detectedEncoding = result.encoding;
+        encodingSelect.value = detectedEncoding;
+    } else {
+        const reader = new FileReader();
+        content = await new Promise((resolve) => {
+            reader.onload = (e) => resolve(e.target.result);
+            reader.readAsText(file, selectedEncoding);
+        });
     }
     
-    const reader = new FileReader();
-    reader.onload = function(e) {
-        const content = e.target.result;
-        if (textarea) {
-            textarea.value = content;
-            textarea.dispatchEvent(new Event('input'));
-        }
-        event.target.value = '';
-    };
-    reader.readAsText(file, selectedEncoding);
+    if (filenameSpan) {
+        filenameSpan.textContent = `已选择: ${file.name} (${detectedEncoding})`;
+    }
+    
+    if (textarea) {
+        textarea.value = content;
+        textarea.dispatchEvent(new Event('input'));
+    }
+    event.target.value = '';
 }
 
 function reloadAiGuidanceFileWithEncoding(encoding) {
@@ -2081,7 +2132,7 @@ function reloadAiGuidanceFileWithEncoding(encoding) {
 // 世界书AI文件上传处理
 let currentWbAiFile = null;
 
-function handleWbAiFile(event) {
+async function handleWbAiFile(event) {
     const file = event.target.files[0];
     if (!file) return;
     
@@ -2093,20 +2144,32 @@ function handleWbAiFile(event) {
     
     const selectedEncoding = encodingSelect ? encodingSelect.value : 'UTF-8';
     
-    if (filenameSpan) {
-        filenameSpan.textContent = `已选择: ${file.name} (${selectedEncoding})`;
+    let content;
+    let detectedEncoding = selectedEncoding;
+    
+    // 如果选择了默认UTF-8，使用优化版自动检测
+    if (selectedEncoding === 'UTF-8' && encodingSelect) {
+        const result = await detectBestEncoding(file);
+        content = result.content;
+        detectedEncoding = result.encoding;
+        encodingSelect.value = detectedEncoding;
+    } else {
+        const reader = new FileReader();
+        content = await new Promise((resolve) => {
+            reader.onload = (e) => resolve(e.target.result);
+            reader.readAsText(file, selectedEncoding);
+        });
     }
     
-    const reader = new FileReader();
-    reader.onload = function(e) {
-        const content = e.target.result;
-        if (textarea) {
-            textarea.value = content;
-            textarea.dispatchEvent(new Event('input'));
-        }
-        event.target.value = '';
-    };
-    reader.readAsText(file, selectedEncoding);
+    if (filenameSpan) {
+        filenameSpan.textContent = `已选择: ${file.name} (${detectedEncoding})`;
+    }
+    
+    if (textarea) {
+        textarea.value = content;
+        textarea.dispatchEvent(new Event('input'));
+    }
+    event.target.value = '';
 }
 
 function reloadWbAiFileWithEncoding(encoding) {

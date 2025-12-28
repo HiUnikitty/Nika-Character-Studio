@@ -3824,24 +3824,24 @@ return new Promise((resolve, reject) => {
     return;
     }
     
-    // 自动检测编码 - 改进检测顺序和逻辑
+    // 自动检测编码 - 优化版：选择解码后字数最少的编码（乱码字数更多）
     const encodings = ['UTF-8', 'GBK', 'GB2312', 'Big5'];
     let bestResult = null;
     let bestEncoding = 'UTF-8';
-    let bestScore = -1;
+    let minLength = Infinity;
     
-    // 同时尝试所有编码并评分
+    // 同时尝试所有编码
     const tryAllEncodings = async () => {
     const promises = encodings.map(encoding => {
         return new Promise((resolveEncoding) => {
         const reader = new FileReader();
         reader.onload = (e) => {
             const result = e.target.result;
-            const score = evaluateEncodingQuality(result, encoding);
-            console.log(`编码 ${encoding} 质量评分: ${score}`);
+            const length = result.length;
+            console.log(`编码 ${encoding} 解码后字数: ${length}`);
             
-            if (score > bestScore) {
-            bestScore = score;
+            if (length < minLength) {
+            minLength = length;
             bestResult = result;
             bestEncoding = encoding;
             }
@@ -3854,42 +3854,11 @@ return new Promise((resolve, reject) => {
     
     await Promise.all(promises);
     
-    console.log(`最佳编码: ${bestEncoding}, 评分: ${bestScore}`);
+    console.log(`最佳编码: ${bestEncoding}, 字数: ${minLength}`);
     // 更新UI显示检测结果
     document.getElementById('file-encoding').value = bestEncoding;
     resolve(bestResult);
     };
-    
-    // 编码质量评估函数
-    function evaluateEncodingQuality(text, encoding) {
-    const sample = text.substring(0, 2000);
-    let score = 100;
-    
-    // 检测明显的乱码字符
-    const badChars = (sample.match(/[  \ufffd]/g) || []).length;
-    score -= badChars * 50;
-    
-    // 检测控制字符
-    const controlChars = (sample.match(/[\u0000-\u001f]/g) || []).length;
-    score -= controlChars * 10;
-    
-    // 检测常见乱码模式
-    if (/[◆ ]{5,}/.test(sample)) score -= 80;
-    if (/[   ]{3,}/.test(sample)) score -= 60;
-    
-    // 中文字符占比 (对中文文本有利)
-    const chineseChars = (sample.match(/[\u4e00-\u9fff]/g) || []).length;
-    const chineseRatio = chineseChars / sample.length;
-    if (chineseRatio > 0.3) score += 30; // 中文文本加分
-    
-    // 特定编码的优化
-    if (encoding === 'GBK' && /[\u4e00-\u9fff]/.test(sample)) {
-        // GBK对简体中文有优势
-        if (!/[  \ufffd]/.test(sample.substring(0, 500))) score += 20;
-    }
-    
-    return Math.max(0, score);
-    }
     
     tryAllEncodings();
 });
