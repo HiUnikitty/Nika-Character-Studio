@@ -3465,14 +3465,23 @@ const state = await NovelState.loadState();
 if (!state) return;
 
 const lastUpdate = new Date(state.lastUpdate).toLocaleString();
-const progress = Math.round((state.currentIndex / state.totalItems) * 100);
-const isCompleted = state.completed || state.currentIndex >= state.totalItems;
+
+// 检查实际未处理的记忆块数量
+const unprocessedCount = (state.memoryQueue || []).filter(m => !m.processed).length;
+const processedCount = (state.memoryQueue || []).filter(m => m.processed).length;
+const totalCount = state.totalItems || (state.memoryQueue || []).length;
+
+// 只有当所有记忆块都已处理时才算完成
+const isCompleted = (state.completed && unprocessedCount === 0) || (unprocessedCount === 0 && processedCount > 0);
+const progress = Math.round((processedCount / totalCount) * 100);
+
+console.log(`状态检查: 总数=${totalCount}, 已处理=${processedCount}, 未处理=${unprocessedCount}, 完成=${isCompleted}`);
 
 let message;
 if (isCompleted) {
     message = 
     `检测到已完成的转换结果:\n` +
-    `文件: ${state.totalItems} 个记忆块\n` +
+    `文件: ${totalCount} 个记忆块\n` +
     `完成时间: ${lastUpdate}\n` +
     `世界书条目: ${Object.keys(state.generatedWorldbook || {}).length} 个分类\n\n` +
     `是否加载上次的结果？\n` +
@@ -3480,7 +3489,8 @@ if (isCompleted) {
 } else {
     message = 
     `检测到未完成的转换任务:\n` +
-    `进度: ${state.currentIndex}/${state.totalItems} (${progress}%)\n` +
+    `进度: ${processedCount}/${totalCount} (${progress}%)\n` +
+    `还有 ${unprocessedCount} 个记忆块未处理\n` +
     `最后更新: ${lastUpdate}\n\n` +
     `是否继续上次的进度？\n` +
     `选择"确定"继续，"取消"开始新任务`;
@@ -3528,8 +3538,16 @@ if (isCompleted) {
     // 已完成的任务，显示结果
     showCompletedResult();
 } else {
-    // 未完成的任务，显示继续处理
-    addContinueButton(state.currentIndex);
+    // 未完成的任务，找到第一个未处理的记忆块索引
+    let firstUnprocessedIndex = 0;
+    for (let i = 0; i < memoryQueue.length; i++) {
+        if (!memoryQueue[i].processed) {
+            firstUnprocessedIndex = i;
+            break;
+        }
+    }
+    console.log(`📋 恢复状态: 第一个未处理的记忆块索引=${firstUnprocessedIndex}`);
+    addContinueButton(firstUnprocessedIndex);
 }
 }
 
@@ -3782,6 +3800,10 @@ try {
     alert('不支持的文件格式，请使用 txt 文件');
     return;
     }
+    
+    // 检测文件是否变化，如果变化则清理历史记录
+    await checkAndClearHistoryOnFileChange(content);
+    
     currentNovelContent = content;
     
     // 显示文本预览（前200字符）
