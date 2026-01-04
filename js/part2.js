@@ -268,8 +268,14 @@ async function mergeWorldbookDataWithHistory(target, source, memoryIndex, memory
     // 保存合并前的状态
     const previousWorldbook = JSON.parse(JSON.stringify(target));
     
-    // 执行合并
-    mergeWorldbookData(target, source);
+    // 根据增量输出模式选择不同的合并策略
+    if (incrementalOutputMode) {
+        // 增量模式：点对点覆盖合并
+        mergeWorldbookDataIncremental(target, source);
+    } else {
+        // 普通模式：递归合并
+        mergeWorldbookData(target, source);
+    }
     
     // 找出变化的条目
     const changedEntries = findChangedEntries(previousWorldbook, target);
@@ -287,6 +293,54 @@ async function mergeWorldbookDataWithHistory(target, source, memoryIndex, memory
     }
     
     return changedEntries;
+}
+
+// 增量模式：点对点覆盖合并
+// 只处理source中存在的条目，覆盖内容但合并关键词
+function mergeWorldbookDataIncremental(target, source) {
+    // 先标准化源数据
+    normalizeWorldbookData(source);
+    
+    for (const category in source) {
+        if (typeof source[category] !== 'object' || source[category] === null) continue;
+        
+        // 确保目标分类存在
+        if (!target[category]) {
+            target[category] = {};
+        }
+        
+        // 遍历分类下的条目
+        for (const entryName in source[category]) {
+            const sourceEntry = source[category][entryName];
+            
+            if (typeof sourceEntry !== 'object' || sourceEntry === null) continue;
+            
+            // 检查目标是否已有此条目
+            if (target[category][entryName]) {
+                // 已有条目：覆盖内容，合并关键词
+                const targetEntry = target[category][entryName];
+                
+                // 合并关键词（去重）
+                if (Array.isArray(sourceEntry['关键词']) && Array.isArray(targetEntry['关键词'])) {
+                    const mergedKeywords = [...new Set([...targetEntry['关键词'], ...sourceEntry['关键词']])];
+                    targetEntry['关键词'] = mergedKeywords;
+                } else if (Array.isArray(sourceEntry['关键词'])) {
+                    targetEntry['关键词'] = sourceEntry['关键词'];
+                }
+                
+                // 覆盖内容
+                if (sourceEntry['内容']) {
+                    targetEntry['内容'] = sourceEntry['内容'];
+                }
+                
+                console.log(`📝 增量更新 [${category}] ${entryName}: 内容已覆盖，关键词已合并`);
+            } else {
+                // 新条目：直接添加
+                target[category][entryName] = sourceEntry;
+                console.log(`➕ 增量新增 [${category}] ${entryName}`);
+            }
+        }
+    }
 }
 
 // ========== 正则回退解析函数 ==========
@@ -763,7 +817,23 @@ if (index === 0) {
 
 `;
 } else {
-    prompt += `请基于新内容**累积补充**世界书，注意以下要点：
+    // 根据增量输出模式选择不同的提示词
+    if (incrementalOutputMode) {
+        prompt += `请基于新内容**增量更新**世界书，采用**点对点覆盖**模式：
+
+**增量输出规则**：
+1. **只输出本次需要变更的条目**，不要输出完整的世界书
+2. **新增条目**：直接输出新条目的完整内容
+3. **修改条目**：输出该条目的完整新内容（会覆盖原有内容）
+4. **未变更的条目不要输出**，系统会自动保留
+5. **关键词合并**：新关键词会自动与原有关键词合并，无需重复原有关键词
+
+**示例**：如果只有"张三"角色有新信息，只需输出：
+{"角色": {"张三": {"关键词": ["新称呼"], "内容": "更新后的完整描述..."}}}
+
+`;
+    } else {
+        prompt += `请基于新内容**累积补充**世界书，注意以下要点：
 
 **重要规则**：
 1. **已有角色**：如果角色已存在，请在原有内容基础上**追加新信息**，不要删除或覆盖已有描述
@@ -773,6 +843,7 @@ if (index === 0) {
 5. **保持完整性**：确保之前章节提取的重要信息不会丢失
 
 `;
+    }
 }
 
 prompt += `请直接输出JSON格式的结果，不要添加任何代码块标记或解释文字。`;
