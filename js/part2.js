@@ -1,3 +1,359 @@
+// ========== 记忆历史管理系统 ==========
+// 用于存储每次记忆更新的历史记录，支持查看和回退
+
+// 增量输出模式开关状态（默认启用）
+let incrementalOutputMode = true;
+
+// 初始化增量输出模式开关（在高级设置中动态添加）
+function initIncrementalOutputModeToggle() {
+    const advancedSettings = document.getElementById('advanced-novel-settings');
+    if (!advancedSettings) return;
+    
+    // 检查是否已存在
+    if (document.getElementById('incremental-output-mode-container')) return;
+    
+    // 创建增量输出模式开关容器
+    const container = document.createElement('div');
+    container.id = 'incremental-output-mode-container';
+    container.style.cssText = 'padding: 10px; background: rgba(0,0,0,0.2); border-radius: 5px; border: 1px solid RGB(52,52,52); margin-bottom: 10px;';
+    container.innerHTML = `
+        <label style="display: flex; align-items: center; gap: 10px; cursor: pointer;">
+            <input type="checkbox" id="incremental-output-mode" style="width: 18px; height: 18px;" checked>
+            <span style="color: var(--label-color); font-weight: bold;">📝 增量输出模式</span>
+        </label>
+        <p style="margin: 5px 0 0 28px; font-size: 12px; color: var(--text-secondary-color);">每次只输出变更的条目，避免上下文字数限制，降低消耗并提升生成速度</p>
+    `;
+    
+    // 插入到高级设置的最前面
+    advancedSettings.insertBefore(container, advancedSettings.firstChild);
+    
+    // 绑定事件
+    document.getElementById('incremental-output-mode').addEventListener('change', function() {
+        incrementalOutputMode = this.checked;
+        console.log('增量输出模式:', incrementalOutputMode ? '开启' : '关闭');
+    });
+}
+
+// 页面加载后初始化
+document.addEventListener('DOMContentLoaded', function() {
+    // 延迟执行以确保DOM完全加载
+    setTimeout(initIncrementalOutputModeToggle, 500);
+});
+
+// 记忆历史数据库
+const MemoryHistoryDB = {
+    dbName: 'MemoryHistoryDB',
+    storeName: 'history',
+    metaStoreName: 'meta',
+    db: null,
+
+    async openDB() {
+        if (this.db) return this.db;
+        
+        return new Promise((resolve, reject) => {
+            const request = indexedDB.open(this.dbName, 2);
+            
+            request.onupgradeneeded = (event) => {
+                const db = event.target.result;
+                // 历史记录存储
+                if (!db.objectStoreNames.contains(this.storeName)) {
+                    const store = db.createObjectStore(this.storeName, { keyPath: 'id', autoIncrement: true });
+                    store.createIndex('timestamp', 'timestamp', { unique: false });
+                    store.createIndex('memoryIndex', 'memoryIndex', { unique: false });
+                }
+                // 元数据存储（用于存储文件hash等）
+                if (!db.objectStoreNames.contains(this.metaStoreName)) {
+                    db.createObjectStore(this.metaStoreName, { keyPath: 'key' });
+                }
+            };
+            
+            request.onsuccess = (event) => {
+                this.db = event.target.result;
+                resolve(this.db);
+            };
+            
+            request.onerror = (event) => {
+                reject(event.target.error);
+            };
+        });
+    },
+
+    // 保存一条历史记录
+    async saveHistory(memoryIndex, memoryTitle, previousWorldbook, newWorldbook, changedEntries) {
+        const db = await this.openDB();
+        return new Promise((resolve, reject) => {
+            const transaction = db.transaction([this.storeName], 'readwrite');
+            const store = transaction.objectStore(this.storeName);
+            
+            const record = {
+                timestamp: Date.now(),
+                memoryIndex: memoryIndex,
+                memoryTitle: memoryTitle,
+                previousWorldbook: JSON.parse(JSON.stringify(previousWorldbook || {})),
+                newWorldbook: JSON.parse(JSON.stringify(newWorldbook || {})),
+                changedEntries: changedEntries || [],
+                fileHash: currentFileHash || null
+            };
+            
+            const request = store.add(record);
+            request.onsuccess = () => resolve(request.result);
+            request.onerror = () => reject(request.error);
+        });
+    },
+
+    // 获取所有历史记录
+    async getAllHistory() {
+        const db = await this.openDB();
+        return new Promise((resolve, reject) => {
+            const transaction = db.transaction([this.storeName], 'readonly');
+            const store = transaction.objectStore(this.storeName);
+            const request = store.getAll();
+            
+            request.onsuccess = () => resolve(request.result || []);
+            request.onerror = () => reject(request.error);
+        });
+    },
+
+    // 获取指定ID的历史记录
+    async getHistoryById(id) {
+        const db = await this.openDB();
+        return new Promise((resolve, reject) => {
+            const transaction = db.transaction([this.storeName], 'readonly');
+            const store = transaction.objectStore(this.storeName);
+            const request = store.get(id);
+            
+            request.onsuccess = () => resolve(request.result);
+            request.onerror = () => reject(request.error);
+        });
+    },
+
+    // 清除所有历史记录
+    async clearAllHistory() {
+        const db = await this.openDB();
+        return new Promise((resolve, reject) => {
+            const transaction = db.transaction([this.storeName], 'readwrite');
+            const store = transaction.objectStore(this.storeName);
+            const request = store.clear();
+            
+            request.onsuccess = () => {
+                console.log('📚 记忆历史已清除');
+                resolve();
+            };
+            request.onerror = () => reject(request.error);
+        });
+    },
+
+    // 保存文件hash
+    async saveFileHash(hash) {
+        const db = await this.openDB();
+        return new Promise((resolve, reject) => {
+            const transaction = db.transaction([this.metaStoreName], 'readwrite');
+            const store = transaction.objectStore(this.metaStoreName);
+            const request = store.put({ key: 'currentFileHash', value: hash });
+            
+            request.onsuccess = () => resolve();
+            request.onerror = () => reject(request.error);
+        });
+    },
+
+    // 获取保存的文件hash
+    async getSavedFileHash() {
+        const db = await this.openDB();
+        return new Promise((resolve, reject) => {
+            const transaction = db.transaction([this.metaStoreName], 'readonly');
+            const store = transaction.objectStore(this.metaStoreName);
+            const request = store.get('currentFileHash');
+            
+            request.onsuccess = () => resolve(request.result?.value || null);
+            request.onerror = () => reject(request.error);
+        });
+    },
+
+    // 回退到指定历史记录
+    async rollbackToHistory(historyId) {
+        const history = await this.getHistoryById(historyId);
+        if (!history) {
+            throw new Error('找不到指定的历史记录');
+        }
+        
+        // 恢复世界书状态
+        generatedWorldbook = JSON.parse(JSON.stringify(history.previousWorldbook));
+        
+        // 删除该记录之后的所有历史
+        const db = await this.openDB();
+        const allHistory = await this.getAllHistory();
+        const toDelete = allHistory.filter(h => h.id >= historyId);
+        
+        const transaction = db.transaction([this.storeName], 'readwrite');
+        const store = transaction.objectStore(this.storeName);
+        
+        for (const h of toDelete) {
+            store.delete(h.id);
+        }
+        
+        return history;
+    }
+};
+
+// 当前文件的hash值（用于检测文件是否变化）
+let currentFileHash = null;
+
+// 计算文件内容的hash
+async function calculateFileHash(content) {
+    const encoder = new TextEncoder();
+    const data = encoder.encode(content);
+    const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+// 比较两个世界书对象，找出变化的条目
+function findChangedEntries(oldWorldbook, newWorldbook) {
+    const changes = [];
+    
+    // 遍历新世界书的所有分类和条目
+    for (const category in newWorldbook) {
+        const oldCategory = oldWorldbook[category] || {};
+        const newCategory = newWorldbook[category];
+        
+        for (const entryName in newCategory) {
+            const oldEntry = oldCategory[entryName];
+            const newEntry = newCategory[entryName];
+            
+            if (!oldEntry) {
+                // 新增条目
+                changes.push({
+                    type: 'add',
+                    category: category,
+                    entryName: entryName,
+                    oldValue: null,
+                    newValue: newEntry
+                });
+            } else if (JSON.stringify(oldEntry) !== JSON.stringify(newEntry)) {
+                // 修改条目
+                changes.push({
+                    type: 'modify',
+                    category: category,
+                    entryName: entryName,
+                    oldValue: oldEntry,
+                    newValue: newEntry
+                });
+            }
+        }
+    }
+    
+    // 检查删除的条目
+    for (const category in oldWorldbook) {
+        const oldCategory = oldWorldbook[category];
+        const newCategory = newWorldbook[category] || {};
+        
+        for (const entryName in oldCategory) {
+            if (!newCategory[entryName]) {
+                changes.push({
+                    type: 'delete',
+                    category: category,
+                    entryName: entryName,
+                    oldValue: oldCategory[entryName],
+                    newValue: null
+                });
+            }
+        }
+    }
+    
+    return changes;
+}
+
+// 带历史记录的世界书合并函数
+async function mergeWorldbookDataWithHistory(target, source, memoryIndex, memoryTitle) {
+    // 保存合并前的状态
+    const previousWorldbook = JSON.parse(JSON.stringify(target));
+    
+    // 根据增量输出模式选择不同的合并策略
+    if (incrementalOutputMode) {
+        // 增量模式：点对点覆盖合并
+        mergeWorldbookDataIncremental(target, source);
+    } else {
+        // 普通模式：递归合并
+        mergeWorldbookData(target, source);
+    }
+    
+    // 找出变化的条目
+    const changedEntries = findChangedEntries(previousWorldbook, target);
+    
+    // 如果有变化，保存历史记录
+    if (changedEntries.length > 0) {
+        await MemoryHistoryDB.saveHistory(
+            memoryIndex,
+            memoryTitle,
+            previousWorldbook,
+            target,
+            changedEntries
+        );
+        console.log(`📚 已保存历史记录: 第${memoryIndex + 1}个记忆块, ${changedEntries.length}个变更`);
+    }
+    
+    return changedEntries;
+}
+
+// 增量模式：点对点覆盖合并
+// 只处理source中存在的条目，覆盖内容但合并关键词
+function mergeWorldbookDataIncremental(target, source) {
+    // 先标准化源数据
+    normalizeWorldbookData(source);
+    
+    // 统计变更
+    const stats = { updated: [], added: [] };
+    
+    for (const category in source) {
+        if (typeof source[category] !== 'object' || source[category] === null) continue;
+        
+        // 确保目标分类存在
+        if (!target[category]) {
+            target[category] = {};
+        }
+        
+        // 遍历分类下的条目
+        for (const entryName in source[category]) {
+            const sourceEntry = source[category][entryName];
+            
+            if (typeof sourceEntry !== 'object' || sourceEntry === null) continue;
+            
+            // 检查目标是否已有此条目
+            if (target[category][entryName]) {
+                // 已有条目：覆盖内容，合并关键词
+                const targetEntry = target[category][entryName];
+                
+                // 合并关键词（去重）
+                if (Array.isArray(sourceEntry['关键词']) && Array.isArray(targetEntry['关键词'])) {
+                    const mergedKeywords = [...new Set([...targetEntry['关键词'], ...sourceEntry['关键词']])];
+                    targetEntry['关键词'] = mergedKeywords;
+                } else if (Array.isArray(sourceEntry['关键词'])) {
+                    targetEntry['关键词'] = sourceEntry['关键词'];
+                }
+                
+                // 覆盖内容
+                if (sourceEntry['内容']) {
+                    targetEntry['内容'] = sourceEntry['内容'];
+                }
+                
+                stats.updated.push(`[${category}] ${entryName}`);
+            } else {
+                // 新条目：直接添加
+                target[category][entryName] = sourceEntry;
+                stats.added.push(`[${category}] ${entryName}`);
+            }
+        }
+    }
+    
+    // 合并输出日志
+    if (stats.updated.length > 0) {
+        console.log(`📝 增量更新 ${stats.updated.length} 个条目: ${stats.updated.join(', ')}`);
+    }
+    if (stats.added.length > 0) {
+        console.log(`➕ 增量新增 ${stats.added.length} 个条目: ${stats.added.join(', ')}`);
+    }
+}
+
 // ========== 正则回退解析函数 ==========
 // 当JSON.parse失败时，使用正则表达式提取世界书数据
 function extractWorldbookDataByRegex(jsonString) {
@@ -192,7 +548,7 @@ if (failedCount > 0) {
         if (!existingHint) {
             const hintText = document.createElement('p');
             hintText.id = 'repair-memory-hint';
-            hintText.textContent = '💡 请转化完毕再使用修复功能';
+            hintText.textContent = '💡 请转化完毕或刷新网页再使用修复功能';
             hintText.style.cssText = 'color: #aaa; font-size: 12px; margin-top: 8px; margin-left: 10px;';
             progressSection.appendChild(hintText);
         }
@@ -472,9 +828,33 @@ if (index === 0) {
 
 `;
 } else {
-    prompt += `请基于新内容更新世界书，保持与已有信息的一致性：
+    // 根据增量输出模式选择不同的提示词
+    if (incrementalOutputMode) {
+        prompt += `请基于新内容**增量更新**世界书，采用**点对点覆盖**模式：
+
+**增量输出规则**：
+1. **只输出本次需要变更的条目**，不要输出完整的世界书
+2. **新增条目**：直接输出新条目的完整内容
+3. **修改条目**：输出该条目的完整新内容（会覆盖原有内容）
+4. **未变更的条目不要输出**，系统会自动保留
+5. **关键词合并**：新关键词会自动与原有关键词合并，无需重复原有关键词
+
+**示例**：如果只有"张三"角色有新信息，只需输出：
+{"角色": {"张三": {"关键词": ["新称呼"], "内容": "更新后的完整描述..."}}}
 
 `;
+    } else {
+        prompt += `请基于新内容**累积补充**世界书，注意以下要点：
+
+**重要规则**：
+1. **已有角色**：如果角色已存在，请在原有内容基础上**追加新信息**，不要删除或覆盖已有描述
+2. **新角色**：如果是新出现的角色，添加为新条目
+3. **剧情大纲**：持续追踪主线发展，**追加新的剧情进展**而不是重写
+4. **关键词**：为已有条目补充新的关键词（如新称呼、新关系等）
+5. **保持完整性**：确保之前章节提取的重要信息不会丢失
+
+`;
+    }
 }
 
 prompt += `请直接输出JSON格式的结果，不要添加任何代码块标记或解释文字。`;
@@ -692,8 +1072,21 @@ ${cleanResponse}
     } // 关闭 catch (secondError) 块
 }
     
-    // 合并到主世界书
-    mergeWorldbookData(generatedWorldbook, memoryUpdate);
+    // 合并到主世界书（带历史记录）
+    const changedEntries = await mergeWorldbookDataWithHistory(generatedWorldbook, memoryUpdate, index, memory.title);
+    
+    // 如果启用了增量输出模式，显示本次变更的条目（合并输出）
+    if (incrementalOutputMode && changedEntries.length > 0) {
+        const added = changedEntries.filter(c => c.type === 'add').map(c => `[${c.category}] ${c.entryName}`);
+        const modified = changedEntries.filter(c => c.type === 'modify').map(c => `[${c.category}] ${c.entryName}`);
+        const deleted = changedEntries.filter(c => c.type === 'delete').map(c => `[${c.category}] ${c.entryName}`);
+        
+        let summary = `📝 第${index + 1}个记忆块变更 ${changedEntries.length} 个条目:`;
+        if (added.length > 0) summary += ` ➕新增${added.length}个(${added.join(', ')})`;
+        if (modified.length > 0) summary += ` ✏️修改${modified.length}个(${modified.join(', ')})`;
+        if (deleted.length > 0) summary += ` ❌删除${deleted.length}个(${deleted.join(', ')})`;
+        console.log(summary);
+    }
     
     // 标记为已处理
     memory.processed = true;
@@ -1009,8 +1402,54 @@ try {
 }
 }
 
+// 标准化世界书条目字段（将content转为内容）
+function normalizeWorldbookEntry(entry) {
+    if (!entry || typeof entry !== 'object' || Array.isArray(entry)) return entry;
+    
+    // 如果同时存在 content 和 内容，取字数最多的
+    if (entry.content !== undefined && entry['内容'] !== undefined) {
+        const contentLen = String(entry.content || '').length;
+        const neirongLen = String(entry['内容'] || '').length;
+        if (contentLen > neirongLen) {
+            entry['内容'] = entry.content;
+        }
+        delete entry.content;
+    } else if (entry.content !== undefined) {
+        // 只有 content，转为 内容
+        entry['内容'] = entry.content;
+        delete entry.content;
+    }
+    
+    return entry;
+}
+
+// 递归标准化整个世界书数据
+function normalizeWorldbookData(data) {
+    if (!data || typeof data !== 'object') return data;
+    
+    for (const category in data) {
+        if (typeof data[category] === 'object' && data[category] !== null && !Array.isArray(data[category])) {
+            // 检查是否是条目（有关键词或内容/content字段）
+            if (data[category]['关键词'] || data[category]['内容'] || data[category].content) {
+                normalizeWorldbookEntry(data[category]);
+            } else {
+                // 递归处理子分类
+                for (const entryName in data[category]) {
+                    if (typeof data[category][entryName] === 'object') {
+                        normalizeWorldbookEntry(data[category][entryName]);
+                    }
+                }
+            }
+        }
+    }
+    return data;
+}
+
 // 合并世界书数据
 function mergeWorldbookData(target, source) {
+// 先标准化源数据
+normalizeWorldbookData(source);
+
 for (const key in source) {
     if (typeof source[key] === 'object' && source[key] !== null && !Array.isArray(source[key])) {
     if (!target[key]) target[key] = {};
@@ -6094,6 +6533,7 @@ header.style.cssText = 'display: flex; justify-content: space-between; align-ite
 header.innerHTML = `
         <h3 style="color: #e67e22; margin: 0;">📖 查看世界书</h3>
         <div>
+            <button id="view-history-btn" style="background: #9b59b6; color: white; padding: 8px 16px; border: none; border-radius: 5px; cursor: pointer; margin-right: 10px;">📜 修改历史</button>
             <button id="export-current-worldbook" style="background: #28a745; color: white; padding: 8px 16px; border: none; border-radius: 5px; cursor: pointer; margin-right: 10px;">📥 导出世界书</button>
             <button id="close-worldbook-modal" style="background: #6c757d; color: white; padding: 8px 16px; border: none; border-radius: 5px; cursor: pointer;">关闭</button>
         </div>
@@ -6116,6 +6556,10 @@ header.innerHTML = `
     document.getElementById('export-current-worldbook').onclick = () => {
         exportWorldbook();
         modal.remove();
+    };
+    document.getElementById('view-history-btn').onclick = () => {
+        modal.remove();
+        showMemoryHistoryModal();
     };
 
     modal.onclick = (e) => { if (e.target === modal) modal.remove(); };
@@ -6344,4 +6788,278 @@ viewBtn.textContent = '📖 查看世界书';
 viewBtn.style.cssText = 'background: #e67e22; color: white; padding: 8px 16px; border: none; border-radius: 5px; margin-top: 10px; margin-left: 10px; cursor: pointer; font-size: 14px;';
 viewBtn.onclick = showViewWorldbookModal;
 progressSection.appendChild(viewBtn);
+}
+
+// ========== 记忆修改历史功能 ==========
+
+// 显示记忆修改历史模态框
+async function showMemoryHistoryModal() {
+    const existingModal = document.getElementById('memory-history-modal');
+    if (existingModal) existingModal.remove();
+
+    const modal = document.createElement('div');
+    modal.id = 'memory-history-modal';
+    modal.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 10000; display: flex; justify-content: center; align-items: center;';
+
+    const content = document.createElement('div');
+    content.style.cssText = 'background: #2d2d2d; border-radius: 10px; padding: 20px; width: 95%; max-width: 1200px; max-height: 90vh; display: flex; flex-direction: column;';
+
+    // 获取历史记录
+    let historyList = [];
+    try {
+        historyList = await MemoryHistoryDB.getAllHistory();
+    } catch (e) {
+        console.error('获取历史记录失败:', e);
+    }
+
+    const header = document.createElement('div');
+    header.style.cssText = 'display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; flex-shrink: 0;';
+    header.innerHTML = `
+        <h3 style="color: #9b59b6; margin: 0;">📜 记忆修改历史 (${historyList.length}条)</h3>
+        <div>
+            <button id="clear-history-btn" style="background: #e74c3c; color: white; padding: 8px 16px; border: none; border-radius: 5px; cursor: pointer; margin-right: 10px;">🗑️ 清空历史</button>
+            <button id="back-to-worldbook-btn" style="background: #e67e22; color: white; padding: 8px 16px; border: none; border-radius: 5px; cursor: pointer; margin-right: 10px;">📖 返回世界书</button>
+            <button id="close-history-modal" style="background: #6c757d; color: white; padding: 8px 16px; border: none; border-radius: 5px; cursor: pointer;">关闭</button>
+        </div>
+    `;
+
+    const mainContainer = document.createElement('div');
+    mainContainer.style.cssText = 'display: flex; flex: 1; overflow: hidden; gap: 15px;';
+
+    // 左侧：历史列表
+    const historyListContainer = document.createElement('div');
+    historyListContainer.style.cssText = 'width: 300px; flex-shrink: 0; overflow-y: auto; background: #1c1c1c; border-radius: 8px; padding: 10px;';
+    historyListContainer.innerHTML = generateHistoryListHTML(historyList);
+
+    // 右侧：详情对比视图
+    const detailContainer = document.createElement('div');
+    detailContainer.id = 'history-detail-container';
+    detailContainer.style.cssText = 'flex: 1; overflow-y: auto; background: #1c1c1c; border-radius: 8px; padding: 15px; color: #f0f0f0;';
+    detailContainer.innerHTML = '<div style="text-align: center; color: #888; padding: 40px;">👈 点击左侧历史记录查看详情</div>';
+
+    mainContainer.appendChild(historyListContainer);
+    mainContainer.appendChild(detailContainer);
+
+    content.appendChild(header);
+    content.appendChild(mainContainer);
+    modal.appendChild(content);
+    document.body.appendChild(modal);
+
+    // 绑定事件
+    document.getElementById('close-history-modal').onclick = () => modal.remove();
+    document.getElementById('back-to-worldbook-btn').onclick = () => {
+        modal.remove();
+        showViewWorldbookModal();
+    };
+    document.getElementById('clear-history-btn').onclick = async () => {
+        if (confirm('确定要清空所有修改历史吗？此操作不可恢复。')) {
+            await MemoryHistoryDB.clearAllHistory();
+            modal.remove();
+            showMemoryHistoryModal();
+        }
+    };
+
+    // 绑定历史项点击事件
+    historyListContainer.querySelectorAll('.history-item').forEach(item => {
+        item.onclick = async () => {
+            const historyId = parseInt(item.dataset.historyId);
+            await showHistoryDetail(historyId);
+            // 高亮选中项
+            historyListContainer.querySelectorAll('.history-item').forEach(i => i.style.background = '#2d2d2d');
+            item.style.background = '#3d3d3d';
+        };
+    });
+
+    modal.onclick = (e) => { if (e.target === modal) modal.remove(); };
+}
+
+// 生成历史列表HTML
+function generateHistoryListHTML(historyList) {
+    if (historyList.length === 0) {
+        return '<div style="text-align: center; color: #888; padding: 20px;">暂无修改历史</div>';
+    }
+
+    let html = '';
+    // 按时间倒序排列
+    const sortedList = [...historyList].sort((a, b) => b.timestamp - a.timestamp);
+    
+    sortedList.forEach((history, index) => {
+        const time = new Date(history.timestamp).toLocaleString('zh-CN', {
+            month: '2-digit',
+            day: '2-digit',
+            hour: '2-digit',
+            minute: '2-digit'
+        });
+        const changeCount = history.changedEntries?.length || 0;
+        const addCount = history.changedEntries?.filter(c => c.type === 'add').length || 0;
+        const modifyCount = history.changedEntries?.filter(c => c.type === 'modify').length || 0;
+        
+        html += `
+        <div class="history-item" data-history-id="${history.id}" style="background: #2d2d2d; border-radius: 6px; padding: 10px; margin-bottom: 8px; cursor: pointer; border-left: 3px solid #9b59b6; transition: background 0.2s;">
+            <div style="font-weight: bold; color: #e67e22; font-size: 13px; margin-bottom: 4px;">
+                📝 ${history.memoryTitle || `记忆块 ${history.memoryIndex + 1}`}
+            </div>
+            <div style="font-size: 11px; color: #888; margin-bottom: 4px;">${time}</div>
+            <div style="font-size: 11px; color: #aaa;">
+                <span style="color: #27ae60;">➕${addCount}</span>
+                <span style="color: #3498db; margin-left: 8px;">✏️${modifyCount}</span>
+                <span style="color: #888; margin-left: 8px;">共${changeCount}项</span>
+            </div>
+        </div>`;
+    });
+
+    return html;
+}
+
+// 显示历史详情
+async function showHistoryDetail(historyId) {
+    const detailContainer = document.getElementById('history-detail-container');
+    if (!detailContainer) return;
+
+    const history = await MemoryHistoryDB.getHistoryById(historyId);
+    if (!history) {
+        detailContainer.innerHTML = '<div style="text-align: center; color: #e74c3c; padding: 40px;">找不到该历史记录</div>';
+        return;
+    }
+
+    const time = new Date(history.timestamp).toLocaleString('zh-CN');
+    
+    let html = `
+    <div style="margin-bottom: 15px; padding-bottom: 15px; border-bottom: 1px solid #444;">
+        <h4 style="color: #e67e22; margin: 0 0 10px 0;">📝 ${history.memoryTitle || `记忆块 ${history.memoryIndex + 1}`}</h4>
+        <div style="font-size: 12px; color: #888;">时间: ${time}</div>
+        <div style="margin-top: 10px;">
+            <button onclick="rollbackToHistoryAndRefresh(${historyId})" style="background: #e74c3c; color: white; padding: 6px 12px; border: none; border-radius: 4px; cursor: pointer; font-size: 12px;">
+                ⏪ 回退到此版本前
+            </button>
+        </div>
+    </div>
+    <div style="font-size: 14px; font-weight: bold; color: #9b59b6; margin-bottom: 10px;">变更内容 (${history.changedEntries?.length || 0}项)</div>
+    `;
+
+    if (history.changedEntries && history.changedEntries.length > 0) {
+        history.changedEntries.forEach(change => {
+            const typeIcon = change.type === 'add' ? '➕ 新增' : change.type === 'modify' ? '✏️ 修改' : '❌ 删除';
+            const typeColor = change.type === 'add' ? '#27ae60' : change.type === 'modify' ? '#3498db' : '#e74c3c';
+            
+            html += `
+            <div style="background: #252525; border-radius: 6px; padding: 12px; margin-bottom: 10px; border-left: 3px solid ${typeColor};">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                    <span style="color: ${typeColor}; font-weight: bold;">${typeIcon}</span>
+                    <span style="color: #e67e22;">[${change.category}] ${change.entryName}</span>
+                </div>
+                <div style="display: flex; gap: 10px;">
+                    <div style="flex: 1; background: #1c1c1c; padding: 8px; border-radius: 4px; ${change.type === 'add' ? 'opacity: 0.5;' : ''}">
+                        <div style="color: #e74c3c; font-size: 11px; margin-bottom: 4px;">原内容</div>
+                        <div style="font-size: 12px; color: #ccc; max-height: 150px; overflow-y: auto;">
+                            ${change.oldValue ? formatEntryForDisplay(change.oldValue) : '<span style="color: #666;">无</span>'}
+                        </div>
+                    </div>
+                    <div style="flex: 1; background: #1c1c1c; padding: 8px; border-radius: 4px; ${change.type === 'delete' ? 'opacity: 0.5;' : ''}">
+                        <div style="color: #27ae60; font-size: 11px; margin-bottom: 4px;">新内容</div>
+                        <div style="font-size: 12px; color: #ccc; max-height: 150px; overflow-y: auto;">
+                            ${change.newValue ? formatEntryForDisplay(change.newValue) : '<span style="color: #666;">无</span>'}
+                        </div>
+                    </div>
+                </div>
+            </div>`;
+        });
+    } else {
+        html += '<div style="color: #888; text-align: center; padding: 20px;">无变更记录</div>';
+    }
+
+    detailContainer.innerHTML = html;
+}
+
+// 格式化条目用于显示
+function formatEntryForDisplay(entry) {
+    if (!entry) return '';
+    if (typeof entry === 'string') return entry.replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/\n/g, '<br>');
+    
+    let html = '';
+    if (entry['关键词']) {
+        const keywords = Array.isArray(entry['关键词']) ? entry['关键词'].join(', ') : entry['关键词'];
+        html += `<div style="color: #9b59b6; margin-bottom: 4px;"><strong>关键词:</strong> ${keywords}</div>`;
+    }
+    if (entry['内容']) {
+        const content = String(entry['内容']).replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/\n/g, '<br>');
+        html += `<div><strong>内容:</strong> ${content}</div>`;
+    }
+    return html || JSON.stringify(entry);
+}
+
+// 回退到指定历史并刷新页面
+async function rollbackToHistoryAndRefresh(historyId) {
+    if (!confirm('确定要回退到此版本吗？\n\n回退后将自动刷新页面以确保API状态正确。\n当前版本之后的所有修改将被删除。')) {
+        return;
+    }
+
+    try {
+        const history = await MemoryHistoryDB.rollbackToHistory(historyId);
+        console.log(`📚 已回退到历史记录 #${historyId}: ${history.memoryTitle}`);
+        
+        // 获取回退点的记忆索引
+        const rollbackMemoryIndex = history.memoryIndex;
+        console.log(`📚 回退到记忆索引: ${rollbackMemoryIndex}`);
+        
+        // 更新记忆队列的处理状态：将回退点及之后的记忆块标记为未处理
+        for (let i = 0; i < memoryQueue.length; i++) {
+            if (i >= rollbackMemoryIndex) {
+                memoryQueue[i].processed = false;
+                memoryQueue[i].failed = false;
+            }
+        }
+        
+        console.log(`📚 已将记忆块 ${rollbackMemoryIndex} 及之后的标记为未处理`);
+        
+        // 保存当前状态（使用回退点的索引）
+        await NovelState.saveState(rollbackMemoryIndex);
+        
+        alert(`回退成功！\n\n世界书已恢复到"${history.memoryTitle}"处理之前的状态。\n记忆块 ${rollbackMemoryIndex + 1} 及之后将重新处理。\n\n页面将自动刷新。`);
+        location.reload();
+    } catch (error) {
+        console.error('回退失败:', error);
+        alert('回退失败: ' + error.message);
+    }
+}
+
+// 检测文件变化并清理历史记录
+async function checkAndClearHistoryOnFileChange(newContent) {
+    try {
+        // 计算新文件的hash
+        const newHash = await calculateFileHash(newContent);
+        
+        // 获取保存的文件hash
+        const savedHash = await MemoryHistoryDB.getSavedFileHash();
+        
+        console.log(`📁 文件hash检测: 新=${newHash?.substring(0, 16)}..., 旧=${savedHash?.substring(0, 16) || '无'}...`);
+        
+        if (savedHash && savedHash !== newHash) {
+            // 文件内容发生变化
+            const historyList = await MemoryHistoryDB.getAllHistory();
+            if (historyList.length > 0) {
+                const shouldClear = confirm(
+                    `检测到导入了新的文件（内容与上次不同）。\n\n` +
+                    `当前有 ${historyList.length} 条修改历史记录。\n\n` +
+                    `是否清空旧的历史记录？\n` +
+                    `- 点击"确定"清空历史，开始新的转换\n` +
+                    `- 点击"取消"保留历史（可能与新文件不匹配）`
+                );
+                
+                if (shouldClear) {
+                    await MemoryHistoryDB.clearAllHistory();
+                    console.log('📚 已清空旧的历史记录');
+                }
+            }
+        }
+        
+        // 保存新文件的hash
+        currentFileHash = newHash;
+        await MemoryHistoryDB.saveFileHash(newHash);
+        console.log('📁 已保存新文件hash');
+        
+    } catch (error) {
+        console.error('检测文件变化时出错:', error);
+        // 出错时不阻止文件导入
+    }
 }
