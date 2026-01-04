@@ -21,7 +21,7 @@ function initIncrementalOutputModeToggle() {
             <input type="checkbox" id="incremental-output-mode" style="width: 18px; height: 18px;">
             <span style="color: var(--label-color); font-weight: bold;">📝 增量输出模式</span>
         </label>
-        <p style="margin: 5px 0 0 28px; font-size: 12px; color: var(--text-secondary-color);">每次只输出变更的条目，避免上下文字数限制</p>
+        <p style="margin: 5px 0 0 28px; font-size: 12px; color: var(--text-secondary-color);">每次只输出变更的条目，避免上下文字数限制，降低消耗并提升生成速度</p>
     `;
     
     // 插入到高级设置的最前面
@@ -301,6 +301,9 @@ function mergeWorldbookDataIncremental(target, source) {
     // 先标准化源数据
     normalizeWorldbookData(source);
     
+    // 统计变更
+    const stats = { updated: [], added: [] };
+    
     for (const category in source) {
         if (typeof source[category] !== 'object' || source[category] === null) continue;
         
@@ -333,13 +336,21 @@ function mergeWorldbookDataIncremental(target, source) {
                     targetEntry['内容'] = sourceEntry['内容'];
                 }
                 
-                console.log(`📝 增量更新 [${category}] ${entryName}: 内容已覆盖，关键词已合并`);
+                stats.updated.push(`[${category}] ${entryName}`);
             } else {
                 // 新条目：直接添加
                 target[category][entryName] = sourceEntry;
-                console.log(`➕ 增量新增 [${category}] ${entryName}`);
+                stats.added.push(`[${category}] ${entryName}`);
             }
         }
+    }
+    
+    // 合并输出日志
+    if (stats.updated.length > 0) {
+        console.log(`📝 增量更新 ${stats.updated.length} 个条目: ${stats.updated.join(', ')}`);
+    }
+    if (stats.added.length > 0) {
+        console.log(`➕ 增量新增 ${stats.added.length} 个条目: ${stats.added.join(', ')}`);
     }
 }
 
@@ -1064,13 +1075,17 @@ ${cleanResponse}
     // 合并到主世界书（带历史记录）
     const changedEntries = await mergeWorldbookDataWithHistory(generatedWorldbook, memoryUpdate, index, memory.title);
     
-    // 如果启用了增量输出模式，显示本次变更的条目
+    // 如果启用了增量输出模式，显示本次变更的条目（合并输出）
     if (incrementalOutputMode && changedEntries.length > 0) {
-        console.log(`📝 增量更新 - 第${index + 1}个记忆块变更了 ${changedEntries.length} 个条目:`);
-        changedEntries.forEach(change => {
-            const typeIcon = change.type === 'add' ? '➕' : change.type === 'modify' ? '✏️' : '❌';
-            console.log(`  ${typeIcon} [${change.category}] ${change.entryName}`);
-        });
+        const added = changedEntries.filter(c => c.type === 'add').map(c => `[${c.category}] ${c.entryName}`);
+        const modified = changedEntries.filter(c => c.type === 'modify').map(c => `[${c.category}] ${c.entryName}`);
+        const deleted = changedEntries.filter(c => c.type === 'delete').map(c => `[${c.category}] ${c.entryName}`);
+        
+        let summary = `📝 第${index + 1}个记忆块变更 ${changedEntries.length} 个条目:`;
+        if (added.length > 0) summary += ` ➕新增${added.length}个(${added.join(', ')})`;
+        if (modified.length > 0) summary += ` ✏️修改${modified.length}个(${modified.join(', ')})`;
+        if (deleted.length > 0) summary += ` ❌删除${deleted.length}个(${deleted.join(', ')})`;
+        console.log(summary);
     }
     
     // 标记为已处理
