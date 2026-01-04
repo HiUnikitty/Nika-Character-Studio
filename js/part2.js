@@ -1,8 +1,8 @@
 // ========== 记忆历史管理系统 ==========
 // 用于存储每次记忆更新的历史记录，支持查看和回退
 
-// 增量输出模式开关状态
-let incrementalOutputMode = false;
+// 增量输出模式开关状态（默认启用）
+let incrementalOutputMode = true;
 
 // 初始化增量输出模式开关（在高级设置中动态添加）
 function initIncrementalOutputModeToggle() {
@@ -18,7 +18,7 @@ function initIncrementalOutputModeToggle() {
     container.style.cssText = 'padding: 10px; background: rgba(0,0,0,0.2); border-radius: 5px; border: 1px solid RGB(52,52,52); margin-bottom: 10px;';
     container.innerHTML = `
         <label style="display: flex; align-items: center; gap: 10px; cursor: pointer;">
-            <input type="checkbox" id="incremental-output-mode" style="width: 18px; height: 18px;">
+            <input type="checkbox" id="incremental-output-mode" style="width: 18px; height: 18px;" checked>
             <span style="color: var(--label-color); font-weight: bold;">📝 增量输出模式</span>
         </label>
         <p style="margin: 5px 0 0 28px; font-size: 12px; color: var(--text-secondary-color);">每次只输出变更的条目，避免上下文字数限制，降低消耗并提升生成速度</p>
