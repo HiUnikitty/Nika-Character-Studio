@@ -192,7 +192,7 @@ if (failedCount > 0) {
         if (!existingHint) {
             const hintText = document.createElement('p');
             hintText.id = 'repair-memory-hint';
-            hintText.textContent = '💡 请转化完毕再使用修复功能';
+            hintText.textContent = '💡 请转化完毕或刷新网页再使用修复功能';
             hintText.style.cssText = 'color: #aaa; font-size: 12px; margin-top: 8px; margin-left: 10px;';
             progressSection.appendChild(hintText);
         }
@@ -472,7 +472,14 @@ if (index === 0) {
 
 `;
 } else {
-    prompt += `请基于新内容更新世界书，保持与已有信息的一致性：
+    prompt += `请基于新内容**累积补充**世界书，注意以下要点：
+
+**重要规则**：
+1. **已有角色**：如果角色已存在，请在原有内容基础上**追加新信息**，不要删除或覆盖已有描述
+2. **新角色**：如果是新出现的角色，添加为新条目
+3. **剧情大纲**：持续追踪主线发展，**追加新的剧情进展**而不是重写
+4. **关键词**：为已有条目补充新的关键词（如新称呼、新关系等）
+5. **保持完整性**：确保之前章节提取的重要信息不会丢失
 
 `;
 }
