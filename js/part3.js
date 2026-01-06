@@ -3577,6 +3577,18 @@ if (failedCount > 0) {
 // 显示操作按钮
 const container = document.querySelector('.conversion-controls') || document.querySelector('.worldbook-body');
 
+// 添加查看世界书按钮（带历史和AI优化功能）
+let viewWorldbookBtn = document.getElementById('view-worldbook-result-btn');
+if (!viewWorldbookBtn) {
+    viewWorldbookBtn = document.createElement('button');
+    viewWorldbookBtn.id = 'view-worldbook-result-btn';
+    viewWorldbookBtn.textContent = '📖 查看世界书';
+    viewWorldbookBtn.className = 'uniform-btn';
+    viewWorldbookBtn.style.cssText = 'margin: 10px 5px; background: #e67e22;';
+    viewWorldbookBtn.onclick = () => showViewWorldbookModal();
+    container.appendChild(viewWorldbookBtn);
+}
+
 // 添加查看JSON按钮
 let viewJsonBtn = document.getElementById('view-json-btn');
 if (!viewJsonBtn) {

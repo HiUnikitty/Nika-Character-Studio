@@ -81,6 +81,34 @@ const MemoryHistoryDB = {
     // 保存一条历史记录
     async saveHistory(memoryIndex, memoryTitle, previousWorldbook, newWorldbook, changedEntries) {
         const db = await this.openDB();
+        
+        // 先检查并删除重复命名的旧记录（除了"记忆-优化"和"记忆-演变总结"）
+        const allowedDuplicates = ['记忆-优化', '记忆-演变总结'];
+        if (!allowedDuplicates.includes(memoryTitle)) {
+            try {
+                const allHistory = await this.getAllHistory();
+                const duplicates = allHistory.filter(h => h.memoryTitle === memoryTitle);
+                
+                if (duplicates.length > 0) {
+                    console.log(`🗑️ 检测到重复命名的历史记录: "${memoryTitle}", 删除 ${duplicates.length} 条旧记录`);
+                    const deleteTransaction = db.transaction([this.storeName], 'readwrite');
+                    const deleteStore = deleteTransaction.objectStore(this.storeName);
+                    
+                    for (const dup of duplicates) {
+                        deleteStore.delete(dup.id);
+                    }
+                    
+                    // 等待删除完成
+                    await new Promise((resolve, reject) => {
+                        deleteTransaction.oncomplete = () => resolve();
+                        deleteTransaction.onerror = () => reject(deleteTransaction.error);
+                    });
+                }
+            } catch (error) {
+                console.error('删除重复历史记录失败:', error);
+            }
+        }
+        
         return new Promise((resolve, reject) => {
             const transaction = db.transaction([this.storeName], 'readwrite');
             const store = transaction.objectStore(this.storeName);
@@ -169,6 +197,32 @@ const MemoryHistoryDB = {
         });
     },
 
+    // 保存自定义优化prompt
+    async saveCustomOptimizationPrompt(prompt) {
+        const db = await this.openDB();
+        return new Promise((resolve, reject) => {
+            const transaction = db.transaction([this.metaStoreName], 'readwrite');
+            const store = transaction.objectStore(this.metaStoreName);
+            const request = store.put({ key: 'customOptimizationPrompt', value: prompt });
+            
+            request.onsuccess = () => resolve();
+            request.onerror = () => reject(request.error);
+        });
+    },
+
+    // 获取保存的自定义优化prompt
+    async getCustomOptimizationPrompt() {
+        const db = await this.openDB();
+        return new Promise((resolve, reject) => {
+            const transaction = db.transaction([this.metaStoreName], 'readonly');
+            const store = transaction.objectStore(this.metaStoreName);
+            const request = store.get('customOptimizationPrompt');
+            
+            request.onsuccess = () => resolve(request.result?.value || null);
+            request.onerror = () => reject(request.error);
+        });
+    },
+
     // 回退到指定历史记录
     async rollbackToHistory(historyId) {
         const history = await this.getHistoryById(historyId);
@@ -192,6 +246,57 @@ const MemoryHistoryDB = {
         }
         
         return history;
+    },
+
+    // 清理重复的历史记录（保留最新的）
+    async cleanDuplicateHistory() {
+        const db = await this.openDB();
+        const allHistory = await this.getAllHistory();
+        const allowedDuplicates = ['记忆-优化', '记忆-演变总结'];
+        
+        // 按标题分组
+        const groupedByTitle = {};
+        for (const record of allHistory) {
+            const title = record.memoryTitle;
+            if (!groupedByTitle[title]) {
+                groupedByTitle[title] = [];
+            }
+            groupedByTitle[title].push(record);
+        }
+        
+        // 找出需要删除的重复记录
+        const toDelete = [];
+        for (const title in groupedByTitle) {
+            if (allowedDuplicates.includes(title)) continue; // 跳过允许重复的
+            
+            const records = groupedByTitle[title];
+            if (records.length > 1) {
+                // 按时间戳排序，保留最新的
+                records.sort((a, b) => b.timestamp - a.timestamp);
+                // 删除除了第一个（最新）之外的所有记录
+                toDelete.push(...records.slice(1));
+            }
+        }
+        
+        if (toDelete.length > 0) {
+            console.log(`🗑️ 清理重复历史记录: 共 ${toDelete.length} 条`);
+            const transaction = db.transaction([this.storeName], 'readwrite');
+            const store = transaction.objectStore(this.storeName);
+            
+            for (const record of toDelete) {
+                store.delete(record.id);
+                console.log(`  - 删除: ${record.memoryTitle} (ID: ${record.id})`);
+            }
+            
+            await new Promise((resolve, reject) => {
+                transaction.oncomplete = () => resolve();
+                transaction.onerror = () => reject(transaction.error);
+            });
+            
+            return toDelete.length;
+        }
+        
+        return 0;
     }
 };
 
@@ -6511,8 +6616,10 @@ try {
     }
 }
 
-mergeWorldbookData(generatedWorldbook, memoryUpdate);
-console.log(`记忆块 ${index + 1} 修复完成`);
+// 使用带历史记录的合并函数，命名规则：记忆-修复-[记忆标题]
+const memoryTitle = `记忆-修复-${memory.title}`;
+await mergeWorldbookDataWithHistory(generatedWorldbook, memoryUpdate, index, memoryTitle);
+console.log(`记忆块 ${index + 1} 修复完成，已保存修改历史: ${memoryTitle}`);
 }
 
 // ========== 查看世界书功能 ==========
@@ -6533,6 +6640,7 @@ header.style.cssText = 'display: flex; justify-content: space-between; align-ite
 header.innerHTML = `
         <h3 style="color: #e67e22; margin: 0;">📖 查看世界书</h3>
         <div>
+            <button id="optimize-worldbook-btn" style="background: #3498db; color: white; padding: 8px 16px; border: none; border-radius: 5px; cursor: pointer; margin-right: 10px;">🤖 AI优化世界书</button>
             <button id="view-history-btn" style="background: #9b59b6; color: white; padding: 8px 16px; border: none; border-radius: 5px; cursor: pointer; margin-right: 10px;">📜 修改历史</button>
             <button id="export-current-worldbook" style="background: #28a745; color: white; padding: 8px 16px; border: none; border-radius: 5px; cursor: pointer; margin-right: 10px;">📥 导出世界书</button>
             <button id="close-worldbook-modal" style="background: #6c757d; color: white; padding: 8px 16px; border: none; border-radius: 5px; cursor: pointer;">关闭</button>
@@ -6560,6 +6668,10 @@ header.innerHTML = `
     document.getElementById('view-history-btn').onclick = () => {
         modal.remove();
         showMemoryHistoryModal();
+    };
+    document.getElementById('optimize-worldbook-btn').onclick = () => {
+        modal.remove();
+        showOptimizeWorldbookModal();
     };
 
     modal.onclick = (e) => { if (e.target === modal) modal.remove(); };
@@ -6807,6 +6919,12 @@ async function showMemoryHistoryModal() {
     // 获取历史记录
     let historyList = [];
     try {
+        // 先清理重复记录
+        const cleanedCount = await MemoryHistoryDB.cleanDuplicateHistory();
+        if (cleanedCount > 0) {
+            console.log(`✅ 已清理 ${cleanedCount} 条重复的历史记录`);
+        }
+        
         historyList = await MemoryHistoryDB.getAllHistory();
     } catch (e) {
         console.error('获取历史记录失败:', e);
@@ -6817,6 +6935,7 @@ async function showMemoryHistoryModal() {
     header.innerHTML = `
         <h3 style="color: #9b59b6; margin: 0;">📜 记忆修改历史 (${historyList.length}条)</h3>
         <div>
+            <button id="view-entry-evolution-btn" style="background: #3498db; color: white; padding: 8px 16px; border: none; border-radius: 5px; cursor: pointer; margin-right: 10px;">📊 条目演变</button>
             <button id="clear-history-btn" style="background: #e74c3c; color: white; padding: 8px 16px; border: none; border-radius: 5px; cursor: pointer; margin-right: 10px;">🗑️ 清空历史</button>
             <button id="back-to-worldbook-btn" style="background: #e67e22; color: white; padding: 8px 16px; border: none; border-radius: 5px; cursor: pointer; margin-right: 10px;">📖 返回世界书</button>
             <button id="close-history-modal" style="background: #6c757d; color: white; padding: 8px 16px; border: none; border-radius: 5px; cursor: pointer;">关闭</button>
@@ -6857,6 +6976,10 @@ async function showMemoryHistoryModal() {
             modal.remove();
             showMemoryHistoryModal();
         }
+    };
+    document.getElementById('view-entry-evolution-btn').onclick = () => {
+        modal.remove();
+        showEntryEvolutionModal(historyList);
     };
 
     // 绑定历史项点击事件
@@ -6926,11 +7049,14 @@ async function showHistoryDetail(historyId) {
     
     let html = `
     <div style="margin-bottom: 15px; padding-bottom: 15px; border-bottom: 1px solid #444;">
-        <h4 style="color: #e67e22; margin: 0 0 10px 0;">📝 ${history.memoryTitle || `记忆块 ${history.memoryIndex + 1}`}</h4>
+        <h4 style="color: #e67e22; margin: 0 0 10px 0;"> 📝 ${history.memoryTitle || `记忆块 ${history.memoryIndex + 1}`}</h4>
         <div style="font-size: 12px; color: #888;">时间: ${time}</div>
         <div style="margin-top: 10px;">
             <button onclick="rollbackToHistoryAndRefresh(${historyId})" style="background: #e74c3c; color: white; padding: 6px 12px; border: none; border-radius: 4px; cursor: pointer; font-size: 12px;">
                 ⏪ 回退到此版本前
+            </button>
+            <button onclick="exportHistoryWorldbook(${historyId})" style="background: #27ae60; color: white; padding: 6px 12px; border: none; border-radius: 4px; cursor: pointer; font-size: 12px; margin-left: 10px;">
+                📥 导出此版本世界书
             </button>
         </div>
     </div>
@@ -7002,20 +7128,25 @@ async function rollbackToHistoryAndRefresh(historyId) {
         const rollbackMemoryIndex = history.memoryIndex;
         console.log(`📚 回退到记忆索引: ${rollbackMemoryIndex}`);
         
-        // 更新记忆队列的处理状态：将回退点及之后的记忆块标记为未处理
+        // 更新记忆队列的处理状态
         for (let i = 0; i < memoryQueue.length; i++) {
-            if (i >= rollbackMemoryIndex) {
+            if (i < rollbackMemoryIndex) {
+                // 回退点之前的记忆块标记为已处理（保留原有的failed状态）
+                memoryQueue[i].processed = true;
+                // 不修改failed状态，保留原有的失败标记
+            } else {
+                // 回退点及之后的记忆块标记为未处理
                 memoryQueue[i].processed = false;
                 memoryQueue[i].failed = false;
             }
         }
         
-        console.log(`📚 已将记忆块 ${rollbackMemoryIndex} 及之后的标记为未处理`);
+        console.log(`📚 记忆块 0-${rollbackMemoryIndex - 1} 标记为已处理，${rollbackMemoryIndex} 及之后标记为未处理`);
         
         // 保存当前状态（使用回退点的索引）
         await NovelState.saveState(rollbackMemoryIndex);
         
-        alert(`回退成功！\n\n世界书已恢复到"${history.memoryTitle}"处理之前的状态。\n记忆块 ${rollbackMemoryIndex + 1} 及之后将重新处理。\n\n页面将自动刷新。`);
+        alert(`回退成功！\n\n世界书已恢复到"${history.memoryTitle}"处理之前的状态。\n• 记忆块 1-${rollbackMemoryIndex} 已处理\n• 记忆块 ${rollbackMemoryIndex + 1} 及之后将重新处理\n\n页面将自动刷新。`);
         location.reload();
     } catch (error) {
         console.error('回退失败:', error);
@@ -7048,7 +7179,7 @@ async function checkAndClearHistoryOnFileChange(newContent) {
                 
                 if (shouldClear) {
                     await MemoryHistoryDB.clearAllHistory();
-                    console.log('📚 已清空旧的历史记录');
+                    console.log('已清空旧的历史记录');
                 }
             }
         }
@@ -7056,10 +7187,1042 @@ async function checkAndClearHistoryOnFileChange(newContent) {
         // 保存新文件的hash
         currentFileHash = newHash;
         await MemoryHistoryDB.saveFileHash(newHash);
-        console.log('📁 已保存新文件hash');
+        console.log('已保存新文件hash');
         
     } catch (error) {
         console.error('检测文件变化时出错:', error);
         // 出错时不阻止文件导入
     }
+}
+
+// ========== 历史数据导出功能 ==========
+
+// ========== 条目演变功能 ==========
+
+// 显示条目演变模态框
+async function showEntryEvolutionModal(historyList) {
+    const existingModal = document.getElementById('entry-evolution-modal');
+    if (existingModal) existingModal.remove();
+
+    // 按条目聚合历史
+    const entryEvolution = aggregateEntryEvolution(historyList);
+
+    const modal = document.createElement('div');
+    modal.id = 'entry-evolution-modal';
+    modal.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 10000; display: flex; justify-content: center; align-items: center;';
+
+    const content = document.createElement('div');
+    content.style.cssText = 'background: #2d2d2d; border-radius: 10px; padding: 20px; width: 95%; max-width: 1200px; max-height: 90vh; display: flex; flex-direction: column;';
+
+    const entryCount = Object.keys(entryEvolution).length;
+    const header = document.createElement('div');
+    header.style.cssText = 'display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; flex-shrink: 0;';
+    header.innerHTML = `
+        <h3 style="color: #3498db; margin: 0;">条目演变历史 (${entryCount}个条目)</h3>
+        <div>
+            <button id="summarize-all-entries-btn" style="background: #9b59b6; color: white; padding: 8px 16px; border: none; border-radius: 5px; cursor: pointer; margin-right: 10px;">AI总结全部演变</button>
+            <button id="export-evolution-btn" style="background: #27ae60; color: white; padding: 8px 16px; border: none; border-radius: 5px; cursor: pointer; margin-right: 10px;">导出演变数据</button>
+            <button id="back-to-history-btn" style="background: #e67e22; color: white; padding: 8px 16px; border: none; border-radius: 5px; cursor: pointer; margin-right: 10px;">返回历史</button>
+            <button id="close-evolution-modal" style="background: #6c757d; color: white; padding: 8px 16px; border: none; border-radius: 5px; cursor: pointer;">关闭</button>
+        </div>
+    `;
+
+    const mainContainer = document.createElement('div');
+    mainContainer.style.cssText = 'display: flex; flex: 1; overflow: hidden; gap: 15px;';
+
+    // 左侧：条目列表
+    const entryListContainer = document.createElement('div');
+    entryListContainer.style.cssText = 'width: 300px; flex-shrink: 0; overflow-y: auto; background: #1c1c1c; border-radius: 8px; padding: 10px;';
+    entryListContainer.innerHTML = generateEntryListHTML(entryEvolution);
+
+    // 右侧：演变详情
+    const evolutionDetailContainer = document.createElement('div');
+    evolutionDetailContainer.id = 'evolution-detail-container';
+    evolutionDetailContainer.style.cssText = 'flex: 1; overflow-y: auto; background: #1c1c1c; border-radius: 8px; padding: 15px; color: #f0f0f0;';
+    evolutionDetailContainer.innerHTML = '<div style="text-align: center; color: #888; padding: 40px;">点击左侧条目查看演变历史</div>';
+
+    mainContainer.appendChild(entryListContainer);
+    mainContainer.appendChild(evolutionDetailContainer);
+
+    content.appendChild(header);
+    content.appendChild(mainContainer);
+    modal.appendChild(content);
+    document.body.appendChild(modal);
+
+    // 保存当前演变数据到全局变量
+    window.currentEntryEvolution = entryEvolution;
+
+    // 绑定事件
+    document.getElementById('close-evolution-modal').onclick = () => modal.remove();
+    document.getElementById('back-to-history-btn').onclick = () => {
+        modal.remove();
+        showMemoryHistoryModal();
+    };
+    document.getElementById('export-evolution-btn').onclick = () => exportEvolutionData(entryEvolution);
+    document.getElementById('summarize-all-entries-btn').onclick = () => summarizeAllEntryEvolution(entryEvolution);
+
+    // 绑定条目点击事件
+    entryListContainer.querySelectorAll('.entry-evolution-item').forEach(item => {
+        item.onclick = () => {
+            const entryKey = item.dataset.entryKey;
+            showEntryEvolutionDetail(entryKey, entryEvolution[entryKey]);
+            // 高亮选中项
+            entryListContainer.querySelectorAll('.entry-evolution-item').forEach(i => i.style.background = '#2d2d2d');
+            item.style.background = '#3d3d3d';
+        };
+    });
+
+    modal.onclick = (e) => { if (e.target === modal) modal.remove(); };
+}
+
+// 按条目聚合演变历史
+function aggregateEntryEvolution(historyList) {
+    const evolution = {};
+
+    // 按时间正序排列
+    const sortedList = [...historyList].sort((a, b) => a.timestamp - b.timestamp);
+
+    sortedList.forEach(history => {
+        if (!history.changedEntries) return;
+
+        history.changedEntries.forEach(change => {
+            const key = `${change.category}::${change.entryName}`;
+            
+            if (!evolution[key]) {
+                evolution[key] = {
+                    category: change.category,
+                    entryName: change.entryName,
+                    changes: [],
+                    summary: null
+                };
+            }
+
+            evolution[key].changes.push({
+                timestamp: history.timestamp,
+                memoryIndex: history.memoryIndex,
+                memoryTitle: history.memoryTitle,
+                type: change.type,
+                oldValue: change.oldValue,
+                newValue: change.newValue
+            });
+        });
+    });
+
+    return evolution;
+}
+
+// 生成条目列表HTML
+function generateEntryListHTML(entryEvolution) {
+    const entries = Object.entries(entryEvolution);
+    
+    if (entries.length === 0) {
+        return '<div style="text-align: center; color: #888; padding: 20px;">暂无条目演变数据</div>';
+    }
+
+    // 按变更次数排序（多的在前）
+    entries.sort((a, b) => b[1].changes.length - a[1].changes.length);
+
+    let html = '';
+    entries.forEach(([key, data]) => {
+        const changeCount = data.changes.length;
+        const hasSummary = data.summary ? '✅' : '';
+        
+        html += `
+        <div class="entry-evolution-item" data-entry-key="${key}" style="background: #2d2d2d; border-radius: 6px; padding: 10px; margin-bottom: 8px; cursor: pointer; border-left: 3px solid #3498db; transition: background 0.2s;">
+            <div style="font-weight: bold; color: #e67e22; font-size: 13px; margin-bottom: 4px; display: flex; justify-content: space-between;">
+                <span> ${data.entryName}</span>
+                <span style="font-size: 11px; color: #27ae60;">${hasSummary}</span>
+            </div>
+            <div style="font-size: 11px; color: #888; margin-bottom: 4px;">[${data.category}]</div>
+            <div style="font-size: 11px; color: #aaa;">
+                <span style="color: #3498db;"> ${changeCount}次变更</span>
+            </div>
+        </div>`;
+    });
+
+    return html;
+}
+
+// 显示条目演变详情
+function showEntryEvolutionDetail(entryKey, entryData) {
+    const detailContainer = document.getElementById('evolution-detail-container');
+    if (!detailContainer || !entryData) return;
+
+    let html = `
+    <div style="margin-bottom: 15px; padding-bottom: 15px; border-bottom: 1px solid #444;">
+        <h4 style="color: #e67e22; margin: 0 0 5px 0;"> ${entryData.entryName}</h4>
+        <div style="font-size: 12px; color: #888; margin-bottom: 10px;">[${entryData.category}] - 共 ${entryData.changes.length} 次变更</div>
+        <button onclick="summarizeSingleEntryEvolution('${entryKey.replace(/'/g, "\\'")}')" style="background: #9b59b6; color: white; padding: 6px 12px; border: none; border-radius: 4px; cursor: pointer; font-size: 12px;">
+            AI总结此条目演变
+        </button>
+    </div>
+    `;
+
+    // 显示已有的总结
+    if (entryData.summary) {
+        html += `
+        <div style="background: #1a3a1a; border: 1px solid #27ae60; border-radius: 6px; padding: 12px; margin-bottom: 15px;">
+            <div style="color: #27ae60; font-weight: bold; margin-bottom: 8px;">AI总结</div>
+            <div style="color: #f0f0f0; font-size: 13px; line-height: 1.6;">${renderMarkdown(entryData.summary)}</div>
+        </div>
+        `;
+    }
+
+    html += `<div style="font-size: 14px; font-weight: bold; color: #3498db; margin-bottom: 10px;">变更时间线</div>`;
+
+    // 按时间正序显示变更
+    entryData.changes.forEach((change, index) => {
+        const time = new Date(change.timestamp).toLocaleString('zh-CN', {
+            month: '2-digit',
+            day: '2-digit',
+            hour: '2-digit',
+            minute: '2-digit'
+        });
+        const typeIcon = change.type === 'add' ? '➕ 新增' : change.type === 'modify' ? '✏️ 修改' : '❌ 删除';
+        const typeColor = change.type === 'add' ? '#27ae60' : change.type === 'modify' ? '#3498db' : '#e74c3c';
+
+        html += `
+        <div style="background: #252525; border-radius: 6px; padding: 12px; margin-bottom: 10px; border-left: 3px solid ${typeColor};">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                <span style="color: ${typeColor}; font-weight: bold;">#${index + 1} ${typeIcon}</span>
+                <span style="color: #888; font-size: 11px;">${time} - ${change.memoryTitle || `记忆块 ${change.memoryIndex + 1}`}</span>
+            </div>
+            <div style="display: flex; gap: 10px;">
+                <div style="flex: 1; background: #1c1c1c; padding: 8px; border-radius: 4px; ${change.type === 'add' ? 'opacity: 0.5;' : ''}">
+                    <div style="color: #e74c3c; font-size: 11px; margin-bottom: 4px;">变更前</div>
+                    <div style="font-size: 12px; color: #ccc; max-height: 120px; overflow-y: auto;">
+                        ${change.oldValue ? formatEntryForDisplay(change.oldValue) : '<span style="color: #666;">无</span>'}
+                    </div>
+                </div>
+                <div style="flex: 1; background: #1c1c1c; padding: 8px; border-radius: 4px; ${change.type === 'delete' ? 'opacity: 0.5;' : ''}">
+                    <div style="color: #27ae60; font-size: 11px; margin-bottom: 4px;">变更后</div>
+                    <div style="font-size: 12px; color: #ccc; max-height: 120px; overflow-y: auto;">
+                        ${change.newValue ? formatEntryForDisplay(change.newValue) : '<span style="color: #666;">无</span>'}
+                    </div>
+                </div>
+            </div>
+        </div>`;
+    });
+
+    detailContainer.innerHTML = html;
+}
+
+// 导出演变数据为SillyTavern世界书格式
+function exportEvolutionData(entryEvolution) {
+    const entries = Object.entries(entryEvolution);
+    
+    if (entries.length === 0) {
+        alert('没有可导出的演变数据');
+        return;
+    }
+
+    const triggerCategories = new Set(['地点', '剧情大纲']);
+    const sillyTavernEntries = [];
+    let entryId = 0;
+
+    for (const [key, data] of entries) {
+        const category = data.category;
+        const entryName = data.entryName;
+        const isTriggerCategory = triggerCategories.has(category);
+        const constant = !isTriggerCategory;
+        const selective = isTriggerCategory;
+
+        // 获取最新的内容和关键词（优先使用AI总结，否则使用最后一次变更的内容）
+        let content = data.summary || '';
+        let keywords = [];
+        
+        if (!content && data.changes.length > 0) {
+            const lastChange = data.changes[data.changes.length - 1];
+            content = lastChange.newValue?.['内容'] || lastChange.oldValue?.['内容'] || '';
+            keywords = lastChange.newValue?.['关键词'] || lastChange.oldValue?.['关键词'] || [];
+        }
+        
+        if (!content) continue;
+
+        // 处理关键词
+        if (!Array.isArray(keywords) || keywords.length === 0) {
+            keywords = [entryName];
+        }
+        const cleanKeywords = keywords.map(k => String(k).trim().replace(/[-_\s]+/g, ''))
+            .filter(k => k.length > 0 && k.length <= 20);
+        if (cleanKeywords.length === 0) cleanKeywords.push(entryName);
+        const uniqueKeywords = [...new Set(cleanKeywords)];
+
+        sillyTavernEntries.push({
+            uid: entryId++,
+            key: uniqueKeywords,
+            keysecondary: [],
+            comment: `${category} - ${entryName}`,
+            content: content,
+            constant,
+            selective,
+            selectiveLogic: 0,
+            addMemo: true,
+            order: entryId * 100,
+            position: 0,
+            disable: false,
+            excludeRecursion: false,
+            preventRecursion: false,
+            delayUntilRecursion: false,
+            probability: 100,
+            depth: 4,
+            group: category,
+            groupOverride: false,
+            groupWeight: 100,
+            scanDepth: null,
+            caseSensitive: false,
+            matchWholeWords: true,
+            useGroupScoring: null,
+            automationId: '',
+            role: 0,
+            vectorized: false,
+            sticky: null,
+            cooldown: null,
+            delay: null
+        });
+    }
+
+    const exportData = { entries: sillyTavernEntries };
+    const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `worldbook_evolution_${new Date().toISOString().slice(0, 10)}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+
+    console.log(`已导出 ${sillyTavernEntries.length} 个条目为SillyTavern世界书格式`);
+}
+
+// AI总结单个条目演变
+async function summarizeSingleEntryEvolution(entryKey) {
+    const entryEvolution = window.currentEntryEvolution;
+    if (!entryEvolution) {
+        alert('演变数据未加载');
+        return;
+    }
+    
+    const entryData = entryEvolution[entryKey];
+    if (!entryData) {
+        alert('找不到该条目的演变数据');
+        return;
+    }
+
+    // 保存总结前的世界书状态
+    const previousWorldbook = JSON.parse(JSON.stringify(generatedWorldbook));
+
+    // 构建演变描述
+    const evolutionText = buildEvolutionText(entryData);
+    
+    // 调用AI总结
+    const summary = await callAIForEvolutionSummary(entryData.entryName, evolutionText);
+    
+    if (summary) {
+        entryData.summary = summary;
+        
+        // 更新世界书中的条目
+        const category = entryData.category;
+        const entryName = entryData.entryName;
+        if (!generatedWorldbook[category]) {
+            generatedWorldbook[category] = {};
+        }
+        
+        const oldValue = generatedWorldbook[category][entryName] || null;
+        const newValue = {
+            '关键词': oldValue?.['关键词'] || [],
+            '内容': summary
+        };
+        generatedWorldbook[category][entryName] = newValue;
+        
+        // 保存到修改历史
+        const changedEntries = [{
+            category: category,
+            entryName: entryName,
+            type: oldValue ? 'modify' : 'add',
+            oldValue: oldValue,
+            newValue: newValue
+        }];
+        
+        try {
+            await MemoryHistoryDB.saveHistory(
+                -1,
+                '记忆-演变总结',
+                previousWorldbook,
+                generatedWorldbook,
+                changedEntries
+            );
+            console.log(`📚 已保存演变总结历史: ${entryName}`);
+        } catch (error) {
+            console.error('保存演变总结历史失败:', error);
+        }
+        
+        // 刷新显示
+        showEntryEvolutionDetail(entryKey, entryData);
+        await NovelState.saveState(memoryQueue.length);
+    }
+}
+
+// AI总结全部条目演变
+async function summarizeAllEntryEvolution(entryEvolution) {
+    window.currentEntryEvolution = entryEvolution;
+    const entries = Object.entries(entryEvolution);
+    
+    if (entries.length === 0) {
+        alert('没有可总结的条目');
+        return;
+    }
+
+    const confirmMsg = `将对 ${entries.length} 个条目进行AI总结。\n这可能需要一些时间和API调用。\n\n是否继续？`;
+    if (!confirm(confirmMsg)) return;
+    
+    // 保存总结前的世界书状态
+    const previousWorldbook = JSON.parse(JSON.stringify(generatedWorldbook));
+
+    // 显示进度
+    const progressDiv = document.createElement('div');
+    progressDiv.id = 'summary-progress';
+    progressDiv.style.cssText = 'position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: #2d2d2d; padding: 20px; border-radius: 10px; z-index: 10001; text-align: center; min-width: 300px;';
+    progressDiv.innerHTML = `
+        <div style="color: #9b59b6; font-size: 16px; margin-bottom: 10px;">AI总结中...</div>
+        <div id="summary-progress-text" style="color: #aaa; font-size: 14px;">0 / ${entries.length}</div>
+        <div style="margin-top: 10px; height: 4px; background: #333; border-radius: 2px; overflow: hidden;">
+            <div id="summary-progress-bar" style="height: 100%; width: 0%; background: linear-gradient(90deg, #9b59b6, #3498db); transition: width 0.3s;"></div>
+        </div>
+        <button id="cancel-summary-btn" style="margin-top: 15px; background: #e74c3c; color: white; padding: 6px 12px; border: none; border-radius: 4px; cursor: pointer;">取消</button>
+    `;
+    document.body.appendChild(progressDiv);
+
+    let cancelled = false;
+    document.getElementById('cancel-summary-btn').onclick = () => {
+        cancelled = true;
+    };
+
+    let completed = 0;
+    for (const [key, data] of entries) {
+        if (cancelled) break;
+        
+        try {
+            const evolutionText = buildEvolutionText(data);
+            const summary = await callAIForEvolutionSummary(data.entryName, evolutionText);
+            if (summary) {
+                data.summary = summary;
+            }
+        } catch (e) {
+            console.error(`总结条目 ${key} 失败:`, e);
+        }
+        
+        completed++;
+        const progressText = document.getElementById('summary-progress-text');
+        const progressBar = document.getElementById('summary-progress-bar');
+        if (progressText) progressText.textContent = `${completed} / ${entries.length}`;
+        if (progressBar) progressBar.style.width = `${(completed / entries.length) * 100}%`;
+    }
+
+    progressDiv.remove();
+    
+    // 保存总结后的世界书状态到修改历史
+    if (completed > 0) {
+        const allChangedEntries = [];
+        for (const [key, data] of entries) {
+            if (data.summary) {
+                const category = data.category;
+                const entryName = data.entryName;
+                if (!generatedWorldbook[category]) {
+                    generatedWorldbook[category] = {};
+                }
+                
+                const oldValue = generatedWorldbook[category][entryName] || null;
+                const newValue = {
+                    '关键词': oldValue?.['关键词'] || [],
+                    '内容': data.summary
+                };
+                generatedWorldbook[category][entryName] = newValue;
+                
+                allChangedEntries.push({
+                    category: category,
+                    entryName: entryName,
+                    type: oldValue ? 'modify' : 'add',
+                    oldValue: oldValue,
+                    newValue: newValue
+                });
+            }
+        }
+        
+        if (allChangedEntries.length > 0) {
+            try {
+                await MemoryHistoryDB.saveHistory(
+                    -1,
+                    '记忆-演变总结',
+                    previousWorldbook,
+                    generatedWorldbook,
+                    allChangedEntries
+                );
+                console.log(`📚 已保存演变总结历史: ${allChangedEntries.length} 个条目`);
+            } catch (error) {
+                console.error('保存演变总结历史失败:', error);
+            }
+            await NovelState.saveState(memoryQueue.length);
+        }
+    }
+    
+    if (cancelled) {
+        alert(`已取消，完成了 ${completed} 个条目的AI总结`);
+    } else {
+        alert(`已完成 ${completed} 个条目的AI总结！`);
+    }
+    
+    // 刷新条目列表
+    const entryListContainer = document.querySelector('#entry-evolution-modal .entry-evolution-item')?.parentElement;
+    if (entryListContainer) {
+        entryListContainer.innerHTML = generateEntryListHTML(entryEvolution);
+        // 重新绑定点击事件
+        entryListContainer.querySelectorAll('.entry-evolution-item').forEach(item => {
+            item.onclick = () => {
+                const entryKey = item.dataset.entryKey;
+                showEntryEvolutionDetail(entryKey, entryEvolution[entryKey]);
+                entryListContainer.querySelectorAll('.entry-evolution-item').forEach(i => i.style.background = '#2d2d2d');
+                item.style.background = '#3d3d3d';
+            };
+        });
+    }
+}
+
+// 构建演变描述文本
+function buildEvolutionText(entryData) {
+    let text = `条目名称: ${entryData.entryName}\n分类: ${entryData.category}\n\n变更历史:\n`;
+    
+    entryData.changes.forEach((change, index) => {
+        const time = new Date(change.timestamp).toLocaleString('zh-CN');
+        text += `\n--- 第${index + 1}次变更 (${time}, ${change.memoryTitle || `记忆块${change.memoryIndex + 1}`}) ---\n`;
+        text += `类型: ${change.type === 'add' ? '新增' : change.type === 'modify' ? '修改' : '删除'}\n`;
+        
+        if (change.oldValue) {
+            text += `变更前内容: ${change.oldValue['内容'] || JSON.stringify(change.oldValue)}\n`;
+        }
+        if (change.newValue) {
+            text += `变更后内容: ${change.newValue['内容'] || JSON.stringify(change.newValue)}\n`;
+        }
+    });
+    
+    return text;
+}
+
+// 调用AI进行演变总结
+async function callAIForEvolutionSummary(entryName, evolutionText) {
+    try {
+        const prompt = `请根据以下世界书条目的变更历史，总结这个条目（角色/事物/概念）的常态信息。
+
+**重要要求：**
+1. 这是为SillyTavern RPG角色卡准备的世界书条目
+2. 人物状态应设置为**常态**（活着、正常状态），不能是死亡、受伤等临时状态
+3. 提取该条目的核心特征、背景、能力、关系等持久性信息
+4. 忽略故事中的临时变化，保留角色/事物的本质特征
+5. 输出应该是精炼的、适合作为RPG世界书条目的描述
+
+${evolutionText}
+
+请直接输出总结内容，不要包含任何解释或前缀。`;
+
+        console.log(`📤 [AI演变总结] 条目: ${entryName}\n完整Prompt:\n`, prompt);
+        const response = await callSimpleAPI(prompt);
+        console.log(`📥 [AI演变总结] 条目: ${entryName} 响应:\n`, response);
+        return response;
+    } catch (error) {
+        console.error('AI总结失败:', error);
+        return null;
+    }
+}
+
+// 导出指定历史版本的世界书
+async function exportHistoryWorldbook(historyId) {
+    try {
+        const history = await MemoryHistoryDB.getHistoryById(historyId);
+        if (!history) {
+            alert('找不到该历史记录');
+            return;
+        }
+
+        const worldbook = history.newWorldbook;
+        if (!worldbook || Object.keys(worldbook).length === 0) {
+            alert('该历史记录没有世界书数据');
+            return;
+        }
+
+        // 生成世界书名称
+        const timestamp = new Date(history.timestamp);
+        const readableTimeString = `${timestamp.getFullYear()}${String(timestamp.getMonth() + 1).padStart(2, '0')}${String(timestamp.getDate()).padStart(2, '0')}_${String(timestamp.getHours()).padStart(2, '0')}${String(timestamp.getMinutes()).padStart(2, '0')}`;
+        const worldbookName = `${history.memoryTitle || `记忆${history.memoryIndex + 1}`}-${readableTimeString}`;
+
+        // 转换为标准世界书条目数组
+        const standardEntries = convertGeneratedWorldbookToStandard(worldbook);
+        
+        // 构建SillyTavern世界书格式
+        const lorebookEntries = {};
+        standardEntries.forEach((entry, index) => {
+            lorebookEntries[index] = {
+                uid: entry.id,
+                key: entry.keys,
+                keysecondary: entry.secondary_keys || [],
+                comment: entry.comment,
+                content: entry.content,
+                constant: entry.constant,
+                selective: entry.selective,
+                selectiveLogic: 0,
+                addMemo: true,
+                order: entry.priority || 100,
+                position: entry.position === 'before_char' ? 0 : 1,
+                disable: !entry.enabled,
+                excludeRecursion: entry.prevent_recursion || false,
+                preventRecursion: entry.prevent_recursion || false,
+                probability: entry.probability || 100,
+                useProbability: true,
+                depth: entry.wb_depth || 4,
+                role: 0,
+                displayIndex: index,
+                extensions: {
+                    position: entry.position === 'before_char' ? 0 : 1,
+                    exclude_recursion: entry.prevent_recursion || false,
+                    probability: entry.probability || 100,
+                    useProbability: true,
+                    depth: entry.wb_depth || 4,
+                    selectiveLogic: 0,
+                    group: entry.group || '',
+                    role: 0
+                }
+            };
+        });
+
+        const lorebookData = {
+            entries: lorebookEntries,
+            originalData: {
+                name: worldbookName,
+                description: `由妮卡角色工作室从历史记录导出 (ID: ${historyId})`,
+                scan_depth: 10,
+                token_budget: 2048,
+                recursive_scanning: false,
+                entries: standardEntries
+            }
+        };
+
+        const blob = new Blob([JSON.stringify(lorebookData, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        const safeName = worldbookName.replace(/[^a-zA-Z0-9\u4e00-\u9fa5]/g, '_');
+        a.download = `${safeName}.json`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        console.log(`已导出历史记录 #${historyId} 的世界书 (SillyTavern世界书格式)`);
+    } catch (error) {
+        console.error('导出历史世界书失败:', error);
+        alert('导出失败: ' + error.message);
+    }
+}
+
+// ========== AI优化世界书功能 ==========
+const DEFAULT_BATCH_CHANGES = 50;
+let customOptimizationPrompt = null;
+
+async function showOptimizeWorldbookModal() {
+    const existingModal = document.getElementById('optimize-worldbook-modal');
+    if (existingModal) existingModal.remove();
+
+    let historyList = [];
+    try {
+        historyList = await MemoryHistoryDB.getAllHistory();
+    } catch (e) {
+        console.error('获取历史记录失败:', e);
+    }
+
+    // 从IndexedDB加载上次保存的自定义prompt
+    try {
+        const savedPrompt = await MemoryHistoryDB.getCustomOptimizationPrompt();
+        if (savedPrompt) {
+            customOptimizationPrompt = savedPrompt;
+            console.log('📝 已加载上次保存的自定义Prompt');
+        }
+    } catch (e) {
+        console.error('加载自定义Prompt失败:', e);
+    }
+
+    const entryEvolution = aggregateEntryEvolution(historyList);
+    const entryCount = Object.keys(entryEvolution).length;
+    let totalChanges = 0;
+    for (const key in entryEvolution) {
+        totalChanges += entryEvolution[key].changes.length;
+    }
+
+    const modal = document.createElement('div');
+    modal.id = 'optimize-worldbook-modal';
+    modal.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 10000; display: flex; justify-content: center; align-items: center;';
+
+    const content = document.createElement('div');
+    content.style.cssText = 'background: #2d2d2d; border-radius: 10px; padding: 25px; width: 90%; max-width: 800px; max-height: 85vh; overflow-y: auto;';
+    content.innerHTML = `
+        <h3 style="color: #3498db; margin: 0 0 20px 0;">🤖 AI优化世界书</h3>
+        <div style="background: #1c1c1c; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+            <div style="color: #e67e22; font-weight: bold; margin-bottom: 10px;">📊 当前数据统计</div>
+            <div style="color: #aaa; font-size: 14px;">
+                <div>• 条目数量: <span style="color: #27ae60;">${entryCount}</span> 个</div>
+                <div>• 历史变更: <span style="color: #3498db;">${totalChanges}</span> 对</div>
+            </div>
+        </div>
+        <div style="background: #1c1c1c; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+            <div style="color: #9b59b6; font-weight: bold; margin-bottom: 10px;">⚙️ 优化设置</div>
+            <label style="color: #aaa; font-size: 14px;">每批处理变更数:</label>
+            <input type="number" id="batch-changes-input" value="${DEFAULT_BATCH_CHANGES}" min="10" max="200" 
+                style="width: 100%; padding: 8px; background: #2d2d2d; border: 1px solid #555; border-radius: 4px; color: white; margin-top: 5px; margin-bottom: 15px;">
+            
+            <div style="margin-top: 15px;">
+                <label style="color: #aaa; font-size: 14px; display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+                    <input type="checkbox" id="use-custom-prompt" style="width: 16px; height: 16px;">
+                    <span>使用自定义Prompt设定</span>
+                </label>
+                <div id="custom-prompt-container" style="display: none;">
+                    <textarea id="custom-prompt-textarea" placeholder="在此输入自定义的优化Prompt...&#10;&#10;提示：可以使用 {{条目}} 作为占位符，系统会自动替换为实际条目内容。" 
+                        style="width: 100%; min-height: 150px; padding: 10px; background: #2d2d2d; border: 1px solid #555; border-radius: 4px; color: white; font-family: monospace; font-size: 13px; resize: vertical; margin-bottom: 10px;">${customOptimizationPrompt || ''}</textarea>
+                    <div style="display: flex; gap: 10px; align-items: center;">
+                        <input type="file" id="prompt-file-input" accept=".txt,.md" style="display: none;">
+                        <button id="import-prompt-btn" style="background: #27ae60; color: white; padding: 6px 12px; border: none; border-radius: 4px; cursor: pointer; font-size: 13px;">📁 导入文件</button>
+                        <button id="reset-prompt-btn" style="background: #3498db; color: white; padding: 6px 12px; border: none; border-radius: 4px; cursor: pointer; font-size: 13px;">📄 显示默认提示词</button>
+                        <span id="prompt-file-status" style="color: #888; font-size: 12px;"></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div style="background: #1a3a1a; border: 1px solid #27ae60; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+            <div style="color: #27ae60; font-weight: bold; margin-bottom: 10px;">✨ 优化目标</div>
+            <div style="color: #ccc; font-size: 13px; line-height: 1.6;">
+                • 将条目优化为<strong>常态描述</strong>（适合RPG）<br>
+                • 人物状态设为正常，忽略临时变化<br>
+                • 优化后将<strong>覆盖</strong>现有世界书条目
+            </div>
+        </div>
+        <div style="display: flex; gap: 10px; justify-content: flex-end;">
+            <button id="cancel-optimize-btn" style="background: #6c757d; color: white; padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer;">取消</button>
+            <button id="start-optimize-btn" style="background: #3498db; color: white; padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer;">🚀 开始优化</button>
+        </div>
+    `;
+    modal.appendChild(content);
+    document.body.appendChild(modal);
+
+    // 绑定自定义prompt开关
+    const useCustomPromptCheckbox = document.getElementById('use-custom-prompt');
+    const customPromptContainer = document.getElementById('custom-prompt-container');
+    const customPromptTextarea = document.getElementById('custom-prompt-textarea');
+    
+    useCustomPromptCheckbox.onchange = () => {
+        customPromptContainer.style.display = useCustomPromptCheckbox.checked ? 'block' : 'none';
+    };
+    
+    // 监听textarea内容变化，自动保存到IndexedDB
+    let saveTimeout = null;
+    customPromptTextarea.addEventListener('input', () => {
+        // 使用防抖，避免频繁保存
+        if (saveTimeout) clearTimeout(saveTimeout);
+        saveTimeout = setTimeout(async () => {
+            const promptText = customPromptTextarea.value.trim();
+            try {
+                await MemoryHistoryDB.saveCustomOptimizationPrompt(promptText);
+                console.log('💾 已自动保存自定义Prompt到IndexedDB');
+            } catch (error) {
+                console.error('保存自定义Prompt失败:', error);
+            }
+        }, 1000); // 1秒后保存
+    });
+
+    // 绑定导入文件按钮
+    document.getElementById('import-prompt-btn').onclick = () => {
+        document.getElementById('prompt-file-input').click();
+    };
+
+    // 绑定文件选择
+    document.getElementById('prompt-file-input').onchange = async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        
+        try {
+            const statusSpan = document.getElementById('prompt-file-status');
+            statusSpan.textContent = '正在读取...';
+            statusSpan.style.color = '#3498db';
+            
+            // 使用detectBestEncoding函数自动检测编码
+            const { encoding, content } = await detectBestEncoding(file);
+            
+            document.getElementById('custom-prompt-textarea').value = content;
+            statusSpan.textContent = `已导入: ${file.name} (${encoding})`;
+            statusSpan.style.color = '#27ae60';
+            
+            console.log(`📁 已导入Prompt文件: ${file.name}, 编码: ${encoding}, 长度: ${content.length}`);
+        } catch (error) {
+            console.error('导入Prompt文件失败:', error);
+            document.getElementById('prompt-file-status').textContent = '导入失败';
+            document.getElementById('prompt-file-status').style.color = '#e74c3c';
+            alert('导入文件失败: ' + error.message);
+        }
+    };
+
+    // 绑定显示默认提示词按钮
+    document.getElementById('reset-prompt-btn').onclick = () => {
+        const defaultPrompt = `你是RPG世界书优化专家。为每个条目生成**常态描述**。
+
+**要求：**
+1. 人物状态必须是常态（活着、正常），不能是死亡等临时状态
+2. 提取核心特征、背景、能力等持久性信息
+3. 越详尽越好
+4. **对于角色类条目**,必须生成完整的结构化JSON,包含以下字段:
+   - name: 角色名称【必填】
+   - gender: 性别【必填】
+   - age_appearance: 外观年龄
+   - origin: 出身背景（position职位、背景描述等）
+   - affiliation: 所属组织/阵营
+   - appearance: 外观描述（发色、发型、瞳色、肤色、体型、服装、配件、特征等）【必填】
+   - personality: 性格特征【必填】,必须包含:
+     * core_traits: 核心特质
+     * speech_style: 说话风格【必填】- 详细描述语气、用词习惯、表达方式
+     * sample_dialogue: 示例对话【必填】- 至少5条典型对话示例
+     * background_psychology: 心理背景
+     * social_style: 社交风格
+   - role_illustration: 角色定位说明
+   - support_relations: 与其他角色的关系
+   - style_tags: 风格标签
+5. **对于非角色条目**（地点、物品、设定等），生成简洁的描述性内容
+
+**输出JSON格式：**
+{
+  "条目名1": {
+    "关键词": ["关键词1", "关键词2"],
+    "内容": "对于角色，这里应该是完整的JSON字符串；对于非角色，这里是描述文本"
+  }
+}
+
+**条目：**
+{{条目}}
+直接输出JSON。`;
+        
+        document.getElementById('custom-prompt-textarea').value = defaultPrompt;
+        document.getElementById('prompt-file-status').textContent = '已加载默认提示词';
+        document.getElementById('prompt-file-status').style.color = '#3498db';
+    };
+
+    document.getElementById('cancel-optimize-btn').onclick = () => { modal.remove(); showViewWorldbookModal(); };
+    document.getElementById('start-optimize-btn').onclick = async () => {
+        const batchSize = parseInt(document.getElementById('batch-changes-input').value) || DEFAULT_BATCH_CHANGES;
+        
+        // 保存自定义prompt
+        if (useCustomPromptCheckbox.checked) {
+            const promptText = document.getElementById('custom-prompt-textarea').value.trim();
+            customOptimizationPrompt = promptText || null;
+        } else {
+            customOptimizationPrompt = null;
+        }
+        
+        modal.remove();
+        await startBatchOptimization(entryEvolution, batchSize);
+    };
+    modal.onclick = (e) => { if (e.target === modal) modal.remove(); };
+}
+
+async function startBatchOptimization(entryEvolution, batchSize) {
+    const entries = Object.entries(entryEvolution);
+    if (entries.length === 0) { alert('没有可优化的条目'); showViewWorldbookModal(); return; }
+
+    const batches = [];
+    let currentBatch = [], currentBatchChanges = 0;
+    for (const [key, data] of entries) {
+        const entryChanges = data.changes.length;
+        if (currentBatchChanges + entryChanges > batchSize && currentBatch.length > 0) {
+            batches.push([...currentBatch]);
+            currentBatch = [];
+            currentBatchChanges = 0;
+        }
+        currentBatch.push({ key, data });
+        currentBatchChanges += entryChanges;
+    }
+    if (currentBatch.length > 0) batches.push(currentBatch);
+
+    // 保存优化前的世界书状态
+    const previousWorldbook = JSON.parse(JSON.stringify(generatedWorldbook));
+
+    const progressDiv = document.createElement('div');
+    progressDiv.id = 'optimize-progress';
+    progressDiv.style.cssText = 'position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: #2d2d2d; padding: 25px; border-radius: 10px; z-index: 10001; text-align: center; min-width: 350px;';
+    progressDiv.innerHTML = `
+        <div style="color: #3498db; font-size: 18px; margin-bottom: 15px;">🤖 AI优化世界书中...</div>
+        <div id="optimize-progress-text" style="color: #aaa; font-size: 14px; margin-bottom: 10px;">批次 0 / ${batches.length}</div>
+        <div style="height: 6px; background: #333; border-radius: 3px; overflow: hidden; margin-bottom: 15px;">
+            <div id="optimize-progress-bar" style="height: 100%; width: 0%; background: linear-gradient(90deg, #3498db, #27ae60); transition: width 0.3s;"></div>
+        </div>
+        <button id="cancel-optimize-progress-btn" style="background: #e74c3c; color: white; padding: 8px 16px; border: none; border-radius: 4px; cursor: pointer;">取消</button>
+    `;
+    document.body.appendChild(progressDiv);
+
+    let cancelled = false;
+    document.getElementById('cancel-optimize-progress-btn').onclick = () => { cancelled = true; };
+
+    let completedBatches = 0, optimizedEntries = 0;
+    const allChangedEntries = [];
+    
+    for (let i = 0; i < batches.length; i++) {
+        if (cancelled) break;
+        document.getElementById('optimize-progress-text').textContent = `批次 ${i + 1} / ${batches.length}`;
+        try {
+            const batchPrompt = buildBatchOptimizationPrompt(batches[i]);
+            const entryNames = batches[i].map(b => b.data.entryName).join(', ');
+            console.log(`📤 [AI优化世界书] 批次 ${i + 1}/${batches.length} 条目: ${entryNames}\n完整Prompt:\n`, batchPrompt);
+            const response = await callSimpleAPI(batchPrompt);
+            console.log(`📥 [AI优化世界书] 批次 ${i + 1}/${batches.length} 响应:\n`, response);
+            const batchChanges = await applyBatchOptimizationResult(response, batches[i], previousWorldbook);
+            allChangedEntries.push(...batchChanges);
+            optimizedEntries += batches[i].length;
+        } catch (error) { console.error(`批次 ${i + 1} 优化失败:`, error); }
+        completedBatches++;
+        document.getElementById('optimize-progress-bar').style.width = `${(completedBatches / batches.length) * 100}%`;
+    }
+
+    progressDiv.remove();
+    
+    // 保存修改历史
+    if (allChangedEntries.length > 0) {
+        try {
+            await MemoryHistoryDB.saveHistory(
+                -1,
+                '记忆-优化',
+                previousWorldbook,
+                generatedWorldbook,
+                allChangedEntries
+            );
+            console.log(`📚 已保存优化历史: ${allChangedEntries.length} 个条目`);
+        } catch (error) {
+            console.error('保存优化历史失败:', error);
+        }
+    }
+    
+    alert(cancelled ? `优化已取消，完成了 ${optimizedEntries} 个条目` : `优化完成！优化了 ${optimizedEntries} 个条目`);
+    await NovelState.saveState(memoryQueue.length);
+    showViewWorldbookModal();
+}
+
+function buildBatchOptimizationPrompt(batch) {
+    // 构建条目内容部分
+    let entriesContent = '';
+    batch.forEach(({ data }) => {
+        entriesContent += `\n--- ${data.entryName} [${data.category}] ---\n`;
+        data.changes.forEach((change, i) => {
+            if (change.newValue?.['内容']) {
+                entriesContent += `${change.newValue['内容'].substring(0, 300)}...\n`;
+            }
+        });
+    });
+    
+    // 如果有自定义prompt，使用自定义prompt
+    if (customOptimizationPrompt) {
+        // 替换占位符
+        let prompt = customOptimizationPrompt.replace(/\{\{条目\}\}/g, entriesContent);
+        console.log('📝 使用自定义Prompt');
+        return prompt;
+    }
+    
+    // 否则使用默认prompt
+    let prompt = `你是RPG世界书优化专家。为每个条目生成**常态描述**。
+
+**要求：**
+1. 人物状态必须是常态（活着、正常），不能是死亡等临时状态
+2. 提取核心特征、背景、能力等持久性信息
+3. 越详尽越好
+4. **对于角色类条目**,必须生成完整的结构化JSON,包含以下字段:
+   - name: 角色名称【必填】
+   - gender: 性别【必填】
+   - age_appearance: 外观年龄
+   - origin: 出身背景（position职位、背景描述等）
+   - affiliation: 所属组织/阵营
+   - appearance: 外观描述（发色、发型、瞳色、肤色、体型、服装、配件、特征等）【必填】
+   - personality: 性格特征【必填】,必须包含:
+     * core_traits: 核心特质
+     * speech_style: 说话风格【必填】- 详细描述语气、用词习惯、表达方式
+     * sample_dialogue: 示例对话【必填】- 至少5条典型对话示例
+     * background_psychology: 心理背景
+     * social_style: 社交风格
+   - role_illustration: 角色定位说明
+   - support_relations: 与其他角色的关系
+   - style_tags: 风格标签
+5. **对于非角色条目**（地点、物品、设定等），生成简洁的描述性内容
+
+**输出JSON格式：**
+{
+  "条目名1": {
+    "关键词": ["关键词1", "关键词2"],
+    "内容": "对于角色，这里应该是完整的JSON字符串；对于非角色，这里是描述文本"
+  }
+}
+
+**条目：**
+${entriesContent}
+直接输出JSON。`;
+    
+    return prompt;
+}
+
+// 应用批量优化结果
+async function applyBatchOptimizationResult(response, batch, previousWorldbook) {
+    let result;
+    
+    try {
+        // 清理响应
+        let cleanResponse = response.trim().replace(/```json\s*/gi, '').replace(/```\s*/g, '');
+        const firstBrace = cleanResponse.indexOf('{');
+        const lastBrace = cleanResponse.lastIndexOf('}');
+        if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
+            cleanResponse = cleanResponse.substring(firstBrace, lastBrace + 1);
+        }
+        
+        result = JSON.parse(cleanResponse);
+    } catch (e) {
+        console.error('解析优化结果失败:', e);
+        return [];
+    }
+
+    const changedEntries = [];
+    
+    // 更新世界书中的条目
+    for (const { key, data } of batch) {
+        const entryName = data.entryName;
+        const category = data.category;
+        
+        // 查找匹配的优化结果
+        const optimized = result[entryName];
+        if (optimized) {
+            // 确保分类存在
+            if (!generatedWorldbook[category]) {
+                generatedWorldbook[category] = {};
+            }
+            
+            // 记录旧值
+            const oldValue = previousWorldbook[category]?.[entryName] || null;
+            
+            // 更新条目
+            const newValue = {
+                '关键词': optimized['关键词'] || data.changes[data.changes.length - 1]?.newValue?.['关键词'] || [],
+                '内容': optimized['内容'] || ''
+            };
+            generatedWorldbook[category][entryName] = newValue;
+            
+            // 记录变更
+            changedEntries.push({
+                category: category,
+                entryName: entryName,
+                type: oldValue ? 'modify' : 'add',
+                oldValue: oldValue,
+                newValue: newValue
+            });
+            
+            console.log(`✅ 已优化条目: [${category}] ${entryName}`);
+        }
+    }
+    
+    return changedEntries;
 }
