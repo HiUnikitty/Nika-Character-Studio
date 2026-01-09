@@ -1017,18 +1017,37 @@ try {
     const response = await callSimpleAPI(prompt);
     
     console.log(`API调用完成，返回内容长度: ${response.length}`);
+    console.log(response);
+    
+    // ========== 新增：检查返回字数是否过少或包含超限错误（上下文超限的表现） ==========
+    const isShortResponse = response.length < 50;
+    const containsTokenError = /max|exceed|token.*limit|input.*token|INVALID_ARGUMENT/i.test(response);
+    
+    if (isShortResponse || containsTokenError) {
+        const reason = isShortResponse 
+            ? `返回内容过少（${response.length}字）` 
+            : '返回内容包含token超限错误';
+        console.log(`⚠️ ${reason}，判定为上下文超限`);
+        document.getElementById('progress-text').textContent = `🔀 ${reason}，判定为上下文超限，分裂所有后续记忆...`;
+        
+        // 分裂所有后续记忆
+        splitAllRemainingMemories(index);
+        updateMemoryQueueUI();
+        console.log(`💾 分裂后保存状态，队列长度: ${memoryQueue.length}，队列标题: ${memoryQueue.map(m => m.title).join(', ')}`);
+        await NovelState.saveState(memoryQueue.filter(m => m.processed).length);
+        
+        throw new Error(`${reason}，判定为上下文超限，已分裂所有后续记忆`);
+    }
     
     // 清理和解析返回的JSON
     let memoryUpdate;
     try {
-    // 直接尝试解析
-    memoryUpdate = JSON.parse(response);
-    console.log('✅ JSON直接解析成功');
+        // 直接尝试解析
+        memoryUpdate = JSON.parse(response);
+        console.log('✅ JSON直接解析成功');
     } catch (jsonError) {
-    console.log('直接JSON解析失败，原因:', jsonError.message);
-    console.log('开始清理内容，原始长度:', response.length);
-    
-    // 清理返回内容
+        console.log('直接JSON解析失败，原因:', jsonError.message);
+        console.log('开始清理内容，原始长度:', response.length);
     let cleanResponse = response.trim();
     
     // 移除可能的代码块标记
