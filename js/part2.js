@@ -753,9 +753,49 @@ isProcessingStopped = false;
         
         console.log('AI记忆大师处理完成，共生成条目:', Object.keys(generatedWorldbook).length);
         
-        // 完成后清除保存的状态（只有没有失败记忆时才清除）
-        if (!isProcessingStopped && failedCount === 0) {
-            await NovelState.clearState();
+        // 完成后保存最终状态（不清除，以便刷新后能恢复结果）
+        if (!isProcessingStopped) {
+            await NovelState.saveState(memoryQueue.length);
+            console.log('✅ 转换完成，状态已保存，刷新页面后可恢复结果');
+        }
+        
+        // 添加操作按钮（查看世界书、查看JSON、保存）
+        const container = document.querySelector('.conversion-controls') || document.querySelector('.worldbook-body');
+        
+        // 添加查看世界书按钮
+        let viewWorldbookBtn = document.getElementById('view-worldbook-result-btn');
+        if (!viewWorldbookBtn) {
+            viewWorldbookBtn = document.createElement('button');
+            viewWorldbookBtn.id = 'view-worldbook-result-btn';
+            viewWorldbookBtn.textContent = '📖 查看世界书';
+            viewWorldbookBtn.className = 'uniform-btn';
+            viewWorldbookBtn.style.cssText = 'margin: 10px 5px; background: #e67e22;';
+            viewWorldbookBtn.onclick = () => showViewWorldbookModal();
+            container.appendChild(viewWorldbookBtn);
+        }
+        
+        // 添加查看JSON按钮
+        let viewJsonBtn = document.getElementById('view-json-btn');
+        if (!viewJsonBtn) {
+            viewJsonBtn = document.createElement('button');
+            viewJsonBtn.id = 'view-json-btn';
+            viewJsonBtn.textContent = '查看生成的JSON';
+            viewJsonBtn.className = 'uniform-btn';
+            viewJsonBtn.style.cssText = 'margin: 10px 5px;';
+            viewJsonBtn.onclick = () => viewGeneratedWorldbook();
+            container.appendChild(viewJsonBtn);
+        }
+        
+        // 添加保存按钮
+        let saveBtn = document.getElementById('save-worldbook-btn');
+        if (!saveBtn) {
+            saveBtn = document.createElement('button');
+            saveBtn.id = 'save-worldbook-btn';
+            saveBtn.textContent = '保存到角色库';
+            saveBtn.className = 'uniform-btn';
+            saveBtn.style.cssText = 'margin: 10px 5px;';
+            saveBtn.onclick = () => saveWorldbookToLibrary();
+            container.appendChild(saveBtn);
         }
         
     } catch (error) {
