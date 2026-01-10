@@ -1019,16 +1019,12 @@ try {
     console.log(`API调用完成，返回内容长度: ${response.length}`);
     console.log(response);
     
-    // ========== 新增：检查返回字数是否过少或包含超限错误（上下文超限的表现） ==========
-    const isShortResponse = response.length < 50;
+    // ========== 新增：检查返回内容是否包含token超限错误（上下文超限的表现） ==========
     const containsTokenError = /max|exceed|token.*limit|input.*token|INVALID_ARGUMENT/i.test(response);
     
-    if (isShortResponse || containsTokenError) {
-        const reason = isShortResponse 
-            ? `返回内容过少（${response.length}字）` 
-            : '返回内容包含token超限错误';
-        console.log(`⚠️ ${reason}，判定为上下文超限`);
-        document.getElementById('progress-text').textContent = `🔀 ${reason}，判定为上下文超限，分裂所有后续记忆...`;
+    if (containsTokenError) {
+        console.log(`⚠️ 返回内容包含token超限错误，判定为上下文超限`);
+        document.getElementById('progress-text').textContent = `🔀 返回内容包含token超限错误，判定为上下文超限，分裂所有后续记忆...`;
         
         // 分裂所有后续记忆
         splitAllRemainingMemories(index);
@@ -1036,7 +1032,7 @@ try {
         console.log(`💾 分裂后保存状态，队列长度: ${memoryQueue.length}，队列标题: ${memoryQueue.map(m => m.title).join(', ')}`);
         await NovelState.saveState(memoryQueue.filter(m => m.processed).length);
         
-        throw new Error(`${reason}，判定为上下文超限，已分裂所有后续记忆`);
+        throw new Error(`返回内容包含token超限错误，判定为上下文超限，已分裂所有后续记忆`);
     }
     
     // 清理和解析返回的JSON
