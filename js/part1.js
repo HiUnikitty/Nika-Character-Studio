@@ -2726,7 +2726,10 @@ aesthetics_system:
                 if (codeMatch) {
                     yamlContent = codeMatch[1].trim();
                 } else {
-                    throw new Error('未找到YAML配置内容');
+                    // 未找到代码块，移除thinking标签后使用剩余内容
+                    yamlContent = response
+                        .replace(/<(?:think|thinking)[\s\S]*?<\/(?:think|thinking)>/gi, '')
+                        .trim();
                 }
             }
             
