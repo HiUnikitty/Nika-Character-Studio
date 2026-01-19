@@ -4,6 +4,237 @@
 // 增量输出模式开关状态（默认启用）
 let incrementalOutputMode = true;
 
+// ========== 自定义JSON模板系统 ==========
+// 默认的世界书分类模板配置
+const DEFAULT_WORLDBOOK_CATEGORIES = [
+    {
+        name: "角色",
+        enabled: true,
+        isBuiltin: true,
+        entryExample: "角色真实姓名",
+        keywordsExample: ["真实姓名", "称呼1", "称呼2", "绰号"],
+        contentGuide: "基于原文的角色描述，包含但不限于**名称**:（必须要）、**性别**:、**MBTI(必须要，如变化请说明背景)**:、**貌龄**:、**年龄**:、**身份**:、**背景**:、**性格**:、**外貌**:、**技能**:、**重要事件**:、**话语示例**:、**弱点**:、**背景故事**:等（实际嵌套或者排列方式按合理的逻辑）"
+    },
+    {
+        name: "地点",
+        enabled: true,
+        isBuiltin: true,
+        entryExample: "地点真实名称",
+        keywordsExample: ["地点名", "别称", "俗称"],
+        contentGuide: "基于原文的地点描述，包含但不限于**名称**:（必须要）、**位置**:、**特征**:、**重要事件**:等（实际嵌套或者排列方式按合理的逻辑）"
+    },
+    {
+        name: "组织",
+        enabled: true,
+        isBuiltin: true,
+        entryExample: "组织真实名称",
+        keywordsExample: ["组织名", "简称", "代号"],
+        contentGuide: "基于原文的组织描述，包含但不限于**名称**:（必须要）、**性质**:、**成员**:、**目标**:等（实际嵌套或者排列方式按合理的逻辑）"
+    },
+    {
+        name: "道具",
+        enabled: false,
+        isBuiltin: false,
+        entryExample: "道具名称",
+        keywordsExample: ["道具名", "别名"],
+        contentGuide: "基于原文的道具描述，包含但不限于**名称**:、**类型**:、**功能**:、**来源**:、**持有者**:等"
+    },
+    {
+        name: "玩法",
+        enabled: false,
+        isBuiltin: false,
+        entryExample: "玩法名称",
+        keywordsExample: ["玩法名", "规则名"],
+        contentGuide: "基于原文的玩法/规则描述，包含但不限于**名称**:、**规则说明**:、**参与条件**:、**奖惩机制**:等"
+    },
+    {
+        name: "章节剧情",
+        enabled: false,
+        isBuiltin: false,
+        entryExample: "第X章",
+        keywordsExample: ["章节名", "章节号"],
+        contentGuide: "该章节的剧情概要，包含但不限于**章节标题**:、**主要事件**:、**出场角色**:、**关键转折**:、**伏笔线索**:等"
+    },
+    {
+        name: "角色内心",
+        enabled: false,
+        isBuiltin: false,
+        entryExample: "角色名-内心世界",
+        keywordsExample: ["角色名", "内心", "心理"],
+        contentGuide: "角色的内心想法和心理活动，包含但不限于**（角色名）的（某个时期）的内心世界**：、****原文内容**:、**内心独白**:、**情感变化**:、**动机分析**:、**心理矛盾**:等"
+    }
+];
+
+// 当前使用的世界书分类配置（从IndexedDB加载或使用默认值）
+let customWorldbookCategories = JSON.parse(JSON.stringify(DEFAULT_WORLDBOOK_CATEGORIES));
+
+// 保存自定义分类配置到IndexedDB
+async function saveCustomCategories() {
+    try {
+        await MemoryHistoryDB.saveCustomCategories(customWorldbookCategories);
+        console.log('自定义分类配置已保存到IndexedDB');
+    } catch (error) {
+        console.error('保存自定义分类配置失败:', error);
+    }
+}
+
+// 从IndexedDB加载自定义分类配置
+async function loadCustomCategories() {
+    try {
+        const saved = await MemoryHistoryDB.getCustomCategories();
+        if (saved && Array.isArray(saved) && saved.length > 0) {
+            customWorldbookCategories = saved;
+        } else {
+            // 尝试从localStorage迁移（兼容旧版本）
+            const localStorageData = localStorage.getItem('customWorldbookCategories');
+            if (localStorageData) {
+                try {
+                    const parsed = JSON.parse(localStorageData);
+                    if (Array.isArray(parsed) && parsed.length > 0) {
+                        customWorldbookCategories = parsed;
+                        await saveCustomCategories(); // 迁移到IndexedDB
+                        localStorage.removeItem('customWorldbookCategories'); // 清理localStorage
+                        console.log('已从localStorage迁移到IndexedDB');
+                    }
+                } catch (e) {
+                    console.error('迁移localStorage数据失败:', e);
+                }
+            }
+        }
+    } catch (error) {
+        console.error('加载自定义分类配置失败:', error);
+    }
+}
+
+// 重置为默认分类配置
+async function resetToDefaultCategories() {
+    customWorldbookCategories = JSON.parse(JSON.stringify(DEFAULT_WORLDBOOK_CATEGORIES));
+    await saveCustomCategories();
+    console.log('已重置为默认分类配置');
+}
+
+// 获取启用的分类列表
+function getEnabledCategories() {
+    return customWorldbookCategories.filter(cat => cat.enabled);
+}
+
+// 生成主提示词的JSON模板部分
+function generateMainPromptJsonTemplate() {
+    const enabledCategories = getEnabledCategories();
+    const enablePlotOutline = document.getElementById('enable-plot-outline')?.checked ?? true;
+    const enableLiteraryStyle = document.getElementById('enable-literary-style')?.checked ?? false;
+    
+    let template = '{\n';
+    const parts = [];
+    
+    for (const cat of enabledCategories) {
+        parts.push(`"${cat.name}": {
+"${cat.entryExample}": {
+"关键词": ${JSON.stringify(cat.keywordsExample)},
+"内容": "${cat.contentGuide}"
+}
+}`);
+    }
+    
+    // 添加剧情大纲（如果启用）
+    if (enablePlotOutline) {
+        parts.push(`"剧情大纲": {
+"主线剧情": {
+"关键词": ["主线", "核心剧情", "故事线"],
+"内容": "## 故事主线\\n**核心冲突**: 故事的中心矛盾\\n**主要目标**: 主角追求的目标\\n**阻碍因素**: 实现目标的障碍\\n\\n## 剧情阶段\\n**第一幕 - 起始**: 故事开端，世界观建立\\n**第二幕 - 发展**: 冲突升级，角色成长\\n**第三幕 - 高潮**: 决战时刻，矛盾爆发\\n**第四幕 - 结局**: [如已完结] 故事收尾\\n\\n## 关键转折点\\n1. **转折点1**: 描述和影响\\n2. **转折点2**: 描述和影响\\n3. **转折点3**: 描述和影响\\n\\n## 伏笔与暗线\\n**已揭示的伏笔**: 已经揭晓的铺垫\\n**未解之谜**: 尚未解答的疑问\\n**暗线推测**: 可能的隐藏剧情线"
+},
+"支线剧情": {
+"关键词": ["支线", "副线", "分支剧情"],
+"内容": "## 主要支线\\n**支线1标题**: 简要描述\\n**支线2标题**: 简要描述\\n**支线3标题**: 简要描述\\n\\n## 支线与主线的关联\\n**交织点**: 支线如何影响主线\\n**独立价值**: 支线的独特意义"
+}
+}`);
+    }
+    
+    // 添加文风配置（如果启用）
+    if (enableLiteraryStyle) {
+        parts.push(`"文风配置": {
+"作品文风": {
+"关键词": ["文风", "写作风格", "叙事特点"],
+"内容": "基于原文分析的文风配置（YAML格式），包含以下三大系统：\\n\\n**叙事系统(narrative_system)**:\\n- **结构(structure)**: 故事组织方式、推进模式、结局处理\\n- **视角(perspective)**: 人称选择、聚焦类型、叙述距离\\n- **时间管理(time_management)**: 时序、时距、频率\\n- **节奏(rhythm)**: 句长模式、速度控制、标点节奏\\n\\n**表达系统(expression_system)**:\\n- **话语与描写(discourse_and_description)**: 话语风格、描写原则、具体技法\\n- **对话(dialogue)**: 对话功能、对话风格\\n- **人物塑造(characterization)**: 塑造方法、心理策略\\n- **感官编织(sensory_weaving)**: 感官优先级、通感技法\\n\\n**美学系统(aesthetics_system)**:\\n- **核心概念(core_concepts)**: 核心美学立场和关键词\\n- **意象与象征(imagery_and_symbolism)**: 季节意象、自然元素、色彩系统\\n- **语言与修辞(language_and_rhetoric)**: 句法特征、词汇偏好、修辞手法\\n- **整体效果(overall_effect)**: 阅读体验目标、美学哲学\\n\\n每个维度都应包含具体的原文示例和可操作的描述。"
+}
+}`);
+    }
+    
+    template += parts.join(',\n');
+    template += '\n}';
+    
+    return template;
+}
+
+// 生成简化版JSON模板（用于记忆修复提示词）
+function generateSimpleJsonTemplate() {
+    const enabledCategories = getEnabledCategories();
+    const enablePlotOutline = document.getElementById('enable-plot-outline')?.checked ?? true;
+    const enableLiteraryStyle = document.getElementById('enable-literary-style')?.checked ?? false;
+    
+    const parts = [];
+    
+    for (const cat of enabledCategories) {
+        parts.push(`"${cat.name}": { "${cat.entryExample}": { "关键词": ["..."], "内容": "..." } }`);
+    }
+    
+    if (enablePlotOutline) {
+        parts.push(`"剧情大纲": { "主线剧情": { "关键词": ["主线"], "内容": "..." } }`);
+    }
+    
+    if (enableLiteraryStyle) {
+        parts.push(`"文风配置": { "作品文风": { "关键词": ["文风"], "内容": "..." } }`);
+    }
+    
+    return '{\n' + parts.join(',\n') + '\n}';
+}
+
+// 生成格式修复提示词的JSON结构说明
+function generateFixPromptJsonStructure() {
+    const enabledCategories = getEnabledCategories();
+    const enableLiteraryStyle = document.getElementById('enable-literary-style')?.checked ?? false;
+    
+    let structure = '{\n';
+    const parts = [];
+    
+    for (const cat of enabledCategories) {
+        parts.push(`  "${cat.name}": {\n    "条目名": { "关键词": ["..."], "内容": "..." }\n  }`);
+    }
+    
+    // 剧情大纲和知识书始终包含在格式修复中
+    parts.push(`  "剧情大纲": {\n    "主线剧情": { "关键词": ["..."], "内容": "..." },\n    "支线剧情": { "关键词": ["..."], "内容": "..." }\n  }`);
+    parts.push(`  "知识书": {\n    "条目名": { "关键词": ["..."], "内容": "..." }\n  }`);
+    
+    if (enableLiteraryStyle) {
+        parts.push(`  "文风配置": {\n    "作品文风": { "关键词": ["文风", "写作风格", "叙事特点"], "内容": "..." }\n  }`);
+    }
+    
+    structure += parts.join(',\n');
+    structure += '\n}';
+    
+    return structure;
+}
+
+// 获取分类名称列表（用于提示词中的说明）
+function getCategoryNamesList() {
+    const enabledCategories = getEnabledCategories();
+    const enableLiteraryStyle = document.getElementById('enable-literary-style')?.checked ?? false;
+    
+    const names = enabledCategories.map(cat => cat.name);
+    names.push('剧情大纲', '知识书');
+    if (enableLiteraryStyle) {
+        names.push('文风配置');
+    }
+    
+    return names.join('/');
+}
+
+// 获取启用分类的提取说明
+function getEnabledCategoriesDescription() {
+    const enabledCategories = getEnabledCategories();
+    return enabledCategories.map(cat => cat.name).join('、');
+}
+
 // 初始化增量输出模式开关（在高级设置中动态添加）
 function initIncrementalOutputModeToggle() {
     const advancedSettings = document.getElementById('advanced-novel-settings');
@@ -34,10 +265,234 @@ function initIncrementalOutputModeToggle() {
     });
 }
 
+// 初始化自定义分类模板UI（在高级设置中动态添加）
+function initCustomCategoriesUI() {
+    const advancedSettings = document.getElementById('advanced-novel-settings');
+    if (!advancedSettings) return;
+    
+    // 检查是否已存在
+    if (document.getElementById('custom-categories-container')) return;
+    
+    // 创建自定义分类容器
+    const container = document.createElement('div');
+    container.id = 'custom-categories-container';
+    container.style.cssText = 'padding: 10px; background: rgba(0,0,0,0.2); border-radius: 5px; border: 1px solid RGB(52,52,52); margin-bottom: 10px;';
+    
+    container.innerHTML = `
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px;">
+            <span style="color: var(--label-color); font-weight: bold;">🏷️ 自定义提取分类</span>
+            <div>
+                <button id="add-custom-category-btn" style="background: #28a745; color: white; padding: 4px 10px; border: none; border-radius: 3px; cursor: pointer; font-size: 12px; margin-right: 5px;">➕ 添加分类</button>
+                <button id="reset-categories-btn" style="background: #6c757d; color: white; padding: 4px 10px; border: none; border-radius: 3px; cursor: pointer; font-size: 12px;">🔄 重置默认</button>
+            </div>
+        </div>
+        <p style="margin: 0 0 10px 0; font-size: 12px; color: var(--text-secondary-color);">勾选要提取的分类，可自定义添加道具、玩法、章节剧情等</p>
+        <div id="categories-list" style="max-height: 300px; overflow-y: auto;"></div>
+    `;
+    
+    // 插入到高级设置中（在增量输出模式之后）
+    const incrementalContainer = document.getElementById('incremental-output-mode-container');
+    if (incrementalContainer && incrementalContainer.nextSibling) {
+        advancedSettings.insertBefore(container, incrementalContainer.nextSibling);
+    } else {
+        advancedSettings.appendChild(container);
+    }
+    
+    // 渲染分类列表
+    renderCategoriesList();
+    
+    // 绑定添加分类按钮事件
+    document.getElementById('add-custom-category-btn').addEventListener('click', showAddCategoryModal);
+    
+    // 绑定重置按钮事件
+    document.getElementById('reset-categories-btn').addEventListener('click', function() {
+        if (confirm('确定要重置为默认分类配置吗？这将清除所有自定义分类。')) {
+            resetToDefaultCategories();
+            renderCategoriesList();
+        }
+    });
+}
+
+// 渲染分类列表
+function renderCategoriesList() {
+    const listContainer = document.getElementById('categories-list');
+    if (!listContainer) return;
+    
+    listContainer.innerHTML = '';
+    
+    customWorldbookCategories.forEach((cat, index) => {
+        const item = document.createElement('div');
+        item.style.cssText = 'display: flex; align-items: center; gap: 8px; padding: 8px; background: rgba(255,255,255,0.05); border-radius: 4px; margin-bottom: 5px;';
+        
+        const checkbox = document.createElement('input');
+        checkbox.type = 'checkbox';
+        checkbox.checked = cat.enabled;
+        checkbox.style.cssText = 'width: 16px; height: 16px; cursor: pointer;';
+        checkbox.addEventListener('change', function() {
+            customWorldbookCategories[index].enabled = this.checked;
+            saveCustomCategories();
+        });
+        
+        const label = document.createElement('span');
+        label.style.cssText = 'flex: 1; color: var(--text-color); font-size: 13px;';
+        label.textContent = cat.name;
+        if (cat.isBuiltin) {
+            label.innerHTML += ' <span style="color: #888; font-size: 11px;">(内置)</span>';
+        }
+        
+        const editBtn = document.createElement('button');
+        editBtn.textContent = '✏️';
+        editBtn.title = '编辑';
+        editBtn.style.cssText = 'background: #3498db; color: white; border: none; padding: 3px 8px; border-radius: 3px; cursor: pointer; font-size: 11px;';
+        editBtn.addEventListener('click', () => showEditCategoryModal(index));
+        
+        const deleteBtn = document.createElement('button');
+        deleteBtn.textContent = '🗑️';
+        deleteBtn.title = '删除';
+        deleteBtn.style.cssText = 'background: #dc3545; color: white; border: none; padding: 3px 8px; border-radius: 3px; cursor: pointer; font-size: 11px;';
+        deleteBtn.disabled = cat.isBuiltin;
+        if (cat.isBuiltin) {
+            deleteBtn.style.opacity = '0.5';
+            deleteBtn.style.cursor = 'not-allowed';
+        }
+        deleteBtn.addEventListener('click', () => {
+            if (!cat.isBuiltin && confirm(`确定要删除分类"${cat.name}"吗？`)) {
+                customWorldbookCategories.splice(index, 1);
+                saveCustomCategories();
+                renderCategoriesList();
+            }
+        });
+        
+        item.appendChild(checkbox);
+        item.appendChild(label);
+        item.appendChild(editBtn);
+        item.appendChild(deleteBtn);
+        listContainer.appendChild(item);
+    });
+}
+
+// 显示添加分类弹窗
+function showAddCategoryModal() {
+    showCategoryModal(null, '添加新分类');
+}
+
+// 显示编辑分类弹窗
+function showEditCategoryModal(index) {
+    showCategoryModal(index, '编辑分类');
+}
+
+// 通用的分类编辑弹窗
+function showCategoryModal(editIndex, title) {
+    const isEdit = editIndex !== null;
+    const cat = isEdit ? customWorldbookCategories[editIndex] : {
+        name: '',
+        enabled: true,
+        isBuiltin: false,
+        entryExample: '',
+        keywordsExample: [],
+        contentGuide: ''
+    };
+    
+    // 移除已存在的弹窗
+    const existingModal = document.getElementById('category-edit-modal');
+    if (existingModal) existingModal.remove();
+    
+    const modal = document.createElement('div');
+    modal.id = 'category-edit-modal';
+    modal.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 10001; display: flex; justify-content: center; align-items: center;';
+    
+    modal.innerHTML = `
+        <div style="background: #2d2d2d; border-radius: 10px; padding: 20px; width: 90%; max-width: 500px; max-height: 80vh; overflow-y: auto;">
+            <h3 style="color: #e67e22; margin: 0 0 15px 0;">${title}</h3>
+            
+            <div style="margin-bottom: 12px;">
+                <label style="display: block; color: var(--label-color); margin-bottom: 5px; font-size: 13px;">分类名称 *</label>
+                <input type="text" id="cat-name" value="${cat.name}" placeholder="如：道具、玩法、章节剧情" 
+                    style="width: 100%; padding: 8px; border: 1px solid #555; border-radius: 4px; background: #1c1c1c; color: white; box-sizing: border-box;">
+            </div>
+            
+            <div style="margin-bottom: 12px;">
+                <label style="display: block; color: var(--label-color); margin-bottom: 5px; font-size: 13px;">条目名称示例</label>
+                <input type="text" id="cat-entry-example" value="${cat.entryExample}" placeholder="如：道具名称、第X章" 
+                    style="width: 100%; padding: 8px; border: 1px solid #555; border-radius: 4px; background: #1c1c1c; color: white; box-sizing: border-box;">
+            </div>
+            
+            <div style="margin-bottom: 12px;">
+                <label style="display: block; color: var(--label-color); margin-bottom: 5px; font-size: 13px;">关键词示例（逗号分隔）</label>
+                <input type="text" id="cat-keywords" value="${cat.keywordsExample.join(', ')}" placeholder="如：道具名, 别名, 俗称" 
+                    style="width: 100%; padding: 8px; border: 1px solid #555; border-radius: 4px; background: #1c1c1c; color: white; box-sizing: border-box;">
+            </div>
+            
+            <div style="margin-bottom: 15px;">
+                <label style="display: block; color: var(--label-color); margin-bottom: 5px; font-size: 13px;">内容提取指南</label>
+                <textarea id="cat-content-guide" placeholder="描述AI应该提取哪些信息，如：包含**名称**:、**类型**:、**功能**:等" 
+                    style="width: 100%; height: 100px; padding: 8px; border: 1px solid #555; border-radius: 4px; background: #1c1c1c; color: white; resize: vertical; box-sizing: border-box;">${cat.contentGuide}</textarea>
+            </div>
+            
+            <div style="display: flex; gap: 10px; justify-content: flex-end;">
+                <button id="cat-cancel-btn" style="background: #6c757d; color: white; padding: 8px 20px; border: none; border-radius: 5px; cursor: pointer;">取消</button>
+                <button id="cat-save-btn" style="background: #28a745; color: white; padding: 8px 20px; border: none; border-radius: 5px; cursor: pointer;">保存</button>
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(modal);
+    
+    // 绑定事件
+    document.getElementById('cat-cancel-btn').addEventListener('click', () => modal.remove());
+    modal.addEventListener('click', (e) => { if (e.target === modal) modal.remove(); });
+    
+    document.getElementById('cat-save-btn').addEventListener('click', () => {
+        const name = document.getElementById('cat-name').value.trim();
+        const entryExample = document.getElementById('cat-entry-example').value.trim();
+        const keywordsStr = document.getElementById('cat-keywords').value.trim();
+        const contentGuide = document.getElementById('cat-content-guide').value.trim();
+        
+        if (!name) {
+            alert('请输入分类名称');
+            return;
+        }
+        
+        // 检查名称是否重复
+        const duplicateIndex = customWorldbookCategories.findIndex((c, i) => c.name === name && i !== editIndex);
+        if (duplicateIndex !== -1) {
+            alert('该分类名称已存在');
+            return;
+        }
+        
+        const keywordsExample = keywordsStr ? keywordsStr.split(/[,，]/).map(k => k.trim()).filter(k => k) : [];
+        
+        const newCat = {
+            name,
+            enabled: isEdit ? cat.enabled : true,
+            isBuiltin: isEdit ? cat.isBuiltin : false,
+            entryExample: entryExample || name + '名称',
+            keywordsExample: keywordsExample.length > 0 ? keywordsExample : [name + '名'],
+            contentGuide: contentGuide || `基于原文的${name}描述`
+        };
+        
+        if (isEdit) {
+            customWorldbookCategories[editIndex] = newCat;
+        } else {
+            customWorldbookCategories.push(newCat);
+        }
+        
+        saveCustomCategories();
+        renderCategoriesList();
+        modal.remove();
+    });
+}
+
 // 页面加载后初始化
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', async function() {
     // 延迟执行以确保DOM完全加载
-    setTimeout(initIncrementalOutputModeToggle, 500);
+    setTimeout(async () => {
+        // 先加载自定义分类配置
+        await loadCustomCategories();
+        // 然后初始化UI
+        initIncrementalOutputModeToggle();
+        initCustomCategoriesUI();
+    }, 500);
 });
 
 // 记忆历史数据库
@@ -217,7 +672,33 @@ const MemoryHistoryDB = {
             const transaction = db.transaction([this.metaStoreName], 'readonly');
             const store = transaction.objectStore(this.metaStoreName);
             const request = store.get('customOptimizationPrompt');
-            
+
+            request.onsuccess = () => resolve(request.result?.value || null);
+            request.onerror = () => reject(request.error);
+        });
+    },
+
+    // 保存自定义分类配置
+    async saveCustomCategories(categories) {
+        const db = await this.openDB();
+        return new Promise((resolve, reject) => {
+            const transaction = db.transaction([this.metaStoreName], 'readwrite');
+            const store = transaction.objectStore(this.metaStoreName);
+            const request = store.put({ key: 'customWorldbookCategories', value: categories });
+
+            request.onsuccess = () => resolve();
+            request.onerror = () => reject(request.error);
+        });
+    },
+
+    // 获取保存的自定义分类配置
+    async getCustomCategories() {
+        const db = await this.openDB();
+        return new Promise((resolve, reject) => {
+            const transaction = db.transaction([this.metaStoreName], 'readonly');
+            const store = transaction.objectStore(this.metaStoreName);
+            const request = store.get('customWorldbookCategories');
+
             request.onsuccess = () => resolve(request.result?.value || null);
             request.onerror = () => reject(request.error);
         });
@@ -888,12 +1369,16 @@ document.getElementById('progress-text').textContent = `正在处理: ${memory.t
 const enableLiteraryStyle = document.getElementById('enable-literary-style')?.checked ?? false;
 const enablePlotOutline = document.getElementById('enable-plot-outline')?.checked ?? true;
 
+// 使用动态生成的JSON模板
+const jsonTemplate = generateMainPromptJsonTemplate();
+const enabledCategoriesDesc = getEnabledCategoriesDescription();
+
 // 精简版提示词
 let prompt = getLanguagePrefix() + `你是专业的小说世界书生成专家。请仔细阅读提供的小说内容，提取其中的关键信息，生成高质量的世界书条目。
 
 ## 重要要求
 1. **必须基于提供的具体小说内容**，不要生成通用模板
-2. **只提取文中明确出现的角色、地点、组织等信息**
+2. **只提取文中明确出现的${enabledCategoriesDesc}等信息**
 3. **关键词必须是文中实际出现的名称**，用逗号分隔
 4. **内容必须基于原文描述**，不要添加原文没有的信息
 5. **内容使用markdown格式**，可以层层嵌套或使用序号标题
@@ -902,42 +1387,7 @@ let prompt = getLanguagePrefix() + `你是专业的小说世界书生成专家�
 请生成标准JSON格式，确保能被JavaScript正确解析：
 
 \`\`\`json
-{
-"角色": {
-"角色真实姓名": {
-"关键词": ["真实姓名", "称呼1", "称呼2", "绰号"],
-"内容": "基于原文的角色描述，包含但不限于**名称**:（必须要）、**性别**:、**MBTI(必须要，如变化请说明背景)**:、**貌龄**:、**年龄**:、**身份**:、**背景**:、**性格**:、**外貌**:、**技能**:、**重要事件**:、**话语示例**:、**弱点**:、**背景故事**:等（实际嵌套或者排列方式按合理的逻辑）"
-}
-},
-"地点": {
-"地点真实名称": {
-"关键词": ["地点名", "别称", "俗称"],
-"内容": "基于原文的地点描述，包含但不限于**名称**:（必须要）、**位置**:、**特征**:、**重要事件**:等（实际嵌套或者排列方式按合理的逻辑）"
-}
-},
-"组织": {
-"组织真实名称": {
-"关键词": ["组织名", "简称", "代号"],
-"内容": "基于原文的组织描述，包含但不限于**名称**:（必须要）、**性质**:、**成员**:、**目标**:等（实际嵌套或者排列方式按合理的逻辑）"
-}
-}${enablePlotOutline ? `,
-"剧情大纲": {
-"主线剧情": {
-"关键词": ["主线", "核心剧情", "故事线"],
-"内容": "## 故事主线\n**核心冲突**: 故事的中心矛盾\n**主要目标**: 主角追求的目标\n**阻碍因素**: 实现目标的障碍\n\n## 剧情阶段\n**第一幕 - 起始**: 故事开端，世界观建立\n**第二幕 - 发展**: 冲突升级，角色成长\n**第三幕 - 高潮**: 决战时刻，矛盾爆发\n**第四幕 - 结局**: [如已完结] 故事收尾\n\n## 关键转折点\n1. **转折点1**: 描述和影响\n2. **转折点2**: 描述和影响\n3. **转折点3**: 描述和影响\n\n## 伏笔与暗线\n**已揭示的伏笔**: 已经揭晓的铺垫\n**未解之谜**: 尚未解答的疑问\n**暗线推测**: 可能的隐藏剧情线"
-},
-"支线剧情": {
-"关键词": ["支线", "副线", "分支剧情"],
-"内容": "## 主要支线\n**支线1标题**: 简要描述\n**支线2标题**: 简要描述\n**支线3标题**: 简要描述\n\n## 支线与主线的关联\n**交织点**: 支线如何影响主线\n**独立价值**: 支线的独特意义"
-}
-}` : ''}${enableLiteraryStyle ? `,
-"文风配置": {
-"作品文风": {
-"关键词": ["文风", "写作风格", "叙事特点"],
-"内容": "基于原文分析的文风配置（YAML格式），包含以下三大系统：\\n\\n**叙事系统(narrative_system)**:\\n- **结构(structure)**: 故事组织方式、推进模式、结局处理\\n- **视角(perspective)**: 人称选择、聚焦类型、叙述距离\\n- **时间管理(time_management)**: 时序、时距、频率\\n- **节奏(rhythm)**: 句长模式、速度控制、标点节奏\\n\\n**表达系统(expression_system)**:\\n- **话语与描写(discourse_and_description)**: 话语风格、描写原则、具体技法\\n- **对话(dialogue)**: 对话功能、对话风格\\n- **人物塑造(characterization)**: 塑造方法、心理策略\\n- **感官编织(sensory_weaving)**: 感官优先级、通感技法\\n\\n**美学系统(aesthetics_system)**:\\n- **核心概念(core_concepts)**: 核心美学立场和关键词\\n- **意象与象征(imagery_and_symbolism)**: 季节意象、自然元素、色彩系统\\n- **语言与修辞(language_and_rhetoric)**: 句法特征、词汇偏好、修辞手法\\n- **整体效果(overall_effect)**: 阅读体验目标、美学哲学\\n\\n每个维度都应包含具体的原文示例和可操作的描述。"
-}
-}` : ''}
-}
+${jsonTemplate}
 \`\`\`
 
 ## 重要提醒
@@ -1156,30 +1606,10 @@ if (missingBraces > 0) {
 ## 🧩 世界书JSON基本嵌套结构（必须遵循）
 修复后的JSON应尽量保持/恢复为以下结构（允许只包含其中一部分分类，但结构层级必须一致）：
 
-{
-  "角色": {
-    "条目名": { "关键词": ["..."], "内容": "..." }
-  },
-  "地点": {
-    "条目名": { "关键词": ["..."], "内容": "..." }
-  },
-  "组织": {
-    "条目名": { "关键词": ["..."], "内容": "..." }
-  },
-  "剧情大纲": {
-    "主线剧情": { "关键词": ["..."], "内容": "..." },
-    "支线剧情": { "关键词": ["..."], "内容": "..." }
-  },
-  "知识书": {
-    "条目名": { "关键词": ["..."], "内容": "..." }
-  }${enableLiteraryStyle ? `,
-  "文风配置": {
-    "作品文风": { "关键词": ["文风", "写作风格", "叙事特点"], "内容": "..." }
-  }` : ''}
-}
+${generateFixPromptJsonStructure()}
 
 要求：
-- 顶层的每个分类（例如“角色/地点/组织/剧情大纲/知识书${enableLiteraryStyle ? `/文风配置` : ''}”）的值必须是对象。
+- 顶层的每个分类（例如"${getCategoryNamesList()}"）的值必须是对象。
 - 分类下每个条目的值必须是对象，且包含 "关键词"(数组) 与 "内容"(字符串) 两个字段。
 - 如果原文中某条目值不是对象（比如直接是字符串），请在不改变语义的前提下包装成 {"关键词":[], "内容":"原内容"}。
 
@@ -6627,18 +7057,15 @@ async function repairSingleMemory(index) {
     const memory = memoryQueue[index];
     const enableLiteraryStyle = document.getElementById('enable-literary-style')?.checked ?? false;
     const enablePlotOutline = document.getElementById('enable-plot-outline')?.checked ?? true;
+    
+    // 使用动态生成的简化JSON模板
+    const simpleJsonTemplate = generateSimpleJsonTemplate();
 
     let prompt = getLanguagePrefix() + `你是专业的小说世界书生成专家。请仔细阅读提供的小说内容，提取关键信息，生成世界书条目。
 
 ## 输出格式
 请生成标准JSON格式：
-{
-"角色": { "角色名": { "关键词": ["..."], "内容": "..." } },
-"地点": { "地点名": { "关键词": ["..."], "内容": "..." } },
-"组织": { "组织名": { "关键词": ["..."], "内容": "..." } }${enablePlotOutline ? `,
-"剧情大纲": { "主线剧情": { "关键词": ["主线"], "内容": "..." } }` : ''}${enableLiteraryStyle ? `,
-"文风配置": { "作品文风": { "关键词": ["文风"], "内容": "..." } }` : ''}
-}
+${simpleJsonTemplate}
 
 直接输出更新后的JSON，保持一致性，不要包含代码块标记。
 `;

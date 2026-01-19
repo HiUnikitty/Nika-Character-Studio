@@ -309,7 +309,6 @@ request.onupgradeneeded = event => {
 
 request.onsuccess = event => {
     customTemplateDB = event.target.result;
-    console.log('自定义模板数据库已准备就绪');
     loadCustomTemplates();
 
     // 加载酒馆助手状态
