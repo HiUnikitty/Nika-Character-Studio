@@ -282,7 +282,7 @@ function initCustomCategoriesUI() {
         <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px;">
             <span style="color: var(--label-color); font-weight: bold;">🏷️ 自定义提取分类</span>
             <div>
-                <button id="add-custom-category-btn" style="background: #28a745; color: white; padding: 4px 10px; border: none; border-radius: 3px; cursor: pointer; font-size: 12px; margin-right: 5px;">➕ 添加分类</button>
+                <button id="add-custom-category-btn" style="background: #e67e22; color: white; padding: 4px 10px; border: none; border-radius: 3px; cursor: pointer; font-size: 12px; margin-right: 5px;">➕ 添加分类</button>
                 <button id="reset-categories-btn" style="background: #6c757d; color: white; padding: 4px 10px; border: none; border-radius: 3px; cursor: pointer; font-size: 12px;">🔄 重置默认</button>
             </div>
         </div>
@@ -431,7 +431,7 @@ function showCategoryModal(editIndex, title) {
             
             <div style="display: flex; gap: 10px; justify-content: flex-end;">
                 <button id="cat-cancel-btn" style="background: #6c757d; color: white; padding: 8px 20px; border: none; border-radius: 5px; cursor: pointer;">取消</button>
-                <button id="cat-save-btn" style="background: #28a745; color: white; padding: 8px 20px; border: none; border-radius: 5px; cursor: pointer;">保存</button>
+                <button id="cat-save-btn" style="background: #e67e22; color: white; padding: 8px 20px; border: none; border-radius: 5px; cursor: pointer;">保存</button>
             </div>
         </div>
     `;
