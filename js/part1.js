@@ -2823,3 +2823,286 @@ if (document.readyState === 'loading') {
         lorebookBtn.parentNode.appendChild(literaryBtn);
     }
 }
+
+// ==================== AI 排序建议功能 ====================
+
+let currentSortSuggestions = [];
+
+function openSortSuggestionModal(button) {
+    const modal = document.getElementById('sort-suggestion-modal');
+    if (modal) {
+        modal.style.display = 'flex';
+        document.getElementById('sort-suggestion-loading').style.display = 'none';
+        document.getElementById('sort-suggestion-results').style.display = 'none';
+        document.getElementById('sort-suggestion-empty').style.display = 'none';
+        document.getElementById('sort-suggestion-analyze-btn').style.display = 'inline-block';
+        document.getElementById('sort-suggestion-apply-btn').style.display = 'none';
+        document.getElementById('sort-suggestion-list').innerHTML = '';
+        currentSortSuggestions = [];
+    }
+}
+
+function closeSortSuggestionModal() {
+    const modal = document.getElementById('sort-suggestion-modal');
+    if (modal) modal.style.display = 'none';
+}
+
+function getPositionDisplayName(position, role, depth) {
+    const positionNames = {
+        0: t('position-before-char-system'),
+        1: t('position-after-char-system'),
+        4: role === 0 ? t('position-smart-system') : (role === 1 ? t('position-smart-user') : t('position-smart-ai'))
+    };
+    let name = positionNames[position] || ('位置 ' + position);
+    if (position === 4 && depth !== null && depth !== undefined) {
+        name += ' (D' + depth + ')';
+    }
+    return name;
+}
+
+async function analyzeSortSuggestions() {
+    const worldbookEntries = buildWorldbookDataFromDOM();
+    
+    if (!worldbookEntries || worldbookEntries.length === 0) {
+        alert(t('sort-suggestion-no-entries'));
+        return;
+    }
+    
+    const analyzeBtn = document.getElementById('sort-suggestion-analyze-btn');
+    const loadingDiv = document.getElementById('sort-suggestion-loading');
+    const resultsDiv = document.getElementById('sort-suggestion-results');
+    const emptyDiv = document.getElementById('sort-suggestion-empty');
+    const applyBtn = document.getElementById('sort-suggestion-apply-btn');
+    
+    analyzeBtn.style.display = 'none';
+    loadingDiv.style.display = 'block';
+    resultsDiv.style.display = 'none';
+    emptyDiv.style.display = 'none';
+    
+    try {
+        const entriesSummary = worldbookEntries.map(function(entry) {
+            return {
+                id: entry.id,
+                comment: entry.comment || '无标题',
+                keys: Array.isArray(entry.keys) ? entry.keys.join(', ') : entry.keys,
+                content: entry.content ? entry.content.substring(0, 300) + (entry.content.length > 300 ? '...' : '') : '',
+                currentPosition: entry.position,
+                currentRole: entry.role,
+                currentDepth: entry.depth,
+                currentPriority: entry.priority || 100,
+                constant: entry.constant
+            };
+        });
+        
+        const prompt = '你是一个SillyTavern世界书条目排序专家。请分析以下世界书条目，并给出排序和深度位置的建议。\n\n' +
+            '## 第一步：识别作品信息\n' +
+            '请先从条目内容中推断：\n' +
+            '1. 作品名称/类型（如：游戏、小说、原创等）\n' +
+            '2. 主角是谁（通常是{{user}}或与{{user}}关系最密切的角色）\n' +
+            '3. 哪些是重要角色（可攻略角色、主要剧情角色、与主角有深厚关系的角色）\n' +
+            '4. 哪些是真正的NPC（路人、店员、只出现一次的角色等）\n\n' +
+            '## 注入位置说明\n' +
+            '- position=0: 📄 角色卡前 - 很高注意力（在系统指令中）- 适合世界观设定、基础规则\n' +
+            '- position=1: 📄 角色卡后 - 中等注意力（在系统指令中）- 适合补充说明、次要设定\n' +
+            '- position=4 + role=0: ⭐ 智能插入 - 系统视角（最高注意力）- 适合需要AI高度关注的核心设定\n' +
+            '- position=4 + role=1: ⭐ 智能插入 - 用户视角（最高注意力）- 适合用户相关的设定\n' +
+            '- position=4 + role=2: ⭐ 智能插入 - AI视角（最高注意力）- 适合角色定义、角色行为指导\n\n' +
+            '## 深度(depth)说明（仅position=4时有效）\n' +
+            '- depth=0: 最近消息位置，AI注意力最高\n' +
+            '- depth=1-2: 较近位置，高注意力\n' +
+            '- depth=3-4: 中等位置，中等注意力\n' +
+            '- depth=5+: 较远位置，注意力递减\n\n' +
+            '## 优先级(priority)说明\n' +
+            '- 1000: 前置条件级别（最高优先级）\n' +
+            '- 200: 重要级别\n' +
+            '- 100: 普通级别（默认）\n' +
+            '- 低于100: 次要级别\n\n' +
+            '## 恒定注入 vs 关键词触发\n' +
+            '- **恒定注入(constant=true)**：始终注入，不需要关键词触发\n' +
+            '- **关键词触发(constant=false)**：只有当对话中出现关键词时才注入\n\n' +
+            '## 角色重要性判断标准\n' +
+            '### 重要角色（应恒定注入）：\n' +
+            '- 主角、玩家角色({{user}})\n' +
+            '- 可攻略角色/主要互动对象\n' +
+            '- 与主角有深厚关系的角色（儿时玩伴、家人、恋人等）\n' +
+            '- 剧情核心角色\n' +
+            '- 描述详细、有独特性格/背景的角色\n\n' +
+            '### 次要角色/NPC（应关键词触发）：\n' +
+            '- 只在特定场景出现的角色\n' +
+            '- 描述简单、没有深入刻画的角色\n' +
+            '- 功能性角色（店员、路人等）\n' +
+            '- 与主角没有特殊关系的角色\n\n' +
+            '## 条目类型与建议\n' +
+            '### 恒定注入类（constant=true）\n' +
+            '1. **世界观/背景设定**: position=0, priority=200-300\n' +
+            '2. **主角/可攻略角色/重要角色**: position=4, role=2, depth=0-1, priority=200\n' +
+            '3. **核心规则/系统**: position=0, priority=300-500\n\n' +
+            '### 关键词触发类（constant=false）\n' +
+            '4. **地点/场景**: position=1, priority=100-150\n' +
+            '5. **道具/物品**: position=1, priority=100\n' +
+            '6. **真正的NPC（路人、功能性角色）**: position=1, priority=100-150\n' +
+            '7. **技能/能力**: position=1, priority=100\n' +
+            '8. **剧情/事件**: position=1, priority=100-150\n\n' +
+            '## 当前条目列表\n' + JSON.stringify(entriesSummary, null, 2) + '\n\n' +
+            '## 输出要求\n' +
+            '请以JSON数组格式输出建议，只输出需要调整的条目。每个建议包含：\n' +
+            '- id: 条目ID\n' +
+            '- suggestedPosition: 建议的position值 (0, 1, 或 4)\n' +
+            '- suggestedRole: 如果position=4，建议的role值 (0=系统, 1=用户, 2=AI)\n' +
+            '- suggestedDepth: 如果position=4，建议的depth值\n' +
+            '- suggestedPriority: 建议的优先级值\n' +
+            '- suggestedConstant: 建议是否恒定注入 (true/false)\n' +
+            '- reason: 简短的调整原因（中文）\n\n' +
+            '只输出JSON数组，不要包含任何其他文字或markdown标记。如果没有需要调整的条目，输出空数组 []';
+
+        console.log(`📤 [AI排序建议] 发送分析请求...\n${prompt}`);
+        const response = await callSimpleAPI(prompt);
+        console.log('📥 [AI排序建议] 收到响应:', response);
+        
+        let suggestions = [];
+        try {
+            const jsonMatch = response.match(/\[[\s\S]*\]/);
+            if (jsonMatch) {
+                suggestions = JSON.parse(jsonMatch[0]);
+            } else {
+                suggestions = JSON.parse(response);
+            }
+        } catch (parseError) {
+            console.error('解析AI响应失败:', parseError);
+            suggestions = [];
+        }
+        
+        loadingDiv.style.display = 'none';
+        
+        if (suggestions && suggestions.length > 0) {
+            currentSortSuggestions = suggestions;
+            renderSortSuggestions(suggestions, worldbookEntries);
+            resultsDiv.style.display = 'block';
+            applyBtn.style.display = 'inline-block';
+            
+            const selectAllCheckbox = document.getElementById('sort-suggestion-select-all');
+            selectAllCheckbox.checked = true;
+            selectAllCheckbox.onchange = function() {
+                const checkboxes = document.querySelectorAll('#sort-suggestion-list input[type="checkbox"]');
+                checkboxes.forEach(function(cb) { cb.checked = selectAllCheckbox.checked; });
+            };
+        } else {
+            emptyDiv.style.display = 'block';
+            analyzeBtn.style.display = 'inline-block';
+        }
+        
+    } catch (error) {
+        console.error('AI排序建议分析失败:', error);
+        loadingDiv.style.display = 'none';
+        analyzeBtn.style.display = 'inline-block';
+        alert('分析失败: ' + error.message);
+    }
+}
+
+function renderSortSuggestions(suggestions, worldbookEntries) {
+    const listDiv = document.getElementById('sort-suggestion-list');
+    listDiv.innerHTML = '';
+    
+    suggestions.forEach(function(suggestion, index) {
+        const entry = worldbookEntries.find(function(e) { return e.id === suggestion.id; });
+        if (!entry) return;
+        
+        const currentPosName = getPositionDisplayName(entry.position, entry.role, entry.depth);
+        const suggestedPosName = getPositionDisplayName(
+            suggestion.suggestedPosition, 
+            suggestion.suggestedRole, 
+            suggestion.suggestedDepth
+        );
+        
+        const itemDiv = document.createElement('div');
+        itemDiv.style.cssText = 'padding: 15px; margin-bottom: 10px; background: rgba(0,0,0,0.2); border-radius: 8px; border: 1px solid rgba(255,255,255,0.1);';
+        const currentConstant = entry.constant ? '是' : '否';
+        const suggestedConstant = suggestion.suggestedConstant !== undefined ? (suggestion.suggestedConstant ? '是' : '否') : currentConstant;
+        
+        itemDiv.innerHTML = '<div style="display: flex; align-items: flex-start; gap: 10px;">' +
+            '<input type="checkbox" checked data-index="' + index + '" style="width: 18px; height: 18px; margin-top: 3px;">' +
+            '<div style="flex: 1;">' +
+            '<div style="font-weight: bold; color: var(--primary-color); margin-bottom: 8px;">ID:' + entry.id + ' - ' + (entry.comment || '无标题') + '</div>' +
+            '<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; font-size: 13px;">' +
+            '<div><div style="color: #888; margin-bottom: 3px;">' + t('sort-suggestion-current') + ':</div>' +
+            '<div style="color: #ccc;">' + t('sort-suggestion-position') + ': ' + currentPosName + '<br>' + t('sort-suggestion-priority') + ': ' + (entry.priority || 100) + '<br>恒定注入: ' + currentConstant + '</div></div>' +
+            '<div><div style="color: #4CAF50; margin-bottom: 3px;">' + t('sort-suggestion-suggested') + ':</div>' +
+            '<div style="color: #8BC34A;">' + t('sort-suggestion-position') + ': ' + suggestedPosName + '<br>' + t('sort-suggestion-priority') + ': ' + (suggestion.suggestedPriority || entry.priority || 100) + '<br>恒定注入: ' + suggestedConstant + '</div></div>' +
+            '</div>' +
+            '<div style="margin-top: 8px; padding: 8px; background: rgba(255,255,255,0.05); border-radius: 4px; font-size: 12px; color: #aaa;">' +
+            '<strong>' + t('sort-suggestion-reason') + ':</strong> ' + (suggestion.reason || '无') + '</div>' +
+            '</div></div>';
+        listDiv.appendChild(itemDiv);
+    });
+}
+
+function applySortSuggestions() {
+    const checkboxes = document.querySelectorAll('#sort-suggestion-list input[type="checkbox"]:checked');
+    const worldbookEntries = buildWorldbookDataFromDOM();
+    let appliedCount = 0;
+    
+    checkboxes.forEach(function(checkbox) {
+        const index = parseInt(checkbox.dataset.index);
+        const suggestion = currentSortSuggestions[index];
+        if (!suggestion) return;
+        
+        const entry = worldbookEntries.find(function(e) { return e.id === suggestion.id; });
+        if (!entry || !entry.element) return;
+        
+        const positionSelect = entry.element.querySelector('.wb-position');
+        if (positionSelect) {
+            const options = positionSelect.options;
+            for (let i = 0; i < options.length; i++) {
+                const optValue = parseInt(options[i].value);
+                const optRole = parseInt(options[i].dataset.role) || 0;
+                if (optValue === suggestion.suggestedPosition) {
+                    if (suggestion.suggestedPosition === 4) {
+                        if (optRole === (suggestion.suggestedRole || 0)) {
+                            positionSelect.selectedIndex = i;
+                            break;
+                        }
+                    } else {
+                        positionSelect.selectedIndex = i;
+                        break;
+                    }
+                }
+            }
+            if (typeof toggleDepthField === 'function') {
+                toggleDepthField(positionSelect);
+            }
+        }
+        
+        if (suggestion.suggestedPosition === 4 && suggestion.suggestedDepth !== undefined) {
+            const depthInput = entry.element.querySelector('.wb-depth');
+            if (depthInput) {
+                depthInput.value = suggestion.suggestedDepth;
+            }
+        }
+        
+        if (suggestion.suggestedPriority !== undefined) {
+            const priorityInput = entry.element.querySelector('.wb-priority');
+            if (priorityInput) {
+                priorityInput.value = suggestion.suggestedPriority;
+            }
+        }
+        
+        // 更新恒定注入
+        if (suggestion.suggestedConstant !== undefined) {
+            const constantCheckbox = entry.element.querySelector('.wb-constant');
+            if (constantCheckbox) {
+                constantCheckbox.checked = suggestion.suggestedConstant;
+                // 触发同步函数更新显示文本
+                if (typeof syncConstantCheckboxChange === 'function') {
+                    syncConstantCheckboxChange(constantCheckbox);
+                }
+            }
+        }
+        
+        appliedCount++;
+    });
+    
+    if (appliedCount > 0) {
+        alert(t('sort-suggestion-applied', { count: appliedCount }));
+        closeSortSuggestionModal();
+    }
+}

@@ -2544,6 +2544,39 @@
       </div>
     </div>
 
+    <!-- AI 排序建议模态框 -->
+    <div id="sort-suggestion-modal" class="modal-overlay">
+      <div class="modal-content" style="max-width: 900px; max-height: 90vh; overflow-y: auto;">
+        <h3 id="sort-suggestion-modal-title" data-i18n="sort-suggestion-modal-title">📊 AI 排序建议</h3>
+        <p class="help-text" style="text-align: center; margin-top: -15px; margin-bottom: 20px" data-i18n="sort-suggestion-modal-desc">AI 将根据世界书条目的内容分析，给出排序和深度位置的建议</p>
+        
+        <div id="sort-suggestion-loading" style="display: none; text-align: center; padding: 40px;">
+          <div style="font-size: 24px; margin-bottom: 15px;">⏳</div>
+          <p data-i18n="sort-suggestion-analyzing">正在分析世界书条目...</p>
+        </div>
+        
+        <div id="sort-suggestion-results" style="display: none;">
+          <div style="margin-bottom: 15px; padding: 10px; background: rgba(0,0,0,0.2); border-radius: 5px;">
+            <label style="display: flex; align-items: center; gap: 10px; cursor: pointer;">
+              <input type="checkbox" id="sort-suggestion-select-all" checked style="width: 18px; height: 18px;">
+              <span style="color: var(--label-color); font-weight: bold;" data-i18n="sort-suggestion-select-all">全选/取消全选</span>
+            </label>
+          </div>
+          <div id="sort-suggestion-list" style="max-height: 400px; overflow-y: auto;"></div>
+        </div>
+        
+        <div id="sort-suggestion-empty" style="display: none; text-align: center; padding: 40px; color: #aaa;">
+          <p data-i18n="sort-suggestion-empty">没有找到需要调整的条目</p>
+        </div>
+        
+        <div class="modal-actions">
+          <button id="sort-suggestion-analyze-btn" class="action-btn" onclick="analyzeSortSuggestions()" data-i18n="sort-suggestion-analyze-btn">🔍 开始分析</button>
+          <button id="sort-suggestion-apply-btn" class="action-btn" style="display: none" onclick="applySortSuggestions()" data-i18n="sort-suggestion-apply-btn">✅ 应用选中建议</button>
+          <button id="sort-suggestion-cancel-btn" class="cancel-btn" onclick="closeSortSuggestionModal()" data-i18n="sort-suggestion-cancel-btn">关闭</button>
+        </div>
+      </div>
+    </div>
+
     <!-- 维基百科获取模态框 -->
     <div id="wikipedia-modal" class="modal-overlay" style="z-index: 10001;">
       <div class="modal-content" style="max-width: 900px; max-height: 90vh; overflow-y: auto;">
@@ -2867,7 +2900,7 @@
                   <option value="100000" data-i18n="100k-words">10万字（Deepseek不要超过）</option>
                   <option value="200000" data-i18n="200k-words">20万字</option>
                   <option value="500000" data-i18n="500k-words">50万字 (建议Gemini)</option>
-                  
+                  <!-- <option value="5000000" data-i18n="5000k-words">500万字</option> -->
                 </select>
                 <button id="generate-worldbook-btn" onclick="bruteForceSplit()" style="margin-top: 10px; padding: 8px 15px; background: var(--secondary-color); color: white; border: none; border-radius: 4px;">生成世界书</button>
               </div>
@@ -3111,6 +3144,9 @@
                 </button>
                 <button id="ai-lorebook-generator-btn" onclick="openWorldbookAiModal(this)" style="background-color: var(--ai-button-bg); color: white; padding: 8px 15px; border-radius: 5px" data-i18n="ai-generate-worldbook">
                   🔮 一键生成世界书
+                </button>
+                <button id="ai-sort-suggestion-btn" onclick="openSortSuggestionModal(this)" style="background-color: var(--ai-button-bg); color: white; padding: 8px 15px; border-radius: 5px" data-i18n="ai-sort-suggestion-btn">
+                  🎯tu'biao AI 排序建议
                 </button>
               </div>
             </div>
@@ -3728,7 +3764,26 @@
           // 世界书按钮
           'ai-global-edit-btn': '🔮 AI 全局改',
           'ai-generate-worldbook': '🔮 一键生成世界书',
+          'ai-sort-suggestion-btn': '📊 AI 排序建议',
           'add-worldbook-entry': '+ 补充世界书',
+          
+          // AI 排序建议模态框
+          'sort-suggestion-modal-title': '📊 AI 排序建议',
+          'sort-suggestion-modal-desc': 'AI 将根据世界书条目的内容分析，给出排序和深度位置的建议',
+          'sort-suggestion-analyzing': '正在分析世界书条目...',
+          'sort-suggestion-select-all': '全选/取消全选',
+          'sort-suggestion-empty': '没有找到需要调整的条目',
+          'sort-suggestion-analyze-btn': '🔍 开始分析',
+          'sort-suggestion-apply-btn': '✅ 应用选中建议',
+          'sort-suggestion-cancel-btn': '关闭',
+          'sort-suggestion-no-entries': '没有世界书条目可供分析',
+          'sort-suggestion-current': '当前',
+          'sort-suggestion-suggested': '建议',
+          'sort-suggestion-reason': '原因',
+          'sort-suggestion-position': '位置',
+          'sort-suggestion-depth': '深度',
+          'sort-suggestion-priority': '优先级',
+          'sort-suggestion-applied': '已成功应用 {count} 条建议',
           'sort-by-priority': '按优先级排',
           'sort-by-id': '按ID排序',
           
@@ -4359,7 +4414,26 @@
           // 世界书按钮
           'ai-global-edit-btn': '🔮 AI Global Edit',
           'ai-generate-worldbook': '🔮 One-Click Generate Worldbook',
+          'ai-sort-suggestion-btn': '📊 AI Sort Suggestion',
           'add-worldbook-entry': '+ Add Worldbook Entry',
+          
+          // AI Sort Suggestion Modal
+          'sort-suggestion-modal-title': '📊 AI Sort Suggestion',
+          'sort-suggestion-modal-desc': 'AI will analyze worldbook entries and suggest sorting and depth position adjustments',
+          'sort-suggestion-analyzing': 'Analyzing worldbook entries...',
+          'sort-suggestion-select-all': 'Select/Deselect All',
+          'sort-suggestion-empty': 'No entries need adjustment',
+          'sort-suggestion-analyze-btn': '🔍 Start Analysis',
+          'sort-suggestion-apply-btn': '✅ Apply Selected Suggestions',
+          'sort-suggestion-cancel-btn': 'Close',
+          'sort-suggestion-no-entries': 'No worldbook entries to analyze',
+          'sort-suggestion-current': 'Current',
+          'sort-suggestion-suggested': 'Suggested',
+          'sort-suggestion-reason': 'Reason',
+          'sort-suggestion-position': 'Position',
+          'sort-suggestion-depth': 'Depth',
+          'sort-suggestion-priority': 'Priority',
+          'sort-suggestion-applied': 'Successfully applied {count} suggestions',
           'sort-by-priority': 'Sort by Priority',
           'sort-by-id': 'Sort by ID',
           
