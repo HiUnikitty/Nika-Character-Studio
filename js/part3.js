@@ -693,14 +693,56 @@ try {
         }),
     });
     } else if (provider === 'tavern') {
-    response = await fetch(settings.tavern.endpoint, {
+    const providerSettings = settings.tavern;
+    const isReverseProxy = providerSettings.connectionType === 'reverse-proxy';
+    
+    let endpoint, apiKey, model;
+    
+    if (isReverseProxy) {
+        endpoint = providerSettings.proxyUrl;
+        apiKey = providerSettings.proxyPassword;
+        model = providerSettings.proxyModel || 'gpt-3.5-turbo';
+        
+        if (!endpoint) throw new Error('代理服务器 URL 未设置');
+    } else {
+        endpoint = providerSettings.endpoint;
+        apiKey = providerSettings.apiKey;
+        model = providerSettings.model || 'gpt-3.5-turbo';
+        
+        if (!endpoint) throw new Error('Tavern API Endpoint 未设置');
+    }
+    
+    let finalEndpoint = endpoint;
+    if (isReverseProxy) {
+        if (!finalEndpoint.includes('/chat/completions')) {
+        if (finalEndpoint.endsWith('/v1')) {
+            finalEndpoint += '/chat/completions';
+        } else if (finalEndpoint.endsWith('/')) {
+            finalEndpoint += 'chat/completions';
+        } else {
+            finalEndpoint += '/chat/completions';
+        }
+        }
+    } else {
+        if (finalEndpoint.endsWith('/v1')) {
+        finalEndpoint += '/chat/completions';
+        }
+    }
+    
+    if (!finalEndpoint.startsWith('http')) {
+        finalEndpoint = 'https://' + finalEndpoint;
+    }
+    
+    const headers = { 'Content-Type': 'application/json' };
+    if (apiKey) {
+        headers['Authorization'] = `Bearer ${apiKey}`;
+    }
+    
+    response = await fetch(finalEndpoint, {
         method: 'POST',
-        headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${settings.tavern.apiKey}`,
-        },
+        headers: headers,
         body: JSON.stringify({
-        model: settings.tavern.model || 'gpt-3.5-turbo',
+        model: model,
         messages: [
             {
             role: 'user',
