@@ -889,15 +889,17 @@ navigator.clipboard
     .writeText(code)
     .then(() => {
     // 显示成功提示
-    const button = event.target;
-    const originalText = button.textContent;
-    button.textContent = '✅ 已注入';
-    button.style.background = '#4CAF50';
+    const button = document.querySelector(`[data-style-index="${index}"] button[onclick*="directInject"]`);
+    if (button) {
+        const originalText = button.textContent;
+        button.textContent = '✅ 已注入';
+        button.style.background = '#4CAF50';
 
-    setTimeout(() => {
-        button.textContent = originalText;
-        button.style.background = 'var(--ai-button-bg)';
-    }, 2000);
+        setTimeout(() => {
+            button.textContent = originalText;
+            button.style.background = '#28a745';
+        }, 2000);
+    }
 
     alert(t('code-added-to-instruction'));
     })
@@ -994,9 +996,6 @@ if (!code) {
     alert(t('style-code-not-exist'));
     return;
 }
-
-// 关闭当前弹窗
-closeInjectModal();
 
 // 获取用户输入的修改要求
 const modifyRequest = prompt('请描述你想要的修改内容：\n例如：添加好感度显示、增加动画效果、改变颜色主题等...');
@@ -1252,7 +1251,7 @@ const previewModalHTML = `
             <button onclick="closeHTMLPreviewModal()" style="background: #6c757d; color: white; padding: 8px 12px; border: none; border-radius: 5px; cursor: pointer;">关闭</button>
         </div>
         <div style="flex: 1; border: 1px solid var(--input-border); border-radius: 5px; overflow: hidden;">
-            <iframe id="html-preview-frame" style="width: 100%; height: 100%; border: none;"></iframe>
+            <iframe id="html-preview-frame" sandbox="allow-scripts allow-same-origin" style="width: 100%; height: 100%; border: none;"></iframe>
         </div>
     </div>
 </div>
@@ -1268,12 +1267,12 @@ const htmlContent = htmlCodeBlocks.join('\n');
 // 直接写入HTML内容
 setTimeout(() => {
     try {
-    iframe.contentDocument.open();
-    iframe.contentDocument.write(htmlContent);
-    iframe.contentDocument.close();
+        iframe.contentDocument.open();
+        iframe.contentDocument.write(htmlContent);
+        iframe.contentDocument.close();
     } catch (e) {
     console.error('HTML预览渲染失败:', e);
-    iframe.src = 'data:text/html;charset=utf-8,' + encodeURIComponent(htmlContent);
+        iframe.src = 'data:text/html;charset=utf-8,' + encodeURIComponent(htmlContent);
     }
 }, 100);
 }
@@ -1282,40 +1281,41 @@ setTimeout(() => {
 function extractHTMLCodeBlocks(content) {
 const htmlBlocks = [];
 
-// 匹配```html 或 ```HTML 或 ``` 开头的代码块
-const codeBlockRegex = /```(?:html|HTML)?\s*\n?([\s\S]*?)```/gi;
+// 方法1: 直接匹配所有 <html>...</html> 标签对（支持多个HTML文档）
+const htmlDocRegex = /<html[\s\S]*?<\/html>/gi;
 let match;
 
-while ((match = codeBlockRegex.exec(content)) !== null) {
-    const code = match[1].trim();
-    if (code && /<[^>]+>/.test(code)) {
-    htmlBlocks.push(code);
+while ((match = htmlDocRegex.exec(content)) !== null) {
+    htmlBlocks.push(match[0]);
+}
+
+// 方法2: 如果没找到完整的 <html> 标签，尝试匹配 <!DOCTYPE html>...
+if (htmlBlocks.length === 0) {
+    const doctypeRegex = /<!DOCTYPE\s+html[\s\S]*?<\/html>/gi;
+    while ((match = doctypeRegex.exec(content)) !== null) {
+    htmlBlocks.push(match[0]);
     }
 }
 
-// 如果没有找到代码块，尝试直接查找HTML标签
+// 方法3: 如果还是没找到，尝试从代码块中提取
 if (htmlBlocks.length === 0) {
-    const lines = content.split('\n');
-    let htmlContent = '';
-    let inHtmlBlock = false;
-    
-    for (const line of lines) {
-    if (/<[^>]+>/.test(line)) {
-        inHtmlBlock = true;
-        htmlContent += line + '\n';
-    } else if (inHtmlBlock && line.trim() === '') {
-        htmlContent += line + '\n';
-    } else if (inHtmlBlock) {
-        if (htmlContent.trim()) {
-        htmlBlocks.push(htmlContent.trim());
-        }
-        htmlContent = '';
-        inHtmlBlock = false;
+    const codeBlockRegex = /```(?:html|HTML)?\s*\n?([\s\S]*?)```/gi;
+    while ((match = codeBlockRegex.exec(content)) !== null) {
+    const code = match[1].trim();
+    if (code && /<[^>]+>/.test(code)) {
+        htmlBlocks.push(code);
     }
     }
-    
-    if (htmlContent.trim()) {
-    htmlBlocks.push(htmlContent.trim());
+}
+
+// 方法4: 最后尝试查找任何包含 <body> 标签的内容块
+if (htmlBlocks.length === 0) {
+    const bodyRegex = /<body[\s\S]*?<\/body>/gi;
+    while ((match = bodyRegex.exec(content)) !== null) {
+    // 构建一个最小的HTML文档
+    const bodyContent = match[0];
+    const minimalHtml = `<!DOCTYPE html>\n<html>\n<head><meta charset="UTF-8"></head>\n${bodyContent}\n</html>`;
+    htmlBlocks.push(minimalHtml);
     }
 }
 
