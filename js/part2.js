@@ -3568,19 +3568,19 @@ genTypeButtons.forEach(button => {
     button.onclick = () => {
     const genType = button.dataset.type;
     modal.dataset.lastGenType = genType; // Store for regeneration
-    
+
     // 切换输入区域显示
     const literaryStyleArea = document.getElementById('literary-style-input-area');
     const generalInputArea = document.getElementById('general-input-area');
-    
+
     if (genType === 'literary_style') {
-        literaryStyleArea.style.display = 'block';
-        generalInputArea.style.display = 'none';
+        if (literaryStyleArea) literaryStyleArea.style.display = 'block';
+        if (generalInputArea) generalInputArea.style.display = 'none';
     } else {
-        literaryStyleArea.style.display = 'none';
-        generalInputArea.style.display = 'block';
+        if (literaryStyleArea) literaryStyleArea.style.display = 'none';
+        if (generalInputArea) generalInputArea.style.display = 'block';
     }
-    
+
     const generatorButton = document.getElementById('ai-lorebook-generator-btn');
     fetchWorldbookStoryNodes(generatorButton, genType);
     };
