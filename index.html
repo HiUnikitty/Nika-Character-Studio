@@ -585,8 +585,14 @@
         color: var(--primary-color);
         margin-top: 25px;
         margin-bottom: 15px;
-        padding-bottom: 8px;
+        padding-bottom: 10px;
         border-bottom: 2px solid var(--primary-color);
+      }
+      
+      /* 世界书标题特殊样式：无横线 */
+      #editor-view .section-title.worldbook-title {
+        border-bottom: none;
+        padding-bottom: 0;
       }
       #editor-view .field-group {
         margin-bottom: 15px;
@@ -833,6 +839,99 @@
         gap: 10px;
       }
       
+      /* 折叠状态下的标题样式 */
+      .entry-collapsed-title {
+        display: none;
+        cursor: pointer;
+        flex: 1;
+        padding: 8px 12px;
+        border-radius: 4px;
+        transition: background 0.2s;
+      }
+      
+      .entry-collapsed-title:hover {
+        background: rgba(230, 126, 34, 0.1);
+      }
+      
+      .entry-collapsed-title h4 {
+        margin: 0;
+        color: var(--text-color);
+        font-size: 16px;
+        font-weight: 500;
+        user-select: none;
+      }
+      
+      /* 世界书折叠按钮样式 - 使用CSS绘制圆润箭头 */
+      .wb-fold-toggle {
+        background: none;
+        border: none;
+        cursor: pointer;
+        padding: 4px;
+        width: 20px;
+        height: 20px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.2s ease;
+        flex-shrink: 0;
+        border-radius: 3px;
+      }
+      
+      .wb-fold-toggle:hover {
+        background: rgba(230, 126, 34, 0.1);
+      }
+      
+      .wb-fold-toggle .toggle-arrow {
+        width: 6px;
+        height: 6px;
+        border-right: 2px solid var(--primary-color);
+        border-bottom: 2px solid var(--primary-color);
+        transform: rotate(45deg);
+        transition: transform 0.2s ease;
+        border-radius: 1px;
+      }
+      
+      .wb-fold-toggle:hover .toggle-arrow {
+        border-color: var(--secondary-color);
+      }
+      
+      /* 全局展开/折叠按钮样式 - 使用CSS绘制圆润箭头 */
+      .wb-global-toggle {
+        background: none;
+        border: none;
+        cursor: pointer;
+        padding: 4px;
+        width: 24px;
+        height: 24px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.2s ease;
+        border-radius: 4px;
+      }
+      
+      .wb-global-toggle:hover {
+        background: rgba(230, 126, 34, 0.1);
+      }
+      
+      .wb-global-toggle .toggle-arrow {
+        width: 8px;
+        height: 8px;
+        border-right: 2px solid var(--primary-color);
+        border-bottom: 2px solid var(--primary-color);
+        transform: rotate(45deg);
+        transition: transform 0.2s ease;
+        border-radius: 1px;
+      }
+      
+      .wb-global-toggle:hover .toggle-arrow {
+        border-color: var(--secondary-color);
+      }
+      
+      .wb-global-toggle.collapsed .toggle-arrow {
+        transform: rotate(-45deg);
+      }
+      
       .entry-title-group {
         display: flex;
         align-items: center;
@@ -1068,6 +1167,26 @@
         
         *::-webkit-scrollbar-thumb:hover {
           background-color: rgba(136, 136, 136, 0.8);
+        }
+        
+        /* 移动端模态框适配 */
+        .modal-content {
+          width: 95%;
+          max-height: 85vh;
+          padding: 20px;
+        }
+        
+        /* 移动端模态框按钮适配 */
+        .modal-content .modal-actions {
+          flex-wrap: wrap;
+          gap: 8px;
+        }
+        
+        .modal-content .modal-actions button {
+          flex: 1 1 calc(50% - 4px);
+          min-width: 0;
+          padding: 10px 8px;
+          font-size: 14px;
         }
       }
       .wb-sort-id {
@@ -1920,6 +2039,8 @@
         padding: 25px;
         border-radius: 10px;
         width: 90%;
+        max-height: 90vh;
+        overflow-y: auto;
         box-shadow: 0 5px 25px rgba(0, 0, 0, 0.5);
       }
       .modal-content h3 {
@@ -3136,8 +3257,13 @@
               <input id="character_version" placeholder="例如：1.0, 测试版">
             </div>
 
-            <div style="display: flex; justify-content: space-between; align-items: center">
-              <h3 class="section-title" id="world-knowledge-book-title">世界书 </h3>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <button id="toggle-all-worldbook-btn" onclick="toggleAllWorldbookEntries()" title="展开/折叠所有条目" class="wb-global-toggle">
+                  <span class="toggle-arrow"></span>
+                </button>
+                <h3 class="section-title worldbook-title" id="world-knowledge-book-title" style="margin: 0;">世界书</h3>
+              </div>
               <div style="display: flex; gap: 10px;">
                 <button id="ai-global-edit-btn" onclick="openGlobalEditModal(this)" style="background-color: var(--ai-button-bg); color: white; padding: 8px 15px; border-radius: 5px" data-i18n="ai-global-edit-btn">
                   🔮 AI 全局改
@@ -3146,7 +3272,7 @@
                   🔮 一键生成世界书
                 </button>
                 <button id="ai-sort-suggestion-btn" onclick="openSortSuggestionModal(this)" style="background-color: var(--ai-button-bg); color: white; padding: 8px 15px; border-radius: 5px" data-i18n="ai-sort-suggestion-btn">
-                  🎯tu'biao AI 排序建议
+                  🎯 AI 排序建议
                 </button>
               </div>
             </div>
@@ -3267,7 +3393,8 @@
             <option value="" data-i18n="select-property">请选择要修改的属性</option>
             <option value="enabled" data-i18n="entry-status">条目状态（启用/禁用）</option>
             <option value="constant" data-i18n="constant-injection-option">恒定注入（永久/关键词）</option>
-            <option value="prevent_recursion" data-i18n="prevent-recursion-option">防止递归</option>
+            <option value="prevent_recursion" data-i18n="prevent-recursion-option">防止进一步递归</option>
+            <option value="exclude_recursion" data-i18n="exclude-recursion-option">不可被递归</option>
             <option value="selective" data-i18n="selective-trigger">选择性触发</option>
             <option value="use_regex" data-i18n="regex-option">正则表达式</option>
             <option value="match_whole_words" data-i18n="whole-word-match">全词匹配</option>
@@ -3310,8 +3437,16 @@
         </div>
         
         <div id="batch-recursion-options" class="field-group" style="display: none; margin-top: 15px;">
-          <label>防止递归：</label>
+          <label>防止进一步递归：</label>
           <select id="batch-recursion-value" style="width: 100%; padding: 10px; background: var(--input-bg); color: var(--text-color); border: 1px solid var(--input-border); border-radius: 5px;">
+            <option value="true">✅ 启用</option>
+            <option value="false">❌ 禁用</option>
+          </select>
+        </div>
+        
+        <div id="batch-exclude-recursion-options" class="field-group" style="display: none; margin-top: 15px;">
+          <label>不可被递归：</label>
+          <select id="batch-exclude-recursion-value" style="width: 100%; padding: 10px; background: var(--input-bg); color: var(--text-color); border: 1px solid var(--input-border); border-radius: 5px;">
             <option value="true">✅ 启用</option>
             <option value="false">❌ 禁用</option>
           </select>
@@ -3459,8 +3594,8 @@
           'injection-content-placeholder': '当关键词被触发时，这段内容会被发送给AI。',
           'entry-id': '条目ID',
           'entry-id-placeholder': '数字，决定条目被发送的顺序',
-          'entry-priority': '优先级',
-          'entry-priority-placeholder': '数字，决定条目被发送的顺序',
+          'entry-priority': '顺序',
+          'entry-priority-placeholder': '数字，决定条目被发送的顺序（升序）',
           'entry-position': '注入位置',
           'entry-scope': '作用域',
           'priority-preset-prereq': '前提',
@@ -3470,12 +3605,13 @@
           'entry-constant': '恒定注入',
           'entry-selective': '选择性注入',
           'use-regex': '正则匹配',
-          'prevent-recursion': '阻止递归',
+          'prevent-recursion': '阻止进一步递归',
+          'exclude-recursion': '不可被递归',
           'entry-group': '分组',
           'entry-group-placeholder': '分组名称',
           'entry-probability': '触发概率 (%)',
           'entry-probability-placeholder': '0-100',
-          'entry-depth': '记录深度',
+          'entry-depth': '深度',
           'entry-depth-placeholder': '数字',
           'scan-depth': '扫描深度',
           'scan-depth-placeholder': '留空使用默认设置',
@@ -3515,7 +3651,7 @@
           'help-entry-id':
             '决定了条目的基础排列顺序。\n用法：数字越小，越靠前。\n例：ID为0的条目会比ID为1的条目先被处理。',
           'help-entry-priority':
-            '决定了当多个条目同时被触发时，哪个条目说了算。\n用法：数字越大，权力越大。\n例：`A条目(优先级100)`和`B条目(优先级200)`都被触发，AI会优先听`B条目`的（需开启“选择性注入”）。',
+            '决定了条目在世界书中的排列顺序，影响发送给AI的位置。\n用法：数字越小越靠前，越大越靠后（升序排列）',
           'help-entry-position':
             'AI注意力递减：智能插入 > 角色卡前 > 角色卡后\n\n'
             + '🔥 智能插入（推荐）：在对话历史中动态插入，最接近当前对话，注意力最高。适合：重要情节、关键信息、状态描述\n'
@@ -3533,7 +3669,9 @@
           'help-use-regex':
             '启用“程序员模式”来设置关键词。\n用法：允许使用正则表达式来设置更复杂的关键词匹配规则，不懂编程建议不勾选。',
           'help-prevent-recursion':
-            '防止AI“自己跟自己说话”。\n效果：防止一个条目的注入内容，又触发了另一个条目，形成无限循环。建议保持勾选。',
+            '防止进一步递归。\n效果：防止一个条目的注入内容，又触发了另一个条目，甚至形成无限循环。建议保持勾选。',
+          'help-exclude-recursion':
+            '不可被递归。\n效果：防止此条目被其他条目的内容触发，只能由用户输入或角色卡内容触发。建议保持勾选。',
           'help-entry-group':
             '给条目“贴标签”，方便管理。\n用法：给逻辑相关的条目设置同一个分组名，可用于其他高级功能。',
           'help-entry-probability':
@@ -3784,7 +3922,7 @@
           'sort-suggestion-depth': '深度',
           'sort-suggestion-priority': '优先级',
           'sort-suggestion-applied': '已成功应用 {count} 条建议',
-          'sort-by-priority': '按优先级排',
+          'sort-by-priority': '按顺序排',
           'sort-by-id': '按ID排序',
           
           // AI引导
@@ -3804,7 +3942,7 @@
           'search-placeholder': '输入搜索关键词...',
           'sort-by-pinyin': '拼音排序',
           'sort-by-id-btn': 'ID排序',
-          'sort-by-priority-btn': '优先级',
+          'sort-by-priority-btn': '顺序',
           'select-all': '全选',
           'selected-count': '已选 {count} 个',
           'batch-modify': '批量修改',
@@ -3843,7 +3981,8 @@
           'select-property': '请选择要修改的属性',
           'entry-status': '条目状态（启用/禁用）',
           'constant-injection-option': '恒定注入（永久/关键词）',
-          'prevent-recursion-option': '防止递归',
+          'prevent-recursion-option': '防止进一步递归',
+          'exclude-recursion-option': '不可被递归',
           'selective-trigger': '选择性触发',
           'regex-option': '正则表达式',
           'whole-word-match': '全词匹配',
@@ -3992,6 +4131,7 @@
           // 折叠视图
           'fold-view': '📖 折叠视图',
           'edit-mode': '📝 编辑模式',
+          'toggle-fold': '折叠/展开',
         },
 
         en: {
@@ -4095,8 +4235,8 @@
           'injection-content-placeholder': 'When keywords are triggered, this content will be sent to AI.',
           'entry-id': 'Sort ID',
           'entry-id-placeholder': 'Number, affects order',
-          'entry-priority': 'Priority',
-          'entry-priority-placeholder': 'Number, determines which entry wins',
+          'entry-priority': 'Order',
+          'entry-priority-placeholder': 'Number, determines sending order (ascending)',
           'entry-position': 'Injection Position',
           'entry-scope': 'Scope',
           'priority-preset-prereq': 'Prereq',
@@ -4108,6 +4248,7 @@
           'use-regex': 'Use Regex',
           'entry-use-regex': 'Use Regex',
           'prevent-recursion': 'Prevent Recursion',
+          'exclude-recursion': 'Exclude Recursion',
           'entry-prevent-recursion': 'Prevent Recursion',
           'entry-group': 'Group',
           'entry-group-placeholder': 'Group name',
@@ -4155,7 +4296,7 @@
           'help-entry-id':
             '[Sort ID] determines which entry the AI sees first within the same level. A smaller number means it comes first.',
           'help-entry-priority':
-            '[Priority] determines which entry wins when multiple triggered entries compete for injection. A higher number means higher priority. Use the quick-set buttons on the right for common values.',
+            '[Order] determines the arrangement order of entries in the worldbook, affecting their position when sent to AI.\nUsage: Smaller numbers come first, larger numbers come later (ascending order).\nNote: At the same @system 0 depth, entries with larger order values (later position) are more likely to be noticed by AI.\nExample: Entry A (order 100) will be placed before Entry B (order 200), but Entry B is more likely to be noticed by AI due to its later position.',
           'help-entry-position':
             "[Injection Position] determines where this content is placed in the final prompt sent to the AI.\n[Before Character]: Default. The content appears before the character's core definition.\n[After Character]: The content appears after the core definition.\n[At the very beginning]: The content is placed at the absolute top of the prompt.\n[Assistant/User/System Depth]: Inject at specified depth in chat history (requires depth setting).",
           'help-entry-scope':
@@ -4169,6 +4310,8 @@
             '[Use Regex] Allows you to use Regular Expressions for more complex keyword matching rules. For advanced users.',
           'help-entry-prevent-recursion':
             '[Prevent Recursion] Prevents the content of one entry from triggering other entries, avoiding infinite loops.',
+          'help-exclude-recursion':
+            '[Exclude Recursion] Prevents this entry from being triggered by other entries\' content. It can only be triggered by user input or character card content.',
           'help-entry-group':
             '[Group] Assign a group name to an entry to help organize and manage a large number of entries.',
           'help-entry-probability':
@@ -4434,7 +4577,7 @@
           'sort-suggestion-depth': 'Depth',
           'sort-suggestion-priority': 'Priority',
           'sort-suggestion-applied': 'Successfully applied {count} suggestions',
-          'sort-by-priority': 'Sort by Priority',
+          'sort-by-priority': 'Sort by Order',
           'sort-by-id': 'Sort by ID',
           
           // AI引导
@@ -4454,7 +4597,7 @@
           'search-placeholder': 'Enter search keywords...',
           'sort-by-pinyin': 'Sort by Pinyin',
           'sort-by-id-btn': 'Sort by ID',
-          'sort-by-priority-btn': 'Priority',
+          'sort-by-priority-btn': 'Order',
           'select-all': 'Select All',
           'selected-count': 'Selected {count}',
           'batch-modify': 'Batch Modify',
@@ -4493,7 +4636,8 @@
           'select-property': 'Please select property to modify',
           'entry-status': 'Entry Status (Enabled/Disabled)',
           'constant-injection-option': 'Constant Injection (Permanent/Keyword)',
-          'prevent-recursion-option': 'Prevent Recursion',
+          'prevent-recursion-option': 'Prevent Further Recursion',
+          'exclude-recursion-option': 'Exclude Recursion',
           'selective-trigger': 'Selective Trigger',
           'regex-option': 'Regular Expression',
           'whole-word-match': 'Whole Word Match',
@@ -4642,6 +4786,7 @@
           // Fold view
           'fold-view': '📖 Fold View',
           'edit-mode': '📝 Edit Mode',
+          'toggle-fold': 'Toggle Fold',
         },
       };
 

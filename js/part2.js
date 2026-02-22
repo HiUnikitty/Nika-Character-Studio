@@ -2418,8 +2418,8 @@ function processWorldbook(obj) {
                 order: entryId * 100,
                 position: 0, // before_char
                 disable: false,
-                excludeRecursion: false,
-                preventRecursion: false,
+                excludeRecursion: true,  // 默认开启不可被递归
+                preventRecursion: true,  // 默认开启防止进一步递归
                 delayUntilRecursion: false,
                 probability: 100,
                 depth: 4,
@@ -2459,8 +2459,8 @@ function processWorldbook(obj) {
                 order: entryId * 100,
                 position: 0,
                 disable: false,
-                excludeRecursion: false,
-                preventRecursion: false,
+                excludeRecursion: true,  // 默认开启不可被递归
+                preventRecursion: true,  // 默认开启防止进一步递归
                 delayUntilRecursion: false,
                 probability: 100,
                 depth: 4,
@@ -2514,8 +2514,8 @@ function processNestedObject(obj, prefix) {
         order: entryId * 100,
         position: 0,
         disable: false,
-        excludeRecursion: false,
-        preventRecursion: false,
+        excludeRecursion: true,  // 默认开启不可被递归
+        preventRecursion: true,  // 默认开启防止进一步递归
         delayUntilRecursion: false,
         probability: 100,
         depth: 4,
@@ -2556,8 +2556,8 @@ if (entries.length === 0) {
     order: 100,
     position: 0,
     disable: false,
-    excludeRecursion: false,
-    preventRecursion: false,
+    excludeRecursion: true,  // 默认开启不可被递归
+    preventRecursion: true,  // 默认开启防止进一步递归
     delayUntilRecursion: false,
     probability: 100,
     depth: 4,
@@ -4414,6 +4414,7 @@ return {
     priority: parseInt(element.querySelector('.wb-priority').value, 10) || 100,
     enabled: element.querySelector('.wb-enabled').checked,
     prevent_recursion: element.querySelector('.wb-prevent-recursion') ? element.querySelector('.wb-prevent-recursion').checked : false,
+    exclude_recursion: element.querySelector('.wb-exclude-recursion') ? element.querySelector('.wb-exclude-recursion').checked : false,
     group: element.querySelector('.wb-group') ? element.querySelector('.wb-group').value.trim() : '',
     position: parseInt(element.querySelector('.wb-position').value) || 0,
     role: parseInt(element.querySelector('.wb-position').selectedOptions[0].dataset.role) || 0,
@@ -4478,6 +4479,8 @@ container.innerHTML = '';
 if (totalEntries <= 100) {
     renderLevelSync(data, container);
     updateAllEntryAttributes();
+    // 恢复折叠状态
+    restoreWorldbookFoldStates();
     return;
 }
 
@@ -4558,6 +4561,8 @@ const loadingDiv = document.getElementById('wb-loading-indicator');
 if (loadingDiv) loadingDiv.remove();
 
 updateAllEntryAttributes();
+// 恢复折叠状态
+restoreWorldbookFoldStates();
 console.log(`世界书渲染完成: ${total} 个条目`);
 }
 
@@ -4584,23 +4589,38 @@ data.forEach(entry => {
 
 function sortDataTreeByPriority(data) {
 data.sort((a, b) => {
-    // 参考SillyTavern的priority排序逻辑
+    // 按顺序排：先看位置，然后深度，再看顺序，最后都一样才看是恒定与否（恒定排上面，非恒定排下面）
     
-    // 1. 主排序：按状态分组 (constant=0, normal=1, disabled=2)
-    const aState = (a.enabled === false) ? 2 : (a.constant ? 0 : 1);
-    const bState = (b.enabled === false) ? 2 : (b.constant ? 0 : 1);
-    if (aState !== bState) {
-    return aState - bState;
+    // 1. 主排序：按位置 (position) 升序
+    const aPos = a.position || 0;
+    const bPos = b.position || 0;
+    if (aPos !== bPos) {
+        return aPos - bPos;
     }
     
-    // 2. 二级排序：按order/priority降序 (数值大的在前)
+    // 2. 二级排序：按深度降序 (深度大的在前，即数值大的在前)
+    // 只对position=4（@深度位置）的条目进行深度排序
+    const aDepth = (a.position === 4) ? (a.depth || 4) : -1;
+    const bDepth = (b.position === 4) ? (b.depth || 4) : -1;
+    if (aDepth !== bDepth) {
+        return bDepth - aDepth; // 深度大的在前
+    }
+    
+    // 3. 三级排序：按顺序 (priority) 升序 (数值小的在前，越靠前越先发送给AI)
     const aOrder = a.priority || 100;
     const bOrder = b.priority || 100;  
     if (aOrder !== bOrder) {
-    return bOrder - aOrder;
+        return aOrder - bOrder; // 顺序小的在前
     }
     
-    // 3. 三级排序：按ID升序
+    // 4. 四级排序：按恒定状态 (constant=0恒定在前, normal=1, disabled=2)
+    const aState = (a.enabled === false) ? 2 : (a.constant ? 0 : 1);
+    const bState = (b.enabled === false) ? 2 : (b.constant ? 0 : 1);
+    if (aState !== bState) {
+        return aState - bState;
+    }
+    
+    // 5. 五级排序：按ID升序
     return (a.id || 0) - (b.id || 0);
 });
 
@@ -4622,7 +4642,7 @@ function sortWorldbookEntriesByPriority() {
 const worldbookData = buildWorldbookDataFromDOM();
 sortDataTreeByPriority(worldbookData);
 renderWorldbookFromData(worldbookData);
-alert('条目已按优先级重新排列！');
+alert('条目已按实际Sillytavern发送顺序重新排列！');
 }
 
 function airdropEntry(button) {
@@ -4706,6 +4726,15 @@ if (entryData) {
 }
 
 renderWorldbookFromData(worldbookData);
+
+// 展开新创建的条目
+setTimeout(() => {
+    const entries = document.querySelectorAll('.worldbook-entry');
+    const newEntry = Array.from(entries).find(e => e.dataset.entryId == newId);
+    if (newEntry) {
+        expandWorldbookEntry(newEntry);
+    }
+}, 100);
 }
 
 // 新增：设置优先级的辅助函数
@@ -4713,6 +4742,11 @@ function setPriority(button, value) {
 const priorityInput = button.closest('.field-group').querySelector('.wb-priority');
 if (priorityInput) {
     priorityInput.value = value;
+    // 更新折叠状态下的显示
+    const entry = button.closest('.worldbook-entry');
+    if (entry) {
+        updateCollapsedInfo(entry);
+    }
 }
 }
 
@@ -4728,11 +4762,35 @@ if (depthField) {
 }
 }
 
+// 获取位置标记文本（参考SillyTavern命名法）
+function getPositionBadgeText(entry) {
+    const position = entry.position || 0;
+    const role = entry.role || 0;
+    const depth = entry.depth || 4;
+    
+    // 基础位置
+    if (position === 0) return '↑Char'; // Before Char Defs
+    if (position === 1) return '↓Char'; // After Char Defs
+    if (position === 5) return '↑EM';   // Before Example Messages
+    if (position === 6) return '↓EM';   // After Example Messages
+    if (position === 2) return '↑AN';   // Before Author's Note
+    if (position === 3) return '↓AN';   // After Author's Note
+    
+    // @深度 位置
+    if (position === 4) {
+        const roleIcon = role === 0 ? '⚙️' : role === 1 ? '👤' : '🤖';
+        return `@深${depth} ${roleIcon}`;
+    }
+    
+    return '↑Char'; // 默认
+}
+
 function createWorldbookEntryElement(entryData = {}) {
 const entryLi = document.createElement('li');
 entryLi.className = 'worldbook-entry';
 const uniqueId = `wb-entry-${Date.now()}-${Math.random()}`;
 entryLi.dataset.uniqueId = uniqueId;
+entryLi.dataset.entryId = entryData?.id || 0; // 用于保存折叠状态
 
 const defaultEntry = {
     comment: t('new-entry'),
@@ -4742,7 +4800,8 @@ const defaultEntry = {
     secondary_keys_logic: 'any',
     priority: 100,
     enabled: true,
-    prevent_recursion: false,
+    prevent_recursion: true,  // 默认开启防止进一步递归
+    exclude_recursion: true,  // 默认开启不可被递归
     group: '',
     position: 0,
     role: 0,
@@ -4771,16 +4830,40 @@ entryLi.innerHTML = `
 <div class="entry-content-wrapper">
     <div class="entry-header">
         <div class="entry-title-group">
-            <div style="display: flex; align-items: center; gap: 5px;">
-                <input type="number" class="wb-sort-id" title="${t('help-entry-id')}" placeholder="${t(
+            <button class="wb-fold-toggle" onclick="toggleWorldbookEntry(this)" title="${t('toggle-fold')}">
+                <span class="toggle-arrow"></span>
+            </button>
+            <div class="entry-collapsed-title" onclick="expandWorldbookEntryByTitle(this)" style="display: none; cursor: pointer; flex: 1; padding: 8px 12px; border-radius: 4px; transition: background 0.2s;">
+                <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px;">
+                    <h4 style="margin: 0; color: var(--text-color); font-size: 16px; font-weight: 500; flex: 1;">${defaultEntry.comment || t('new-entry')}</h4>
+                    <div class="entry-collapsed-info" onclick="event.stopPropagation();" style="display: flex; align-items: center; gap: 6px; flex-shrink: 0;">
+                        <span class="entry-priority-badge" style="padding: 4px 8px; border-radius: 3px; font-size: 11px; font-weight: bold; background: rgba(230, 126, 34, 0.1); color: #e67e22;" title="顺序">
+                            ${defaultEntry.priority || 0}
+                        </span>
+                        <span class="entry-position-badge" style="padding: 4px 8px; border-radius: 3px; font-size: 11px; font-weight: bold; background: rgba(94, 91, 157, 0.1); color: var(--primary-color);" title="${t('entry-position')}">
+                            ${getPositionBadgeText(defaultEntry)}
+                        </span>
+                        <button class="constant-toggle-btn-mini" onclick="toggleConstantMode(this)" 
+                                style="padding: 4px 8px; border: none; border-radius: 3px; font-size: 11px; font-weight: bold; cursor: pointer; transition: all 0.2s ease; ${defaultEntry.constant ? 'background-color: #ff7849; color: white;' : 'background-color: #6c757d; color: white;'}"
+                                data-constant="${defaultEntry.constant || false}"
+                                title="${defaultEntry.constant ? t('constant-mode-permanent') : t('constant-mode-keyword')}">
+                            ${defaultEntry.constant ? '永久' : '关键词'}
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <div class="entry-expanded-controls" style="display: flex; align-items: center; gap: 5px; flex: 1;">
+                <div style="display: flex; align-items: center; gap: 5px;">
+                    <input type="number" class="wb-sort-id" title="${t('help-entry-id')}" placeholder="${t(
     'entry-id',
 )}" value="${defaultEntry.id}" style="width: 65px; flex-shrink: 0;">
-                <button title="${t('airdrop-entry-title')}" onclick="airdropEntry(this)" style="padding: 5px 8px; font-size: 14px; background-color: #6c757d; color: white;">➡️</button>
-            </div>
-            <input type="text" class="entry-comment" placeholder="${t('entry-comment-placeholder')}" value="${
+                    <button title="${t('airdrop-entry-title')}" onclick="airdropEntry(this)" style="padding: 5px 8px; font-size: 14px; background-color: #6c757d; color: white;">➡️</button>
+                </div>
+                <input type="text" class="entry-comment" placeholder="${t('entry-comment-placeholder')}" value="${
     defaultEntry.comment
-}">
-            <span class="help-icon" onclick="event.preventDefault(); event.stopPropagation(); showHelp(t('help-id-drop'))">?</span>
+}" oninput="updateCollapsedTitle(this)">
+                <span class="help-icon" onclick="event.preventDefault(); event.stopPropagation(); showHelp(t('help-id-drop'))">?</span>
+            </div>
         </div>
         <div class="entry-actions">
             <button title="${t('add-child-entry')}" onclick="addChildEntry(this)">➕</button>
@@ -4852,7 +4935,7 @@ entryLi.innerHTML = `
                         <label>${t(
                             'entry-position',
                         )} <span class="help-icon" onclick="event.preventDefault(); event.stopPropagation(); showHelp(t('help-entry-position'))">?</span></label>
-                        <select class="wb-position" onchange="toggleDepthField(this)">
+                        <select class="wb-position" onchange="toggleDepthField(this); updateCollapsedInfo(this.closest('.worldbook-entry'))">
                             <!-- 基础位置：在角色定义附近 -->
                             <option value="0" ${defaultEntry.position === 0 ? 'selected' : ''}>
                                 ${t('position-before-char-system')}
@@ -4895,7 +4978,7 @@ entryLi.innerHTML = `
                         <div style="display: flex; align-items: center; width: 100%;">
                             <input type="number" class="wb-priority" value="${
                                 defaultEntry.priority
-                            }" step="100" style="flex-grow: 1;">
+                            }" step="100" style="flex-grow: 1;" onchange="updateCollapsedInfo(this.closest('.worldbook-entry'))">
                             <div class="priority-buttons">
                                 <button onclick="setPriority(this, 1000)" title="1000">${t(
                                     'priority-preset-prereq',
@@ -4925,7 +5008,7 @@ entryLi.innerHTML = `
                         'entry-depth',
                     )} <span class="help-icon" onclick="event.preventDefault(); event.stopPropagation(); showHelp(t('help-entry-depth'))">?</span></label><input type="number" class="wb-depth" value="${
     defaultEntry.depth
-}" min="0" placeholder="深度越浅AI越注意，最小为0"></div>
+}" min="0" placeholder="深度越浅AI越注意，最小为0" onchange="updateCollapsedInfo(this.closest('.worldbook-entry'))"></div>
                     <div class="field-group"><label>${t('scan-depth')} <span class="help-icon" onclick="event.preventDefault(); event.stopPropagation(); showHelp(t('help-scan-depth'))">?</span></label><input type="number" class="wb-scan-depth" value="${
     defaultEntry.scan_depth || ''
 }" min="0" placeholder="${t('scan-depth-placeholder')}"></div>
@@ -4953,6 +5036,11 @@ entryLi.innerHTML = `
                         }>${t(
     'prevent-recursion',
 )} <span class="help-icon" onclick="event.preventDefault(); event.stopPropagation(); showHelp(t('help-prevent-recursion'))">?</span></label>
+                        <label><input type="checkbox" class="wb-exclude-recursion" ${
+                            defaultEntry.exclude_recursion ? 'checked' : ''
+                        }>${t(
+    'exclude-recursion',
+)} <span class="help-icon" onclick="event.preventDefault(); event.stopPropagation(); showHelp(t('help-exclude-recursion'))">?</span></label>
                         <label><input type="checkbox" class="wb-use-regex" ${
                             defaultEntry.use_regex ? 'checked' : ''
                         }>${t(
@@ -5001,12 +5089,13 @@ return entryLi;
 function addChildEntry(button) {
 const worldbookData = buildWorldbookDataFromDOM();
 const parentEntryElement = button.closest('.worldbook-entry');
+let newChildId = null;
 
 function findAndAdd(data) {
     for (const entry of data) {
     if (entry.element === parentEntryElement) {
-        const newId = entry.children.length > 0 ? Math.max(...entry.children.map(e => e.id)) + 1 : 0;
-        entry.children.push({ id: newId, comment: '新子条目', keys: [], content: '', children: [] });
+        newChildId = entry.children.length > 0 ? Math.max(...entry.children.map(e => e.id)) + 1 : 0;
+        entry.children.push({ id: newChildId, comment: '新子条目', keys: [], content: '', children: [] });
         return true;
     }
     if (entry.children.length > 0) {
@@ -5018,6 +5107,15 @@ function findAndAdd(data) {
 
 findAndAdd(worldbookData);
 renderWorldbookFromData(worldbookData);
+
+// 展开新创建的子条目，但不展开父条目
+setTimeout(() => {
+    const entries = document.querySelectorAll('.worldbook-entry');
+    const newEntry = Array.from(entries).find(e => e.dataset.entryId == newChildId);
+    if (newEntry) {
+        expandWorldbookEntry(newEntry);
+    }
+}, 100);
 }
 
 function indentEntry(button, direction) {
@@ -6058,31 +6156,41 @@ const newConstant = !isConstant;
 button.dataset.constant = newConstant;
 constantCheckbox.checked = newConstant;
 
-// 更新按钮显示
-updateConstantToggleButton(button, newConstant);
+// 更新所有相关按钮显示（包括普通按钮和迷你按钮）
+const allButtons = entryElement.querySelectorAll('.constant-toggle-btn, .constant-toggle-btn-mini');
+allButtons.forEach(btn => {
+    btn.dataset.constant = newConstant;
+    updateConstantToggleButton(btn, newConstant);
+});
 }
 
 // 更新恒定注入切换按钮显示
 function updateConstantToggleButton(button, isConstant) {
+const isMini = button.classList.contains('constant-toggle-btn-mini');
+
 if (isConstant) {
     button.style.backgroundColor = '#ff7849';
     button.style.color = 'white';
-    button.textContent = t('constant-mode-permanent');
+    button.textContent = isMini ? '永久' : t('constant-mode-permanent');
+    button.title = t('constant-mode-permanent');
 } else {
     button.style.backgroundColor = '#6c757d';
     button.style.color = 'white';
-    button.textContent = t('constant-mode-keyword');
+    button.textContent = isMini ? '关键词' : t('constant-mode-keyword');
+    button.title = t('constant-mode-keyword');
 }
 }
 
 // 同步恒定注入选项变化到切换按钮
 function syncConstantCheckboxChange(checkbox) {
 const entryElement = checkbox.closest('.worldbook-entry');
-const toggleButton = entryElement.querySelector('.constant-toggle-btn');
-if (toggleButton) {
+const toggleButtons = entryElement.querySelectorAll('.constant-toggle-btn, .constant-toggle-btn-mini');
+if (toggleButtons.length > 0) {
     const isConstant = checkbox.checked;
-    toggleButton.dataset.constant = isConstant;
-    updateConstantToggleButton(toggleButton, isConstant);
+    toggleButtons.forEach(btn => {
+        btn.dataset.constant = isConstant;
+        updateConstantToggleButton(btn, isConstant);
+    });
 }
 }
 
@@ -6213,8 +6321,19 @@ document.addEventListener('keydown', (e) => {
     }
 });
 
-// 搜索输入监听
-searchInput.addEventListener('input', refreshSearchResults);
+// 搜索输入监听（添加节流）
+let searchTimeout = null;
+searchInput.addEventListener('input', () => {
+    // 清除之前的定时器
+    if (searchTimeout) {
+        clearTimeout(searchTimeout);
+    }
+    
+    // 300ms 后执行搜索
+    searchTimeout = setTimeout(() => {
+        refreshSearchResults();
+    }, 300);
+});
 
 // 排序按钮监听
 sortBtns.forEach(btn => {
@@ -6297,12 +6416,12 @@ function refreshSearchResults() {
     }
     });
     
-    // 渲染结果
-    renderSearchResults(filteredEntries);
+    // 渲染结果，传递搜索关键词
+    renderSearchResults(filteredEntries, keyword);
 }
 
 // 渲染搜索结果
-function renderSearchResults(entries) {
+function renderSearchResults(entries, keyword = '') {
     if (entries.length === 0) {
     searchResults.innerHTML = '<div style="text-align: center; color: #888; padding: 40px;">没有找到匹配的条目</div>';
     updateSelectedCount();
@@ -6310,11 +6429,19 @@ function renderSearchResults(entries) {
     }
     
     const html = entries.map(entry => {
-    const preview = entry.content.substring(0, 80) + (entry.content.length > 80 ? '...' : '');
+    // 生成预览内容：如果有关键词，显示匹配的上下文；否则显示开头
+    let preview = '';
+    if (keyword && keyword.trim()) {
+        preview = getMatchPreview(entry, keyword);
+    } else {
+        // 没有关键词时，显示内容开头
+        preview = entry.content.substring(0, 80) + (entry.content.length > 80 ? '...' : '');
+    }
+    
     return `
-        <div class="search-result-item" data-entry-id="${entry.uniqueId}" style="display: flex; gap: 10px; align-items: flex-start;">
+        <div class="search-result-item" data-entry-id="${entry.uniqueId}" data-keyword="${escapeHtml(keyword)}" style="display: flex; gap: 10px; align-items: flex-start;">
         <input type="checkbox" class="entry-checkbox" data-entry-id="${entry.uniqueId}" onclick="event.stopPropagation(); updateSelectedCount();" style="margin-top: 5px; cursor: pointer; flex-shrink: 0;">
-        <div style="flex: 1; min-width: 0; cursor: pointer;" onclick="jumpToEntry('${entry.uniqueId}')">
+        <div style="flex: 1; min-width: 0; cursor: pointer;" onclick="jumpToEntryWithKeyword(this)">
             <div class="search-result-title" style="word-wrap: break-word; overflow-wrap: break-word;">${entry.comment || '未命名条目'}</div>
             <div class="search-result-meta" style="display: flex; justify-content: space-between; gap: 10px;">
             <span style="flex-shrink: 0;">ID: ${entry.id}</span>
@@ -6331,6 +6458,62 @@ function renderSearchResults(entries) {
     
     // 重新初始化框选功能
     initializeBoxSelection();
+}
+
+// 获取匹配的预览内容（显示关键词上下文）
+function getMatchPreview(entry, keyword) {
+    const keywordLower = keyword.toLowerCase();
+    
+    // 按优先级搜索：标题 > 关键词 > 内容
+    // 1. 检查标题
+    if (entry.comment.toLowerCase().includes(keywordLower)) {
+        const index = entry.comment.toLowerCase().indexOf(keywordLower);
+        return highlightText(entry.comment, keyword, index);
+    }
+    
+    // 2. 检查关键词
+    const matchedKey = entry.keys.find(key => key.toLowerCase().includes(keywordLower));
+    if (matchedKey) {
+        return `关键词: ${highlightText(matchedKey, keyword, matchedKey.toLowerCase().indexOf(keywordLower))}`;
+    }
+    
+    // 3. 检查内容
+    const contentLower = entry.content.toLowerCase();
+    const index = contentLower.indexOf(keywordLower);
+    if (index !== -1) {
+        // 获取匹配位置前后的上下文
+        const contextLength = 40; // 前后各40个字符
+        const start = Math.max(0, index - contextLength);
+        const end = Math.min(entry.content.length, index + keyword.length + contextLength);
+        
+        let preview = entry.content.substring(start, end);
+        
+        // 添加省略号
+        if (start > 0) preview = '...' + preview;
+        if (end < entry.content.length) preview = preview + '...';
+        
+        // 高亮关键词
+        const relativeIndex = index - start + (start > 0 ? 3 : 0); // 考虑省略号的偏移
+        return highlightText(preview, keyword, relativeIndex);
+    }
+    
+    // 如果都没找到（理论上不会发生），返回内容开头
+    return entry.content.substring(0, 80) + (entry.content.length > 80 ? '...' : '');
+}
+
+// 高亮文本中的关键词
+function highlightText(text, keyword, startIndex) {
+    if (startIndex === -1) return escapeHtml(text);
+    
+    const before = text.substring(0, startIndex);
+    const match = text.substring(startIndex, startIndex + keyword.length);
+    const after = text.substring(startIndex + keyword.length);
+    
+    return escapeHtml(before) + 
+           '<span style="background-color: rgba(255, 235, 59, 0.6); font-weight: bold; padding: 0 2px; border-radius: 2px;">' + 
+           escapeHtml(match) + 
+           '</span>' + 
+           escapeHtml(after);
 }
 
 // 鼠标框选功能
@@ -6504,13 +6687,32 @@ entryElements.forEach(element => {
 return entries;
 }
 
+// 跳转到指定条目（从搜索结果调用）
+function jumpToEntryWithKeyword(element) {
+const resultItem = element.closest('.search-result-item');
+if (!resultItem) return;
+
+const uniqueId = resultItem.dataset.entryId;
+const keyword = resultItem.dataset.keyword || '';
+
+jumpToEntry(uniqueId, keyword);
+}
+
 // 跳转到指定条目
-function jumpToEntry(uniqueId) {
+function jumpToEntry(uniqueId, keyword = '') {
 const entry = document.querySelector(`[data-unique-id="${uniqueId}"]`);
 if (!entry) return;
 
 // 关闭搜索面板
 document.getElementById('search-panel').classList.remove('open');
+
+// 展开条目（如果是折叠状态）
+const entryGrid = entry.querySelector('.entry-grid');
+const toggleBtn = entry.querySelector('.wb-fold-toggle');
+if (entryGrid && entryGrid.style.display === 'none' && toggleBtn) {
+    // 展开条目
+    expandWorldbookEntry(entry);
+}
 
 // 滚动到条目位置
 entry.scrollIntoView({ 
@@ -6518,13 +6720,80 @@ entry.scrollIntoView({
     block: 'center' 
 });
 
-// 高亮条目
+// 高亮条目背景
 entry.style.backgroundColor = 'rgba(74, 144, 226, 0.3)';
 entry.style.transition = 'background-color 0.3s ease';
 
 setTimeout(() => {
     entry.style.backgroundColor = '';
 }, 2000);
+
+// 如果有搜索关键词，高亮显示
+if (keyword && keyword.trim()) {
+    highlightKeywordInEntry(entry, keyword);
+}
+}
+
+// 在条目中高亮搜索关键词
+function highlightKeywordInEntry(entry, keyword) {
+// 清除之前的高亮
+clearHighlightsInEntry(entry);
+
+const keywordLower = keyword.toLowerCase();
+const fieldsToSearch = [
+    { selector: '.entry-comment', type: 'input', name: '标题' },
+    { selector: '.wb-keys', type: 'input', name: '关键词' },
+    { selector: '.wb-content', type: 'textarea', name: '内容' }
+];
+
+let firstHighlight = null;
+let matchedField = null;
+
+fieldsToSearch.forEach(field => {
+    const element = entry.querySelector(field.selector);
+    if (!element) return;
+    
+    const text = element.value;
+    const textLower = text.toLowerCase();
+    const index = textLower.indexOf(keywordLower);
+    
+    if (index !== -1) {
+        // 记录第一个高亮元素
+        if (!firstHighlight) {
+            firstHighlight = element;
+            matchedField = field.name;
+        }
+        
+        // 设置选中范围（只保留文本选中效果）
+        setTimeout(() => {
+            element.focus();
+            element.setSelectionRange(index, index + keyword.length);
+            
+            // 如果是textarea，滚动到选中位置
+            if (field.type === 'textarea') {
+                const lineHeight = parseInt(window.getComputedStyle(element).lineHeight) || 20;
+                const lines = text.substring(0, index).split('\n').length;
+                element.scrollTop = Math.max(0, (lines - 3) * lineHeight);
+            }
+        }, 300);
+    }
+});
+
+// 如果找到匹配，滚动到第一个匹配位置
+if (firstHighlight) {
+    console.log(`找到匹配: ${matchedField} - "${keyword}"`);
+    setTimeout(() => {
+        firstHighlight.scrollIntoView({ 
+            behavior: 'smooth', 
+            block: 'center' 
+        });
+    }, 400);
+}
+}
+
+// 清除条目中的高亮
+function clearHighlightsInEntry(entry) {
+// 不需要清除任何样式，因为只使用文本选中
 }
 
 // 打开批量修改模态框
@@ -6549,6 +6818,7 @@ document.getElementById('batch-modify-type').value = '';
 document.getElementById('batch-enabled-options').style.display = 'none';
 document.getElementById('batch-constant-options').style.display = 'none';
 document.getElementById('batch-recursion-options').style.display = 'none';
+document.getElementById('batch-exclude-recursion-options').style.display = 'none';
 document.getElementById('batch-selective-options').style.display = 'none';
 document.getElementById('batch-regex-options').style.display = 'none';
 document.getElementById('batch-wholewords-options').style.display = 'none';
@@ -6565,6 +6835,7 @@ typeSelect.onchange = function() {
     document.getElementById('batch-enabled-options').style.display = 'none';
     document.getElementById('batch-constant-options').style.display = 'none';
     document.getElementById('batch-recursion-options').style.display = 'none';
+    document.getElementById('batch-exclude-recursion-options').style.display = 'none';
     document.getElementById('batch-selective-options').style.display = 'none';
     document.getElementById('batch-regex-options').style.display = 'none';
     document.getElementById('batch-wholewords-options').style.display = 'none';
@@ -6582,6 +6853,9 @@ typeSelect.onchange = function() {
         break;
     case 'prevent_recursion':
         document.getElementById('batch-recursion-options').style.display = 'block';
+        break;
+    case 'exclude_recursion':
+        document.getElementById('batch-exclude-recursion-options').style.display = 'block';
         break;
     case 'selective':
         document.getElementById('batch-selective-options').style.display = 'block';
@@ -6658,6 +6932,15 @@ entryIds.forEach(uniqueId => {
         const recursionCheckbox = entryElement.querySelector('.wb-prevent-recursion');
         if (recursionCheckbox) {
         recursionCheckbox.checked = recursionValue;
+        modifiedCount++;
+        }
+        break;
+        
+    case 'exclude_recursion':
+        const excludeRecursionValue = document.getElementById('batch-exclude-recursion-value').value === 'true';
+        const excludeRecursionCheckbox = entryElement.querySelector('.wb-exclude-recursion');
+        if (excludeRecursionCheckbox) {
+        excludeRecursionCheckbox.checked = excludeRecursionValue;
         modifiedCount++;
         }
         break;
@@ -7967,8 +8250,8 @@ function exportEvolutionData(entryEvolution) {
             order: entryId * 100,
             position: 0,
             disable: false,
-            excludeRecursion: false,
-            preventRecursion: false,
+            excludeRecursion: true,  // 默认开启不可被递归
+            preventRecursion: true,  // 默认开启防止进一步递归
             delayUntilRecursion: false,
             probability: 100,
             depth: 4,
@@ -8280,8 +8563,8 @@ async function exportHistoryWorldbook(historyId) {
                 order: entry.priority || 100,
                 position: entry.position === 'before_char' ? 0 : 1,
                 disable: !entry.enabled,
-                excludeRecursion: entry.prevent_recursion || false,
-                preventRecursion: entry.prevent_recursion || false,
+                excludeRecursion: entry.exclude_recursion !== undefined ? entry.exclude_recursion : true,
+                preventRecursion: entry.prevent_recursion !== undefined ? entry.prevent_recursion : true,
                 probability: entry.probability || 100,
                 useProbability: true,
                 depth: entry.wb_depth || 4,
@@ -8289,7 +8572,8 @@ async function exportHistoryWorldbook(historyId) {
                 displayIndex: index,
                 extensions: {
                     position: entry.position === 'before_char' ? 0 : 1,
-                    exclude_recursion: entry.prevent_recursion || false,
+                    exclude_recursion: entry.exclude_recursion !== undefined ? entry.exclude_recursion : true,
+                    prevent_recursion: entry.prevent_recursion !== undefined ? entry.prevent_recursion : true,
                     probability: entry.probability || 100,
                     useProbability: true,
                     depth: entry.wb_depth || 4,
@@ -8731,4 +9015,217 @@ async function applyBatchOptimizationResult(response, batch, previousWorldbook) 
     }
     
     return changedEntries;
+}
+
+
+// ========== 世界书条目折叠功能 ==========
+// 存储折叠状态的键名
+const WB_FOLD_STATE_KEY = 'worldbookFoldStates';
+
+// 全局标志：是否跳过恢复折叠状态（用于新导入的角色）
+let skipRestoreFoldStates = false;
+
+// 获取当前角色的折叠状态
+function getWorldbookFoldStates() {
+    const charId = document.getElementById('charId')?.value || 'default';
+    const allStates = JSON.parse(localStorage.getItem(WB_FOLD_STATE_KEY) || '{}');
+    return allStates[charId] || {};
+}
+
+// 保存折叠状态
+function saveWorldbookFoldState(entryId, isFolded) {
+    const charId = document.getElementById('charId')?.value || 'default';
+    const allStates = JSON.parse(localStorage.getItem(WB_FOLD_STATE_KEY) || '{}');
+    
+    if (!allStates[charId]) {
+        allStates[charId] = {};
+    }
+    
+    allStates[charId][entryId] = isFolded;
+    localStorage.setItem(WB_FOLD_STATE_KEY, JSON.stringify(allStates));
+}
+
+// 切换世界书条目的折叠状态
+window.toggleWorldbookEntry = function(button) {
+    const entry = button.closest('.worldbook-entry');
+    if (!entry) return;
+    
+    const entryGrid = entry.querySelector('.entry-grid');
+    const entryId = entry.dataset.entryId;
+    
+    if (!entryGrid) return;
+    
+    // 切换折叠状态
+    const isFolded = entryGrid.style.display === 'none';
+    
+    // 应用新状态
+    applyFoldStateToEntry(entry, !isFolded);
+    
+    // 保存状态
+    if (entryId) {
+        saveWorldbookFoldState(entryId, !isFolded);
+    }
+};
+
+// 应用折叠状态到条目
+function applyFoldStateToEntry(entry, shouldFold) {
+    const entryGrid = entry.querySelector('.entry-grid');
+    const childEntries = entry.querySelector('.child-entries');
+    const toggleBtn = entry.querySelector('.wb-fold-toggle');
+    const arrow = toggleBtn ? toggleBtn.querySelector('.toggle-arrow') : null;
+    const collapsedTitle = entry.querySelector('.entry-collapsed-title');
+    const expandedControls = entry.querySelector('.entry-expanded-controls');
+    const entryActions = entry.querySelector('.entry-actions');
+    
+    if (!entryGrid) return;
+    
+    if (shouldFold) {
+        // 折叠状态：显示只读标题，隐藏输入控件和操作按钮
+        entryGrid.style.display = 'none';
+        if (childEntries) childEntries.style.display = 'none';
+        if (arrow) arrow.style.transform = 'rotate(-45deg)';
+        if (collapsedTitle) collapsedTitle.style.display = 'block';
+        if (expandedControls) expandedControls.style.display = 'none';
+        if (entryActions) entryActions.style.display = 'none';
+    } else {
+        // 展开状态：显示输入控件和操作按钮，隐藏只读标题
+        entryGrid.style.display = '';
+        if (childEntries) childEntries.style.display = '';
+        if (arrow) arrow.style.transform = 'rotate(45deg)';
+        if (collapsedTitle) collapsedTitle.style.display = 'none';
+        if (expandedControls) expandedControls.style.display = 'flex';
+        if (entryActions) entryActions.style.display = 'flex';
+    }
+}
+
+// 恢复所有条目的折叠状态
+function restoreWorldbookFoldStates() {
+    // 如果设置了跳过标志，则不恢复状态
+    if (skipRestoreFoldStates) {
+        console.log('跳过恢复折叠状态（新导入的角色）');
+        skipRestoreFoldStates = false; // 重置标志
+        return;
+    }
+    
+    const foldStates = getWorldbookFoldStates();
+    const entries = document.querySelectorAll('.worldbook-entry');
+    
+    entries.forEach(entry => {
+        const entryId = entry.dataset.entryId;
+        if (entryId && foldStates.hasOwnProperty(entryId)) {
+            applyFoldStateToEntry(entry, foldStates[entryId]);
+        }
+    });
+}
+
+// 折叠所有条目（用于导入时）
+function foldAllWorldbookEntries() {
+    const entries = document.querySelectorAll('.worldbook-entry');
+    entries.forEach(entry => {
+        applyFoldStateToEntry(entry, true);
+        // 保存折叠状态
+        const entryId = entry.dataset.entryId;
+        if (entryId) {
+            saveWorldbookFoldState(entryId, true);
+        }
+    });
+}
+
+// 展开指定条目（用于新建时）
+function expandWorldbookEntry(entryElement) {
+    if (!entryElement) return;
+    applyFoldStateToEntry(entryElement, false);
+    
+    // 保存展开状态
+    const entryId = entryElement.dataset.entryId;
+    if (entryId) {
+        saveWorldbookFoldState(entryId, false);
+    }
+}
+
+// 点击折叠状态的标题展开条目
+window.expandWorldbookEntryByTitle = function(titleElement) {
+    const entry = titleElement.closest('.worldbook-entry');
+    if (!entry) return;
+    
+    // 展开条目
+    applyFoldStateToEntry(entry, false);
+    
+    // 保存展开状态
+    const entryId = entry.dataset.entryId;
+    if (entryId) {
+        saveWorldbookFoldState(entryId, false);
+    }
+};
+
+// 更新折叠状态下显示的标题
+window.updateCollapsedTitle = function(inputElement) {
+    const entry = inputElement.closest('.worldbook-entry');
+    if (!entry) return;
+    
+    const collapsedTitle = entry.querySelector('.entry-collapsed-title h4');
+    if (collapsedTitle) {
+        collapsedTitle.textContent = inputElement.value || t('new-entry');
+    }
+};
+
+// 更新折叠状态下的位置和优先级显示
+window.updateCollapsedInfo = function(entryElement) {
+    if (!entryElement) return;
+    
+    // 获取当前条目的数据
+    const position = parseInt(entryElement.querySelector('.wb-position')?.value || 0);
+    const role = parseInt(entryElement.querySelector('.wb-role')?.value || 0);
+    const depth = parseInt(entryElement.querySelector('.wb-depth')?.value || 4);
+    const priority = parseInt(entryElement.querySelector('.wb-priority')?.value || 0);
+    
+    // 更新位置标记
+    const positionBadge = entryElement.querySelector('.entry-position-badge');
+    if (positionBadge) {
+        positionBadge.textContent = getPositionBadgeText({ position, role, depth });
+    }
+    
+    // 更新优先级标记
+    const priorityBadge = entryElement.querySelector('.entry-priority-badge');
+    if (priorityBadge) {
+        priorityBadge.textContent = `${priority}`;
+    }
+};
+
+
+// 全局展开/折叠所有世界书条目
+function toggleAllWorldbookEntries() {
+    const entries = document.querySelectorAll('.worldbook-entry');
+    const toggleBtn = document.getElementById('toggle-all-worldbook-btn');
+    
+    if (entries.length === 0) return;
+    
+    // 检查第一个条目的状态来决定是展开还是折叠
+    const firstEntry = entries[0];
+    const firstEntryGrid = firstEntry.querySelector('.entry-grid');
+    const shouldFold = firstEntryGrid && firstEntryGrid.style.display !== 'none';
+    
+    // 应用到所有条目
+    entries.forEach(entry => {
+        applyFoldStateToEntry(entry, shouldFold);
+        
+        // 保存折叠状态
+        const entryId = entry.dataset.entryId;
+        if (entryId) {
+            saveWorldbookFoldState(entryId, shouldFold);
+        }
+    });
+    
+    // 更新按钮状态
+    if (toggleBtn) {
+        if (shouldFold) {
+            toggleBtn.classList.add('collapsed');
+            toggleBtn.title = '展开所有条目';
+        } else {
+            toggleBtn.classList.remove('collapsed');
+            toggleBtn.title = '折叠所有条目';
+        }
+    }
+    
+    console.log(shouldFold ? '已折叠所有条目' : '已展开所有条目');
 }

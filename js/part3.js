@@ -1534,9 +1534,8 @@ const positionMap = {
     2: 'before_char',
 };
 
-// 处理数组格式
-if (Array.isArray(entriesSource)) {
-    entriesSource.forEach((tavernEntry, index) => {
+// 递归函数：转换条目及其子条目
+function convertTavernEntryToInternal(tavernEntry, index) {
     const internalEntry = {
         id: tavernEntry.uid !== undefined ? tavernEntry.uid : (tavernEntry.order || index),
         keys: tavernEntry.keys || tavernEntry.key || [],
@@ -1564,41 +1563,30 @@ if (Array.isArray(entriesSource)) {
         case_sensitive: tavernEntry.caseSensitive || tavernEntry.case_sensitive || false,
         children: [],
     };
-    internalEntries.push(internalEntry);
+    
+    // 递归处理子词条
+    if (tavernEntry.children && Array.isArray(tavernEntry.children) && tavernEntry.children.length > 0) {
+        internalEntry.children = tavernEntry.children.map((child, childIndex) => 
+            convertTavernEntryToInternal(child, childIndex)
+        );
+    }
+    
+    return internalEntry;
+}
+
+// 处理数组格式
+if (Array.isArray(entriesSource)) {
+    entriesSource.forEach((tavernEntry, index) => {
+        const internalEntry = convertTavernEntryToInternal(tavernEntry, index);
+        internalEntries.push(internalEntry);
     });
 }
 // 处理对象格式
 else {
     for (const key in entriesSource) {
-    const tavernEntry = entriesSource[key];
-    const internalEntry = {
-        id: tavernEntry.order || parseInt(key, 10) || 0,
-        keys: tavernEntry.keys || tavernEntry.key || [],
-        secondary_keys: tavernEntry.keysecondary || tavernEntry.secondary_keys || [],
-        comment: tavernEntry.name || tavernEntry.comment || '',
-        content: tavernEntry.content || '',
-        priority: tavernEntry.order || 100,
-        enabled:
-        tavernEntry.disable !== undefined
-            ? !tavernEntry.disable
-            : tavernEntry.enabled !== undefined
-            ? tavernEntry.enabled
-            : true,
-        constant: tavernEntry.constant || false,
-        selective: tavernEntry.selective || false,
-        prevent_recursion: tavernEntry.excludeRecursion || false,
-        position: positionMap[tavernEntry.position] || 'before_char',
-        secondary_keys_logic: 'any',
-        use_regex: tavernEntry.use_regex || false,
-        group: tavernEntry.group || '',
-        scope: 'chat',
-        probability: tavernEntry.probability !== undefined ? tavernEntry.probability : 100,
-        wb_depth: tavernEntry.depth || 4,
-        match_whole_words: tavernEntry.match_whole_words || false,
-        case_sensitive: tavernEntry.case_sensitive || false,
-        children: [],
-    };
-    internalEntries.push(internalEntry);
+        const tavernEntry = entriesSource[key];
+        const internalEntry = convertTavernEntryToInternal(tavernEntry, parseInt(key, 10) || 0);
+        internalEntries.push(internalEntry);
     }
 }
 
@@ -2112,6 +2100,7 @@ charDataForDb.avatar = avatarBase64 || originalCard.avatar || null;
 charDataForDb.internalTags = charDataForDb.internalTags || [];
 charDataForDb.isFavorite = charDataForDb.isFavorite || false;
 charDataForDb.lastUsed = Date.now();
+charDataForDb.isNewImport = true; // 标记为新导入
 
 const transaction = db.transaction(['characters'], 'readwrite');
 const store = transaction.objectStore('characters');
@@ -2434,10 +2423,8 @@ return true;
 function buildWorldbookExportObjectFromData(cardData) {
 const v3Card = buildV3Card(cardData);
 
-// This is the format SillyTavern uses for its lorebooks.
-const lorebookEntries = {};
-if (v3Card.data.character_book && v3Card.data.character_book.entries) {
-    v3Card.data.character_book.entries.forEach((entry, index) => {
+// 递归函数：将V3条目转换为Tavern格式（包括子词条）
+function convertV3EntryToTavern(entry, index) {
     const tavernEntry = {
         uid: entry.id,
         key: entry.keys,
@@ -2469,7 +2456,22 @@ if (v3Card.data.character_book && v3Card.data.character_book.entries) {
             role: entry.extensions.role !== undefined ? entry.extensions.role : 0,
         },
     };
-    lorebookEntries[index] = tavernEntry;
+    
+    // 递归处理子词条
+    if (entry.children && Array.isArray(entry.children) && entry.children.length > 0) {
+        tavernEntry.children = entry.children.map((child, childIndex) => 
+            convertV3EntryToTavern(child, childIndex)
+        );
+    }
+    
+    return tavernEntry;
+}
+
+// This is the format SillyTavern uses for its lorebooks.
+const lorebookEntries = {};
+if (v3Card.data.character_book && v3Card.data.character_book.entries) {
+    v3Card.data.character_book.entries.forEach((entry, index) => {
+        lorebookEntries[index] = convertV3EntryToTavern(entry, index);
     });
 }
 
@@ -3005,7 +3007,38 @@ if (charData.instructionsData && Array.isArray(charData.instructionsData)) {
     updatePostHistoryInstructions();
 }
 
+// 如果是新导入的角色，设置标志跳过恢复折叠状态
+if (charData.isNewImport) {
+    skipRestoreFoldStates = true;
+    console.log('检测到新导入的角色，将在渲染后折叠所有条目');
+}
+
 renderWorldbookFromData(charData.worldbook || []);
+
+// 如果是新导入的角色，折叠所有世界书条目
+if (charData.isNewImport) {
+    // 使用更长的延迟确保DOM完全渲染
+    setTimeout(() => {
+        console.log('开始折叠所有世界书条目');
+        foldAllWorldbookEntries();
+        
+        // 清除标记，避免下次编辑时再次折叠
+        const charId = charData.id;
+        if (charId && db) {
+            const transaction = db.transaction(['characters'], 'readwrite');
+            const store = transaction.objectStore('characters');
+            const getRequest = store.get(charId);
+            getRequest.onsuccess = () => {
+                const char = getRequest.result;
+                if (char) {
+                    delete char.isNewImport;
+                    store.put(char);
+                    console.log('已清除新导入标记');
+                }
+            };
+        }
+    }, 500);
+}
 
 // 恢复备用问候语数据
 if (charData.alternate_greetings && Array.isArray(charData.alternate_greetings)) {
@@ -3195,7 +3228,7 @@ function convertEntryToV3(entry) {
     use_regex: entry.use_regex || false,
     extensions: {
         position: entry.position !== undefined ? entry.position : 0,
-        exclude_recursion: false,
+        exclude_recursion: entry.exclude_recursion !== undefined ? entry.exclude_recursion : true,
         display_index: entry.display_index || 0,
         probability: entry.probability === undefined ? 100 : entry.probability,
         useProbability: true,
@@ -3204,7 +3237,7 @@ function convertEntryToV3(entry) {
         group: entry.group || '',
         group_override: entry.group_override || false,
         group_weight: entry.group_weight || 100,
-        prevent_recursion: entry.prevent_recursion || false,
+        prevent_recursion: entry.prevent_recursion !== undefined ? entry.prevent_recursion : true,
         delay_until_recursion: false,
         scan_depth: entry.scan_depth || null,
         match_whole_words: entry.match_whole_words || null,
