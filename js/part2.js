@@ -1469,10 +1469,8 @@ try {
     console.log(`API调用完成，返回内容长度: ${response.length}`);
     console.log(response);
     
-    // ========== 新增：检查返回内容是否包含token超限错误（上下文超限的表现） ==========
-    const containsTokenError = /max|exceed|token.*limit|input.*token|INVALID_ARGUMENT/i.test(response);
-    
-    if (containsTokenError) {
+    // ========== 检查返回内容是否包含token超限错误（上下文超限的表现） ==========
+    if (isContextOverflowError(response)) {
         console.log(`⚠️ 返回内容包含token超限错误，判定为上下文超限`);
         document.getElementById('progress-text').textContent = `🔀 返回内容包含token超限错误，判定为上下文超限，分裂所有后续记忆...`;
         
@@ -1556,19 +1554,8 @@ if (missingBraces > 0) {
         console.log(`✅ 自动添加${missingBraces}个闭合括号后解析成功`);
         // 成功解析，不需要继续后续处理
     } catch (autoFixError) {
-        console.log('❌ 自动添加闭合括号后仍然失败，检测是否上下文超限...');
-        // 检测是否是上下文超限
-        document.getElementById('progress-text').textContent = `🔍 检测是否上下文超限: ${memory.title}`;
-        const isOverflow = await checkIfContextOverflow(prompt, cleanResponse);
-        if (isOverflow) {
-            console.log('⚠️ 确认是上下文超限，分裂所有后续记忆...');
-            document.getElementById('progress-text').textContent = `🔀 上下文超限，分裂所有后续记忆...`;
-            splitAllRemainingMemories(index);
-            updateMemoryQueueUI();
-            console.log(`💾 分裂后保存状态，队列长度: ${memoryQueue.length}，队列标题: ${memoryQueue.map(m => m.title).join(', ')}`);
-            await NovelState.saveState(memoryQueue.filter(m => m.processed).length);
-            throw new Error(`上下文超限，已分裂所有后续记忆`);
-        }
+        console.log('❌ 自动添加闭合括号后仍然失败');
+        console.log(`⚠️ JSON内容不完整（缺少${missingBraces}个闭合括号），标记为失败`);
         throw new Error(`JSON内容不完整（缺少${missingBraces}个闭合括号），自动修复失败`);
     }
 } else {
@@ -1686,12 +1673,11 @@ ${cleanResponse}
 } catch (error) {
     console.error(`处理记忆块 ${index + 1} 时出错 (第${retryCount + 1}次尝试):`, error);
     
-    // 检查是否是token超限错误 - 如果是，直接分裂而不重试
+    // ========== 检查是否是上下文超限错误 ==========
     const errorMsg = error.message || '';
-    const isTokenLimitError = errorMsg.includes('max_prompt_tokens') || 
-                               errorMsg.includes('exceeded') ||
-                               errorMsg.includes('input tokens') ||
-                               (errorMsg.includes('20015') && errorMsg.includes('limit'));
+    
+    // 使用统一的检测函数，或者检查特殊标记
+    const isTokenLimitError = errorMsg.startsWith('CONTEXT_OVERFLOW:') || isContextOverflowError(errorMsg);
     
     if (isTokenLimitError) {
         console.log(`⚠️ 检测到token超限错误，直接分裂记忆: ${memory.title}`);
@@ -1765,6 +1751,23 @@ ${cleanResponse}
 if (memory.processed) {
     await new Promise(resolve => setTimeout(resolve, 1000));
 }
+}
+
+// ========== 统一的上下文超限检测函数 ==========
+function isContextOverflowError(text) {
+    // 将错误响应转为字符串（无论是JSON对象还是纯文本）
+    let errorString = text;
+    try {
+        // 尝试解析为JSON，然后转回字符串（这样可以检测深层嵌套的内容）
+        const errorObj = JSON.parse(text);
+        errorString = JSON.stringify(errorObj);
+    } catch (e) {
+        // 如果不是JSON，直接使用原文本
+        errorString = text;
+    }
+    
+    // 使用正则表达式检测超限关键词（不区分大小写）
+    return /max|long|exceed|limit|token|context|reduce|length/i.test(errorString);
 }
 
 // 简化的API调用函数（不依赖按钮）
@@ -1946,6 +1949,14 @@ try {
     if (!response.ok) {
     const errorText = await response.text();
     console.log('API错误响应:', errorText);
+    
+    // ========== 优先检查是否是上下文超限错误 ==========
+    if (isContextOverflowError(errorText)) {
+        console.log('⚠️ 检测到上下文超限错误，立即抛出特殊错误');
+        console.log('匹配的错误内容:', errorText.substring(0, 200));
+        // 抛出特殊的超限错误，包含完整的错误信息
+        throw new Error(`CONTEXT_OVERFLOW: ${errorText}`);
+    }
     
     // 检查是否是限流错误
     if (response.status === 429 || errorText.includes('resource_exhausted') || errorText.includes('rate limit')) {
@@ -7180,37 +7191,6 @@ function splitAllRemainingMemories(startIndex) {
     return splitCount;
 }
 
-// 检测是否是上下文超限导致的输出截断
-async function checkIfContextOverflow(originalPrompt, truncatedResponse) {
-    console.log('🔍 检测是否是上下文超限...');
-    
-    // 直接把原始prompt和截断的响应拼接在一起发送请求
-    // 如果返回token超限错误，说明确实是上下文超限
-    const testPrompt = originalPrompt + '\n\n' + truncatedResponse;
-    
-    try {
-        await callSimpleAPI(testPrompt);
-        // 如果请求成功，说明不是上下文超限
-        console.log('🔍 上下文超限检测结果: 否（请求成功）');
-        return false;
-    } catch (e) {
-        const errorMsg = e.message || '';
-        // 检查错误信息是否包含token超限相关关键词
-        const isTokenLimitError = errorMsg.includes('max_prompt_tokens') || 
-                                   errorMsg.includes('exceeded') ||
-                                   errorMsg.includes('input tokens') ||
-                                   (errorMsg.includes('20015') && errorMsg.includes('limit'));
-        
-        if (isTokenLimitError) {
-            console.log('🔍 上下文超限检测结果: 是（' + errorMsg.substring(0, 100) + '...）');
-            return true;
-        } else {
-            console.log('🔍 上下文超限检测结果: 否（其他错误: ' + errorMsg.substring(0, 50) + '）');
-            return false;
-        }
-    }
-}
-
 // 递归修复单个记忆（处理分裂情况）
 async function repairMemoryWithSplit(memoryIndex, stats) {
     const memory = memoryQueue[memoryIndex];
@@ -7230,12 +7210,11 @@ async function repairMemoryWithSplit(memoryIndex, stats) {
         await NovelState.saveState(memoryQueue.filter(m => m.processed).length);
         await new Promise(resolve => setTimeout(resolve, 1000));
     } catch (error) {
-        // 检查是否是token超限错误
+        // ========== 检查是否是上下文超限错误 ==========
         const errorMsg = error.message || '';
-        const isTokenLimitError = errorMsg.includes('max_prompt_tokens') || 
-                                   errorMsg.includes('exceeded') ||
-                                   errorMsg.includes('input tokens') ||
-                                   (errorMsg.includes('20015') && errorMsg.includes('limit'));
+        
+        // 使用统一的检测函数，或者检查特殊标记
+        const isTokenLimitError = errorMsg.startsWith('CONTEXT_OVERFLOW:') || isContextOverflowError(errorMsg);
         
         if (isTokenLimitError) {
             console.log(`⚠️ 检测到token超限错误，开始分裂记忆: ${memory.title}`);
@@ -7250,7 +7229,7 @@ async function repairMemoryWithSplit(memoryIndex, stats) {
                 await NovelState.saveState(memoryQueue.filter(m => m.processed).length);
                 await new Promise(resolve => setTimeout(resolve, 500));
                 
-                // 递归处理第一个分裂记忆（如果还是超限会继续分裂）
+                // 递归处理第一个分裂记忆
                 const part1Index = memoryQueue.indexOf(splitResult.part1);
                 await repairMemoryWithSplit(part1Index, stats);
                 
