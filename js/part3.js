@@ -597,6 +597,14 @@ switch (settings.provider) {
         settings['gemini-proxy'].endpoint &&
         settings['gemini-proxy'].endpoint.trim() !== ''
     );
+    case 'ollama':
+    return (
+        settings.ollama &&
+        settings.ollama.endpoint &&
+        settings.ollama.endpoint.trim() !== '' &&
+        settings.ollama.model &&
+        settings.ollama.model.trim() !== ''
+    );
     case 'tavern':
     if (!settings.tavern) return false;
     
@@ -770,6 +778,29 @@ try {
         temperature: 0.7,
         }),
     });
+    } else if (provider === 'ollama') {
+    let ollamaEndpoint = settings.ollama.endpoint;
+    if (!ollamaEndpoint.startsWith('http')) {
+        ollamaEndpoint = 'http://' + ollamaEndpoint;
+    }
+    if (ollamaEndpoint.endsWith('/')) {
+        ollamaEndpoint = ollamaEndpoint.slice(0, -1);
+    }
+    
+    response = await fetch(`${ollamaEndpoint}/api/generate`, {
+        method: 'POST',
+        headers: {
+        'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+        model: settings.ollama.model,
+        prompt: prompt,
+        stream: false,
+        options: {
+            temperature: 0.7,
+        }
+        }),
+    });
     }
 
     if (!response.ok) {
@@ -784,6 +815,8 @@ try {
     generatedContent = data.choices[0].message.content;
     } else if (provider === 'gemini') {
     generatedContent = data.candidates[0].content.parts[0].text;
+    } else if (provider === 'ollama') {
+    generatedContent = data.response;
     }
 
     // 解析生成的HTML代码

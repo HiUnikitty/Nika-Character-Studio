@@ -1,3 +1,70 @@
+// IndexedDB 辅助类 - 用于存储模型列表
+const ModelListDB = {
+    dbName: 'ModelListDB',
+    version: 1,
+    
+    async openDB() {
+        return new Promise((resolve, reject) => {
+            const request = indexedDB.open(this.dbName, this.version);
+            
+            request.onerror = () => reject(request.error);
+            
+            request.onsuccess = () => resolve(request.result);
+            
+            request.onupgradeneeded = (event) => {
+                const db = event.target.result;
+                if (!db.objectStoreNames.contains('models')) {
+                    db.createObjectStore('models', { keyPath: 'provider' });
+                }
+            };
+        });
+    },
+    
+    async saveModelList(provider, models) {
+        try {
+            const db = await this.openDB();
+            const transaction = db.transaction(['models'], 'readwrite');
+            const store = transaction.objectStore('models');
+            
+            await new Promise((resolve, reject) => {
+                const request = store.put({
+                    provider: provider,
+                    models: models,
+                    timestamp: Date.now()
+                });
+                request.onsuccess = () => resolve();
+                request.onerror = () => reject(request.error);
+            });
+        } catch (error) {
+            console.error(`❌ 保存 ${provider} 模型列表失败:`, error);
+        }
+    },
+    
+    async getModelList(provider) {
+        try {
+            const db = await this.openDB();
+            const transaction = db.transaction(['models'], 'readonly');
+            const store = transaction.objectStore('models');
+            
+            return new Promise((resolve, reject) => {
+                const request = store.get(provider);
+                request.onsuccess = () => {
+                    const result = request.result;
+                    if (result) {
+                        resolve(result.models);
+                    } else {
+                        resolve(null);
+                    }
+                };
+                request.onerror = () => reject(request.error);
+            });
+        } catch (error) {
+            console.error(`❌ 读取 ${provider} 模型列表失败:`, error);
+            return null;
+        }
+    }
+};
+
 // 优化版自动编码检测函数 - 选择解码后字数最少的编码（乱码字数更多）
 async function detectBestEncoding(file) {
     const encodings = ['UTF-8', 'GBK', 'GB2312', 'Big5'];
@@ -719,7 +786,14 @@ try {
         translatedData.worldbook.forEach(item => {
         const entry = worldbookEntries[item.index];
         if (entry && entry.element) {
-            if (item.comment) entry.element.querySelector('.entry-comment').value = item.comment;
+            if (item.comment) {
+                const commentInput = entry.element.querySelector('.entry-comment');
+                commentInput.value = item.comment;
+                // 更新折叠状态下的标题
+                if (typeof updateCollapsedTitle === 'function') {
+                    updateCollapsedTitle(commentInput);
+                }
+            }
             if (item.keys) entry.element.querySelector('.wb-keys').value = item.keys;
             if (item.content) entry.element.querySelector('.wb-content').value = item.content;
         }
@@ -819,6 +893,14 @@ if (refreshModelsBtn) {
     };
 }
 
+// Handle refresh Ollama models button
+const refreshOllamaModelsBtn = document.getElementById('refresh-ollama-models-btn');
+if (refreshOllamaModelsBtn) {
+    refreshOllamaModelsBtn.onclick = async () => {
+    await refreshOllamaModels();
+    };
+}
+
 // Initialize with first option
 selector.dispatchEvent(new Event('change'));
 
@@ -843,6 +925,10 @@ saveBtn.onclick = () => {
         apiKey: document.getElementById('gemini-proxy-api-key').value.trim(),
         model: document.getElementById('gemini-proxy-model').value,
         useSystemPrompt: document.getElementById('gemini-proxy-use-system-prompt').checked,
+    },
+    ollama: {
+        endpoint: document.getElementById('ollama-api-endpoint').value.trim() || 'http://localhost:11434',
+        model: document.getElementById('ollama-model').value.trim() || 'llama2',
     },
     tavern: {
         connectionType: document.getElementById('tavern-connection-type').value,
@@ -879,6 +965,10 @@ try {
     apiKey: '', 
     model: 'gemini-2.5-flash',
     useSystemPrompt: false
+    },
+    ollama: {
+    endpoint: 'http://localhost:11434',
+    model: 'llama2'
     },
     tavern: { 
     connectionType: 'direct',
@@ -920,6 +1010,13 @@ document.getElementById('gemini-proxy-api-key').value = settings['gemini-proxy']
 document.getElementById('gemini-proxy-model').value = settings['gemini-proxy']?.model || 'gemini-2.5-flash';
 document.getElementById('gemini-proxy-use-system-prompt').checked = settings['gemini-proxy']?.useSystemPrompt || false;
 
+// Load Ollama settings
+document.getElementById('ollama-api-endpoint').value = settings.ollama?.endpoint || 'http://localhost:11434';
+document.getElementById('ollama-model').value = settings.ollama?.model || 'llama2';
+
+// 从 IndexedDB 加载 Ollama 模型列表
+loadModelListFromDB('ollama', 'ollama-model', settings.ollama?.model);
+
 // Load tavern settings including connection type and proxy settings
 document.getElementById('tavern-connection-type').value = settings.tavern?.connectionType || 'direct';
 document.getElementById('tavern-api-endpoint').value = settings.tavern?.endpoint || '';
@@ -928,6 +1025,9 @@ document.getElementById('tavern-model').value = settings.tavern?.model || '';
 document.getElementById('tavern-proxy-url').value = settings.tavern?.proxyUrl || '';
 document.getElementById('tavern-proxy-password').value = settings.tavern?.proxyPassword || '';
 document.getElementById('tavern-proxy-model').value = settings.tavern?.proxyModel || '';
+
+// 从 IndexedDB 加载 CLI 反代模型列表
+loadModelListFromDB('tavern', 'tavern-proxy-model', settings.tavern?.proxyModel);
 document.getElementById('tavern-proxy-jailbreak').checked = settings.tavern?.jailbreak || false;
 document.getElementById('local-api-endpoint').value = settings.local?.endpoint || '';
 
@@ -947,6 +1047,37 @@ return settings;
     provider: 'deepseek',
     deepseek: { apiKey: '' }
     };
+}
+}
+
+// --- 从 IndexedDB 加载模型列表到下拉框 ---
+async function loadModelListFromDB(provider, selectElementId, currentValue) {
+try {
+    const models = await ModelListDB.getModelList(provider);
+    const selectElement = document.getElementById(selectElementId);
+    
+    if (!selectElement) {
+        return;
+    }
+    
+    if (models && models.length > 0) {
+        // 清空并重新填充模型选择框
+        selectElement.innerHTML = `<option value="">${t('select-model-placeholder') || '请选择模型...'}</option>`;
+        
+        models.forEach(model => {
+            const option = document.createElement('option');
+            option.value = model.id;
+            option.textContent = model.name;
+            selectElement.appendChild(option);
+        });
+        
+        // 恢复之前选中的模型
+        if (currentValue) {
+            selectElement.value = currentValue;
+        }
+    }
+} catch (error) {
+    console.error(`❌ 加载 ${provider} 模型列表失败:`, error);
 }
 }
 
@@ -1047,11 +1178,109 @@ try {
     modelSelect.value = currentValue;
     }
 
+    // 保存模型列表到 IndexedDB
+    await ModelListDB.saveModelList('tavern', models);
+
     alert(t('models-fetched', {count: models.length}));
 
 } catch (error) {
     console.error('获取模型列表失败:', error);
     alert(t('models-fetch-failed', {error: error.message}));
+} finally {
+    refreshBtn.disabled = false;
+    refreshBtn.textContent = originalText;
+}
+}
+
+// --- Refresh Ollama Models Function ---
+async function refreshOllamaModels() {
+const refreshBtn = document.getElementById('refresh-ollama-models-btn');
+const modelSelect = document.getElementById('ollama-model');
+const ollamaEndpoint = document.getElementById('ollama-api-endpoint').value.trim();
+
+if (!ollamaEndpoint) {
+    alert(t('ollama-endpoint-required') || 'Please enter Ollama API URL');
+    return;
+}
+
+const originalText = refreshBtn.textContent;
+refreshBtn.disabled = true;
+refreshBtn.textContent = t('fetching') || '获取中...';
+
+try {
+    // 构建模型列表请求URL
+    let modelsUrl = ollamaEndpoint;
+    if (!modelsUrl.startsWith('http')) {
+    modelsUrl = 'http://' + modelsUrl;
+    }
+    
+    // 移除末尾的斜杠
+    if (modelsUrl.endsWith('/')) {
+    modelsUrl = modelsUrl.slice(0, -1);
+    }
+    
+    // 添加 /api/tags 端点
+    modelsUrl += '/api/tags';
+
+    console.log('Fetching Ollama models from:', modelsUrl);
+
+    const response = await fetch(modelsUrl, {
+    method: 'GET',
+    headers: {
+        'Content-Type': 'application/json'
+    }
+    });
+
+    if (!response.ok) {
+    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+    }
+
+    const data = await response.json();
+    console.log('Ollama models response:', data);
+
+    // 解析模型列表
+    let models = [];
+    if (data.models && Array.isArray(data.models)) {
+    models = data.models.map(model => ({
+        id: model.name,
+        name: model.name,
+        size: model.size,
+        modified_at: model.modified_at
+    }));
+    } else {
+    throw new Error(t('models-parse-error') || '无法解析模型列表格式');
+    }
+
+    if (models.length === 0) {
+    throw new Error(t('no-models-found') || '未找到可用模型');
+    }
+
+    // 保存当前选中的模型
+    const currentValue = modelSelect.value;
+
+    // 清空并重新填充模型选择框
+    modelSelect.innerHTML = `<option value="">${t('select-model-placeholder') || '请选择模型...'}</option>`;
+    
+    models.forEach(model => {
+    const option = document.createElement('option');
+    option.value = model.id;
+    option.textContent = model.name;
+    modelSelect.appendChild(option);
+    });
+
+    // 恢复之前选中的模型（如果还存在）
+    if (currentValue && models.some(m => m.id === currentValue)) {
+    modelSelect.value = currentValue;
+    }
+
+    // 保存模型列表到 IndexedDB
+    await ModelListDB.saveModelList('ollama', models);
+
+    alert(t('models-fetched', {count: models.length}) || `成功获取 ${models.length} 个模型`);
+
+} catch (error) {
+    console.error('获取Ollama模型列表失败:', error);
+    alert(t('models-fetch-failed', {error: error.message}) || `获取模型失败: ${error.message}`);
 } finally {
     refreshBtn.disabled = false;
     refreshBtn.textContent = originalText;

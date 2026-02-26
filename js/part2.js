@@ -1939,6 +1939,33 @@ switch (provider) {
     };
     break;
     
+    case 'ollama':
+    if (!apiSettings.ollama.endpoint) throw new Error('Ollama API Endpoint 未设置');
+    if (!apiSettings.ollama.model) throw new Error('Ollama Model 未设置');
+    
+    let ollamaEndpoint = apiSettings.ollama.endpoint;
+    if (!ollamaEndpoint.startsWith('http')) {
+        ollamaEndpoint = 'http://' + ollamaEndpoint;
+    }
+    if (ollamaEndpoint.endsWith('/')) {
+        ollamaEndpoint = ollamaEndpoint.slice(0, -1);
+    }
+    
+    requestUrl = ollamaEndpoint + '/api/generate';
+    requestOptions = {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+        model: apiSettings.ollama.model,
+        prompt: prompt,
+        stream: false,
+        options: {
+            temperature: 0.3,
+        }
+        }),
+    };
+    break;
+    
     default:
     throw new Error(`不支持的提供商: ${provider}`);
 }
@@ -1991,6 +2018,8 @@ try {
     } else {
         throw new Error('Gemini Proxy 返回了未知的响应格式');
     }
+    } else if (provider === 'ollama') {
+    return data.response;
     }
     
     throw new Error('未知的API响应格式');
@@ -3002,6 +3031,35 @@ try {
         }
         break;
 
+    case 'ollama':
+        if (!apiSettings.ollama.endpoint) throw new Error('Ollama API Endpoint is missing.');
+        if (!apiSettings.ollama.model) throw new Error('Ollama Model is missing.');
+
+        let ollamaEndpoint = apiSettings.ollama.endpoint;
+        if (!ollamaEndpoint.startsWith('http')) {
+        ollamaEndpoint = 'http://' + ollamaEndpoint;
+        }
+        // Remove trailing slash if present
+        if (ollamaEndpoint.endsWith('/')) {
+        ollamaEndpoint = ollamaEndpoint.slice(0, -1);
+        }
+
+        requestUrl = ollamaEndpoint + '/api/generate';
+        requestOptions = {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            model: apiSettings.ollama.model,
+            prompt: finalPrompt,
+            stream: false,
+            options: {
+            temperature: 0.7,
+            }
+        }),
+        };
+        console.log('Ollama request:', requestOptions.body);
+        break;
+
     case 'local':
     case 'tavern':
         const isLocal = provider === 'local';
@@ -3175,6 +3233,22 @@ try {
     const isGeminiNativeResponse = provider === 'gemini' || provider === 'gemini-proxy';
     const isCLIProxyGemini = provider === 'tavern' && apiSettings.tavern.connectionType === 'reverse-proxy' && 
         apiSettings.tavern.proxyModel && apiSettings.tavern.proxyModel.toLowerCase().includes('gemini');
+    
+    // Handle Ollama response
+    if (provider === 'ollama') {
+    console.log('Ollama API response:', data);
+    
+    if (data.error) {
+        throw new Error(`Ollama API Error: ${data.error}`);
+    }
+    
+    if (data.response) {
+        return filterEmptyEntries(data.response);
+    }
+    
+    console.error('Unexpected Ollama response structure:', data);
+    throw new Error('Ollama API返回了意外的响应结构，请检查控制台日志');
+    }
     
     if (isGeminiNativeResponse) {
     console.log('Gemini API response:', data);

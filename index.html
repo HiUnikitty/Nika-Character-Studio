@@ -2419,6 +2419,7 @@
             <option value="deepseek" data-i18n="api-provider-deepseek">DeepSeek</option>
             <option value="gemini" data-i18n="api-provider-gemini">Gemini (直链，需魔法)</option>
             <option value="gemini-proxy" data-i18n="api-provider-gemini-proxy">Gemini (中转站)</option>
+            <option value="ollama" data-i18n="api-provider-ollama">Ollama</option>
             <option value="local" data-i18n="api-provider-local">本地大模型（bat启动用这个）</option>
             <option value="tavern" data-i18n="api-provider-tavern">CLI反代 / 自定义</option>
           </select>
@@ -2478,12 +2479,31 @@
           </p>
         </div>
 
+        <div id="ollama-options" class="api-provider-options">
+          <div class="field-group">
+            <label for="ollama-api-endpoint" data-i18n="ollama-api-url">API URL</label>
+            <input type="text" id="ollama-api-endpoint" data-i18n-placeholder="ollama-api-placeholder" placeholder="例如: http://localhost:11434">
+          </div>
+          <div class="field-group">
+            <label for="ollama-model" data-i18n="ollama-model-name">模型名称</label>
+            <div style="display: flex; gap: 8px; align-items: center;">
+              <select id="ollama-model" style="flex: 1;">
+                <option value="" data-i18n="refresh-models-placeholder">请刷新模型...</option>
+              </select>
+              <button type="button" id="refresh-ollama-models-btn" data-i18n="refresh-models" style="background: var(--primary-color); color: white; padding: 8px 12px; border: none; border-radius: 4px; cursor: pointer; white-space: nowrap;">
+                刷新
+              </button>
+            </div>
+          </div>
+          <p class="help-text" data-i18n="ollama-help">用于连接本地运行的Ollama服务，默认地址为 http://localhost:11434</p>
+        </div>
+
         <div id="local-options" class="api-provider-options">
           <div class="field-group">
             <label for="local-api-endpoint" data-i18n="local-api-url">API URL</label>
             <input type="text" id="local-api-endpoint" data-i18n-placeholder="local-api-placeholder" placeholder="例如: http://localhost:1234/v1">
           </div>
-          <p class="help-text" data-i18n="local-help">用于连接LM Studio或者Ollama, 需下载项目源文件启动才能使用。</p>
+          <p class="help-text" data-i18n="local-help">用于连接LM Studio, 需下载项目源文件启动才能使用。</p>
         </div>
 
         <div id="tavern-options" class="api-provider-options">
@@ -3799,7 +3819,12 @@
           'proxy-help': '用于连接 Cloudflare Worker 等自定义反向代理。Endpoint URL 应为不包含模型名称的完整路径。',
           'local-api-url': 'API URL',
           'local-api-placeholder': '例如: http://localhost:1234/v1',
-          'local-help': '用于连接LM Studio或者Ollama, 需下载项目源文件启动才能使用。',
+          'local-help': '用于连接LM Studio, 需下载项目源文件启动才能使用。',
+          'ollama-api-url': 'API URL',
+          'ollama-api-placeholder': '例如: http://localhost:11434',
+          'ollama-model-name': '模型名称',
+          'ollama-model-placeholder': '例如: llama2, mistral, qwen',
+          'ollama-help': '用于连接本地运行的Ollama服务，默认地址为 http://localhost:11434',
           'connection-type': '连接类型',
           'custom-api': '自定义API',
           'cli-reverse-proxy': 'CLI反代',
@@ -4064,6 +4089,10 @@
           'api-settings-load-failed': '⚠️ 加载API设置失败: {error}',
           'proxy-url-required': '请先输入代理服务器 URL',
           'proxy-password-required': '请先输入代理密码',
+          'ollama-endpoint-required': '请先输入 Ollama API URL',
+          'fetching': '获取中...',
+          'models-parse-error': '无法解析模型列表格式',
+          'no-models-found': '未找到可用模型',
           'models-fetched': '成功获取 {count} 个模型',
           'models-fetch-failed': '获取模型列表失败: {error}',
           'template-name-content-required': '请填写模板名称和内容',
@@ -4111,7 +4140,8 @@
           'api-provider-deepseek': 'DeepSeek',
           'api-provider-gemini': 'Gemini (直链，需魔法)',
           'api-provider-gemini-proxy': 'Gemini (中转站)',
-          'api-provider-local': '本地大模型（bat启动用这个）',
+          'api-provider-ollama': 'Ollama (bat启动)',
+          'api-provider-local': 'LM Stuodio (bat启动)',
           'api-provider-tavern': 'CLI反代 / 自定义',
           'edit-instruction': '编辑指令',
           'instruction-beautify': '指令与前端美化',
@@ -4454,7 +4484,12 @@
           'proxy-help': 'For connecting to custom reverse proxies like Cloudflare Worker. Endpoint URL should be the full path without model name.',
           'local-api-url': 'API URL',
           'local-api-placeholder': 'e.g.: http://localhost:1234/v1',
-          'local-help': 'For connecting to LM Studio or Ollama. Requires downloading and running the project source files.',
+          'local-help': 'For connecting to LM Studio. Requires downloading and running the project source files.',
+          'ollama-api-url': 'API URL',
+          'ollama-api-placeholder': 'e.g.: http://localhost:11434',
+          'ollama-model-name': 'Model Name',
+          'ollama-model-placeholder': 'e.g.: llama2, mistral, qwen',
+          'ollama-help': 'For connecting to locally running Ollama service. Default address is http://localhost:11434',
           'connection-type': 'Connection Type',
           'custom-api': 'Custom API',
           'cli-reverse-proxy': 'CLI Reverse Proxy',
@@ -4719,6 +4754,10 @@
           'api-settings-load-failed': '⚠️ Failed to load API settings: {error}',
           'proxy-url-required': 'Please enter the proxy server URL',
           'proxy-password-required': 'Please enter the proxy password',
+          'ollama-endpoint-required': 'Please enter Ollama API URL',
+          'fetching': 'Fetching...',
+          'models-parse-error': 'Unable to parse model list format',
+          'no-models-found': 'No available models found',
           'models-fetched': 'Successfully fetched {count} models',
           'models-fetch-failed': 'Failed to fetch model list: {error}',
           'template-name-content-required': 'Please fill in template name and content',
@@ -4766,7 +4805,8 @@
           'api-provider-deepseek': 'DeepSeek',
           'api-provider-gemini': 'Gemini',
           'api-provider-gemini-proxy': 'Gemini (Proxy)',
-          'api-provider-local': 'Local Model (Use with .bat)',
+          'api-provider-ollama': 'Ollama (Use with .bat)',
+          'api-provider-local': 'LM Studio (Use with .bat)',
           'api-provider-tavern': 'CLI Reverse Proxy / Custom',
           'edit-instruction': 'Edit Instruction',
           'instruction-beautify': 'Instruction & Frontend Beautify',
