@@ -3591,7 +3591,13 @@ regenerateButton.textContent = t('generating');
 
 try {
     const result = await callApi(prompt, button);
-    if (result) {
+    
+    // 立即处理失败情况，不等待
+    if (!result) {
+        optionsContainer.innerHTML = `<p style="color: #f44336; padding: 20px;">${t('name-generation-failed')}</p>`;
+        return;
+    }
+    
     const cleanedResult = result.replace(/^```json\s*|```$/g, '').trim();
     const names = JSON.parse(cleanedResult);
 
@@ -3609,13 +3615,12 @@ try {
     } else {
         throw new Error('AI did not return a valid array of names.');
     }
-    } else {
-    optionsContainer.innerHTML = `<p>${t('name-generation-failed')}</p>`;
-    }
 } catch (e) {
     console.error('Failed to parse AI-generated names:', e);
-    console.error('Raw response:', result);
-    optionsContainer.innerHTML = `<p>${t('name-generation-failed')}</p>`;
+    if (typeof result !== 'undefined') {
+        console.error('Raw response:', result);
+    }
+    optionsContainer.innerHTML = `<p style="color: #f44336; padding: 20px;">${t('name-generation-failed')}</p>`;
 } finally {
     regenerateButton.disabled = false;
     regenerateButton.textContent = originalRegenerateText;
