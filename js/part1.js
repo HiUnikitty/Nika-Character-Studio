@@ -1,3 +1,12 @@
+//控制台日志输出
+const DEBUG = false;
+
+function mylog(...logs){
+	if (DEBUG){
+	mylog(logs);		
+}	
+}
+
 // IndexedDB 辅助类 - 用于存储模型列表
 const ModelListDB = {
     dbName: 'ModelListDB',
@@ -78,7 +87,7 @@ async function detectBestEncoding(file) {
             reader.onload = (e) => {
                 const content = e.target.result;
                 const length = content.length;
-                console.log(`编码 ${encoding} 解码后字数: ${length}`);
+                mylog(`编码 ${encoding} 解码后字数: ${length}`);
                 
                 if (length < minLength) {
                     minLength = length;
@@ -93,7 +102,7 @@ async function detectBestEncoding(file) {
     });
     
     await Promise.all(promises);
-    console.log(`最佳编码: ${bestEncoding}, 字数: ${minLength}`);
+    mylog(`最佳编码: ${bestEncoding}, 字数: ${minLength}`);
     
     return { encoding: bestEncoding, content: bestContent };
 }
@@ -655,7 +664,7 @@ const endpoint = apiSettings[provider]?.endpoint;
 
 // 使用统一的API配置检查函数
 if (!checkApiConfiguration(apiSettings)) {
-    console.log('API配置检查失败:', {
+    mylog('API配置检查失败:', {
     provider: provider,
     settings: apiSettings[provider],
     hasProvider: !!apiSettings[provider],
@@ -769,7 +778,7 @@ try {
         }
     }
     
-    console.log('Cleaned JSON for parsing:', cleanedResult);
+    mylog('Cleaned JSON for parsing:', cleanedResult);
     const translatedData = JSON.parse(cleanedResult);
 
     // 4. 应用翻译结果
@@ -1121,7 +1130,7 @@ try {
     modelsUrl += '/v1/models';
     }
 
-    console.log('Fetching models from:', modelsUrl);
+    mylog('Fetching models from:', modelsUrl);
 
     const response = await fetch(modelsUrl, {
     method: 'GET',
@@ -1136,7 +1145,7 @@ try {
     }
 
     const data = await response.json();
-    console.log('Models response:', data);
+    mylog('Models response:', data);
 
     // 解析模型列表
     let models = [];
@@ -1222,7 +1231,7 @@ try {
     // 添加 /api/tags 端点
     modelsUrl += '/api/tags';
 
-    console.log('Fetching Ollama models from:', modelsUrl);
+    mylog('Fetching Ollama models from:', modelsUrl);
 
     const response = await fetch(modelsUrl, {
     method: 'GET',
@@ -1236,7 +1245,7 @@ try {
     }
 
     const data = await response.json();
-    console.log('Ollama models response:', data);
+    mylog('Ollama models response:', data);
 
     // 解析模型列表
     let models = [];
@@ -3184,9 +3193,9 @@ async function analyzeSortSuggestions() {
             '- reason: 简短的调整原因（中文）\n\n' +
             '只输出JSON数组，不要包含任何其他文字或markdown标记。如果没有需要调整的条目，输出空数组 []';
 
-        console.log(`📤 [AI排序建议] 发送分析请求...\n${prompt}`);
+        mylog(`📤 [AI排序建议] 发送分析请求...\n${prompt}`);
         const response = await callSimpleAPI(prompt);
-        console.log('📥 [AI排序建议] 收到响应:', response);
+        mylog('📥 [AI排序建议] 收到响应:', response);
         
         let suggestions = [];
         try {

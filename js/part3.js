@@ -1628,7 +1628,7 @@ internalEntries.forEach((entry, index) => {
     entry.id = index;
 });
 
-console.log(`✅ 成功转换 ${internalEntries.length} 个世界书条目`);
+mylog(`✅ 成功转换 ${internalEntries.length} 个世界书条目`);
 return internalEntries;
 }
 
@@ -2092,7 +2092,7 @@ if (originalCard.spec === 'chara_card_v3' && originalCard.data) {
     };
 } else if (isTavernLorebook) {
     // Handle SillyTavern Lorebook JSON
-    console.log('Detected SillyTavern Lorebook format. Converting...');
+    mylog('Detected SillyTavern Lorebook format. Converting...');
     const internalBookEntries = convertTavernLorebookToInternal(originalCard);
 
     charDataForDb = {
@@ -2112,7 +2112,7 @@ if (originalCard.spec === 'chara_card_v3' && originalCard.data) {
     worldbook: internalBookEntries,
     isFavorite: false,
     };
-    console.log('Conversion complete. Processed entries:', internalBookEntries.length);
+    mylog('Conversion complete. Processed entries:', internalBookEntries.length);
 } else {
     charDataForDb = JSON.parse(JSON.stringify(originalCard));
     charDataForDb.tags = Array.isArray(charDataForDb.tags)
@@ -2354,7 +2354,7 @@ if (cardForDb.id) {
         // 保存版本化副本（新版本）
         const addVersionRequest = store.add(versionedCopy);
         addVersionRequest.onsuccess = () => {
-        console.log(`已创建版本化副本: ${card.name}-${currentVersion}`);
+        mylog(`已创建版本化副本: ${card.name}-${currentVersion}`);
         deleteDraft();
         alert(t('character-saved', { name: card.name }));
         // 强制刷新UI以确保头像正确显示
@@ -2631,7 +2631,7 @@ try {
         return;
     }
     
-    console.log('准备复制角色到chat.html:', charData.name, 'ID:', id);
+    mylog('准备复制角色到chat.html:', charData.name, 'ID:', id);
     
     // 确保角色数据的id字段正确
     charData.id = id;
@@ -2676,7 +2676,7 @@ try {
         const putRequest = chatStore.put(charData);
         
         putRequest.onsuccess = () => {
-            console.log('角色已保存到IndexedDB characters存储');
+            mylog('角色已保存到IndexedDB characters存储');
             
             // 将当前角色ID存入IndexedDB的keyvalue存储
             const kvTransaction = chatDb.transaction(['keyvalue'], 'readwrite');
@@ -2684,7 +2684,7 @@ try {
             const kvRequest = kvStore.put({ key: 'active_character_v2', value: String(id) });
             
             kvRequest.onsuccess = () => {
-            console.log('当前角色ID已保存到IndexedDB:', id);
+            mylog('当前角色ID已保存到IndexedDB:', id);
             // 跳转到chat.html
             window.location.href = 'chat.html?from_index=1';
             };
@@ -3043,7 +3043,7 @@ if (charData.instructionsData && Array.isArray(charData.instructionsData)) {
 // 如果是新导入的角色，设置标志跳过恢复折叠状态
 if (charData.isNewImport) {
     skipRestoreFoldStates = true;
-    console.log('检测到新导入的角色，将在渲染后折叠所有条目');
+    mylog('检测到新导入的角色，将在渲染后折叠所有条目');
 }
 
 renderWorldbookFromData(charData.worldbook || []);
@@ -3052,7 +3052,7 @@ renderWorldbookFromData(charData.worldbook || []);
 if (charData.isNewImport) {
     // 使用更长的延迟确保DOM完全渲染
     setTimeout(() => {
-        console.log('开始折叠所有世界书条目');
+        mylog('开始折叠所有世界书条目');
         foldAllWorldbookEntries();
         
         // 清除标记，避免下次编辑时再次折叠
@@ -3066,7 +3066,7 @@ if (charData.isNewImport) {
                 if (char) {
                     delete char.isNewImport;
                     store.put(char);
-                    console.log('已清除新导入标记');
+                    mylog('已清除新导入标记');
                 }
             };
         }
@@ -3138,7 +3138,7 @@ reader.onload = async function (e) {
     const pngDataUrl = await convertImageToPng(e.target.result);
     avatarImageBase64 = pngDataUrl;
     document.getElementById('avatar-preview').src = pngDataUrl;
-    console.log(
+    mylog(
         currentLanguage === 'zh' ? '头像已转换为PNG格式:' : 'Avatar converted to PNG format:',
         pngDataUrl.substring(0, 50) + '...',
     );
@@ -3538,7 +3538,7 @@ async saveState(currentIndex = 0) {
     completed: currentIndex >= memoryQueue.length
     };
     await IndexedDBHelper.setItem('novel_worldbook_state', state);
-    console.log(`状态已保存: ${currentIndex}/${memoryQueue.length}`, currentFile ? `文件: ${currentFile.name}` : '无文件');
+    mylog(`状态已保存: ${currentIndex}/${memoryQueue.length}`, currentFile ? `文件: ${currentFile.name}` : '无文件');
 },
 
 // 加载状态
@@ -3550,7 +3550,7 @@ async loadState() {
 // 清除状态
 async clearState() {
     await IndexedDBHelper.removeItem('novel_worldbook_state');
-    console.log('状态已清除');
+    mylog('状态已清除');
 },
 
 // 检查是否有未完成的状态
@@ -3582,7 +3582,7 @@ const totalCount = state.totalItems || (state.memoryQueue || []).length;
 const isCompleted = (state.completed && unprocessedCount === 0) || (unprocessedCount === 0 && processedCount > 0);
 const progress = Math.round((processedCount / totalCount) * 100);
 
-console.log(`状态检查: 总数=${totalCount}, 已处理=${processedCount}, 未处理=${unprocessedCount}, 完成=${isCompleted}`);
+mylog(`状态检查: 总数=${totalCount}, 已处理=${processedCount}, 未处理=${unprocessedCount}, 完成=${isCompleted}`);
 
 let message;
 if (isCompleted) {
@@ -3623,10 +3623,10 @@ currentNovelContent = state.currentNovelContent || '';
 // 恢复文件信息（创建一个虚拟的文件对象）
 if (state.currentFileName) {
     currentFile = { name: state.currentFileName };
-    console.log('恢复文件名:', state.currentFileName);
+    mylog('恢复文件名:', state.currentFileName);
 } else {
     currentFile = null;
-    console.log('没有保存的文件名信息');
+    mylog('没有保存的文件名信息');
 }
 
 // 更新UI
@@ -3653,7 +3653,7 @@ if (isCompleted) {
             break;
         }
     }
-    console.log(`📋 恢复状态: 第一个未处理的记忆块索引=${firstUnprocessedIndex}`);
+    mylog(`📋 恢复状态: 第一个未处理的记忆块索引=${firstUnprocessedIndex}`);
     addContinueButton(firstUnprocessedIndex);
 }
 }
@@ -3763,20 +3763,20 @@ for (let i = 0; i < memoryQueue.length; i++) {
         break;
     }
 }
-console.log(`📋 继续处理：队列长度=${memoryQueue.length}，从索引${startIndex}开始（原索引${fromIndex}）`);
-console.log(`📋 队列标题: ${memoryQueue.map(m => m.title).join(', ')}`);
+mylog(`📋 继续处理：队列长度=${memoryQueue.length}，从索引${startIndex}开始（原索引${fromIndex}）`);
+mylog(`📋 队列标题: ${memoryQueue.map(m => m.title).join(', ')}`);
 
 try {
     for (let i = startIndex; i < memoryQueue.length; i++) {
     // 跳过已处理的记忆
     if (memoryQueue[i].processed) {
-        console.log(`⏭️ 跳过已处理的记忆: ${memoryQueue[i].title}`);
+        mylog(`⏭️ 跳过已处理的记忆: ${memoryQueue[i].title}`);
         continue;
     }
     
     // 检查是否用户要求停止
     if (isProcessingStopped) {
-        console.log('继续处理被用户停止');
+        mylog('继续处理被用户停止');
         document.getElementById('progress-text').textContent = `⏸️ 已暂停处理 (${i}/${memoryQueue.length})`;
         
         // 转换为继续按钮
@@ -3803,7 +3803,7 @@ try {
     // 标记完成并保存最终状态（不清除，以便下次恢复）
     if (!isProcessingStopped) {
     await NovelState.saveState(memoryQueue.length); // 保存完成状态
-    console.log('✅ 转换完成，状态已保存，可在下次打开时恢复');
+    mylog('✅ 转换完成，状态已保存，可在下次打开时恢复');
     }
     
     // 添加操作按钮（查看世界书、查看JSON、保存）
@@ -3996,7 +3996,7 @@ return new Promise((resolve, reject) => {
     // 使用用户指定的编码
     const reader = new FileReader();
     reader.onload = (e) => {
-        console.log(`使用用户指定编码 ${selectedEncoding} 读取文件`);
+        mylog(`使用用户指定编码 ${selectedEncoding} 读取文件`);
         resolve(e.target.result);
     };
     reader.onerror = reject;
@@ -4018,7 +4018,7 @@ return new Promise((resolve, reject) => {
         reader.onload = (e) => {
             const result = e.target.result;
             const length = result.length;
-            console.log(`编码 ${encoding} 解码后字数: ${length}`);
+            mylog(`编码 ${encoding} 解码后字数: ${length}`);
             
             if (length < minLength) {
             minLength = length;
@@ -4034,7 +4034,7 @@ return new Promise((resolve, reject) => {
     
     await Promise.all(promises);
     
-    console.log(`最佳编码: ${bestEncoding}, 字数: ${minLength}`);
+    mylog(`最佳编码: ${bestEncoding}, 字数: ${minLength}`);
     // 更新UI显示检测结果
     document.getElementById('file-encoding').value = bestEncoding;
     resolve(bestResult);
@@ -4403,7 +4403,7 @@ startAIProcessing();
         reader.onload = function(event) {
             const fileContent = event.target.result;
             // 处理文件内容
-            console.log(fileContent);
+            mylog(fileContent);
         };
 
         reader.readAsText(file);

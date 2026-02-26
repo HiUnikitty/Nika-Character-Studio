@@ -72,7 +72,7 @@ let customWorldbookCategories = JSON.parse(JSON.stringify(DEFAULT_WORLDBOOK_CATE
 async function saveCustomCategories() {
     try {
         await MemoryHistoryDB.saveCustomCategories(customWorldbookCategories);
-        console.log('自定义分类配置已保存到IndexedDB');
+        mylog('自定义分类配置已保存到IndexedDB');
     } catch (error) {
         console.error('保存自定义分类配置失败:', error);
     }
@@ -94,7 +94,7 @@ async function loadCustomCategories() {
                         customWorldbookCategories = parsed;
                         await saveCustomCategories(); // 迁移到IndexedDB
                         localStorage.removeItem('customWorldbookCategories'); // 清理localStorage
-                        console.log('已从localStorage迁移到IndexedDB');
+                        mylog('已从localStorage迁移到IndexedDB');
                     }
                 } catch (e) {
                     console.error('迁移localStorage数据失败:', e);
@@ -110,7 +110,7 @@ async function loadCustomCategories() {
 async function resetToDefaultCategories() {
     customWorldbookCategories = JSON.parse(JSON.stringify(DEFAULT_WORLDBOOK_CATEGORIES));
     await saveCustomCategories();
-    console.log('已重置为默认分类配置');
+    mylog('已重置为默认分类配置');
 }
 
 // 获取启用的分类列表
@@ -261,7 +261,7 @@ function initIncrementalOutputModeToggle() {
     // 绑定事件
     document.getElementById('incremental-output-mode').addEventListener('change', function() {
         incrementalOutputMode = this.checked;
-        console.log('增量输出模式:', incrementalOutputMode ? '开启' : '关闭');
+        mylog('增量输出模式:', incrementalOutputMode ? '开启' : '关闭');
     });
 }
 
@@ -545,7 +545,7 @@ const MemoryHistoryDB = {
                 const duplicates = allHistory.filter(h => h.memoryTitle === memoryTitle);
                 
                 if (duplicates.length > 0) {
-                    console.log(`🗑️ 检测到重复命名的历史记录: "${memoryTitle}", 删除 ${duplicates.length} 条旧记录`);
+                    mylog(`🗑️ 检测到重复命名的历史记录: "${memoryTitle}", 删除 ${duplicates.length} 条旧记录`);
                     const deleteTransaction = db.transaction([this.storeName], 'readwrite');
                     const deleteStore = deleteTransaction.objectStore(this.storeName);
                     
@@ -619,7 +619,7 @@ const MemoryHistoryDB = {
             const request = store.clear();
             
             request.onsuccess = () => {
-                console.log('📚 记忆历史已清除');
+                mylog('📚 记忆历史已清除');
                 resolve();
             };
             request.onerror = () => reject(request.error);
@@ -760,13 +760,13 @@ const MemoryHistoryDB = {
         }
         
         if (toDelete.length > 0) {
-            console.log(`🗑️ 清理重复历史记录: 共 ${toDelete.length} 条`);
+            mylog(`🗑️ 清理重复历史记录: 共 ${toDelete.length} 条`);
             const transaction = db.transaction([this.storeName], 'readwrite');
             const store = transaction.objectStore(this.storeName);
             
             for (const record of toDelete) {
                 store.delete(record.id);
-                console.log(`  - 删除: ${record.memoryTitle} (ID: ${record.id})`);
+                mylog(`  - 删除: ${record.memoryTitle} (ID: ${record.id})`);
             }
             
             await new Promise((resolve, reject) => {
@@ -875,7 +875,7 @@ async function mergeWorldbookDataWithHistory(target, source, memoryIndex, memory
             target,
             changedEntries
         );
-        console.log(`📚 已保存历史记录: 第${memoryIndex + 1}个记忆块, ${changedEntries.length}个变更`);
+        mylog(`📚 已保存历史记录: 第${memoryIndex + 1}个记忆块, ${changedEntries.length}个变更`);
     }
     
     return changedEntries;
@@ -933,17 +933,17 @@ function mergeWorldbookDataIncremental(target, source) {
     
     // 合并输出日志
     if (stats.updated.length > 0) {
-        console.log(`📝 增量更新 ${stats.updated.length} 个条目: ${stats.updated.join(', ')}`);
+        mylog(`📝 增量更新 ${stats.updated.length} 个条目: ${stats.updated.join(', ')}`);
     }
     if (stats.added.length > 0) {
-        console.log(`➕ 增量新增 ${stats.added.length} 个条目: ${stats.added.join(', ')}`);
+        mylog(`➕ 增量新增 ${stats.added.length} 个条目: ${stats.added.join(', ')}`);
     }
 }
 
 // ========== 正则回退解析函数 ==========
 // 当JSON.parse失败时，使用正则表达式提取世界书数据
 function extractWorldbookDataByRegex(jsonString) {
-    console.log('🔧 开始正则提取世界书数据...');
+    mylog('🔧 开始正则提取世界书数据...');
     const result = {};
     
     // 定义要提取的分类
@@ -969,7 +969,7 @@ function extractWorldbookDataByRegex(jsonString) {
         }
         
         if (braceCount !== 0) {
-            console.log(`⚠️ 分类 "${category}" 括号不匹配，跳过`);
+            mylog(`⚠️ 分类 "${category}" 括号不匹配，跳过`);
             continue;
         }
         
@@ -1044,7 +1044,7 @@ function extractWorldbookDataByRegex(jsonString) {
                     '关键词': keywords,
                     '内容': content
                 };
-                console.log(`  ✓ 提取条目: ${category} -> ${entryName} (关键词: ${keywords.length}个, 内容: ${content.length}字)`);
+                mylog(`  ✓ 提取条目: ${category} -> ${entryName} (关键词: ${keywords.length}个, 内容: ${content.length}字)`);
             }
         }
         
@@ -1056,7 +1056,7 @@ function extractWorldbookDataByRegex(jsonString) {
     
     const extractedCategories = Object.keys(result);
     const totalEntries = extractedCategories.reduce((sum, cat) => sum + Object.keys(result[cat]).length, 0);
-    console.log(`🔧 正则提取完成: ${extractedCategories.length}个分类, ${totalEntries}个条目`);
+    mylog(`🔧 正则提取完成: ${extractedCategories.length}个分类, ${totalEntries}个条目`);
     
     return result;
 }
@@ -1187,7 +1187,7 @@ isProcessingStopped = false;
         for (let i = 0; i < memoryQueue.length; i++) {
             // 检查是否用户要求停止
             if (isProcessingStopped) {
-                console.log('处理被用户停止');
+                mylog('处理被用户停止');
                 document.getElementById('progress-text').textContent = `⏸️ 已暂停处理 (${i}/${memoryQueue.length})`;
                 
                 // 转换为继续按钮
@@ -1199,7 +1199,7 @@ isProcessingStopped = false;
             
             // 检查是否正在修复记忆
             if (isRepairingMemories) {
-                console.log(`检测到修复模式，暂停当前处理于索引 ${i}`);
+                mylog(`检测到修复模式，暂停当前处理于索引 ${i}`);
                 currentProcessingIndex = i; // 记录当前索引
                 document.getElementById('progress-text').textContent = `⏸️ 修复记忆中，已暂停处理 (${i}/${memoryQueue.length})`;
                 
@@ -1208,7 +1208,7 @@ isProcessingStopped = false;
                     await new Promise(resolve => setTimeout(resolve, 500));
                 }
                 
-                console.log(`修复完成，从索引 ${i} 继续处理`);
+                mylog(`修复完成，从索引 ${i} 继续处理`);
                 document.getElementById('progress-text').textContent = `继续处理: ${memoryQueue[i].title} (${i + 1}/${memoryQueue.length})`;
             }
             
@@ -1232,12 +1232,12 @@ isProcessingStopped = false;
         document.getElementById('result-section').style.display = 'block';
         document.getElementById('worldbook-preview').textContent = JSON.stringify(generatedWorldbook, null, 2);
         
-        console.log('AI记忆大师处理完成，共生成条目:', Object.keys(generatedWorldbook).length);
+        mylog('AI记忆大师处理完成，共生成条目:', Object.keys(generatedWorldbook).length);
         
         // 完成后保存最终状态（不清除，以便刷新后能恢复结果）
         if (!isProcessingStopped) {
             await NovelState.saveState(memoryQueue.length);
-            console.log('✅ 转换完成，状态已保存，刷新页面后可恢复结果');
+            mylog('✅ 转换完成，状态已保存，刷新页面后可恢复结果');
         }
         
         // 添加操作按钮（查看世界书、查看JSON、保存）
@@ -1349,7 +1349,7 @@ function convertToResumeButton(currentIndex) {
 // 停止处理并刷新页面
 function stopProcessing() {
 // 保存当前进度状态
-console.log('用户请求暂停处理并刷新页面');
+mylog('用户请求暂停处理并刷新页面');
 // 直接刷新页面
 location.reload();   
 }
@@ -1455,29 +1455,29 @@ if (index === 0) {
 prompt += `请直接输出JSON格式的结果，不要添加任何代码块标记或解释文字。`;
 
 // 添加prompt查看功能
-console.log(`=== 第${index + 1}步 Prompt ===`);
-console.log(prompt);
-console.log('=====================');
+mylog(`=== 第${index + 1}步 Prompt ===`);
+mylog(prompt);
+mylog('=====================');
 
 try {
-    console.log(`开始调用API处理第${index + 1}个记忆块...`);
+    mylog(`开始调用API处理第${index + 1}个记忆块...`);
     document.getElementById('progress-text').textContent = `正在调用API: ${memory.title} (${index + 1}/${memoryQueue.length})`;
     
     // 调用AI API（使用现有的API系统）
     const response = await callSimpleAPI(prompt);
     
-    console.log(`API调用完成，返回内容长度: ${response.length}`);
-    console.log(response);
+    mylog(`API调用完成，返回内容长度: ${response.length}`);
+    mylog(response);
     
     // ========== 检查返回内容是否包含token超限错误（上下文超限的表现） ==========
     if (isContextOverflowError(response)) {
-        console.log(`⚠️ 返回内容包含token超限错误，判定为上下文超限`);
+        mylog(`⚠️ 返回内容包含token超限错误，判定为上下文超限`);
         document.getElementById('progress-text').textContent = `🔀 返回内容包含token超限错误，判定为上下文超限，分裂所有后续记忆...`;
         
         // 分裂所有后续记忆
         splitAllRemainingMemories(index);
         updateMemoryQueueUI();
-        console.log(`💾 分裂后保存状态，队列长度: ${memoryQueue.length}，队列标题: ${memoryQueue.map(m => m.title).join(', ')}`);
+        mylog(`💾 分裂后保存状态，队列长度: ${memoryQueue.length}，队列标题: ${memoryQueue.map(m => m.title).join(', ')}`);
         await NovelState.saveState(memoryQueue.filter(m => m.processed).length);
         
         throw new Error(`返回内容包含token超限错误，判定为上下文超限，已分裂所有后续记忆`);
@@ -1488,10 +1488,10 @@ try {
     try {
         // 直接尝试解析
         memoryUpdate = JSON.parse(response);
-        console.log('✅ JSON直接解析成功');
+        mylog('✅ JSON直接解析成功');
     } catch (jsonError) {
-        console.log('直接JSON解析失败，原因:', jsonError.message);
-        console.log('开始清理内容，原始长度:', response.length);
+        mylog('直接JSON解析失败，原因:', jsonError.message);
+        mylog('开始清理内容，原始长度:', response.length);
     let cleanResponse = response.trim();
     
     // 移除可能的代码块标记
@@ -1506,7 +1506,7 @@ try {
         const lastBrace = cleanResponse.lastIndexOf('}');
         if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
         cleanResponse = cleanResponse.substring(firstBrace, lastBrace + 1);
-        console.log('提取JSON部分，新长度:', cleanResponse.length);
+        mylog('提取JSON部分，新长度:', cleanResponse.length);
         }
     }
     
@@ -1516,7 +1516,7 @@ try {
     
     try {
         memoryUpdate = JSON.parse(cleanResponse);
-        console.log('✅ JSON清理后解析成功');
+        mylog('✅ JSON清理后解析成功');
     } catch (secondError) {
     console.error('❌ JSON解析仍然失败');
     console.error('错误信息:', secondError.message);
@@ -1536,7 +1536,7 @@ try {
         }
         
         // ========== 新增：正则回退解析机制 ==========
-        console.log('🔄 尝试使用正则表达式提取内容...');
+        mylog('🔄 尝试使用正则表达式提取内容...');
         document.getElementById('progress-text').textContent = `JSON解析失败，尝试正则提取: ${memory.title} (${index + 1}/${memoryQueue.length})`;
         
         // 检查内容完整性：是否有正确的闭合符
@@ -1545,17 +1545,17 @@ const closeBraces = (cleanResponse.match(/}/g) || []).length;
 const missingBraces = openBraces - closeBraces;
 
 if (missingBraces > 0) {
-    console.log(`⚠️ 检测到内容不完整：开括号${openBraces}个，闭括号${closeBraces}个，缺少${missingBraces}个`);
+    mylog(`⚠️ 检测到内容不完整：开括号${openBraces}个，闭括号${closeBraces}个，缺少${missingBraces}个`);
     
     // 尝试自动添加缺少的闭合括号
-    console.log(`🔧 尝试自动添加${missingBraces}个闭合括号...`);
+    mylog(`🔧 尝试自动添加${missingBraces}个闭合括号...`);
     try {
         memoryUpdate = JSON.parse(cleanResponse + '}'.repeat(missingBraces));
-        console.log(`✅ 自动添加${missingBraces}个闭合括号后解析成功`);
+        mylog(`✅ 自动添加${missingBraces}个闭合括号后解析成功`);
         // 成功解析，不需要继续后续处理
     } catch (autoFixError) {
-        console.log('❌ 自动添加闭合括号后仍然失败');
-        console.log(`⚠️ JSON内容不完整（缺少${missingBraces}个闭合括号），标记为失败`);
+        mylog('❌ 自动添加闭合括号后仍然失败');
+        mylog(`⚠️ JSON内容不完整（缺少${missingBraces}个闭合括号），标记为失败`);
         throw new Error(`JSON内容不完整（缺少${missingBraces}个闭合括号），自动修复失败`);
     }
 } else {
@@ -1564,15 +1564,15 @@ if (missingBraces > 0) {
     
     if (regexExtractedData && Object.keys(regexExtractedData).length > 0) {
         // 正则提取成功
-        console.log('✅ 正则提取成功！提取到的分类:', Object.keys(regexExtractedData));
+        mylog('✅ 正则提取成功！提取到的分类:', Object.keys(regexExtractedData));
         memoryUpdate = regexExtractedData;
         document.getElementById('progress-text').textContent = `正则提取成功: ${memory.title} (${index + 1}/${memoryQueue.length})`;
     } else {
         // 正则提取失败，继续使用API纠正
-        console.log('⚠️ 正则提取未能获取有效数据，尝试API纠正...');
+        mylog('⚠️ 正则提取未能获取有效数据，尝试API纠正...');
     
     // 调用API纠正格式错误的JSON
-    console.log('🔧 尝试调用API纠正JSON格式...');
+    mylog('🔧 尝试调用API纠正JSON格式...');
     document.getElementById('progress-text').textContent = `JSON格式错误，正在调用AI纠正: ${memory.title} (${index + 1}/${memoryQueue.length})`;
     
     try {
@@ -1612,7 +1612,7 @@ ${cleanResponse}
 
             // 调用API进行格式纠正
             const fixedResponse = await callSimpleAPI(fixPrompt);
-            console.log('API返回的纠正结果长度:', fixedResponse.length);
+            mylog('API返回的纠正结果长度:', fixedResponse.length);
 
             // 清理纠正后的响应
             let cleanedFixedResponse = fixedResponse.trim();
@@ -1627,14 +1627,14 @@ ${cleanResponse}
 
             // 解析纠正后的JSON
             memoryUpdate = JSON.parse(cleanedFixedResponse);
-            console.log('✅ JSON格式纠正成功！');
+            mylog('✅ JSON格式纠正成功！');
             document.getElementById('progress-text').textContent = `JSON格式已纠正: ${memory.title} (${index + 1}/${memoryQueue.length})`;
 
         } catch (fixError) {
             console.error('❌ JSON格式纠正也失败:', fixError.message);
             
             // 如果纠正也失败，创建一个简单的默认结构
-            console.log('⚠️ 无法解析JSON，使用默认结构保存原始响应');
+            mylog('⚠️ 无法解析JSON，使用默认结构保存原始响应');
             memoryUpdate = {
             '知识书': {
                 [`第${index + 1}个记忆块_解析失败`]: {
@@ -1662,13 +1662,13 @@ ${cleanResponse}
         if (added.length > 0) summary += ` ➕新增${added.length}个(${added.join(', ')})`;
         if (modified.length > 0) summary += ` ✏️修改${modified.length}个(${modified.join(', ')})`;
         if (deleted.length > 0) summary += ` ❌删除${deleted.length}个(${deleted.join(', ')})`;
-        console.log(summary);
+        mylog(summary);
     }
     
     // 标记为已处理
     memory.processed = true;
     updateMemoryQueueUI();
-    console.log(`记忆块 ${index + 1} 处理完成`);
+    mylog(`记忆块 ${index + 1} 处理完成`);
     
 } catch (error) {
     console.error(`处理记忆块 ${index + 1} 时出错 (第${retryCount + 1}次尝试):`, error);
@@ -1680,13 +1680,13 @@ ${cleanResponse}
     const isTokenLimitError = errorMsg.startsWith('CONTEXT_OVERFLOW:') || isContextOverflowError(errorMsg);
     
     if (isTokenLimitError) {
-        console.log(`⚠️ 检测到token超限错误，直接分裂记忆: ${memory.title}`);
+        mylog(`⚠️ 检测到token超限错误，直接分裂记忆: ${memory.title}`);
         document.getElementById('progress-text').textContent = `🔀 字数超限，正在分裂记忆: ${memory.title}`;
         
         // 直接分裂记忆
         const splitResult = splitMemoryIntoTwo(index);
         if (splitResult) {
-            console.log(`✅ 记忆分裂成功: ${splitResult.part1.title} 和 ${splitResult.part2.title}`);
+            mylog(`✅ 记忆分裂成功: ${splitResult.part1.title} 和 ${splitResult.part2.title}`);
             updateMemoryQueueUI();
             // 分裂后立即保存状态，确保刷新后能恢复
             await NovelState.saveState(memoryQueue.filter(m => m.processed).length);
@@ -1717,7 +1717,7 @@ ${cleanResponse}
     
     // 非token超限错误，使用原有的重试机制
     if (retryCount < maxRetries) {
-    console.log(`准备重试，当前重试次数: ${retryCount + 1}/${maxRetries}`);
+    mylog(`准备重试，当前重试次数: ${retryCount + 1}/${maxRetries}`);
     const retryDelay = Math.min(1000 * Math.pow(2, retryCount), 10000); // 指数退避，最大10秒
     document.getElementById('progress-text').textContent = `处理失败，${retryDelay/1000}秒后重试: ${memory.title} (${retryCount + 1}/${maxRetries})`;
     
@@ -1743,7 +1743,7 @@ ${cleanResponse}
     updateMemoryQueueUI();
     
     // 显示错误详情
-    console.log(`记忆块 ${index + 1} 处理失败，已加入修复队列，可点击❗一键修复`);
+    mylog(`记忆块 ${index + 1} 处理失败，已加入修复队列，可点击❗一键修复`);
     }
 }
 
@@ -1776,7 +1776,7 @@ const apiSettings = loadApiSettings();
 const provider = apiSettings.provider;
 const maxRetries = 3;
 
-console.log('API设置:', { provider, settings: apiSettings[provider] });
+mylog('API设置:', { provider, settings: apiSettings[provider] });
 
 // 检查API配置
 if (!apiSettings[provider]) {
@@ -1975,12 +1975,12 @@ try {
     
     if (!response.ok) {
     const errorText = await response.text();
-    console.log('API错误响应:', errorText);
+    mylog('API错误响应:', errorText);
     
     // ========== 优先检查是否是上下文超限错误 ==========
     if (isContextOverflowError(errorText)) {
-        console.log('⚠️ 检测到上下文超限错误，立即抛出特殊错误');
-        console.log('匹配的错误内容:', errorText.substring(0, 200));
+        mylog('⚠️ 检测到上下文超限错误，立即抛出特殊错误');
+        mylog('匹配的错误内容:', errorText.substring(0, 200));
         // 抛出特殊的超限错误，包含完整的错误信息
         throw new Error(`CONTEXT_OVERFLOW: ${errorText}`);
     }
@@ -1989,7 +1989,7 @@ try {
     if (response.status === 429 || errorText.includes('resource_exhausted') || errorText.includes('rate limit')) {
         if (retryCount < maxRetries) {
         const delay = Math.pow(2, retryCount) * 1000; // 指数退避：1s, 2s, 4s
-        console.log(`遇到限流，${delay}ms后重试 (${retryCount + 1}/${maxRetries})`);
+        mylog(`遇到限流，${delay}ms后重试 (${retryCount + 1}/${maxRetries})`);
         await new Promise(resolve => setTimeout(resolve, delay));
         return callSimpleAPI(prompt, retryCount + 1);
         } else {
@@ -2271,11 +2271,11 @@ let worldbookName = '世界书';
 if (currentFile && currentFile.name) {
     const baseName = currentFile.name.replace(/\.[^/.]+$/, '');
     worldbookName = `${baseName}-世界书-${readableTimeString}`;
-    console.log('使用文件名:', baseName, '完整名称:', worldbookName);
+    mylog('使用文件名:', baseName, '完整名称:', worldbookName);
 } else {
     worldbookName = `世界书-${readableTimeString}`;
-    console.log('未找到文件名，使用默认名称:', worldbookName);
-    console.log('currentFile状态:', currentFile);
+    mylog('未找到文件名，使用默认名称:', worldbookName);
+    mylog('currentFile状态:', currentFile);
 }
 
 // 创建角色卡对象，将世界书作为主要内容
@@ -2307,7 +2307,7 @@ try {
     const addRequest = store.add(worldbookCard);
     addRequest.onsuccess = () => {
     alert(`世界书已成功保存到角色库！\n名称：${worldbookName}\n\n你可以在角色库中找到并使用它。`);
-    console.log('世界书已保存到角色库:', worldbookName);
+    mylog('世界书已保存到角色库:', worldbookName);
     };
     
     addRequest.onerror = (error) => {
@@ -2393,7 +2393,7 @@ Object.keys(generatedWb).forEach(category => {
     }
 });
 
-console.log(`✅ 转换了 ${standardWorldbook.length} 个世界书条目`);
+mylog(`✅ 转换了 ${standardWorldbook.length} 个世界书条目`);
 return standardWorldbook;
 }
 
@@ -2617,7 +2617,7 @@ if (entries.length === 0) {
     });
 }
 
-console.log(`转换完成，生成了 ${entries.length} 个世界书条目`);
+mylog(`转换完成，生成了 ${entries.length} 个世界书条目`);
 
 return {
     entries: entries,
@@ -2880,28 +2880,28 @@ const finalRequestBody = JSON.parse(JSON.stringify(requestBody));
 // 已移除metadata字段以确保API兼容性
 
 // 输出完整的破限信息到console
-console.log('=== 破限系统详细信息 ===');
-console.log('破限模式:', isSystemPromptEnabled ? '已启用' : '未启用');
-console.log('模型:', model);
-console.log('工具调用:', finalRequestBody.tools ? finalRequestBody.tools.length + '个工具' : '无');
+mylog('=== 破限系统详细信息 ===');
+mylog('破限模式:', isSystemPromptEnabled ? '已启用' : '未启用');
+mylog('模型:', model);
+mylog('工具调用:', finalRequestBody.tools ? finalRequestBody.tools.length + '个工具' : '无');
 if (isSystemPromptEnabled && typeof LimitlessPrompt !== 'undefined') {
-    console.log('系统指令长度:', LimitlessPrompt.length + '字符');
+    mylog('系统指令长度:', LimitlessPrompt.length + '字符');
     // 从 LimitlessPrompt 中提取动态后缀
     const suffixMatch = LimitlessPrompt.match(/创作\s+(\w+)/);
     if (suffixMatch) {
-    console.log('动态后缀:', suffixMatch[1]);
+    mylog('动态后缀:', suffixMatch[1]);
     }
 }
 if (finalRequestBody.tools) {
-    console.log('工具详情:', finalRequestBody.tools.map(t => {
+    mylog('工具详情:', finalRequestBody.tools.map(t => {
     if (t.google_search) return 'Google搜索';
     if (t.google_search_retrieval) return 'Google搜索检索';
     if (t.function_declarations) return '函数调用工具';
     return '未知工具';
     }).join(', '));
 }
-console.log('完整请求体:', JSON.stringify(finalRequestBody, null, 2));
-console.log('=== 破限系统结束 ===');
+mylog('完整请求体:', JSON.stringify(finalRequestBody, null, 2));
+mylog('=== 破限系统结束 ===');
 
 return finalRequestBody;
 }
@@ -2912,8 +2912,8 @@ const provider = apiSettings.provider;
 
 const isPlus = document.getElementById('Plus-switch').checked;
 const finalPrompt = isPlus ? prompt + getStylePromptPrefix() : prompt;
-console.log(`Using API provider: ${provider}`);
-console.log('Final prompt being sent to API:', finalPrompt);
+mylog(`Using API provider: ${provider}`);
+mylog('Final prompt being sent to API:', finalPrompt);
 
 const originalText = button.textContent;
 button.disabled = true;
@@ -2953,7 +2953,7 @@ try {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(geminiBody),
         };
-        console.log('Gemini request body:', geminiBody);
+        mylog('Gemini request body:', geminiBody);
         break;
 
     case 'gemini-proxy':
@@ -2987,7 +2987,7 @@ try {
             stream: false
             }),
         };
-        console.log('Gemini Proxy request (OpenAI format):', requestOptions.body);
+        mylog('Gemini Proxy request (OpenAI format):', requestOptions.body);
         } else {
         // 使用Gemini原生API格式
         const geminiProxyBody = buildGeminiRequest(finalPrompt, apiSettings, provider);
@@ -3027,7 +3027,7 @@ try {
             },
             body: JSON.stringify(geminiProxyBody),
         };
-        console.log('Gemini Proxy request (Native format):', requestOptions.body);
+        mylog('Gemini Proxy request (Native format):', requestOptions.body);
         }
         break;
 
@@ -3057,7 +3057,7 @@ try {
             }
         }),
         };
-        console.log('Ollama request:', requestOptions.body);
+        mylog('Ollama request:', requestOptions.body);
         break;
 
     case 'local':
@@ -3164,7 +3164,7 @@ try {
         
         // 如果是CLI反代的Gemini模型，添加额外的配置
         if (isGeminiModel && isReverseProxy) {
-        console.log('Using OpenAI format for CLI reverse proxy with Gemini model');
+        mylog('Using OpenAI format for CLI reverse proxy with Gemini model');
         
         // 为Gemini模型添加系统消息来模拟高级功能
         let systemMessage = '';
@@ -3194,12 +3194,12 @@ try {
             ];
         }
         
-        console.log('=== CLI反代破限系统详细信息 ===');
-        console.log('破限模式:', providerSettings.jailbreak ? '已启用' : '未启用');
-        console.log('模型:', model);
-        console.log('系统指令:', systemMessage);
-        console.log('完整请求体:', JSON.stringify(requestBody, null, 2));
-        console.log('=== CLI反代破限系统结束 ===');
+        mylog('=== CLI反代破限系统详细信息 ===');
+        mylog('破限模式:', providerSettings.jailbreak ? '已启用' : '未启用');
+        mylog('模型:', model);
+        mylog('系统指令:', systemMessage);
+        mylog('完整请求体:', JSON.stringify(requestBody, null, 2));
+        mylog('=== CLI反代破限系统结束 ===');
         }
         
         requestOptions = {
@@ -3236,7 +3236,7 @@ try {
     
     // Handle Ollama response
     if (provider === 'ollama') {
-    console.log('Ollama API response:', data);
+    mylog('Ollama API response:', data);
     
     if (data.error) {
         throw new Error(`Ollama API Error: ${data.error}`);
@@ -3251,7 +3251,7 @@ try {
     }
     
     if (isGeminiNativeResponse) {
-    console.log('Gemini API response:', data);
+    mylog('Gemini API response:', data);
     
     // Handle error response from Gemini first
     if (data.error) {
@@ -3273,7 +3273,7 @@ try {
     }
     
     const candidate = data.candidates[0];
-    console.log('Candidate structure:', candidate);
+    mylog('Candidate structure:', candidate);
     
     // Check for finish reason
     if (candidate.finishReason && candidate.finishReason !== 'STOP') {
@@ -3305,11 +3305,11 @@ try {
     if (responseContent?.parts) {
         for (const part of responseContent.parts) {
         if (part.functionCall) {
-            console.log('检测到函数调用:', part.functionCall);
+            mylog('检测到函数调用:', part.functionCall);
             return `检测到函数调用: ${part.functionCall.name}`;
         }
         if (part.inlineData) {
-            console.log('检测到内联数据:', part.inlineData.mimeType);
+            mylog('检测到内联数据:', part.inlineData.mimeType);
             return '检测到内联数据（图像或其他媒体）';
         }
         }
@@ -3321,7 +3321,7 @@ try {
     throw new Error('Gemini API返回了意外的响应结构，请检查控制台日志');
     } else if (isCLIProxyGemini) {
     // Handle CLI reverse proxy Gemini (returns OpenAI format)
-    console.log('CLI Proxy Gemini API response:', data);
+    mylog('CLI Proxy Gemini API response:', data);
     
     if (data.error) {
         throw new Error(`CLI Proxy Gemini Error: ${data.error.message}`);
@@ -4018,7 +4018,7 @@ getAiGuidance(t('ai-guidance-title'), async userGuidance => {
         // 首先尝试直接解析
         generatedEntries = JSON.parse(cleanedResult);
         } catch (e) {
-        console.log('直接解析失败，尝试提取嵌套JSON...');
+        mylog('直接解析失败，尝试提取嵌套JSON...');
         try {
             // 如果是完整的API响应，提取content字段
             const apiResponse = JSON.parse(cleanedResult);
@@ -4653,7 +4653,7 @@ if (loadingDiv) loadingDiv.remove();
 updateAllEntryAttributes();
 // 恢复折叠状态
 restoreWorldbookFoldStates();
-console.log(`世界书渲染完成: ${total} 个条目`);
+mylog(`世界书渲染完成: ${total} 个条目`);
 }
 
 function countAllEntries(entries) {
@@ -5959,7 +5959,7 @@ try {
     
     if (jsonStart !== -1 && jsonEnd !== -1) {
     const jsonText = lines.slice(jsonStart, jsonEnd + 1).join('\n');
-    console.log('手动提取的JSON文本:', jsonText);
+    mylog('手动提取的JSON文本:', jsonText);
     return jsonText;
     }
     
@@ -5973,7 +5973,7 @@ try {
 // 应用全局修改结果
 async function applyGlobalEditResult(result, originalEntries) {
 try {
-    console.log('原始AI返回结果:', result);
+    mylog('原始AI返回结果:', result);
     
     // 多层次清理AI返回的结果
     let cleanedResult = result;
@@ -5982,19 +5982,19 @@ try {
     const jsonBlockMatch = cleanedResult.match(/```json\s*([\s\S]*?)\s*```/);
     if (jsonBlockMatch) {
     cleanedResult = jsonBlockMatch[1].trim();
-    console.log('从代码块提取的JSON:', cleanedResult);
+    mylog('从代码块提取的JSON:', cleanedResult);
     } else {
     // 2. 如果没有代码块，尝试查找JSON对象模式
     const jsonObjectMatch = cleanedResult.match(/\{[\s\S]*\}/);
     if (jsonObjectMatch) {
         cleanedResult = jsonObjectMatch[0].trim();
-        console.log('提取的JSON对象:', cleanedResult);
+        mylog('提取的JSON对象:', cleanedResult);
     } else {
         // 3. 尝试查找以"modifications"开头的JSON
         const modificationsMatch = cleanedResult.match(/\{\s*"modifications"\s*:\s*\[[\s\S]*?\]\s*\}/);
         if (modificationsMatch) {
         cleanedResult = modificationsMatch[0].trim();
-        console.log('提取的modifications JSON:', cleanedResult);
+        mylog('提取的modifications JSON:', cleanedResult);
         }
     }
     }
@@ -6007,7 +6007,7 @@ try {
     try {
     data = JSON.parse(cleanedResult);
     } catch (e) {
-    console.log('直接解析失败，尝试提取嵌套JSON...', e.message);
+    mylog('直接解析失败，尝试提取嵌套JSON...', e.message);
     try {
         // 如果是完整的API响应，提取content字段
         const apiResponse = JSON.parse(cleanedResult);
@@ -6042,7 +6042,7 @@ try {
             const manualExtract = extractJsonManually(result);
             if (manualExtract) {
             data = JSON.parse(manualExtract);
-            console.log('手动提取成功:', data);
+            mylog('手动提取成功:', data);
             } else {
             throw new Error('无法从AI返回结果中提取有效的JSON数据');
             }
@@ -6082,7 +6082,7 @@ try {
         if (isEmpty) {
             // 标记为需要删除
             entriesToDelete.add(originalEntry.id);
-            console.log(`标记删除世界书条目 ID:${originalEntry.id}`);
+            mylog(`标记删除世界书条目 ID:${originalEntry.id}`);
             worldbookModified = true;
         } else {
             // 正常修改
@@ -6107,7 +6107,7 @@ try {
         if (isEmpty) {
             // 角色字段设为空
             fieldElement.value = '';
-            console.log(`清空角色字段: ${originalEntry.field}`);
+            mylog(`清空角色字段: ${originalEntry.field}`);
         } else {
             fieldElement.value = mod.content;
         }
@@ -6124,7 +6124,7 @@ try {
     renderWorldbookFromData(filteredEntries);
     
     if (entriesToDelete.size > 0) {
-        console.log(`已删除 ${entriesToDelete.size} 个空值条目`);
+        mylog(`已删除 ${entriesToDelete.size} 个空值条目`);
         return entriesToDelete.size; // 返回删除的条目数量
     }
     }
@@ -6871,7 +6871,7 @@ fieldsToSearch.forEach(field => {
 
 // 如果找到匹配，滚动到第一个匹配位置
 if (firstHighlight) {
-    console.log(`找到匹配: ${matchedField} - "${keyword}"`);
+    mylog(`找到匹配: ${matchedField} - "${keyword}"`);
     setTimeout(() => {
         firstHighlight.scrollIntoView({ 
             behavior: 'smooth', 
@@ -7191,7 +7191,7 @@ function splitMemoryIntoTwo(memoryIndex) {
     // 从队列中移除原记忆，插入两个新记忆
     memoryQueue.splice(memoryIndex, 1, memory1, memory2);
     
-    console.log(`🔀 记忆分裂完成: "${originalTitle}" -> "${memory1.title}" (${content1.length}字) + "${memory2.title}" (${content2.length}字)`);
+    mylog(`🔀 记忆分裂完成: "${originalTitle}" -> "${memory1.title}" (${content1.length}字) + "${memory2.title}" (${content2.length}字)`);
     
     return {
         part1: memory1,
@@ -7201,7 +7201,7 @@ function splitMemoryIntoTwo(memoryIndex) {
 
 // 分裂从指定索引开始的所有后续记忆（当检测到上下文超限时使用）
 function splitAllRemainingMemories(startIndex) {
-    console.log(`🔀 开始分裂从索引 ${startIndex} 开始的所有后续记忆...`);
+    mylog(`🔀 开始分裂从索引 ${startIndex} 开始的所有后续记忆...`);
     const originalLength = memoryQueue.length;
     let splitCount = 0;
     
@@ -7262,11 +7262,11 @@ function splitAllRemainingMemories(startIndex) {
         
         memoryQueue.splice(i, 1, memory1, memory2);
         splitCount++;
-        console.log(`  🔀 ${originalTitle} -> ${memory1.title} + ${memory2.title}`);
+        mylog(`  🔀 ${originalTitle} -> ${memory1.title} + ${memory2.title}`);
     }
     
-    console.log(`✅ 分裂完成: 原${originalLength - startIndex}个记忆 -> 现${memoryQueue.length - startIndex}个记忆 (分裂了${splitCount}个)`);
-    console.log(`📋 分裂后队列: ${memoryQueue.map(m => m.title).join(', ')}`);
+    mylog(`✅ 分裂完成: 原${originalLength - startIndex}个记忆 -> 现${memoryQueue.length - startIndex}个记忆 (分裂了${splitCount}个)`);
+    mylog(`📋 分裂后队列: ${memoryQueue.map(m => m.title).join(', ')}`);
     return splitCount;
 }
 
@@ -7283,7 +7283,7 @@ async function repairMemoryWithSplit(memoryIndex, stats) {
         memory.failedError = null;
         memory.processed = true;  // 确保标记为已处理，UI会显示正常样式
         stats.successCount++;
-        console.log(`✅ 修复成功: ${memory.title}`);
+        mylog(`✅ 修复成功: ${memory.title}`);
         updateMemoryQueueUI();
         // 保存状态，确保分裂后的记忆状态被保存
         await NovelState.saveState(memoryQueue.filter(m => m.processed).length);
@@ -7296,13 +7296,13 @@ async function repairMemoryWithSplit(memoryIndex, stats) {
         const isTokenLimitError = errorMsg.startsWith('CONTEXT_OVERFLOW:') || isContextOverflowError(errorMsg);
         
         if (isTokenLimitError) {
-            console.log(`⚠️ 检测到token超限错误，开始分裂记忆: ${memory.title}`);
+            mylog(`⚠️ 检测到token超限错误，开始分裂记忆: ${memory.title}`);
             document.getElementById('progress-text').textContent = `🔀 正在分裂记忆: ${memory.title}`;
             
             // 分裂记忆
             const splitResult = splitMemoryIntoTwo(memoryIndex);
             if (splitResult) {
-                console.log(`✅ 记忆分裂成功: ${splitResult.part1.title} 和 ${splitResult.part2.title}`);
+                mylog(`✅ 记忆分裂成功: ${splitResult.part1.title} 和 ${splitResult.part2.title}`);
                 updateMemoryQueueUI();
                 // 分裂后立即保存状态，确保刷新后能恢复
                 await NovelState.saveState(memoryQueue.filter(m => m.processed).length);
@@ -7340,8 +7340,8 @@ async function startRepairFailedMemories() {
 
 // 设置修复模式标志
 isRepairingMemories = true;
-console.log(`🔧 开始一键修复 ${failedMemories.length} 个失败的记忆...`);
-console.log(`当前正在处理的索引: ${currentProcessingIndex}`);
+mylog(`🔧 开始一键修复 ${failedMemories.length} 个失败的记忆...`);
+mylog(`当前正在处理的索引: ${currentProcessingIndex}`);
 
 document.getElementById('progress-section').style.display = 'block';
 document.getElementById('progress-text').textContent = `正在修复失败的记忆 (0/${failedMemories.length})`;
@@ -7384,7 +7384,7 @@ await NovelState.saveState(memoryQueue.length);
 
 // 清除修复模式标志，允许继续处理
 isRepairingMemories = false;
-console.log(`🔧 修复模式结束，继续处理标志已清除`);
+mylog(`🔧 修复模式结束，继续处理标志已清除`);
 
 if (stats.stillFailedCount > 0) {
     alert(`修复完成！\n成功: ${stats.successCount} 个\n仍失败: ${stats.stillFailedCount} 个\n\n失败的记忆仍显示❗，可继续点击修复。`);
@@ -7418,9 +7418,9 @@ if (Object.keys(generatedWorldbook).length > 0) {
 prompt += `阅读内容：\n---\n${memory.content}\n---\n\n请基于内容更新世界书，直接输出JSON。`;
 
 // 添加prompt查看功能（与普通处理一致）
-console.log(`=== 修复记忆 第${index + 1}步 Prompt ===`);
-console.log(prompt);
-console.log('=====================');
+mylog(`=== 修复记忆 第${index + 1}步 Prompt ===`);
+mylog(prompt);
+mylog('=====================');
 
 const response = await callSimpleAPI(prompt);
 let memoryUpdate;
@@ -7466,7 +7466,7 @@ try {
 // 使用带历史记录的合并函数，命名规则：记忆-修复-[记忆标题]
 const memoryTitle = `记忆-修复-${memory.title}`;
 await mergeWorldbookDataWithHistory(generatedWorldbook, memoryUpdate, index, memoryTitle);
-console.log(`记忆块 ${index + 1} 修复完成，已保存修改历史: ${memoryTitle}`);
+mylog(`记忆块 ${index + 1} 修复完成，已保存修改历史: ${memoryTitle}`);
 }
 
 // ========== 查看世界书功能 ==========
@@ -7769,7 +7769,7 @@ async function showMemoryHistoryModal() {
         // 先清理重复记录
         const cleanedCount = await MemoryHistoryDB.cleanDuplicateHistory();
         if (cleanedCount > 0) {
-            console.log(`✅ 已清理 ${cleanedCount} 条重复的历史记录`);
+            mylog(`✅ 已清理 ${cleanedCount} 条重复的历史记录`);
         }
         
         historyList = await MemoryHistoryDB.getAllHistory();
@@ -7969,11 +7969,11 @@ async function rollbackToHistoryAndRefresh(historyId) {
 
     try {
         const history = await MemoryHistoryDB.rollbackToHistory(historyId);
-        console.log(`📚 已回退到历史记录 #${historyId}: ${history.memoryTitle}`);
+        mylog(`📚 已回退到历史记录 #${historyId}: ${history.memoryTitle}`);
         
         // 获取回退点的记忆索引
         const rollbackMemoryIndex = history.memoryIndex;
-        console.log(`📚 回退到记忆索引: ${rollbackMemoryIndex}`);
+        mylog(`📚 回退到记忆索引: ${rollbackMemoryIndex}`);
         
         // 更新记忆队列的处理状态
         for (let i = 0; i < memoryQueue.length; i++) {
@@ -7988,7 +7988,7 @@ async function rollbackToHistoryAndRefresh(historyId) {
             }
         }
         
-        console.log(`📚 记忆块 0-${rollbackMemoryIndex - 1} 标记为已处理，${rollbackMemoryIndex} 及之后标记为未处理`);
+        mylog(`📚 记忆块 0-${rollbackMemoryIndex - 1} 标记为已处理，${rollbackMemoryIndex} 及之后标记为未处理`);
         
         // 保存当前状态（使用回退点的索引）
         await NovelState.saveState(rollbackMemoryIndex);
@@ -8010,7 +8010,7 @@ async function checkAndClearHistoryOnFileChange(newContent) {
         // 获取保存的文件hash
         const savedHash = await MemoryHistoryDB.getSavedFileHash();
         
-        console.log(`📁 文件hash检测: 新=${newHash?.substring(0, 16)}..., 旧=${savedHash?.substring(0, 16) || '无'}...`);
+        mylog(`📁 文件hash检测: 新=${newHash?.substring(0, 16)}..., 旧=${savedHash?.substring(0, 16) || '无'}...`);
         
         if (savedHash && savedHash !== newHash) {
             // 文件内容发生变化
@@ -8026,7 +8026,7 @@ async function checkAndClearHistoryOnFileChange(newContent) {
                 
                 if (shouldClear) {
                     await MemoryHistoryDB.clearAllHistory();
-                    console.log('已清空旧的历史记录');
+                    mylog('已清空旧的历史记录');
                 }
             }
         }
@@ -8034,7 +8034,7 @@ async function checkAndClearHistoryOnFileChange(newContent) {
         // 保存新文件的hash
         currentFileHash = newHash;
         await MemoryHistoryDB.saveFileHash(newHash);
-        console.log('已保存新文件hash');
+        mylog('已保存新文件hash');
         
     } catch (error) {
         console.error('检测文件变化时出错:', error);
@@ -8340,7 +8340,7 @@ function exportEvolutionData(entryEvolution) {
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
 
-    console.log(`已导出 ${sillyTavernEntries.length} 个条目为SillyTavern世界书格式`);
+    mylog(`已导出 ${sillyTavernEntries.length} 个条目为SillyTavern世界书格式`);
 }
 
 // AI总结单个条目演变
@@ -8400,7 +8400,7 @@ async function summarizeSingleEntryEvolution(entryKey) {
                 generatedWorldbook,
                 changedEntries
             );
-            console.log(`📚 已保存演变总结历史: ${entryName}`);
+            mylog(`📚 已保存演变总结历史: ${entryName}`);
         } catch (error) {
             console.error('保存演变总结历史失败:', error);
         }
@@ -8506,7 +8506,7 @@ async function summarizeAllEntryEvolution(entryEvolution) {
                     generatedWorldbook,
                     allChangedEntries
                 );
-                console.log(`📚 已保存演变总结历史: ${allChangedEntries.length} 个条目`);
+                mylog(`📚 已保存演变总结历史: ${allChangedEntries.length} 个条目`);
             } catch (error) {
                 console.error('保存演变总结历史失败:', error);
             }
@@ -8572,9 +8572,9 @@ ${evolutionText}
 
 请直接输出总结内容，不要包含任何解释或前缀。`;
 
-        console.log(`📤 [AI演变总结] 条目: ${entryName}\n完整Prompt:\n`, prompt);
+        mylog(`📤 [AI演变总结] 条目: ${entryName}\n完整Prompt:\n`, prompt);
         const response = await callSimpleAPI(prompt);
-        console.log(`📥 [AI演变总结] 条目: ${entryName} 响应:\n`, response);
+        mylog(`📥 [AI演变总结] 条目: ${entryName} 响应:\n`, response);
         return response;
     } catch (error) {
         console.error('AI总结失败:', error);
@@ -8664,7 +8664,7 @@ async function exportHistoryWorldbook(historyId) {
         a.click();
         document.body.removeChild(a);
         URL.revokeObjectURL(url);
-        console.log(`已导出历史记录 #${historyId} 的世界书 (SillyTavern世界书格式)`);
+        mylog(`已导出历史记录 #${historyId} 的世界书 (SillyTavern世界书格式)`);
     } catch (error) {
         console.error('导出历史世界书失败:', error);
         alert('导出失败: ' + error.message);
@@ -8691,7 +8691,7 @@ async function showOptimizeWorldbookModal() {
         const savedPrompt = await MemoryHistoryDB.getCustomOptimizationPrompt();
         if (savedPrompt) {
             customOptimizationPrompt = savedPrompt;
-            console.log('📝 已加载上次保存的自定义Prompt');
+            mylog('📝 已加载上次保存的自定义Prompt');
         }
     } catch (e) {
         console.error('加载自定义Prompt失败:', e);
@@ -8776,7 +8776,7 @@ async function showOptimizeWorldbookModal() {
             const promptText = customPromptTextarea.value.trim();
             try {
                 await MemoryHistoryDB.saveCustomOptimizationPrompt(promptText);
-                console.log('💾 已自动保存自定义Prompt到IndexedDB');
+                mylog('💾 已自动保存自定义Prompt到IndexedDB');
             } catch (error) {
                 console.error('保存自定义Prompt失败:', error);
             }
@@ -8805,7 +8805,7 @@ async function showOptimizeWorldbookModal() {
             statusSpan.textContent = `已导入: ${file.name} (${encoding})`;
             statusSpan.style.color = '#27ae60';
             
-            console.log(`📁 已导入Prompt文件: ${file.name}, 编码: ${encoding}, 长度: ${content.length}`);
+            mylog(`📁 已导入Prompt文件: ${file.name}, 编码: ${encoding}, 长度: ${content.length}`);
         } catch (error) {
             console.error('导入Prompt文件失败:', error);
             document.getElementById('prompt-file-status').textContent = '导入失败';
@@ -8921,9 +8921,9 @@ async function startBatchOptimization(entryEvolution, batchSize) {
         try {
             const batchPrompt = buildBatchOptimizationPrompt(batches[i]);
             const entryNames = batches[i].map(b => b.data.entryName).join(', ');
-            console.log(`📤 [AI优化世界书] 批次 ${i + 1}/${batches.length} 条目: ${entryNames}\n完整Prompt:\n`, batchPrompt);
+            mylog(`📤 [AI优化世界书] 批次 ${i + 1}/${batches.length} 条目: ${entryNames}\n完整Prompt:\n`, batchPrompt);
             const response = await callSimpleAPI(batchPrompt);
-            console.log(`📥 [AI优化世界书] 批次 ${i + 1}/${batches.length} 响应:\n`, response);
+            mylog(`📥 [AI优化世界书] 批次 ${i + 1}/${batches.length} 响应:\n`, response);
             const batchChanges = await applyBatchOptimizationResult(response, batches[i], previousWorldbook);
             allChangedEntries.push(...batchChanges);
             optimizedEntries += batches[i].length;
@@ -8944,7 +8944,7 @@ async function startBatchOptimization(entryEvolution, batchSize) {
                 generatedWorldbook,
                 allChangedEntries
             );
-            console.log(`📚 已保存优化历史: ${allChangedEntries.length} 个条目`);
+            mylog(`📚 已保存优化历史: ${allChangedEntries.length} 个条目`);
         } catch (error) {
             console.error('保存优化历史失败:', error);
         }
@@ -8971,7 +8971,7 @@ function buildBatchOptimizationPrompt(batch) {
     if (customOptimizationPrompt) {
         // 替换占位符
         let prompt = customOptimizationPrompt.replace(/\{\{条目\}\}/g, entriesContent);
-        console.log('📝 使用自定义Prompt');
+        mylog('📝 使用自定义Prompt');
         return prompt;
     }
     
@@ -9068,7 +9068,7 @@ async function applyBatchOptimizationResult(response, batch, previousWorldbook) 
                 newValue: newValue
             });
             
-            console.log(`✅ 已优化条目: [${category}] ${entryName}`);
+            mylog(`✅ 已优化条目: [${category}] ${entryName}`);
         }
     }
     
@@ -9160,7 +9160,7 @@ function applyFoldStateToEntry(entry, shouldFold) {
 function restoreWorldbookFoldStates() {
     // 如果设置了跳过标志，则不恢复状态
     if (skipRestoreFoldStates) {
-        console.log('跳过恢复折叠状态（新导入的角色）');
+        mylog('跳过恢复折叠状态（新导入的角色）');
         skipRestoreFoldStates = false; // 重置标志
         return;
     }
@@ -9285,5 +9285,5 @@ function toggleAllWorldbookEntries() {
         }
     }
     
-    console.log(shouldFold ? '已折叠所有条目' : '已展开所有条目');
+    mylog(shouldFold ? '已折叠所有条目' : '已展开所有条目');
 }
