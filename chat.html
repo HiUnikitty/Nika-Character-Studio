@@ -828,6 +828,343 @@
             width: 100% !important;
         }
 
+        /* CG卡片样式 - 重新设计 */
+        .cg-card {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            background: var(--card-bg-color);
+            border-radius: 12px;
+            padding: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+            margin: 8px 0;
+            position: relative;
+            max-width: 400px;
+            border: 1px solid var(--border-color);
+            transition: all 0.2s ease;
+        }
+        .cg-card:hover {
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            transform: translateY(-1px);
+        }
+        
+        /* CG卡片主体区域（图片+内容+按钮） */
+        .cg-card-main {
+            display: flex;
+            gap: 12px;
+            cursor: pointer;
+        }
+        
+        /* CG卡片详细信息区域 */
+        .cg-card-details {
+            display: none;
+            padding-top: 8px;
+            margin-top: 8px;
+            border-top: 1px solid var(--border-color);
+            font-size: 12px;
+            line-height: 1.4;
+            color: var(--text-secondary-color);
+        }
+        .cg-card-details.show {
+            display: block;
+        }
+        .cg-card-detail-summary {
+            color: var(--text-color);
+            margin-bottom: 4px;
+        }
+        .cg-card-detail-description {
+            color: var(--text-secondary-color);
+        }
+        
+        /* 大图模式样式 - 只在有large-image-mode class时生效 */
+        .cg-card.large-image-mode {
+            flex-direction: column;
+            max-width: 100%;
+            padding: 0;
+            background: transparent;
+            border: none;
+            box-shadow: none;
+            gap: 8px;
+        }
+        .cg-card.large-image-mode:hover {
+            transform: none;
+            box-shadow: none;
+        }
+        .cg-card.large-image-mode .cg-card-main {
+            flex-direction: column;
+            cursor: default;
+        }
+        .cg-card.large-image-mode .cg-card-image {
+            width: 100%;
+            height: auto;
+            max-height: none;
+            border-radius: 12px;
+            border: none;
+            transition: none;
+            padding: 0;
+        }
+        .cg-card.large-image-mode .cg-card-image:hover {
+            transform: none;
+        }
+        .cg-card.large-image-mode .cg-card-image img {
+            border: none;
+            transition: none;
+        }
+        .cg-card.large-image-mode .cg-card-image img:hover {
+            transform: none;
+        }
+        .cg-card.large-image-mode .cg-card-content {
+            display: none;
+        }
+        .cg-card.large-image-mode .cg-card-details {
+            display: none !important;
+        }
+        .cg-card.large-image-mode .cg-card-generate-btn {
+            position: static;
+            width: 36px;
+            height: 36px;
+            margin: 0 auto;
+            padding: 0;
+            opacity: 0.5;
+            background: var(--card-bg-color);
+            color: var(--text-secondary-color);
+            border: 1px solid var(--border-color);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            transition: all 0.2s ease;
+        }
+        .cg-card.large-image-mode .cg-card-generate-btn:hover:not(:disabled) {
+            opacity: 1;
+            background: var(--primary-color);
+            color: white;
+            transform: scale(1.1);
+        }
+        
+        .cg-card-image {
+            width: 70px;
+            height: 70px;
+            border-radius: 8px;
+            object-fit: cover;
+            flex-shrink: 0;
+            background: transparent;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 12px;
+            text-align: center;
+            padding: 8px;
+        }
+        
+        .cg-card-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            min-width: 0;
+            gap: 4px;
+        }
+        
+        .cg-card-title {
+            font-weight: 600;
+            font-size: 14px;
+            margin-bottom: 2px;
+            color: var(--text-color);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        
+        .cg-card-description {
+            font-size: 12px;
+            color: var(--text-secondary-color);
+            line-height: 1.3;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+        
+        .cg-card-generate-btn {
+            position: absolute;
+            bottom: 8px;
+            right: 8px;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: 2px solid white;
+            color: white;
+            font-size: 14px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+            transition: all 0.2s ease;
+            z-index: 10;
+        }
+        
+        .cg-card-generate-btn:hover:not(:disabled) {
+            transform: scale(1.1);
+            box-shadow: 0 3px 10px rgba(102, 126, 234, 0.3);
+        }
+        
+        .cg-card-generate-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+        
+        /* SD生图 - 未生成图片的卡片样式 */
+        .card-message-wrapper {
+            background-color: transparent;
+            border: 3px dashed #9ca3af;
+            border-radius: 6px;
+            color: #1f2937;
+            width: 100%;
+            max-width: 350px;
+            position: relative;
+            margin: 6px 0;
+            overflow: visible;
+        }
+        .card-message-wrapper h4,
+        .card-message-wrapper p {
+            margin: 0;
+            padding: 0;
+        }
+        .card-message-wrapper h4 {
+            font-size: 13px;
+            font-weight: 600;
+            color: #1f2937;
+        }
+        .card-message-wrapper p {
+            font-size: 11px;
+            color: #6b7280;
+            line-height: 1.2;
+        }
+        
+        /* 卡片详情展开样式 - 已删除，不再需要 */
+        .bubble.card-bubble {
+            position: relative;
+            overflow: visible;
+            background: none;
+            padding: 0;
+            box-shadow: none;
+        }
+        
+        /* 卡片内容布局 - 左图标右文字 */
+        .card-type-2 {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px;
+            position: relative;
+            width: 100%;
+            min-height: 50px;
+        }
+        .card-type-2 .card-icon {
+            width: 40px;
+            height: 40px;
+            flex-shrink: 0;
+            background-color: rgba(229, 231, 235, 0.5);
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #9ca3af;
+            font-size: 20px;
+        }
+        .card-type-2 .card-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+            overflow: hidden;
+            min-width: 0;
+            padding-right: 32px;
+        }
+        .card-type-2 h4 {
+            font-size: 13px;
+            font-weight: 600;
+            color: #1f2937 !important;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            display: block !important;
+        }
+        .card-type-2 .card-summary {
+            font-size: 11px;
+            color: #9ca3af !important;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            display: block !important;
+        }
+        .card-type-2 .card-description {
+            font-size: 11px;
+            color: #6b7280 !important;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            display: block !important;
+        }
+        
+        /* 卡片生成按钮 - 重新设计 */
+        .card-generate-btn {
+            position: absolute;
+            bottom: 4px;
+            right: 4px;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: 2px solid white;
+            color: white;
+            font-size: 10px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.15);
+            transition: all 0.2s ease;
+            z-index: 20;
+        }
+        .card-generate-btn:hover:not(:disabled) {
+            transform: scale(1.1);
+            box-shadow: 0 3px 10px rgba(102, 126, 234, 0.3);
+        }
+        .card-generate-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+        .card-generate-btn.generating {
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        /* 图片查看器中的描述 */
+        .image-viewer-description {
+            position: absolute;
+            bottom: 80px;
+            left: 50%;
+            transform: translateX(-50%);
+            max-width: 80%;
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 12px 20px;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            line-height: 1.5;
+            text-align: center;
+            display: none;
+            z-index: 10001;
+        }
+
     </style>
 </head>
 <body>
@@ -847,6 +1184,7 @@
             <button data-modal="theme-settings-modal" class="nav-link w-full flex items-center gap-4 p-3 rounded-lg text-left" data-i18n-title="sidebar.theme" title="主题设置"><i class="fas fa-palette text-xl w-6 text-center"></i><span class="font-medium" data-i18n="sidebar.theme">主题设置</span></button>
             <button data-modal="preferences-modal" class="nav-link w-full flex items-center gap-4 p-3 rounded-lg text-left" data-i18n-title="sidebar.preferences" title="偏好设置"><i class="fas fa-sliders text-xl w-6 text-center"></i><span class="font-medium" data-i18n="sidebar.preferences">偏好设置</span></button>
             <button data-modal="user-profile-modal" class="nav-link w-full flex items-center gap-4 p-3 rounded-lg text-left" data-i18n-title="sidebar.user" title="用户/UI设置"><i class="fas fa-cog text-xl w-6 text-center"></i><span class="font-medium" data-i18n="sidebar.user">用户/UI设置</span></button>
+            <button data-modal="sd-settings-modal" class="nav-link w-full flex items-center gap-4 p-3 rounded-lg text-left" data-i18n-title="sidebar.sdGeneration" title="SD生图设置"><i class="fas fa-image text-xl w-6 text-center"></i><span class="font-medium" data-i18n="sidebar.sdGeneration">SD生图</span></button>
         </nav>
     </aside>
 
@@ -1301,6 +1639,21 @@
                                 <div>
                                     <input id="char-editor-tags" type="text" data-i18n-placeholder="char.tags" placeholder="标签（用逗号分隔，如: 女性, 助手, 幻想）" class="w-full text-sm light-input rounded-md p-2">
                                 </div>
+                                
+                                <!-- SD角色提示词库 -->
+                                <div class="border rounded-lg p-3" style="border-color: var(--border-color); background-color: rgba(94, 91, 157, 0.05);">
+                                    <div class="flex justify-between items-center mb-2">
+                                        <label class="block text-sm font-medium" data-i18n="char.sdPromptLibrary">SD角色提示词库</label>
+                                        <button id="add-char-sd-prompt-btn" class="text-xs btn-primary px-2 py-1 rounded">
+                                            <i class="fas fa-plus mr-1"></i><span data-i18n="char.addPrompt">添加</span>
+                                        </button>
+                                    </div>
+                                    <div id="char-sd-prompts-list" class="space-y-2 max-h-40 overflow-y-auto">
+                                        <!-- 动态生成的提示词项 -->
+                                    </div>
+                                    <p class="text-xs text-gray-500 mt-2" data-i18n="char.sdPromptHint">为此角色添加专属的SD提示词，支持lora标签</p>
+                                </div>
+                                
                                 <div class="flex flex-wrap items-center gap-2">
                                      <button id="char-save-btn" class="flex-1 py-2 px-4 text-sm btn-primary rounded-lg"><i class="fas fa-save mr-2"></i><span data-i18n="char.save">保存</span></button>
                                      <button id="char-export-btn" data-i18n-title="char.export" title="导出为 .json" class="w-10 h-10 btn-secondary rounded-lg"><i class="fas fa-download"></i></button>
@@ -1488,6 +1841,190 @@
             </div>
         </div>
     </div>
+    
+    <!-- SD生图设置模态框 -->
+    <div id="sd-settings-modal" class="modal-overlay">
+        <div class="modal-content w-full h-full card p-0 flex flex-col">
+            <header class="flex justify-between items-center p-4 border-b theme-border-b flex-shrink-0 bg-opacity-90 backdrop-blur-sm z-10">
+                <h2 class="text-2xl font-bold primary-gradient-text flex items-center gap-3">
+                    <i class="fas fa-image"></i>
+                    <span data-i18n="sd.title">SD生图设置</span>
+                </h2>
+                <button class="close-modal-btn text-gray-400 hover:text-gray-800">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+            </header>
+
+            <div class="flex-1 overflow-y-auto p-6 space-y-6">
+                <!-- 启用开关 -->
+                <div class="card p-4">
+                    <label class="flex items-center justify-between cursor-pointer mb-4">
+                        <div>
+                            <h3 class="font-medium mb-1" data-i18n="sd.enable">启用SD生图</h3>
+                            <p class="text-sm text-gray-500" data-i18n="sd.enableHint">启用后，聊天时会自动添加CG生成提示</p>
+                        </div>
+                        <input type="checkbox" id="sd-enabled" class="w-5 h-5 accent-primary-color">
+                    </label>
+                    
+                    <!-- 大图模式 -->
+                    <label class="flex items-center justify-between cursor-pointer pt-4 border-t theme-border">
+                        <div>
+                            <h3 class="font-medium mb-1" data-i18n="sd.largeImageMode">大图模式</h3>
+                            <p class="text-sm text-gray-500" data-i18n="sd.largeImageModeHint">隐藏标题描述，生成的图片以大图形式直接显示</p>
+                        </div>
+                        <input type="checkbox" id="sd-large-image-mode" class="w-5 h-5 accent-primary-color">
+                    </label>
+                </div>
+
+                <!-- API配置 -->
+                <div class="card p-4">
+                    <h3 class="font-medium mb-3" data-i18n="sd.apiConfig">API配置</h3>
+                    <div class="space-y-3">
+                        <div>
+                            <label class="block text-sm font-medium mb-1" data-i18n="sd.apiUrl">API地址</label>
+                            <input type="text" id="sd-api-url" class="w-full light-input rounded-md p-2" placeholder="http://127.0.0.1:7860">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 基础参数 -->
+                <div class="card p-4">
+                    <h3 class="font-medium mb-3" data-i18n="sd.basicParams">基础参数</h3>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium mb-1" data-i18n="sd.width">宽度</label>
+                            <input type="number" id="sd-width" class="w-full light-input rounded-md p-2" value="512" min="64" max="2048" step="64">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium mb-1" data-i18n="sd.height">高度</label>
+                            <input type="number" id="sd-height" class="w-full light-input rounded-md p-2" value="512" min="64" max="2048" step="64">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium mb-1" data-i18n="sd.steps">采样步数</label>
+                            <input type="number" id="sd-steps" class="w-full light-input rounded-md p-2" value="20" min="1" max="150">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium mb-1" data-i18n="sd.cfgScale">CFG Scale</label>
+                            <input type="number" id="sd-cfg-scale" class="w-full light-input rounded-md p-2" value="7" min="1" max="30" step="0.5">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium mb-1" data-i18n="sd.batchSize">批量大小</label>
+                            <input type="number" id="sd-batch-size" class="w-full light-input rounded-md p-2" value="1" min="1" max="8">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium mb-1" data-i18n="sd.nIter">迭代次数</label>
+                            <input type="number" id="sd-n-iter" class="w-full light-input rounded-md p-2" value="1" min="1" max="10">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 采样器 -->
+                <div class="card p-4">
+                    <h3 class="font-medium mb-3" data-i18n="sd.sampler">采样器</h3>
+                    <select id="sd-sampler" class="w-full light-input rounded-md p-2">
+                        <option value="Euler">Euler</option>
+                        <option value="Euler a">Euler a</option>
+                        <option value="DPM++ 2M Karras">DPM++ 2M Karras</option>
+                        <option value="DPM++ SDE Karras">DPM++ SDE Karras</option>
+                        <option value="DDIM">DDIM</option>
+                        <option value="LMS">LMS</option>
+                        <option value="Heun">Heun</option>
+                    </select>
+                </div>
+
+                <!-- 种子 -->
+                <div class="card p-4">
+                    <h3 class="font-medium mb-3" data-i18n="sd.seed">随机种子</h3>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium mb-1" data-i18n="sd.seedValue">种子值 (-1为随机)</label>
+                            <input type="number" id="sd-seed" class="w-full light-input rounded-md p-2" value="-1">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium mb-1" data-i18n="sd.subseed">子种子 (-1为随机)</label>
+                            <input type="number" id="sd-subseed" class="w-full light-input rounded-md p-2" value="-1">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium mb-1" data-i18n="sd.subseedStrength">子种子强度</label>
+                            <input type="number" id="sd-subseed-strength" class="w-full light-input rounded-md p-2" value="0" min="0" max="1" step="0.1">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 高分辨率修复 -->
+                <div class="card p-4">
+                    <h3 class="font-medium mb-3" data-i18n="sd.hires">高分辨率修复</h3>
+                    <div class="space-y-3">
+                        <label class="flex items-center gap-2 cursor-pointer">
+                            <input type="checkbox" id="sd-enable-hr" class="w-4 h-4 accent-primary-color">
+                            <span class="text-sm" data-i18n="sd.enableHr">启用高分辨率修复</span>
+                        </label>
+                        <div id="sd-hr-options" class="space-y-3 pl-6">
+                            <div class="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-sm font-medium mb-1" data-i18n="sd.hrScale">放大倍数</label>
+                                    <input type="number" id="sd-hr-scale" class="w-full light-input rounded-md p-2" value="2" min="1" max="4" step="0.1">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium mb-1" data-i18n="sd.denoisingStrength">重绘幅度</label>
+                                    <input type="number" id="sd-denoising-strength" class="w-full light-input rounded-md p-2" value="0.7" min="0" max="1" step="0.05">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium mb-1" data-i18n="sd.hrSecondPassSteps">第二阶段步数</label>
+                                    <input type="number" id="sd-hr-second-pass-steps" class="w-full light-input rounded-md p-2" value="0" min="0" max="150">
+                                </div>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium mb-1" data-i18n="sd.hrUpscaler">上采样器</label>
+                                <select id="sd-hr-upscaler" class="w-full light-input rounded-md p-2">
+                                    <option value="Latent">Latent</option>
+                                    <option value="Latent (antialiased)">Latent (antialiased)</option>
+                                    <option value="Latent (bicubic)">Latent (bicubic)</option>
+                                    <option value="ESRGAN_4x">ESRGAN_4x</option>
+                                    <option value="R-ESRGAN 4x+">R-ESRGAN 4x+</option>
+                                    <option value="R-ESRGAN 4x+ Anime6B">R-ESRGAN 4x+ Anime6B</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 其他选项 -->
+                <div class="card p-4">
+                    <h3 class="font-medium mb-3" data-i18n="sd.otherOptions">其他选项</h3>
+                    <div class="space-y-2">
+                        <label class="flex items-center gap-2 cursor-pointer">
+                            <input type="checkbox" id="sd-restore-faces" class="w-4 h-4 accent-primary-color">
+                            <span class="text-sm" data-i18n="sd.restoreFaces">面部修复</span>
+                        </label>
+                        <label class="flex items-center gap-2 cursor-pointer">
+                            <input type="checkbox" id="sd-tiling" class="w-4 h-4 accent-primary-color">
+                            <span class="text-sm" data-i18n="sd.tiling">平铺</span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- 提示词 -->
+                <div class="card p-4">
+                    <h3 class="font-medium mb-3" data-i18n="sd.negativePrompt">负面提示词</h3>
+                    <textarea id="sd-negative-prompt" class="w-full light-input rounded-md p-2 resize-y" rows="4" placeholder="lowres, bad anatomy, bad hands, text, error...">lowres, bad anatomy, bad hands, text, error, missing fingers, extra digit, fewer digits, cropped, worst quality, low quality, normal quality, jpeg artifacts, signature, watermark, username, blurry</textarea>
+                </div>
+
+                <!-- 保存按钮 -->
+                <div class="flex gap-4">
+                    <button id="sd-test-btn" class="flex-1 py-2 btn-secondary rounded-lg">
+                        <i class="fas fa-flask mr-2"></i>
+                        <span data-i18n="sd.test">测试生成</span>
+                    </button>
+                    <button id="sd-save-btn" class="flex-1 py-2 btn-primary rounded-lg">
+                        <i class="fas fa-save mr-2"></i>
+                        <span data-i18n="sd.save">保存设置</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
     <!-- 用户管理模态框 (统一滚动版) -->
     <div id="user-profile-modal" class="modal-overlay">
         <div class="modal-content w-full h-full card p-0 flex flex-col">
@@ -2391,6 +2928,7 @@ body {
                     'sidebar.theme': '主题设置',
                     'sidebar.preferences': '偏好设置',
                     'sidebar.user': '用户/UI设置',
+                    'sidebar.sdGeneration': 'SD生图',
                     'sidebar.newChat': '新对话',
                     'sidebar.summarize': '总结聊天',
                     'sidebar.promptPreview': 'Prompt预览',
@@ -2444,7 +2982,43 @@ body {
                     'char.name': '角色名称',
                     'char.uploadAvatar': '上传头像',
                     'char.tags': '标签（用逗号分隔，如: 女性, 助手, 幻想）',
+                    'char.sdPromptLibrary': 'SD角色提示词库',
+                    'char.addPrompt': '添加',
+                    'char.sdPromptHint': '为此角色添加专属的SD提示词，支持lora标签',
                     'char.save': '保存',
+                    
+                    // SD生图设置
+                    'sd.title': 'SD生图设置',
+                    'sd.enable': '启用SD生图',
+                    'sd.enableHint': '启用后，聊天时会自动添加CG生成提示',
+                    'sd.largeImageMode': '大图模式',
+                    'sd.largeImageModeHint': '生成后自动切换为大图显示，隐藏标题和描述',
+                    'sd.apiConfig': 'API配置',
+                    'sd.apiUrl': 'API地址',
+                    'sd.basicParams': '基础参数',
+                    'sd.width': '宽度',
+                    'sd.height': '高度',
+                    'sd.steps': '采样步数',
+                    'sd.cfgScale': 'CFG Scale',
+                    'sd.batchSize': '批量大小',
+                    'sd.nIter': '迭代次数',
+                    'sd.sampler': '采样器',
+                    'sd.seed': '随机种子',
+                    'sd.seedValue': '种子值 (-1为随机)',
+                    'sd.subseed': '子种子 (-1为随机)',
+                    'sd.subseedStrength': '子种子强度',
+                    'sd.hires': '高分辨率修复',
+                    'sd.enableHr': '启用高分辨率修复',
+                    'sd.hrScale': '放大倍数',
+                    'sd.denoisingStrength': '重绘幅度',
+                    'sd.hrSecondPassSteps': '第二阶段步数',
+                    'sd.hrUpscaler': '上采样器',
+                    'sd.otherOptions': '其他选项',
+                    'sd.restoreFaces': '面部修复',
+                    'sd.tiling': '平铺',
+                    'sd.negativePrompt': '负面提示词',
+                    'sd.test': '测试生成',
+                    'sd.save': '保存设置',
                     'char.delete': '删除',
                     'char.duplicate': '复制',
                     'char.description': '角色描述 (性格, 外貌, 对话示例等)',
@@ -2783,6 +3357,7 @@ body {
                     'sidebar.theme': 'Theme',
                     'sidebar.preferences': 'Preferences',
                     'sidebar.user': 'User/UI',
+                    'sidebar.sdGeneration': 'SD Generation',
                     'sidebar.newChat': 'New Chat',
                     'sidebar.summarize': 'Summarize',
                     'sidebar.promptPreview': 'Prompt Preview',
@@ -2836,7 +3411,43 @@ body {
                     'char.name': 'Character Name',
                     'char.uploadAvatar': 'Upload Avatar',
                     'char.tags': 'Tags (comma-separated, e.g.: female, assistant, fantasy)',
+                    'char.sdPromptLibrary': 'SD Character Prompt Library',
+                    'char.addPrompt': 'Add',
+                    'char.sdPromptHint': 'Add exclusive SD prompts for this character, supports lora tags',
                     'char.save': 'Save',
+                    
+                    // SD Generation Settings
+                    'sd.title': 'SD Generation Settings',
+                    'sd.enable': 'Enable SD Generation',
+                    'sd.enableHint': 'When enabled, CG generation prompts will be automatically added during chat',
+                    'sd.largeImageMode': 'Large Image Mode',
+                    'sd.largeImageModeHint': 'Auto-switch to large image display after generation, hiding title and description',
+                    'sd.apiConfig': 'API Configuration',
+                    'sd.apiUrl': 'API URL',
+                    'sd.basicParams': 'Basic Parameters',
+                    'sd.width': 'Width',
+                    'sd.height': 'Height',
+                    'sd.steps': 'Sampling Steps',
+                    'sd.cfgScale': 'CFG Scale',
+                    'sd.batchSize': 'Batch Size',
+                    'sd.nIter': 'Iterations',
+                    'sd.sampler': 'Sampler',
+                    'sd.seed': 'Random Seed',
+                    'sd.seedValue': 'Seed Value (-1 for random)',
+                    'sd.subseed': 'Subseed (-1 for random)',
+                    'sd.subseedStrength': 'Subseed Strength',
+                    'sd.hires': 'High Resolution Fix',
+                    'sd.enableHr': 'Enable High Resolution Fix',
+                    'sd.hrScale': 'Upscale Factor',
+                    'sd.denoisingStrength': 'Denoising Strength',
+                    'sd.hrSecondPassSteps': 'Second Pass Steps',
+                    'sd.hrUpscaler': 'Upscaler',
+                    'sd.otherOptions': 'Other Options',
+                    'sd.restoreFaces': 'Restore Faces',
+                    'sd.tiling': 'Tiling',
+                    'sd.negativePrompt': 'Negative Prompt',
+                    'sd.test': 'Test Generation',
+                    'sd.save': 'Save Settings',
                     'char.delete': 'Delete',
                     'char.duplicate': 'Duplicate',
                     'char.description': 'Character Description (personality, appearance, dialogue examples, etc.)',
@@ -3421,6 +4032,7 @@ body {
                                 tags: char.tags || [],
                                 lastUsed: char.lastUsed || Date.now(),
                                 isFavorite: char.isFavorite || false,
+                                sdPrompts: char.sdPrompts || [], // 添加SD提示词库
                                 data: {
                                     name: char.name || '',
                                     gender: char.gender || '',
@@ -3436,6 +4048,7 @@ body {
                                     character_version: char.character_version || '',
                                     alternate_greetings: char.alternate_greetings || [],
                                     character_book: char.character_book || null,
+                                    sdPrompts: char.sdPrompts || [], // 添加SD提示词库
                                     // 兼容多种正则脚本字段位置：regex > extensions.regex_scripts > regex_scripts
                                     regex: char.regex || (char.extensions && char.extensions.regex_scripts) || char.regex_scripts || [],
                                     regex_enabled: char.regex_enabled !== undefined ? char.regex_enabled : (char.regex || (char.extensions && char.extensions.regex_scripts) || char.regex_scripts ? true : false)
@@ -3683,7 +4296,7 @@ body {
             });
 
             // --- Modal Logic ---
-            const mainModals = ['api-settings-modal', 'presets-modal', 'character-modal', 'world-info-modal', 'regex-modal', 'user-profile-modal', 'theme-settings-modal', 'preferences-modal'];
+            const mainModals = ['api-settings-modal', 'presets-modal', 'character-modal', 'world-info-modal', 'regex-modal', 'user-profile-modal', 'theme-settings-modal', 'preferences-modal', 'sd-settings-modal'];
             
             document.querySelectorAll('#main-nav button').forEach(button => {
                 button.addEventListener('click', () => { showModal(button.dataset.modal); });
@@ -3695,6 +4308,11 @@ body {
                     modal.classList.add('active');
                     document.querySelector(`[data-modal="${modalId}"]`).classList.add('active');
                     sidebar.classList.add('collapsed');
+                    
+                    // 当打开SD设置模态框时，更新UI
+                    if (modalId === 'sd-settings-modal' && window.SDGeneration) {
+                        window.SDGeneration.updateUI();
+                    }
                 }
             }
             function closeAllModals() {
@@ -3817,6 +4435,9 @@ body {
                 configs: {},
                 currentId: null,
             };
+            
+            // 暴露api对象到全局作用域，供SDGeneration等外部模块使用
+            window.api = api;
 
             // 辅助函数：从当前UI界面获取配置数据（所见即所得）
             function getApiValuesFromUI(isVision = false) {
@@ -4763,6 +5384,9 @@ body {
                 data: {},
                 activeCharacterId: null
             };
+            
+            // 将char暴露为全局变量，供其他模块访问
+            window.char = char;
 
             async function getCharacters() {
                 // 检查是否应该从IndexedDB加载（从index.html跳转过来）
@@ -4840,6 +5464,10 @@ body {
                                 }
                                 if (charData.data?.regex_enabled !== undefined) {
                                     indexCharData.regex_enabled = charData.data.regex_enabled;
+                                }
+                                // 显式保存SD提示词库
+                                if (charData.sdPrompts || charData.data?.sdPrompts) {
+                                    indexCharData.sdPrompts = charData.sdPrompts || charData.data.sdPrompts;
                                 }
                                 
                                 await idbStorage.saveCharacterToStore(indexCharData);
@@ -5078,7 +5706,7 @@ body {
             
             function showCharacterEditor(character) {
                 char.editor.id.value = character.id;
-                char.editor.avatarImg.src = character.avatar || 'https://placehold.co/128x128/5E5B9D/ffffff?text=AI';
+                char.editor.avatarImg.src = (character.avatar && character.avatar !== 'none') ? character.avatar : 'https://placehold.co/128x128/5E5B9D/ffffff?text=AI';
                 char.editor.name.value = character.name || '';
                 char.editor.desc.value = character.description || (character.data?.description || '');
                 char.editor.firstMes.value = character.first_mes || (character.data?.first_mes || '');
@@ -5102,6 +5730,15 @@ body {
             function populateCharacterEditor(character) {
                 showCharacterEditor(character);
                 renderAlternateGreetings(character);
+                
+                // 加载SD角色提示词库
+                if (window.SDGeneration) {
+                    const sdPrompts = character.sdPrompts || character.data?.sdPrompts || [];
+                    console.log('📖 加载SD提示词库:', character.name, sdPrompts);
+                    window.SDGeneration.loadCharacterPrompts(sdPrompts);
+                } else {
+                    console.warn('⚠️ SDGeneration未初始化，无法加载提示词库');
+                }
             }
 
             // 渲染备选开场白列表
@@ -5277,11 +5914,22 @@ body {
                 character.data.tags = tagsArray;
                 character.tags = tagsArray; // 同时保存到顶层
 
+                // 保存SD角色提示词库
+                if (window.SDGeneration) {
+                    const sdPrompts = window.SDGeneration.getCharacterPrompts();
+                    console.log('💾 保存SD提示词库:', sdPrompts);
+                    character.data.sdPrompts = sdPrompts;
+                    character.sdPrompts = sdPrompts; // 同时保存到顶层
+                } else {
+                    console.warn('⚠️ SDGeneration未初始化');
+                }
+
                 // **FIX**: Save character-specific world book if it was being edited
                 if (wi.charBook && wi.worldSelect.value === 'char_book') {
                     character.data.character_book = wi.charBook;
                 }
 
+                console.log('💾 保存角色数据:', character);
                 await saveCharacters();
                 renderCharacterSelect();
                 updateCharPreviewCard();
@@ -6737,6 +7385,20 @@ body {
             // --- Chat Logic ---
             const chatMessages = document.getElementById('chat-messages');
             
+            // 添加卡片点击事件处理
+            chatMessages.addEventListener('click', (e) => {
+                const cardWrapper = e.target.closest('.card-message-wrapper');
+                if (cardWrapper) {
+                    const cardId = cardWrapper.dataset.cardId;
+                    if (!cardId) return;
+                    const detailElement = document.getElementById(cardId);
+                    if (detailElement) {
+                        detailElement.classList.toggle('visible');
+                    }
+                    return;
+                }
+            });
+            
             // 自动滚动控制变量
             let autoScrollEnabled = true;
             
@@ -7061,7 +7723,8 @@ body {
             }
             
             async function addMessageToHistory(messageData) {
-                const messageId = `msg_${Date.now()}`;
+                // 生成UUID作为消息的唯一标识
+                const messageId = messageData.id || `msg_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
                 const message = { id: messageId, ...messageData };
                 chatHistory.push(message);
                 renderMessage(message);
@@ -7086,6 +7749,18 @@ body {
                         document.querySelectorAll('style[id^="style-"]').forEach(style => {
                             style.remove();
                         });
+                        
+                        // 清空CG图片索引映射，避免切换角色时图片索引混乱
+                        if (window.SDGeneration && window.SDGeneration._cgImageIndexMap) {
+                            window.SDGeneration._cgImageIndexMap.clear();
+                            window.SDGeneration._cgImageCounter = 0;
+                            console.log('🧹 已清空CG图片索引映射');
+                        }
+                        
+                        // 清空已处理占位符集合
+                        if (window.SDGeneration && window.SDGeneration.clearProcessedPlaceholders) {
+                            window.SDGeneration.clearProcessedPlaceholders();
+                        }
                         
                         // 获取可见消息（非隐藏）
                         const visibleMessages = chatHistory.filter(msg => !msg.hidden);
@@ -7140,6 +7815,18 @@ body {
                 document.querySelectorAll('style[id^="style-"]').forEach(style => {
                     style.remove();
                 });
+                
+                // 清空CG图片索引映射，避免重新渲染时图片索引混乱
+                if (window.SDGeneration && window.SDGeneration._cgImageIndexMap) {
+                    window.SDGeneration._cgImageIndexMap.clear();
+                    window.SDGeneration._cgImageCounter = 0;
+                    console.log('🧹 已清空CG图片索引映射');
+                }
+                
+                // 清空已处理占位符集合
+                if (window.SDGeneration && window.SDGeneration.clearProcessedPlaceholders) {
+                    window.SDGeneration.clearProcessedPlaceholders();
+                }
                 
                 // 获取可见消息（非隐藏）
                 const visibleMessages = chatHistory.filter(msg => !msg.hidden);
@@ -7360,6 +8047,11 @@ body {
                     return renderStatBar(statContent);
                 });
                 
+                // 第六步:如果启用了SD生图，替换CG格式为卡片占位符（流式生成中也实时替换）
+                if (window.SDGeneration && window.SDGeneration.enabled) {
+                    processedText = window.SDGeneration.replaceCGWithCards(processedText);
+                }
+                
                 return processedText;
             }
 
@@ -7458,7 +8150,12 @@ body {
                         finalContent = finalContent.replace(/\{\{user\}\}/gi, currentUserName);
                     }
                     
-                    // 第二步：提取并保护状态栏内容（在正则处理之前）
+                    // 第二步：如果启用了SD生图，替换CG格式为卡片HTML
+                    if (!isUser && window.SDGeneration && window.SDGeneration.enabled) {
+                        finalContent = window.SDGeneration.replaceCGWithCards(finalContent);
+                    }
+                    
+                    // 第三步：提取并保护状态栏内容（在正则处理之前）
                     const statBarPlaceholders = [];
                     // 使用更宽松的正则,避免引号等特殊字符冲突
                     const statBarRegex = /```([^`]*)```/gs;
@@ -7474,7 +8171,7 @@ body {
                         return match; // 保留原样（可能是代码块）
                     });
                     
-                    // 第三步：对AI消息应用正则表达式
+                    // 第四步：对AI消息应用正则表达式
                     if (!isUser) {
                         finalContent = applyRegex(finalContent);
                     }
@@ -9133,6 +9830,32 @@ body {
                     
                     console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
                 }
+                
+                // 如果启用了SD生图，添加CG提示作为system消息（必须在保存和预览之前）
+                if (window.SDGeneration && window.SDGeneration.enabled && messages.length > 0) {
+                    console.log('🎨 SD生图已启用，准备添加CG提示');
+                    
+                    // 检查最后一条消息是否已经是CG提示
+                    const lastMsg = messages[messages.length - 1];
+                    const cgPromptText = '在输出结束时或者关键情节请输出"CG"图片，使用这种格式：{{分享标题|简介15字以内|详细内容30-60字}}。\n\n重要：请根据场景中的角色数量和情节复杂度生成多个CG（通常3-5个）：\n- 如果有多个角色互动，为每个主要角色生成一张特写CG\n- 如果是复杂场景，从不同角度、时刻、情绪生成多张CG\n- 每个CG要有独特的视角和重点，避免重复\n\n举例（三人场景）：\n{{少女的微笑|温柔的表情|少女嘴角上扬，眼中闪烁着温柔的光芒，脸颊微微泛红，显得格外动人。}}\n{{少年的凝视|专注的眼神|少年目光深邃地看向前方，眉宇间透露出坚定，阳光在他脸上投下柔和的光影。}}\n{{孩童的欢笑|纯真的笑容|孩子张开双臂欢快地笑着，眼睛弯成月牙状，整个画面充满了童真与活力。}}\n{{三人合影|温馨的时刻|三个人并肩站在一起，背景是温暖的夕阳，每个人脸上都洋溢着幸福的笑容。}}';
+                    
+                    if (!lastMsg.content.includes('{{分享标题')) {
+                        // 添加一条system消息
+                        messages.push({
+                            role: 'system',
+                            content: cgPromptText
+                        });
+                        console.log('✅ 已添加CG提示作为system消息');
+                    } else {
+                        console.log('⚠️ 已存在CG提示，跳过添加');
+                    }
+                } else {
+                    console.log('⚠️ SD生图未启用或条件不满足:', {
+                        hasSDGeneration: !!window.SDGeneration,
+                        enabled: window.SDGeneration?.enabled,
+                        hasMessages: messages.length > 0
+                    });
+                }
 
                 // 保存构建的提示词供查看
                 window.lastConstructedPrompt = messages;
@@ -9541,6 +10264,8 @@ body {
                         // 流式完成后,最后更新一次确保显示完整内容
                         // 传入 false 表示非流式模式(内容已完整),使用更严格的正则
                         const finalProcessedContent = processStreamingContent(fullContent, false);
+                        
+                        // 直接使用处理后的内容（CG卡片替换已在processStreamingContent中完成）
                         contentDiv.innerHTML = finalProcessedContent;
                         if (autoScrollEnabled) {
                             chatMessages.scrollTop = chatMessages.scrollHeight;
@@ -10382,7 +11107,7 @@ You must structure your entire output strictly in the following format, without 
                     const nameEl = document.getElementById('current-user-name-preview');
                     const statusEl = document.getElementById('current-user-status-preview');
 
-                    if (avatarEl) avatarEl.src = user.avatar || 'https://placehold.co/48x48/E4E6EB/1A1A1D?text=U';
+                    if (avatarEl) avatarEl.src = (user.avatar && user.avatar !== 'none') ? user.avatar : 'https://placehold.co/48x48/E4E6EB/1A1A1D?text=U';
                     if (nameEl) nameEl.textContent = user.name || i18n.t('user.unnamed');
                     if (statusEl) statusEl.textContent = user.status || i18n.t('user.offline');
                 },
@@ -10397,7 +11122,7 @@ You must structure your entire output strictly in the following format, without 
 
                     // 填充表单
                     document.getElementById('user-editing-id').value = user.id;
-                    document.getElementById('user-editor-avatar').src = user.avatar || 'https://placehold.co/128x128/E4E6EB/1A1A1D?text=U';
+                    document.getElementById('user-editor-avatar').src = (user.avatar && user.avatar !== 'none') ? user.avatar : 'https://placehold.co/128x128/E4E6EB/1A1A1D?text=U';
                     document.getElementById('user-editor-name').value = user.name || '';
                     document.getElementById('user-editor-status').value = user.status || '';
                     document.getElementById('user-editor-description').value = user.description || '';
@@ -12074,6 +12799,1331 @@ You must structure your entire output strictly in the following format, without 
             loadSummarizeConfig();
 
         });
+    </script>
+
+    <!-- SD生图功能模块 -->
+    <script>
+        (function() {
+            // SD生图配置管理
+            const SDGeneration = {
+                enabled: false,
+                config: {},
+                
+                // 获取LLM API配置
+                getApiConfig() {
+                    // 尝试从全局window对象获取
+                    if (window.api && window.api.currentId && window.api.configs) {
+                        const config = window.api.configs[window.api.currentId];
+                        if (config) return config;
+                    }
+                    
+                    // 尝试从localStorage获取（备用方案）
+                    try {
+                        const savedConfigs = localStorage.getItem('api_configs_v1');
+                        const currentId = localStorage.getItem('current_api_id_v1');
+                        if (savedConfigs && currentId) {
+                            const configs = JSON.parse(savedConfigs);
+                            if (configs[currentId]) {
+                                return configs[currentId];
+                            }
+                        }
+                    } catch (e) {
+                        console.error('从localStorage获取API配置失败:', e);
+                    }
+                    
+                    // 如果都失败，返回null
+                    return null;
+                },
+                
+                async init() {
+                    // 加载配置
+                    await this.loadConfig();
+                    
+                    // 绑定UI事件
+                    this.bindEvents();
+                    
+                    // 初始化角色提示词库UI
+                    this.initCharacterPromptsUI();
+                },
+                
+                async loadConfig() {
+                    const savedConfig = await idbStorage.getItem('sd_config');
+                    if (savedConfig) {
+                        this.config = JSON.parse(savedConfig);
+                        this.enabled = this.config.enabled || false;
+                    } else {
+                        // 默认配置 - 使用驼峰命名
+                        this.config = {
+                            enabled: false,
+                            largeImageMode: true,
+                            apiUrl: 'http://127.0.0.1:7860',
+                            width: 1216,
+                            height: 832,
+                            steps: 20,
+                            cfgScale: 7,
+                            sampler: 'DPM++ 2M Karras',
+                            batchSize: 1,
+                            nIter: 1,
+                            seed: -1,
+                            subseed: -1,
+                            subseedStrength: 0,
+                            enableHr: false,
+                            hrScale: 2,
+                            denoisingStrength: 0.7,
+                            hrSecondPassSteps: 0,
+                            hrUpscaler: 'Latent',
+                            restoreFaces: false,
+                            tiling: false,
+                            negativePrompt: ''
+                          };
+                    }
+                },
+                
+                updateUI() {
+                    const elements = {
+                        'sd-enabled': this.config.enabled,
+                        'sd-large-image-mode': this.config.largeImageMode,
+                        'sd-api-url': this.config.apiUrl,
+                        'sd-width': this.config.width,
+                        'sd-height': this.config.height,
+                        'sd-steps': this.config.steps,
+                        'sd-cfg-scale': this.config.cfgScale,
+                        'sd-batch-size': this.config.batchSize,
+                        'sd-n-iter': this.config.nIter,
+                        'sd-sampler': this.config.sampler,
+                        'sd-seed': this.config.seed,
+                        'sd-subseed': this.config.subseed,
+                        'sd-subseed-strength': this.config.subseedStrength,
+                        'sd-enable-hr': this.config.enableHr,
+                        'sd-hr-scale': this.config.hrScale,
+                        'sd-denoising-strength': this.config.denoisingStrength,
+                        'sd-hr-second-pass-steps': this.config.hrSecondPassSteps,
+                        'sd-hr-upscaler': this.config.hrUpscaler,
+                        'sd-restore-faces': this.config.restoreFaces,
+                        'sd-tiling': this.config.tiling,
+                        'sd-negative-prompt': this.config.negativePrompt
+                    };
+                    
+                    Object.entries(elements).forEach(([id, value]) => {
+                        const el = document.getElementById(id);
+                        if (el) {
+                            if (el.type === 'checkbox') {
+                                el.checked = value;
+                            } else {
+                                el.value = value;
+                            }
+                        }
+                    });
+                },
+                
+                getConfigFromUI() {
+                    // 获取并清理API URL（移除查询参数和末尾斜杠）
+                    let apiUrl = document.getElementById('sd-api-url')?.value || 'http://127.0.0.1:7860';
+                    apiUrl = apiUrl.split('?')[0].split('#')[0]; // 移除 ?query 和 #hash
+                    apiUrl = apiUrl.replace(/\/+$/, ''); // 移除末尾的所有斜杠
+                    
+                    return {
+                        enabled: document.getElementById('sd-enabled')?.checked || false,
+                        largeImageMode: document.getElementById('sd-large-image-mode')?.checked || false,
+                        apiUrl: apiUrl,
+                        width: parseInt(document.getElementById('sd-width')?.value) || 512,
+                        height: parseInt(document.getElementById('sd-height')?.value) || 512,
+                        steps: parseInt(document.getElementById('sd-steps')?.value) || 50,
+                        cfgScale: parseFloat(document.getElementById('sd-cfg-scale')?.value) || 7,
+                        batchSize: parseInt(document.getElementById('sd-batch-size')?.value) || 1,
+                        nIter: parseInt(document.getElementById('sd-n-iter')?.value) || 1,
+                        sampler: document.getElementById('sd-sampler')?.value || 'Euler',
+                        seed: parseInt(document.getElementById('sd-seed')?.value) || -1,
+                        subseed: parseInt(document.getElementById('sd-subseed')?.value) || -1,
+                        subseedStrength: parseFloat(document.getElementById('sd-subseed-strength')?.value) || 0,
+                        enableHr: document.getElementById('sd-enable-hr')?.checked || false,
+                        hrScale: parseFloat(document.getElementById('sd-hr-scale')?.value) || 2,
+                        denoisingStrength: parseFloat(document.getElementById('sd-denoising-strength')?.value) || 0.7,
+                        hrSecondPassSteps: parseInt(document.getElementById('sd-hr-second-pass-steps')?.value) || 0,
+                        hrUpscaler: document.getElementById('sd-hr-upscaler')?.value || 'Latent',
+                        restoreFaces: document.getElementById('sd-restore-faces')?.checked || false,
+                        tiling: document.getElementById('sd-tiling')?.checked || false,
+                        negativePrompt: document.getElementById('sd-negative-prompt')?.value || ''
+                    };
+                },
+                
+                async saveConfig() {
+                    this.config = this.getConfigFromUI();
+                    this.enabled = this.config.enabled;
+                    await idbStorage.setItem('sd_config', JSON.stringify(this.config));
+                    alert('SD配置已保存！');
+                },
+                
+                bindEvents() {
+                    // 保存按钮
+                    document.getElementById('sd-save-btn')?.addEventListener('click', () => {
+                        this.saveConfig();
+                    });
+                    
+                    // 测试按钮
+                    document.getElementById('sd-test-btn')?.addEventListener('click', () => {
+                        this.testGeneration();
+                    });
+                    
+                    // 高分辨率修复开关
+                    document.getElementById('sd-enable-hr')?.addEventListener('change', (e) => {
+                        const options = document.getElementById('sd-hr-options');
+                        if (options) {
+                            options.style.opacity = e.target.checked ? '1' : '0.5';
+                            options.querySelectorAll('input, select').forEach(el => {
+                                el.disabled = !e.target.checked;
+                            });
+                        }
+                    });
+                },
+                
+                initCharacterPromptsUI() {
+                    const addBtn = document.getElementById('add-char-sd-prompt-btn');
+                    if (addBtn) {
+                        addBtn.addEventListener('click', () => this.addCharacterPromptItem());
+                    }
+                },
+                
+                addCharacterPromptItem(prompt = '', loraTag = '') {
+                    const list = document.getElementById('char-sd-prompts-list');
+                    if (!list) return;
+                    
+                    const item = document.createElement('div');
+                    item.className = 'flex gap-2 items-center p-2 border rounded';
+                    item.style.borderColor = 'var(--border-color)';
+                    item.innerHTML = `
+                        <input type="text" placeholder="提示词" value="${prompt}" class="prompt-text flex-1 text-xs light-input rounded p-1">
+                        <input type="text" placeholder="lora标签(可选)" value="${loraTag}" class="prompt-lora flex-1 text-xs light-input rounded p-1" style="min-width: 100px;">
+                        <button class="text-red-500 hover:text-red-700 text-xs px-2" onclick="this.parentElement.remove()">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    `;
+                    list.appendChild(item);
+                },
+                
+                getCharacterPrompts() {
+                    const list = document.getElementById('char-sd-prompts-list');
+                    if (!list) return [];
+                    
+                    const items = list.querySelectorAll('.flex.gap-2');
+                    const prompts = [];
+                    items.forEach(item => {
+                        const text = item.querySelector('.prompt-text')?.value.trim();
+                        const lora = item.querySelector('.prompt-lora')?.value.trim();
+                        if (text) {
+                            prompts.push({ prompt: text, loraTag: lora });
+                        }
+                    });
+                    return prompts;
+                },
+                
+                loadCharacterPrompts(prompts) {
+                    const list = document.getElementById('char-sd-prompts-list');
+                    if (!list) return;
+                    list.innerHTML = '';
+                    if (prompts && prompts.length > 0) {
+                        prompts.forEach(p => this.addCharacterPromptItem(p.prompt, p.loraTag));
+                    }
+                },
+                
+                // 解析CG格式
+                parseCGFormat(text) {
+                    // 使用非贪婪匹配，避免匹配到多余的内容
+                    const cgRegex = /\{\{([^|{}]+)\|([^|{}]+)\|([^{}]+?)\}\}/g;
+                    const matches = [];
+                    let match;
+                    while ((match = cgRegex.exec(text)) !== null) {
+                        matches.push({
+                            full: match[0],
+                            title: match[1].trim(),
+                            summary: match[2].trim(),
+                            description: match[3].trim()
+                        });
+                    }
+                    return matches;
+                },
+                
+                // 替换CG格式为占位符（用于MutationObserver识别）
+                // 用于跟踪已分配的图片索引（避免流式生成中图片变化）
+                _cgImageIndexMap: new Map(),
+                _cgImageCounter: 0,
+                
+                replaceCGWithCards(text) {
+                    // 将{{}}格式替换为完整的可交互卡片
+                    // 直接在流式生成中显示随机图片和生成按钮
+                    const cgRegex = /\{\{([^|{}]+)\|([^|{}]+)\|([^{}]+?)\}\}/g;
+                    let replacedCount = 0;
+                    
+                    // 在替换之前，先从现有DOM中提取已存在的卡片的图片索引
+                    // 这样可以在流式生成中保持图片不变
+                    const existingCards = document.querySelectorAll('.cg-card[data-image-index]');
+                    existingCards.forEach(card => {
+                        const title = card.querySelector('.cg-card-title')?.textContent;
+                        const imageIndex = parseInt(card.dataset.imageIndex);
+                        if (title && !isNaN(imageIndex) && !this._cgImageIndexMap.has(title)) {
+                            this._cgImageIndexMap.set(title, imageIndex);
+                            console.log('🔄 从现有卡片恢复图片索引:', title, '→', imageIndex);
+                        }
+                    });
+                    
+                    const result = text.replace(cgRegex, (match, title, summary, description) => {
+                        replacedCount++;
+                        // 创建CG数据
+                        const cgData = {
+                            title: title.trim(),
+                            summary: summary.trim(),
+                            description: description.trim(),
+                            full: match
+                        };
+                        const cgDataBase64 = btoa(encodeURIComponent(JSON.stringify(cgData)));
+                        
+                        // 使用标题作为key（标题通常最先完整且不再变化）
+                        const titleKey = cgData.title;
+                        if (!this._cgImageIndexMap.has(titleKey)) {
+                            this._cgImageIndexMap.set(titleKey, this._cgImageCounter % 5);
+                            this._cgImageCounter++;
+                            console.log('🎨 为新标题分配图片索引:', titleKey, '→', this._cgImageIndexMap.get(titleKey));
+                        }
+                        const imageIndex = this._cgImageIndexMap.get(titleKey);
+                        
+                        console.log('🎨 替换CG格式 #' + replacedCount + ':', { 
+                            title: titleKey, 
+                            imageIndex: imageIndex
+                        });
+                        
+                        const placeholderImages = [
+                            'https://picsum.photos/120/120?random=1',
+                            'https://picsum.photos/120/120?random=2',
+                            'https://picsum.photos/120/120?random=3',
+                            'https://picsum.photos/120/120?random=4',
+                            'https://picsum.photos/120/120?random=5'
+                        ];
+                        const randomImage = placeholderImages[imageIndex];
+                        
+                        // 创建完整的可交互卡片（包含随机图片和生成按钮）
+                        // 使用cg-placeholder class标记，以便MutationObserver可以识别并升级（如果需要从IndexedDB恢复图片）
+                        // 在data-image-index中保存图片索引，确保即使内容变化也能保持相同的图片
+                        return `<div class="cg-card cg-placeholder" data-cg-base64="${cgDataBase64}" data-image-index="${imageIndex}" style="position: relative;">
+    <div class="cg-card-main" onclick="SDGeneration.toggleCardDetails(this)">
+        <div class="cg-card-image" data-type="placeholder">
+            <img src="${randomImage}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 8px; border: none;" onerror="this.parentElement.innerHTML='<span>图片加载中...</span>'">
+        </div>
+        <div class="cg-card-content">
+            <div class="cg-card-title">${cgData.title}</div>
+            <div class="cg-card-description">${cgData.description}</div>
+        </div>
+        <button class="cg-card-generate-btn" onclick="event.stopPropagation(); SDGeneration.generateImage(this)" title="生成图片">
+            <i class="fas fa-magic"></i>
+        </button>
+    </div>
+    <div class="cg-card-details">
+        ${cgData.summary ? `<div class="cg-card-detail-summary">${cgData.summary}</div>` : ''}
+        ${cgData.description ? `<div class="cg-card-detail-description">${cgData.description}</div>` : ''}
+    </div>
+</div>`;
+                    });
+                    if (replacedCount > 0) {
+                        console.log('✅ 共替换了', replacedCount, '个CG格式');
+                    }
+                    return result;
+                },
+                
+                // 渲染CG卡片（支持从IndexedDB恢复图片）
+                async renderCGCard(cgData, messageId) {
+                    const card = document.createElement('div');
+                    card.className = 'cg-card';
+                    card.dataset.messageId = messageId;
+                    card.dataset.cgData = JSON.stringify(cgData);
+                    
+                    // 尝试从IndexedDB恢复保存的图片（传入cgData以生成唯一key）
+                    const savedImage = await this.restoreCGImage(messageId, cgData);
+                    
+                    // 如果启用了大图模式且已有图片，添加large-image-mode class
+                    if (this.config.largeImageMode && savedImage && savedImage.imageData) {
+                        card.classList.add('large-image-mode');
+                    }
+                    
+                    let imageHTML = '';
+                    let buttonIcon = 'fa-magic';
+                    let buttonTitle = '生成图片';
+                    
+                    if (savedImage && savedImage.imageData) {
+                        // 使用保存的图片
+                        imageHTML = `<img src="data:image/png;base64,${savedImage.imageData}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 8px; border: none;" onclick="SDGeneration.showFullImage(this.src)">`;
+                        buttonIcon = 'fa-redo-alt';
+                        buttonTitle = '重新生成';
+                    } else {
+                        // 使用占位图 - 使用标题的哈希值来确保同一标题总是显示相同的占位图
+                        const placeholderImages = [
+                            'https://picsum.photos/120/120?random=1',
+                            'https://picsum.photos/120/120?random=2',
+                            'https://picsum.photos/120/120?random=3',
+                            'https://picsum.photos/120/120?random=4',
+                            'https://picsum.photos/120/120?random=5'
+                        ];
+                        // 使用标题生成一个稳定的索引
+                        const titleHash = cgData.title.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+                        const imageIndex = titleHash % placeholderImages.length;
+                        const randomImage = placeholderImages[imageIndex];
+                        imageHTML = `<img src="${randomImage}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 8px; border: none;" onerror="this.parentElement.innerHTML='<span>图片加载中...</span>'">`;
+                    }
+                    
+                    card.innerHTML = `
+                        <div class="cg-card-main" onclick="SDGeneration.toggleCardDetails(this)">
+                            <div class="cg-card-image" data-type="${savedImage ? 'generated' : 'placeholder'}">
+                                ${imageHTML}
+                            </div>
+                            <div class="cg-card-content">
+                                <div class="cg-card-title">${cgData.title}</div>
+                                <div class="cg-card-description">${cgData.description}</div>
+                            </div>
+                            <button class="cg-card-generate-btn" onclick="event.stopPropagation(); SDGeneration.generateImage(this)" title="${buttonTitle}">
+                                <i class="fas ${buttonIcon}"></i>
+                            </button>
+                        </div>
+                        <div class="cg-card-details">
+                            ${cgData.summary ? `<div class="cg-card-detail-summary">${cgData.summary}</div>` : ''}
+                            ${cgData.description ? `<div class="cg-card-detail-description">${cgData.description}</div>` : ''}
+                        </div>
+                    `;
+                    
+                    return card;
+                },
+                
+                // 生成图片
+                async generateImage(button) {
+                    const card = button.closest('.cg-card');
+                    const cgData = JSON.parse(card.dataset.cgData);
+                    const messageId = card.dataset.messageId;
+                    
+                    button.disabled = true;
+                    button.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+                    
+                    try {
+                        console.log('🎨 ========== SD生图流程开始 ==========');
+                        console.log('📋 CG数据:', cgData);
+                        console.log('🆔 消息ID:', messageId);
+                        
+                        // 1. 先请求LLM生成提示词
+                        const characterPrompts = await this.getCharacterPromptsForCurrentChar();
+                        const currentCharName = char.activeCharacterId && char.data[char.activeCharacterId] 
+                            ? char.data[char.activeCharacterId].name 
+                            : '未知角色';
+                        
+                        console.log('👤 当前角色:', currentCharName);
+                        console.log('📚 角色提示词库:', characterPrompts);
+                        
+                        // 格式化角色提示词库（参考SD.html的格式）
+                        let characterDesc = '';
+                        if (characterPrompts.length > 0) {
+                            const formattedPrompts = characterPrompts
+                                .map(p => {
+                                    const loraInfo = p.loraTag ? `如果使用此提示词，必须在正向提示词里面添加<lora:${p.loraTag}>` : '';
+                                    return `=================\n${loraInfo ? loraInfo + '\n' : ''}${p.prompt}\n=================`;
+                                })
+                                .join('\n\n');
+                            
+                            characterDesc = `\n角色提示词库：\n${formattedPrompts}`;
+                        } else {
+                            characterDesc = '\n角色提示词库：无';
+                        }
+                        
+                        const promptGenerationRequest = `你是一个专业的AI绘画提示词生成专家。你的任务是根据用户提供的描述，生成高质量的Stable Diffusion绘画提示词。
+
+当前角色：${currentCharName}
+
+要求：
+1. 生成英文提示词，使用逗号分隔
+2. 包含画面主体、风格、质量标签
+3. 提示词要具体、详细
+4. 如果使用角色提示词库中的内容，必须严格按照格式要求添加对应的<lora:名称>标签
+5. 必须返回JSON格式，包含positive（正面提示词）和negative（负面提示词）两个字段
+6. 负面提示词应该包含常见的质量问题，如：lowres, bad anatomy, bad hands, text, error, missing fingers, extra digit, fewer digits, cropped, worst quality, low quality, normal quality, jpeg artifacts, signature, watermark, username, blurry${characterDesc}
+
+请根据以下关于${currentCharName}的描述生成绘画提示词，返回格式：
+{
+  "positive": "正面提示词内容",
+  "negative": "负面提示词内容"
+}
+
+CG信息：
+标题：${cgData.title}
+简介：${cgData.summary}
+详细描述：${cgData.description}`;
+
+                        console.log('📝 完整提示词请求:');
+                        console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+                        console.log(promptGenerationRequest);
+                        console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+                        console.log('📏 提示词长度:', promptGenerationRequest.length, '字符');
+
+                        // 获取API配置
+                        const apiConfig = this.getApiConfig();
+                        if (!apiConfig?.url || !apiConfig?.key || !apiConfig.model) {
+                            throw new Error('API配置不完整，请先配置API设置');
+                        }
+                        
+                        console.log('🔧 API配置:', {
+                            url: apiConfig.url,
+                            model: apiConfig.model,
+                            hasKey: !!apiConfig.key
+                        });
+                        
+                        // 调用LLM API生成提示词
+                        const endpoint = `${apiConfig.url.replace(/\/$/, '')}/chat/completions`;
+                        console.log('🌐 请求端点:', endpoint);
+                        
+                        const requestBody = {
+                            model: apiConfig.model,
+                            messages: [
+                                { role: 'user', content: promptGenerationRequest }
+                            ],
+                            max_tokens: 1000000,
+                            temperature: 0.7
+                        };
+                        
+                        console.log('📤 LLM请求体:', JSON.stringify(requestBody, null, 2));
+                        
+                        const startTime = Date.now();
+                        const response = await fetch(endpoint, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Authorization': `Bearer ${apiConfig.key}`
+                            },
+                            body: JSON.stringify(requestBody)
+                        });
+                        
+                        const endTime = Date.now();
+                        console.log('⏱️ LLM响应时间:', (endTime - startTime) + 'ms');
+                        
+                        if (!response.ok) {
+                            const errorText = await response.text();
+                            console.error('❌ LLM API错误响应:', errorText);
+                            throw new Error(`LLM API错误: ${response.status} - ${errorText}`);
+                        }
+                        
+                        const data = await response.json();
+                        console.log('📥 LLM完整响应:', JSON.stringify(data, null, 2));
+                        
+                        const generatedContent = data.choices?.[0]?.message?.content?.trim();
+                        
+                        if (!generatedContent) {
+                            console.error('❌ LLM返回数据格式错误，完整响应:', data);
+                            throw new Error('LLM返回数据格式错误');
+                        }
+                        
+                        console.log('📥 LLM原始返回内容:');
+                        console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+                        console.log(generatedContent);
+                        console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+                        
+                        // 解析提示词
+                        const { positive: positivePrompt, negative: negativePrompt } = this.parsePromptResponse(generatedContent);
+                        
+                        console.log('✅ 最终提示词:');
+                        console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+                        console.log('正面提示词:', positivePrompt);
+                        console.log('负面提示词:', negativePrompt);
+                        console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+                        console.log('📏 正面提示词长度:', positivePrompt.length, '字符');
+                        console.log('📏 负面提示词长度:', negativePrompt.length, '字符');
+                        
+                        // 2. 调用SD API生成图片
+                        console.log('🖼️ 步骤2: 调用SD API生成图片');
+                        const imageData = await this.callSDAPI(positivePrompt, negativePrompt);
+                        
+                        console.log('✅ 图片生成成功');
+                        console.log('🎨 ========== SD生图流程结束 ==========');
+                        
+                        // 3. 更新卡片显示生成的图片
+                        const imageContainer = card.querySelector('.cg-card-image');
+                        imageContainer.dataset.type = 'generated';
+                        imageContainer.innerHTML = `<img src="data:image/png;base64,${imageData}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 8px; border: none;" onclick="SDGeneration.showFullImage(this.src)">`;
+                        
+                        // 4. 保存到IndexedDB
+                        await this.saveCGImage(messageId, cgData, imageData, positivePrompt, negativePrompt);
+                        
+                        // 5. 如果启用了大图模式，切换到大图显示
+                        if (this.config.largeImageMode) {
+                            card.classList.add('large-image-mode');
+                            console.log('✅ 已切换到大图模式');
+                        }
+                        
+                        // 6. 更新按钮状态为"重新生成"
+                        button.innerHTML = '<i class="fas fa-check"></i>';
+                        button.title = '生成成功';
+                        setTimeout(() => {
+                            button.innerHTML = '<i class="fas fa-redo-alt"></i>';
+                            button.title = '重新生成';
+                            button.disabled = false;
+                        }, 2000);
+                        
+                    } catch (error) {
+                        console.error('生成图片失败:', error);
+                        alert('生成图片失败: ' + error.message);
+                        button.innerHTML = '<i class="fas fa-magic"></i>';
+                        button.disabled = false;
+                    }
+                },
+                
+                // 解析LLM返回的提示词（支持JSON格式）
+                parsePromptResponse(content) {
+                    let positivePrompt = '';
+                    let negativePrompt = '';
+                    
+                    try {
+                        // 尝试提取JSON（可能被markdown代码块包裹）
+                        let jsonStr = content;
+                        const jsonMatch = content.match(/```(?:json)?\s*(\{[\s\S]*?\})\s*```/);
+                        if (jsonMatch) {
+                            jsonStr = jsonMatch[1];
+                        } else if (!content.trim().startsWith('{')) {
+                            // 如果不是JSON格式，尝试查找JSON部分
+                            const jsonStart = content.indexOf('{');
+                            const jsonEnd = content.lastIndexOf('}');
+                            if (jsonStart !== -1 && jsonEnd !== -1) {
+                                jsonStr = content.substring(jsonStart, jsonEnd + 1);
+                            }
+                        }
+                        
+                        const parsed = JSON.parse(jsonStr);
+                        positivePrompt = parsed.positive || '';
+                        negativePrompt = parsed.negative || '';
+                        
+                        console.log('✅ 成功解析JSON格式提示词');
+                    } catch (e) {
+                        console.warn('⚠️ JSON解析失败，使用原始内容作为正面提示词:', e.message);
+                        positivePrompt = content;
+                        negativePrompt = '';
+                    }
+                    
+                    // 叠加用户设置的负面提示词
+                    const userNegativePrompt = this.config.negativePrompt || '';
+                    if (userNegativePrompt) {
+                        negativePrompt = negativePrompt 
+                            ? `${negativePrompt}, ${userNegativePrompt}` 
+                            : userNegativePrompt;
+                    }
+                    
+                    return { positive: positivePrompt, negative: negativePrompt };
+                },
+                
+                // 调用SD API (使用fetch，POST JSON格式)
+                async callSDAPI(prompt, negativePrompt = null) {
+                    const params = {
+                        // 基础参数
+                        prompt: prompt,
+                        negative_prompt: negativePrompt !== null ? negativePrompt : (this.config.negativePrompt || ''),
+                        width: this.config.width || 512,
+                        height: this.config.height || 512,
+                        steps: this.config.steps || 50,
+                        cfg_scale: this.config.cfgScale || 7,
+                        sampler_name: this.config.sampler || 'Euler',
+                        sampler_index: this.config.sampler || 'Euler',
+                        
+                        // 高清修复参数
+                        enable_hr: this.config.enableHr || false,
+                        denoising_strength: this.config.enableHr ? (this.config.denoisingStrength || 0.7) : 0,
+                        hr_scale: this.config.hrScale || 2,
+                        hr_upscaler: this.config.hrUpscaler || 'Latent',
+                        hr_second_pass_steps: this.config.hrSecondPassSteps || 0,
+                        hr_resize_x: 0,
+                        hr_resize_y: 0,
+                        firstphase_width: 0,
+                        firstphase_height: 0,
+                        
+                        // 种子参数
+                        seed: this.config.seed || -1,
+                        subseed: this.config.subseed || -1,
+                        subseed_strength: this.config.subseedStrength || 0,
+                        seed_resize_from_h: -1,
+                        seed_resize_from_w: -1,
+                        
+                        // 批量参数
+                        batch_size: this.config.batchSize || 1,
+                        n_iter: this.config.nIter || 1,
+                        
+                        // 其他参数
+                        restore_faces: this.config.restoreFaces || false,
+                        tiling: this.config.tiling || false,
+                        do_not_save_samples: true,
+                        do_not_save_grid: true,
+                        eta: 0,
+                        s_min_uncond: 0,
+                        s_churn: 0,
+                        s_tmax: 0,
+                        s_tmin: 0,
+                        s_noise: 1,
+                        
+                        // 风格
+                        styles: [],
+                        
+                        // 覆盖设置
+                        override_settings: {},
+                        override_settings_restore_afterwards: true,
+                        
+                        // 脚本参数
+                        script_args: [],
+                        script_name: null,
+                        
+                        // 输出控制
+                        send_images: true,
+                        save_images: false,
+                        alwayson_scripts: {}
+                    };
+                    
+                    console.log('📤 SD API请求参数:');
+                    console.log('  - 正面提示词:', params.prompt);
+                    console.log('  - 负面提示词:', params.negative_prompt);
+                    console.log('  - 尺寸:', `${params.width}x${params.height}`);
+                    console.log('  - 步数:', params.steps);
+                    console.log('  - CFG Scale:', params.cfg_scale);
+                    console.log('  - 采样器:', params.sampler_name);
+                    console.log('  - 高清修复:', params.enable_hr);
+                    
+                    // 清理API URL（移除可能的查询参数和末尾斜杠）
+                    let cleanApiUrl = this.config.apiUrl.split('?')[0].split('#')[0];
+                    cleanApiUrl = cleanApiUrl.replace(/\/+$/, ''); // 移除末尾的所有斜杠
+                    
+                    const response = await fetch(`${cleanApiUrl}/sdapi/v1/txt2img`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify(params)
+                    });
+                    
+                    if (!response.ok) {
+                        const errorText = await response.text();
+                        throw new Error(`SD API请求失败 (${response.status}): ${errorText}`);
+                    }
+                    
+                    const data = await response.json();
+                    console.log('✅ SD API响应成功，图片数量:', data.images?.length || 0);
+                    return data.images[0];
+                },
+                
+                // 测试生成
+                async testGeneration() {
+                    const btn = document.getElementById('sd-test-btn');
+                    const originalText = btn.innerHTML;
+                    btn.disabled = true;
+                    btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>测试中...';
+                    
+                    try {
+                        // 诊断信息
+                        console.log('🔍 开始SD API诊断');
+                        console.log('当前页面地址:', window.location.href);
+                        console.log('完整配置对象:', this.config);
+                        console.log('SD API地址:', this.config.apiUrl);
+                        console.log('API地址类型:', typeof this.config.apiUrl);
+                        
+                        // 检查混合内容问题
+                        const isHttps = window.location.protocol === 'https:';
+                        const apiIsHttp = this.config.apiUrl.startsWith('http://');
+                        const apiIsLocalhost = this.config.apiUrl.includes('127.0.0.1') || this.config.apiUrl.includes('localhost');
+                        
+                        if (isHttps && apiIsHttp) {
+                            const errorMsg = `❌ 混合内容错误\n\n当前网站使用 HTTPS，但SD API使用 HTTP\n浏览器安全策略阻止了此请求\n\n解决方案：\n1. 使用 HTTP 访问本网站（推荐）\n2. 为SD API配置HTTPS（使用cloudflared等工具）\n3. 在浏览器中允许不安全内容`;
+                            alert(errorMsg);
+                            console.error(errorMsg);
+                            return;
+                        }
+                        
+                        if (apiIsLocalhost && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
+                            const errorMsg = `❌ 本地地址访问错误\n\n您配置的API地址是 ${this.config.apiUrl}\n但当前页面地址是 ${window.location.href}\n\n127.0.0.1 只能在本机访问！\n\n解决方案：\n1. 将API地址改为电脑的局域网IP\n   例如：http://192.168.1.100:7860\n2. 或者在本机浏览器中打开此页面\n   使用：http://127.0.0.1:端口号\n\n如何查找电脑IP：\nWindows: 运行 ipconfig\nMac/Linux: 运行 ifconfig`;
+                            alert(errorMsg);
+                            console.error(errorMsg);
+                            return;
+                        }
+                        
+                        // 先测试连接
+                        console.log('🔌 测试API连接...');
+                        btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>测试连接...';
+                        
+                        // 清理API URL（移除可能的查询参数和末尾斜杠）
+                        let cleanApiUrl = this.config.apiUrl.split('?')[0].split('#')[0];
+                        cleanApiUrl = cleanApiUrl.replace(/\/+$/, ''); // 移除末尾的所有斜杠
+                        console.log('清理后的API地址:', cleanApiUrl);
+                        
+                        try {
+                            const testResponse = await fetch(`${cleanApiUrl}/sdapi/v1/options`, {
+                                method: 'GET',
+                                headers: { 'Content-Type': 'application/json' }
+                            });
+                            
+                            if (testResponse.ok) {
+                                console.log('✅ API连接成功');
+                            } else {
+                                throw new Error(`API返回错误: ${testResponse.status}`);
+                            }
+                        } catch (connectError) {
+                            let errorMsg = '❌ 无法连接到SD API\n\n';
+                            
+                            if (connectError.message.includes('Failed to fetch')) {
+                                errorMsg += '连接被拒绝或超时\n\n可能原因：\n';
+                                errorMsg += '1. Stable Diffusion WebUI 未启动\n';
+                                errorMsg += '2. API地址配置错误\n';
+                                errorMsg += '3. 防火墙阻止了连接\n';
+                                errorMsg += '4. CORS配置问题\n\n';
+                                errorMsg += '解决步骤：\n';
+                                errorMsg += '1. 确保SD WebUI已启动\n';
+                                errorMsg += '2. 启动时添加参数：--api --cors-allow-origins=*\n';
+                                errorMsg += `3. 在浏览器新标签页访问：${this.config.apiUrl}\n`;
+                                errorMsg += '   如果无法打开，说明地址错误或服务未启动\n';
+                                errorMsg += '4. 检查防火墙设置';
+                            } else {
+                                errorMsg += connectError.message;
+                            }
+                            
+                            alert(errorMsg);
+                            console.error(errorMsg);
+                            throw connectError;
+                        }
+                        
+                        // 连接成功，开始测试生成
+                        console.log('🎨 开始测试生成');
+                        btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>生成中...';
+                        
+                        const testPrompt = '1girl, beautiful, masterpiece, best quality';
+                        const imageData = await this.callSDAPI(testPrompt);
+                        
+                        // 显示生成的图片
+                        this.showFullImage(`data:image/png;base64,${imageData}`);
+                        alert('✅ 测试生成成功！\n\nSD API工作正常，可以开始使用了。');
+                        console.log('✅ 测试成功');
+                        
+                    } catch (error) {
+                        console.error('❌ 测试失败:', error);
+                        
+                        // 如果不是连接错误，显示其他错误
+                        if (!error.message.includes('连接')) {
+                            alert('测试生成失败:\n\n' + error.message + '\n\n请查看浏览器控制台了解详情');
+                        }
+                    } finally {
+                        btn.disabled = false;
+                        btn.innerHTML = originalText;
+                    }
+                },
+                
+                // 获取当前角色的提示词库
+                async getCharacterPromptsForCurrentChar() {
+                    if (!char.activeCharacterId) return [];
+                    const character = char.data[char.activeCharacterId];
+                    const prompts = character?.sdPrompts || character?.data?.sdPrompts || [];
+                    console.log('📋 获取当前角色SD提示词库:', char.activeCharacterId, prompts);
+                    return prompts;
+                },
+                
+                // 保存CG图片（使用消息ID+标题作为唯一key，确保每个卡片独立保存）
+                async saveCGImage(messageId, cgData, imageData, positivePrompt, negativePrompt) {
+                    // 使用消息ID和标题的组合作为唯一key，避免同一消息的多个卡片共享图片
+                    const uniqueKey = `cg_image_${messageId}_${cgData.title}`;
+                    await idbStorage.setItem(uniqueKey, JSON.stringify({
+                        messageId,
+                        cgData,
+                        imageData,
+                        prompt: positivePrompt,
+                        positivePrompt: positivePrompt,
+                        negativePrompt: negativePrompt,
+                        timestamp: Date.now()
+                    }));
+                    console.log('💾 图片已保存到IndexedDB，key:', uniqueKey);
+                },
+                
+                // 恢复保存的CG图片（使用消息ID+标题作为唯一key）
+                async restoreCGImage(messageId, cgData) {
+                    const uniqueKey = `cg_image_${messageId}_${cgData.title}`;
+                    const savedData = await idbStorage.getItem(uniqueKey);
+                    if (savedData) {
+                        try {
+                            const data = JSON.parse(savedData);
+                            console.log('🔄 恢复保存的图片，key:', uniqueKey);
+                            return data;
+                        } catch (e) {
+                            console.error('解析保存的图片数据失败:', e);
+                        }
+                    }
+                    return null;
+                },
+                
+                // 切换卡片详细信息显示
+                toggleCardDetails(mainElement) {
+                    const card = mainElement.closest('.cg-card');
+                    const detailsElement = card.querySelector('.cg-card-details');
+                    if (detailsElement) {
+                        detailsElement.classList.toggle('show');
+                    }
+                },
+                
+                // 显示大图
+                showFullImage(src) {
+                    const modal = document.createElement('div');
+                    modal.style.cssText = 'position: fixed; inset: 0; background: rgba(0,0,0,0.9); display: flex; align-items: center; justify-content: center; z-index: 9999; cursor: pointer;';
+                    modal.innerHTML = `<img src="${src}" style="max-width: 90%; max-height: 90%; border-radius: 8px;">`;
+                    modal.onclick = () => document.body.removeChild(modal);
+                    document.body.appendChild(modal);
+                },
+                
+                // 生成卡片图片
+                async generateCardImage(button) {
+                    if (!this.enabled) {
+                        alert('请先在SD生图设置中启用SD生图功能');
+                        return;
+                    }
+                    
+                    const card = button.closest('.card-message-wrapper');
+                    if (!card) return;
+                    
+                    const cardId = card.dataset.cardId;
+                    const title = card.dataset.cardTitle || '';
+                    const description = card.dataset.cardDescription || '';
+                    const messageText = `${title}, ${description}`;
+                    
+                    button.disabled = true;
+                    button.classList.add('generating');
+                    
+                    try {
+                        console.log('🎨 ========== 卡片图片生成流程开始 ==========');
+                        console.log('📋 卡片数据:', { cardId, title, description, messageText });
+                        
+                        // 1. 先请求LLM生成提示词
+                        const characterPrompts = await this.getCharacterPromptsForCurrentChar();
+                        const currentCharName = char.activeCharacterId && char.data[char.activeCharacterId] 
+                            ? char.data[char.activeCharacterId].name 
+                            : '未知角色';
+                        
+                        console.log('👤 当前角色:', currentCharName);
+                        console.log('📚 角色提示词库:', characterPrompts);
+                        
+                        // 格式化角色提示词库（参考SD.html的格式）
+                        let characterDesc = '';
+                        if (characterPrompts.length > 0) {
+                            const formattedPrompts = characterPrompts
+                                .map(p => {
+                                    const loraInfo = p.loraTag ? `如果使用此提示词，必须在正向提示词里面添加<lora:${p.loraTag}>` : '';
+                                    return `=================\n${loraInfo ? loraInfo + '\n' : ''}${p.prompt}\n=================`;
+                                })
+                                .join('\n\n');
+                            
+                            characterDesc = `\n角色提示词库：\n${formattedPrompts}`;
+                        } else {
+                            characterDesc = '\n角色提示词库：无';
+                        }
+                        
+                        const promptGenerationRequest = `你是一个专业的AI绘画提示词生成专家。你的任务是根据用户提供的描述，生成高质量的Stable Diffusion绘画提示词。
+
+当前角色：${currentCharName}
+
+要求：
+1. 生成英文提示词，使用逗号分隔
+2. 包含画面主体、风格、质量标签
+3. 提示词要具体、详细
+4. 如果使用角色提示词库中的内容，必须严格按照格式要求添加对应的<lora:名称>标签
+5. 必须返回JSON格式，包含positive（正面提示词）和negative（负面提示词）两个字段
+6. 负面提示词应该包含常见的质量问题，如：lowres, bad anatomy, bad hands, text, error, missing fingers, extra digit, fewer digits, cropped, worst quality, low quality, normal quality, jpeg artifacts, signature, watermark, username, blurry${characterDesc}
+
+请根据以下关于${currentCharName}的描述生成绘画提示词，返回格式：
+{
+  "positive": "正面提示词内容",
+  "negative": "负面提示词内容"
+}
+
+描述：
+${messageText}`;
+
+                        console.log('📝 完整提示词请求:');
+                        console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+                        console.log(promptGenerationRequest);
+                        console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+                        console.log('📏 提示词长度:', promptGenerationRequest.length, '字符');
+                        
+                        // 获取API配置
+                        const apiConfig = this.getApiConfig();
+                        if (!apiConfig?.url || !apiConfig?.key || !apiConfig.model) {
+                            throw new Error('API配置不完整，请先配置API设置');
+                        }
+                        
+                        console.log('🔧 API配置:', {
+                            url: apiConfig.url,
+                            model: apiConfig.model,
+                            hasKey: !!apiConfig.key
+                        });
+                        
+                        // 调用LLM API生成提示词
+                        const endpoint = `${apiConfig.url.replace(/\/$/, '')}/chat/completions`;
+                        console.log('🌐 请求端点:', endpoint);
+                        
+                        const requestBody = {
+                            model: apiConfig.model,
+                            messages: [
+                                { role: 'user', content: promptGenerationRequest }
+                            ],
+                            max_tokens: 1000000,
+                            temperature: 0.7
+                        };
+                        
+                        console.log('📤 LLM请求体:', JSON.stringify(requestBody, null, 2));
+                        
+                        const startTime = Date.now();
+                        const response = await fetch(endpoint, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Authorization': `Bearer ${apiConfig.key}`
+                            },
+                            body: JSON.stringify(requestBody)
+                        });
+                        
+                        const endTime = Date.now();
+                        console.log('⏱️ LLM响应时间:', (endTime - startTime) + 'ms');
+                        
+                        if (!response.ok) {
+                            const errorText = await response.text();
+                            console.error('❌ LLM API错误响应:', errorText);
+                            throw new Error(`LLM API错误: ${response.status} - ${errorText}`);
+                        }
+                        
+                        const data = await response.json();
+                        console.log('📥 LLM完整响应:', JSON.stringify(data, null, 2));
+                        
+                        const generatedContent = data.choices?.[0]?.message?.content?.trim();
+                        
+                        if (!generatedContent) {
+                            console.error('❌ LLM返回数据格式错误，完整响应:', data);
+                            throw new Error('LLM返回数据格式错误');
+                        }
+                        
+                        console.log('📥 LLM原始返回内容:');
+                        console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+                        console.log(generatedContent);
+                        console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+                        
+                        // 解析提示词
+                        const { positive: positivePrompt, negative: negativePrompt } = this.parsePromptResponse(generatedContent);
+                        
+                        console.log('✅ 最终提示词:');
+                        console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+                        console.log('正面提示词:', positivePrompt);
+                        console.log('负面提示词:', negativePrompt);
+                        console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+                        console.log('📏 正面提示词长度:', positivePrompt.length, '字符');
+                        console.log('📏 负面提示词长度:', negativePrompt.length, '字符');
+                        
+                        // 2. 调用SD API生成图片
+                        console.log('🖼️ 步骤2: 调用SD API生成图片');
+                        const imageData = await this.callSDAPI(positivePrompt, negativePrompt);
+                        const fullImageData = 'data:image/png;base64,' + imageData;
+                        
+                        console.log('✅ 图片生成成功');
+                        console.log('🎨 ========== 卡片图片生成流程结束 ==========');
+                        
+                        // 3. 保存到IndexedDB
+                        if (cardId) {
+                            await idbStorage.setItem(`card_image_${cardId}`, JSON.stringify({
+                                cardId: cardId,
+                                imageData: fullImageData,
+                                title: title,
+                                description: description,
+                                prompt: positivePrompt,
+                                negativePrompt: negativePrompt,
+                                timestamp: Date.now()
+                            }));
+                            console.log('💾 卡片图片已保存到IndexedDB:', cardId);
+                        }
+                        
+                        // 4. 更新卡片图片
+                        const img = card.querySelector('.card-image');
+                        if (img) {
+                            img.src = fullImageData;
+                            img.dataset.description = description;
+                            img.dataset.generated = 'true';
+                        }
+                        
+                        // 5. 在聊天中显示大图
+                        const messageGroup = card.closest('.chat-message-group');
+                        if (messageGroup) {
+                            // 检查是否已经有大图显示
+                            let largeImageContainer = messageGroup.querySelector('.card-large-image-container');
+                            if (!largeImageContainer) {
+                                largeImageContainer = document.createElement('div');
+                                largeImageContainer.className = 'card-large-image-container';
+                                largeImageContainer.style.cssText = 'margin-top: 12px; width: 100%; max-width: 400px;';
+                                
+                                const largeImg = document.createElement('img');
+                                largeImg.style.cssText = 'width: 100%; height: auto; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); cursor: pointer;';
+                                largeImg.onclick = () => this.viewCardImage(largeImg);
+                                
+                                const descDiv = document.createElement('div');
+                                descDiv.style.cssText = 'margin-top: 8px; padding: 8px 12px; background: rgba(0,0,0,0.05); border-radius: 8px; font-size: 0.85rem; color: #666; line-height: 1.5;';
+                                descDiv.textContent = description;
+                                
+                                largeImageContainer.appendChild(largeImg);
+                                if (description) {
+                                    largeImageContainer.appendChild(descDiv);
+                                }
+                                
+                                // 插入到卡片后面
+                                const bubble = card.closest('.chat-bubble');
+                                if (bubble) {
+                                    bubble.appendChild(largeImageContainer);
+                                }
+                            }
+                            
+                            // 更新大图
+                            const largeImg = largeImageContainer.querySelector('img');
+                            if (largeImg) {
+                                largeImg.src = fullImageData;
+                                largeImg.dataset.description = description;
+                            }
+                        }
+                        
+                        // 6. 显示成功提示
+                        button.innerHTML = '<i class="fas fa-check"></i>';
+                        setTimeout(() => {
+                            button.innerHTML = '<i class="fas fa-magic"></i>';
+                            button.classList.remove('generating');
+                            button.disabled = false;
+                        }, 2000);
+                        
+                    } catch (error) {
+                        console.error('生成卡片图片失败:', error);
+                        alert('生成图片失败: ' + error.message);
+                        button.innerHTML = '<i class="fas fa-magic"></i>';
+                        button.classList.remove('generating');
+                        button.disabled = false;
+                    }
+                },
+                
+                // 查看卡片图片（带描述）
+                viewCardImage(img) {
+                    const description = img.dataset.description || img.closest('.card-message-wrapper')?.dataset.cardDescription || '';
+                    
+                    const modal = document.createElement('div');
+                    modal.style.cssText = 'position: fixed; inset: 0; background: rgba(0,0,0,0.9); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 9999; cursor: pointer;';
+                    
+                    const imgElement = document.createElement('img');
+                    imgElement.src = img.src;
+                    imgElement.style.cssText = 'max-width: 90%; max-height: 80%; border-radius: 8px; margin-bottom: 20px;';
+                    
+                    const descElement = document.createElement('div');
+                    descElement.className = 'image-viewer-description';
+                    descElement.textContent = description;
+                    descElement.style.display = description ? 'block' : 'none';
+                    
+                    modal.appendChild(imgElement);
+                    modal.appendChild(descElement);
+                    modal.onclick = () => document.body.removeChild(modal);
+                    document.body.appendChild(modal);
+                },
+                
+                // 恢复保存的卡片图片
+                async restoreCardImage(cardId) {
+                    try {
+                        const savedData = await idbStorage.getItem(`card_image_${cardId}`);
+                        if (!savedData) return;
+                        
+                        const data = JSON.parse(savedData);
+                        const card = document.querySelector(`[data-card-id="${cardId}"]`);
+                        if (!card) return;
+                        
+                        console.log('🔄 恢复卡片图片:', cardId);
+                        
+                        // 更新卡片小图
+                        const img = card.querySelector('.card-image');
+                        if (img) {
+                            img.src = data.imageData;
+                            img.dataset.description = data.description;
+                            img.dataset.generated = 'true';
+                        }
+                        
+                        // 显示大图
+                        const messageGroup = card.closest('.chat-message-group');
+                        if (messageGroup) {
+                            let largeImageContainer = messageGroup.querySelector('.card-large-image-container');
+                            if (!largeImageContainer) {
+                                largeImageContainer = document.createElement('div');
+                                largeImageContainer.className = 'card-large-image-container';
+                                largeImageContainer.style.cssText = 'margin-top: 12px; width: 100%; max-width: 400px;';
+                                
+                                const largeImg = document.createElement('img');
+                                largeImg.src = data.imageData;
+                                largeImg.dataset.description = data.description;
+                                largeImg.style.cssText = 'width: 100%; height: auto; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); cursor: pointer;';
+                                largeImg.onclick = () => this.viewCardImage(largeImg);
+                                
+                                const descDiv = document.createElement('div');
+                                descDiv.style.cssText = 'margin-top: 8px; padding: 8px 12px; background: rgba(0,0,0,0.05); border-radius: 8px; font-size: 0.85rem; color: #666; line-height: 1.5;';
+                                descDiv.textContent = data.description;
+                                
+                                largeImageContainer.appendChild(largeImg);
+                                if (data.description) {
+                                    largeImageContainer.appendChild(descDiv);
+                                }
+                                
+                                const bubble = card.closest('.chat-bubble');
+                                if (bubble) {
+                                    bubble.appendChild(largeImageContainer);
+                                }
+                            }
+                        }
+                    } catch (error) {
+                        console.error('恢复卡片图片失败:', error);
+                    }
+                }
+            };
+            
+            // 初始化
+            window.SDGeneration = SDGeneration;
+            document.addEventListener('DOMContentLoaded', () => {
+                SDGeneration.init();
+            });
+            
+            // 监听消息渲染，自动解析并渲染CG卡片
+            document.addEventListener('DOMContentLoaded', () => {
+                const chatMessages = document.getElementById('chat-messages');
+                if (chatMessages) {
+                    console.log('🎬 CG卡片监听器已启动');
+                    
+                    // 已处理的占位符集合，避免重复处理（使用占位符的data属性作为key）
+                    let processedPlaceholders = new Set();
+                    
+                    // 暴露清空方法，供外部调用
+                    window.SDGeneration.clearProcessedPlaceholders = () => {
+                        processedPlaceholders = new Set();
+                        console.log('🧹 已清空已处理占位符集合');
+                    };
+                    
+                    // 处理单个消息气泡
+                    const processBubble = async (bubble) => {
+                        // 获取消息ID（从气泡的dataset或父元素的ID）
+                        const messageId = bubble.dataset.messageId || bubble.closest('.chat-message-group')?.id;
+                        if (!messageId) {
+                            console.warn('⚠️ 无法获取消息ID，跳过CG卡片渲染');
+                            return;
+                        }
+                        
+                        // 查找CG占位符（现在是div.cg-placeholder）
+                        const placeholders = bubble.querySelectorAll('.cg-placeholder');
+                        console.log('📝 处理消息气泡，消息ID:', messageId, '找到占位符:', placeholders.length);
+                        
+                        if (placeholders.length > 0) {
+                            for (const placeholder of placeholders) {
+                                try {
+                                    // 从Base64解码CG数据
+                                    const cgDataBase64 = placeholder.dataset.cgBase64;
+                                    if (!cgDataBase64) continue;
+                                    
+                                    // 使用占位符的data作为唯一标识，避免重复处理同一个占位符
+                                    const placeholderKey = `${messageId}-${cgDataBase64}`;
+                                    if (processedPlaceholders.has(placeholderKey)) {
+                                        console.log('⏭️ 占位符已处理过，跳过');
+                                        continue;
+                                    }
+                                    processedPlaceholders.add(placeholderKey);
+                                    
+                                    const cgDataJson = decodeURIComponent(atob(cgDataBase64));
+                                    const cgData = JSON.parse(cgDataJson);
+                                    console.log('✅ 准备渲染完整CG卡片:', cgData, '消息ID:', messageId);
+                                    
+                                    const card = await window.SDGeneration.renderCGCard(cgData, messageId);
+                                    console.log('✅ 完整卡片已创建，准备替换占位符');
+                                    
+                                    // 用完整的可交互卡片替换简化占位符
+                                    placeholder.parentNode.replaceChild(card, placeholder);
+                                    console.log('✅ 完整卡片已添加到DOM');
+                                } catch (e) {
+                                    console.error('❌ 渲染CG卡片失败:', e);
+                                }
+                            }
+                        }
+                    };
+                    
+                    const observer = new MutationObserver((mutations) => {
+                        mutations.forEach((mutation) => {
+                            // 处理新增的节点
+                            mutation.addedNodes.forEach((node) => {
+                                if (node.nodeType !== 1) return; // 只处理元素节点
+                                
+                                console.log('🔍 检测到新节点:', node.className);
+                                
+                                // 检查节点本身是否是消息气泡
+                                if (node.classList && node.classList.contains('chat-bubble')) {
+                                    console.log('✅ 节点本身是消息气泡');
+                                    processBubble(node);
+                                }
+                                
+                                // 检查节点的子元素中是否有消息气泡（包括深层子元素）
+                                if (node.querySelectorAll) {
+                                    const bubbles = node.querySelectorAll('.chat-bubble');
+                                    if (bubbles.length > 0) {
+                                        console.log('🔍 在子元素中找到', bubbles.length, '个消息气泡');
+                                        bubbles.forEach(bubble => {
+                                            processBubble(bubble);
+                                        });
+                                    }
+                                }
+                                
+                                // 检查是否是CG占位符本身被添加
+                                if (node.classList && node.classList.contains('cg-placeholder')) {
+                                    console.log('✅ 检测到CG占位符被添加');
+                                    const bubble = node.closest('.chat-bubble');
+                                    if (bubble) {
+                                        processBubble(bubble);
+                                    }
+                                }
+                            });
+                            
+                            // 处理内容变化（流式生成时innerHTML更新）
+                            if (mutation.type === 'childList' && mutation.target.classList) {
+                                // 如果变化发生在消息气泡内
+                                if (mutation.target.classList.contains('chat-bubble') || 
+                                    mutation.target.classList.contains('message-content')) {
+                                    const bubble = mutation.target.closest('.chat-bubble');
+                                    if (bubble) {
+                                        // 检查是否有新的CG占位符
+                                        const placeholders = bubble.querySelectorAll('.cg-placeholder');
+                                        if (placeholders.length > 0) {
+                                            console.log('🔄 检测到气泡内容更新，发现', placeholders.length, '个占位符');
+                                            processBubble(bubble);
+                                        }
+                                    }
+                                }
+                            }
+                        });
+                    });
+                    
+                    observer.observe(chatMessages, {
+                        childList: true,
+                        subtree: true,  // 监听所有子树的变化
+                        characterData: false  // 不需要监听文本内容变化
+                    });
+                    
+                    console.log('✅ MutationObserver已启动，监听配置:', { childList: true, subtree: true });
+                    
+                    // 处理页面加载时已存在的消息（用于刷新后恢复）
+                    const existingBubbles = chatMessages.querySelectorAll('.chat-bubble');
+                    if (existingBubbles.length > 0) {
+                        console.log('🔄 处理已存在的', existingBubbles.length, '个消息气泡');
+                        existingBubbles.forEach(bubble => {
+                            processBubble(bubble);
+                        });
+                    }
+                } else {
+                    console.error('❌ 未找到chat-messages元素');
+                }
+            });
+            
+            // 将SDGeneration暴露为全局变量，供外部访问
+            window.SDGeneration = SDGeneration;
+        })();
+    </script>
+    
+    <!-- SD生图与角色系统集成 -->
+    <script>
+        // 将SDGeneration暴露为全局变量，供外部访问
+        window.SDGeneration = window.SDGeneration || {};
     </script>
 
     <!-- 保存提示Toast -->

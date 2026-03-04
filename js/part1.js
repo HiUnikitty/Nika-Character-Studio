@@ -3,8 +3,8 @@ const DEBUG = false;
 
 function mylog(...logs){
 	if (DEBUG){
-	mylog(logs);		
-}	
+		console.log(...logs);		
+	}	
 }
 
 // IndexedDB 辅助类 - 用于存储模型列表
@@ -620,10 +620,13 @@ if (translateAllBtn) translateAllBtn.textContent = t('translate-all');
 const undoTranslateBtn = document.getElementById('undo-translate-btn');
 if (undoTranslateBtn) undoTranslateBtn.textContent = t('undo-translation');
 
-// 更新AI按钮
+// 更新AI按钮（排除批量生成按钮）
 const aiButtons = document.querySelectorAll('.ai-button');
 aiButtons.forEach(btn => {
-    btn.textContent = t('ai-help-write');
+    // 跳过批量生成按钮
+    if (!btn.classList.contains('batch-generate-btn')) {
+        btn.textContent = t('ai-help-write');
+    }
 });
 
 const undoButtons = document.querySelectorAll('.ai-undo-button');
@@ -632,6 +635,9 @@ undoButtons.forEach(btn => {
 });
 
 // 更新世界书相关按钮
+const importWorldbookBtn = document.getElementById('import-worldbook-btn');
+if (importWorldbookBtn) importWorldbookBtn.textContent = t('import-worldbook');
+
 const addEntryBtn = document.querySelector('button[onclick="addWorldbookEntry()"]');
 if (addEntryBtn) addEntryBtn.textContent = t('add-new-entry');
 
@@ -852,6 +858,63 @@ function openApiSettingsModal() {
 const modal = document.getElementById('api-settings-modal');
 loadApiSettings(); // Load current settings when opening
 modal.style.display = 'flex';
+}
+
+// --- Other Settings ---
+function openOtherSettingsModal() {
+const modal = document.getElementById('other-settings-modal');
+loadOtherSettings(); // Load current settings when opening
+modal.style.display = 'flex';
+}
+
+function loadOtherSettings() {
+try {
+    const settings = JSON.parse(localStorage.getItem('otherSettings')) || {
+    formatEnhancement: false
+    };
+    
+    document.getElementById('Plus-switch').checked = settings.formatEnhancement || false;
+    
+    // 更新AI按钮文本
+    toggleAiButtonText(settings.formatEnhancement);
+    
+    return settings;
+} catch (error) {
+    console.error('加载其他设置失败:', error);
+    return {
+    formatEnhancement: false
+    };
+}
+}
+
+function initializeOtherSettingsModal() {
+const modal = document.getElementById('other-settings-modal');
+const saveBtn = document.getElementById('save-other-settings-btn');
+const cancelBtn = document.getElementById('cancel-other-settings-btn');
+
+cancelBtn.onclick = () => {
+    modal.style.display = 'none';
+};
+
+saveBtn.onclick = () => {
+    const settings = {
+    formatEnhancement: document.getElementById('Plus-switch').checked
+    };
+    localStorage.setItem('otherSettings', JSON.stringify(settings));
+    
+    // 更新AI按钮文本
+    toggleAiButtonText(settings.formatEnhancement);
+    
+    alert('设置已保存');
+    modal.style.display = 'none';
+};
+
+// 点击模态框外部关闭
+modal.addEventListener('click', (e) => {
+    if (e.target === modal) {
+    modal.style.display = 'none';
+    }
+});
 }
 
 // 全局存储事件处理函数，避免重复绑定
@@ -1900,8 +1963,8 @@ preview.textContent = text ? text.substring(0, 50) + (text.length > 50 ? '...' :
 }
 
 // 添加新的备用问候语
-function addAlternateGreeting() {
-alternateGreetingsData.push('');
+function addAlternateGreeting(content = '') {
+alternateGreetingsData.push(content);
 renderAlternateGreetings();
 // 自动展开并聚焦到新添加的文本框
 setTimeout(() => {

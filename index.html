@@ -1983,7 +1983,7 @@
       .switch {
         position: relative;
         display: inline-block;
-        width: 74px;
+        width: 44px;
         height: 28px;
       }
       .switch input {
@@ -2017,7 +2017,7 @@
         background-color: #e67e22;
       }
       input:checked + .slider:before {
-        transform: translateX(22px);
+        transform: translateX(16px);
       }
 
       /* --- Modal 样式 (通用) --- */
@@ -2071,6 +2071,11 @@
 
       /* --- API 设置 Modal 样式 --- */
       #api-settings-modal .modal-content {
+        max-width: 600px;
+      }
+      
+      /* --- 其他设置 Modal 样式 --- */
+      #other-settings-modal .modal-content {
         max-width: 600px;
       }
       #api-settings-modal .api-provider-options {
@@ -2572,6 +2577,34 @@
         <div class="modal-actions">
           <button id="save-api-settings-btn" class="action-btn" data-i18n="save">保存</button>
           <button id="cancel-api-settings-btn" class="cancel-btn" data-i18n="cancel">取消</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 其他设置模态框 -->
+    <div id="other-settings-modal" class="modal-overlay">
+      <div class="modal-content">
+        <h3 id="other-modal-title" data-i18n="other-settings">其他设置</h3>
+        
+        <!-- 格式增强开关 -->
+        <div class="field-group">
+          <div class="Plus-switch-container" style="margin: 0; justify-content: space-between; width: 100%;">
+            <div>
+              <span class="switch-label" id="style-mode-label" data-i18n="style-mode">格式增强</span>
+              <p class="help-text" style="margin: 5px 0 0 0; font-size: 12px; color: #888;">
+                开启后，AI生成内容将使用Markdown格式，包含粗体、斜体、列表等结构化输出
+              </p>
+            </div>
+            <label class="switch">
+              <input type="checkbox" id="Plus-switch">
+              <span class="slider"></span>
+            </label>
+          </div>
+        </div>
+        
+        <div class="modal-actions">
+          <button id="save-other-settings-btn" class="action-btn" data-i18n="save">保存</button>
+          <button id="cancel-other-settings-btn" class="cancel-btn" data-i18n="cancel">取消</button>
         </div>
       </div>
     </div>
@@ -3112,9 +3145,14 @@
       <div class="editor-container">
         <div class="editor-header">
           <h1 id="editor-title">创建新角色</h1>
-          <button onclick="openApiSettingsModal()" style="background: var(--secondary-color); color: white; padding: 8px 15px; border-radius: 5px" data-i18n="api-settings-btn">
-            ⚙️ API 设置
-          </button>
+          <div style="display: flex; gap: 10px;">
+            <button onclick="openApiSettingsModal()" style="background: var(--secondary-color); color: white; padding: 8px 15px; border-radius: 5px" data-i18n="api-settings-btn">
+              ⚙️ API 设置
+            </button>
+            <button onclick="openOtherSettingsModal()" style="background: var(--secondary-color); color: white; padding: 8px 15px; border-radius: 5px" data-i18n="other-settings-btn">
+              🔧 其他设置
+            </button>
+          </div>
         </div>
         <div class="editor-body">
           <div class="panel-content">
@@ -3233,6 +3271,7 @@
               <label for="first_mes">问候消息</label>
               <textarea id="first_mes" rows="3" placeholder="角色的第一句话"></textarea>
               <button class="ai-button" onclick="callDeepSeek('first_mes')">🔮 AI 帮我写</button>
+              <button class="ai-button batch-generate-btn" onclick="batchGenerateGreetings(this)" style="margin-left: 5px;">🎲 批量生成</button>
               <button class="ai-undo-button" onclick="undoAiCompletion(this)" >↩️ 撤销</button>
             </div>
 
@@ -3299,14 +3338,9 @@
             <p class="help-text" id="worldbook-help-text">“世界书”是给AI角色绑定的一部<b>参考词典和设定集</b>。如果你要世界书，上面的信息只用填名字</p>
             <ul id="worldbook-entries-container" class="worldbook-list"></ul>
             <div class="action-buttons row" style="margin-top: 15px">
-              <div class="Plus-switch-container">
-                <span class="switch-label" id="style-mode-label">格式增强</span>
-                <label class="switch">
-                  <input type="checkbox" id="Plus-switch">
-                  <span class="slider"></span>
-                </label>
-              </div>
-              <button id="add-worldbook-entry-btn" onclick="addWorldbookEntry()" class="secondary" style="background-color: #e67e22; flex-grow: 1">+ 补充世界书</button>
+              <button id="add-worldbook-entry-btn" onclick="addWorldbookEntry()" class="secondary" style="background-color: #e67e22; flex-grow: 1" data-i18n="add-worldbook-entry">+ 补充世界书</button>
+                            <input type="file" id="worldbook-importer" accept=".json,.png" style="display: none" onchange="importWorldbook(event)" multiple />
+              <button id="import-worldbook-btn" onclick="document.getElementById('worldbook-importer').click()" class="secondary" style="background-color: #e67e22; flex-grow: 1" data-i18n="import-worldbook">📥 导入世界书</button>
               <button id="worldbook-sort-priority-btn" onclick="sortWorldbookEntriesByPriority()" class="secondary" style="flex-grow: 1">按优先级排序</button>
               <button id="worldbook-sort-id-btn" onclick="sortWorldbookEntries()" class="secondary" style="flex-grow: 1">按ID排序</button>
             </div>
@@ -3571,6 +3605,19 @@
           'scenario-placeholder': '角色所处的环境',
           'first-message': '问候消息',
           'first-message-placeholder': '角色的第一句话',
+          'batch-generate-greetings': '批量生成',
+          'batch-greeting-title': '批量生成问候消息',
+          'greeting-count-label': '生成数量：',
+          'greeting-style-label': '剧情风格偏向（可选）：',
+          'greeting-style-placeholder': '例如：恋爱向、科幻冒险、日常温馨、紧张悬疑等...',
+          'user-setting-label': 'User设定（可选）：',
+          'user-setting-placeholder': '例如：user是一名侦探、user失去了记忆、user拥有特殊能力等...',
+          'greeting-generating': '正在生成问候消息...',
+          'greeting-generated-title': '生成的问候消息：',
+          'set-as-main': '设为主问候',
+          'add-to-alternate': '添加到备选',
+          'greeting-set-success': '已设置为主问候消息',
+          'greeting-added-success': '已添加到备选问候消息',
           'alternate-greetings': '备用问候语',
           'alternate-greetings-help': '可选的多个开场白，在SillyTavern中可以切换使用',
           'add-greeting': '+ 添加问候语',
@@ -3648,6 +3695,9 @@
           'import-png-failed': '导入 PNG 角色卡失败: {error}',
           'import-image-failed': '导入图片失败: {error}',
           'import-json-failed': '导入失败，JSON 文件格式无效。',
+          'import-worldbook-failed': '导入世界书失败: {error}',
+          'import-worldbook-empty': '导入的文件中没有找到世界书条目',
+          'import-worldbook-success': '成功导入 {count} 个世界书条目',
           'save-import-failed': '保存导入的角色失败。',
           'character-saved': '角色 "{name}" 已保存。',
           'save-failed': '保存角色失败，请检查数据或图片格式。',
@@ -3928,6 +3978,7 @@
           'ai-global-edit-btn': '🔮 AI 全局改',
           'ai-generate-worldbook': '🔮 一键生成世界书',
           'ai-sort-suggestion-btn': '📊 AI 排序建议',
+          'import-worldbook': '📥 导入世界书',
           'add-worldbook-entry': '+ 补充世界书',
           
           // AI 排序建议模态框
@@ -4137,6 +4188,8 @@
           'trigger-words-label': '触发词',
           'content-label': '内容',
           'api-settings-btn': '⚙️ API 设置',
+          'other-settings-btn': '其他设置',
+          'other-settings': '其他设置',
           'api-provider-deepseek': 'DeepSeek',
           'api-provider-gemini': 'Gemini (直链，需魔法)',
           'api-provider-gemini-proxy': 'Gemini (中转站)',
@@ -4222,6 +4275,19 @@
             'The environment for the scene. e.g.: {{char}} and {{user}} are in a classroom at dusk.',
           'first-message': 'Greeting Message',
           'first-message-placeholder': "The character's first message to the user.",
+          'batch-generate-greetings': 'Batch Generate',
+          'batch-greeting-title': 'Batch Generate Greeting Messages',
+          'greeting-count-label': 'Number to Generate:',
+          'greeting-style-label': 'Plot Style Preference (Optional):',
+          'greeting-style-placeholder': 'e.g.: Romance, Sci-fi Adventure, Daily Warmth, Suspense...',
+          'user-setting-label': 'User Setting (Optional):',
+          'user-setting-placeholder': 'e.g.: user is a detective, user lost memory, user has special abilities...',
+          'greeting-generating': 'Generating greeting messages...',
+          'greeting-generated-title': 'Generated Greeting Messages:',
+          'set-as-main': 'Set as Main',
+          'add-to-alternate': 'Add to Alternate',
+          'greeting-set-success': 'Set as main greeting message',
+          'greeting-added-success': 'Added to alternate greetings',
           'alternate-greetings': 'Alternate Greetings',
           'alternate-greetings-help': 'Optional multiple openings that can be switched in SillyTavern',
           'add-greeting': '+ Add Greeting',
@@ -4302,6 +4368,9 @@
           'import-png-failed': 'Failed to import PNG character card: {error}',
           'import-image-failed': 'Failed to import image: {error}',
           'import-json-failed': 'Import failed, JSON file format is invalid.',
+          'import-worldbook-failed': 'Failed to import worldbook: {error}',
+          'import-worldbook-empty': 'No worldbook entries found in the imported file',
+          'import-worldbook-success': 'Successfully imported {count} worldbook entries',
           'save-import-failed': 'Failed to save imported character.',
           'character-saved': 'Character "{name}" saved.',
           'save-failed': 'Failed to save character, please check data or image format.',
@@ -4593,6 +4662,7 @@
           'ai-global-edit-btn': '🔮 AI Global Edit',
           'ai-generate-worldbook': '🔮 One-Click Generate Worldbook',
           'ai-sort-suggestion-btn': '📊 AI Sort Suggestion',
+          'import-worldbook': '📥 Import Worldbook',
           'add-worldbook-entry': '+ Add Worldbook Entry',
           
           // AI Sort Suggestion Modal
@@ -4802,6 +4872,8 @@
           'trigger-words-label': 'Trigger Words',
           'content-label': 'Content',
           'api-settings-btn': '⚙️ API Settings',
+          'other-settings-btn': 'Other Settings',
+          'other-settings': 'Other Settings',
           'api-provider-deepseek': 'DeepSeek',
           'api-provider-gemini': 'Gemini',
           'api-provider-gemini-proxy': 'Gemini (Proxy)',

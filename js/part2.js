@@ -2639,8 +2639,25 @@ return {
 function initializePlusSwitch() {
 const PlusSwitch = document.getElementById('Plus-switch');
 if (PlusSwitch) {
+    // 从localStorage加载状态
+    try {
+    const settings = JSON.parse(localStorage.getItem('otherSettings')) || { formatEnhancement: false };
+    PlusSwitch.checked = settings.formatEnhancement || false;
+    toggleAiButtonText(PlusSwitch.checked);
+    } catch (error) {
+    console.error('加载格式增强设置失败:', error);
+    }
+    
+    // 监听变化并保存到localStorage
     PlusSwitch.addEventListener('change', event => {
     toggleAiButtonText(event.target.checked);
+    try {
+        const settings = JSON.parse(localStorage.getItem('otherSettings')) || {};
+        settings.formatEnhancement = event.target.checked;
+        localStorage.setItem('otherSettings', JSON.stringify(settings));
+    } catch (error) {
+        console.error('保存格式增强设置失败:', error);
+    }
     });
 }
 }
@@ -2649,7 +2666,10 @@ function toggleAiButtonText(isPlus) {
 const aiButtons = document.querySelectorAll('.ai-button');
 const newText = isPlus ? t('generate-style') : t('ai-help-write');
 aiButtons.forEach(button => {
-    button.textContent = newText;
+    // 跳过批量生成按钮
+    if (!button.classList.contains('batch-generate-btn')) {
+        button.textContent = newText;
+    }
 });
 }
 
@@ -3550,6 +3570,233 @@ if (generateBtn) {
 
 if (modal) modal.style.display = 'flex';
 if (inputEl) inputEl.focus();
+}
+
+// 批量生成问候消息
+async function batchGenerateGreetings(button) {
+    // 创建模态框
+    const modal = document.createElement('div');
+    modal.id = 'batch-greeting-modal';
+    modal.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 10001; display: flex; align-items: center; justify-content: center;';
+    
+    modal.innerHTML = `
+        <div style="background: var(--light-bg); border-radius: 10px; padding: 20px; max-width: 900px; max-height: 90vh; overflow-y: auto; width: 90%;">
+            <h3 style="color: var(--primary-color); margin-bottom: 15px;">🎲 批量生成问候消息</h3>
+            
+            <div style="margin-bottom: 15px;">
+                <label style="display: block; color: var(--text-color); margin-bottom: 5px;">生成数量：</label>
+                <select id="greeting-count" style="width: 120px; padding: 8px; border: 1px solid var(--input-border); border-radius: 5px; background: var(--input-bg); color: var(--text-color);">
+                    <option value="3">3条</option>
+                    <option value="5" selected>5条</option>
+                    <option value="8">8条</option>
+                    <option value="10">10条</option>
+                </select>
+            </div>
+            
+            <div style="margin-bottom: 15px;">
+                <label style="display: block; color: var(--text-color); margin-bottom: 5px;">剧情风格偏向（可选）：</label>
+                <textarea id="greeting-style-input" placeholder="例如：恋爱向、科幻冒险、日常温馨、紧张悬疑等..." style="width: 100%; height: 80px; padding: 12px; border: 1px solid var(--input-border); border-radius: 5px; background: var(--input-bg); color: var(--text-color); resize: vertical; box-sizing: border-box;"></textarea>
+            </div>
+            
+            <div style="margin-bottom: 15px;">
+                <label style="display: block; color: var(--text-color); margin-bottom: 5px;">地点/场景（可选，可多个）：</label>
+                <textarea id="location-setting-input" placeholder="例如：在学校图书馆、在未来都市、在魔法学院、在太空站等..." style="width: 100%; height: 80px; padding: 12px; border: 1px solid var(--input-border); border-radius: 5px; background: var(--input-bg); color: var(--text-color); resize: vertical; box-sizing: border-box;"></textarea>
+            </div>
+            
+            <div style="margin-bottom: 15px;">
+                <label style="display: block; color: var(--text-color); margin-bottom: 5px;">User设定（可选）：</label>
+                <textarea id="user-setting-input" placeholder="例如：user是一名侦探、user失去了记忆、user拥有特殊能力等..." style="width: 100%; height: 80px; padding: 12px; border: 1px solid var(--input-border); border-radius: 5px; background: var(--input-bg); color: var(--text-color); resize: vertical; box-sizing: border-box;"></textarea>
+            </div>
+            
+            <div id="greeting-results" style="margin-top: 20px;"></div>
+            
+            <div style="margin-top: 20px; text-align: right;">
+                <button id="generate-greetings-btn" style="background: var(--primary-color); color: white; padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer; margin-right: 10px;">🎨 开始生成</button>
+                <button id="cancel-greetings-btn" style="background: #6c757d; color: white; padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer;">取消</button>
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(modal);
+    
+    // 绑定事件
+    const generateBtn = modal.querySelector('#generate-greetings-btn');
+    const cancelBtn = modal.querySelector('#cancel-greetings-btn');
+    
+    cancelBtn.addEventListener('click', () => modal.remove());
+    modal.addEventListener('click', (e) => {
+        if (e.target === modal) modal.remove();
+    });
+    
+    generateBtn.addEventListener('click', async () => {
+        const count = document.getElementById('greeting-count').value;
+        const styleInput = document.getElementById('greeting-style-input').value.trim();
+        const locationInput = document.getElementById('location-setting-input').value.trim();
+        const userSettingInput = document.getElementById('user-setting-input').value.trim();
+        const resultsDiv = document.getElementById('greeting-results');
+        
+        // 禁用生成按钮
+        generateBtn.disabled = true;
+        generateBtn.textContent = '🔄 生成中...';
+        generateBtn.style.opacity = '0.6';
+        
+        resultsDiv.innerHTML = '<div style="text-align: center; color: var(--text-color); padding: 20px;"><div style="display: inline-block; width: 20px; height: 20px; border: 2px solid #f3f3f3; border-top: 2px solid var(--primary-color); border-radius: 50%; animation: spin 1s linear infinite;"></div> 正在生成问候消息...</div>';
+        
+        try {
+            // 检查API配置
+            const apiSettings = loadApiSettings();
+            if (!checkApiConfiguration(apiSettings)) {
+                resultsDiv.innerHTML = `
+                    <div style="text-align: center; color: #f44336; padding: 20px;">
+                        <h4>⚠️ 需要配置API设置</h4>
+                        <p>请先在API设置中配置您的AI服务提供商才能使用AI生成功能。</p>
+                        <button onclick="openApiSettingsModal()" style="background: var(--primary-color); color: white; padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer; margin-top: 10px;">打开API设置</button>
+                    </div>
+                `;
+                return;
+            }
+            
+            // 获取当前角色信息
+            const currentCard = buildCardObject();
+            const existingEntries = buildWorldbookDataFromDOM();
+            
+            // 构建世界书上下文
+            const worldbookContext = existingEntries.length > 0 
+                ? existingEntries.map(e => `- ${e.comment}: ${e.content.substring(0, 150)}...`).join('\n')
+                : '无';
+            
+            // 构建提示词
+            let prompt = getLanguagePrefix() + `你是一个专业的角色扮演剧情设计师。请根据以下角色信息，生成${count}个不同风格的问候消息（开场白）。
+
+**角色信息：**
+- 角色名: ${currentCard.name || '未指定'}
+- 性别: ${currentCard.gender || '未指定'}
+- 角色描述: ${currentCard.description || '未指定'}
+- 个性: ${currentCard.personality || '未指定'}
+- 场景设定: ${currentCard.scenario || '未指定'}
+
+**世界书参考：**
+${worldbookContext}
+
+${styleInput ? `**用户指定的剧情风格偏向：** ${styleInput}\n` : ''}
+${locationInput ? `**地点/场景：** ${locationInput}\n请在生成的问候消息中考虑这些地点或场景设定。\n` : ''}
+${userSettingInput ? `**User设定：** ${userSettingInput}\n请在生成的问候消息中考虑这些user设定，让开场白更有针对性和代入感。\n` : ''}
+
+**生成要求：**
+1. 每条问候消息都应该是一个完整的开场场景，篇幅在500-800字左右
+2. 每条消息要有不同的剧情方向和氛围（例如：日常、冒险、紧张、温馨、神秘等）
+3. 包含丰富的环境描写、感官细节、角色动作和表情
+4. 使用第二人称"你"({{user}})的视角，营造代入感
+5. 包含{{char}}的台词，展现性格特征
+6. 结尾留下互动空间，引导{{user}}做出回应
+7. 每条消息应该独立成篇，可以直接使用
+
+**输出格式：**
+请严格按照JSON数组格式返回，每个元素包含title（场景标题）和content（问候消息内容）：
+[
+  {
+    "title": "场景1标题",
+    "content": "问候消息内容..."
+  },
+  {
+    "title": "场景2标题",
+    "content": "问候消息内容..."
+  }
+]
+
+不要包含任何解释或Markdown标记，直接返回JSON数组。`;
+
+            // 调用API
+            const result = await callApi(prompt, button);
+            
+            if (!result) {
+                throw new Error('API调用失败');
+            }
+            
+            // 解析结果
+            let cleanedResult = result.trim();
+            
+            // 提取JSON
+            const jsonMatch = cleanedResult.match(/```json\s*([\s\S]*?)\s*```/);
+            if (jsonMatch) {
+                cleanedResult = jsonMatch[1].trim();
+            } else {
+                const jsonStart = cleanedResult.indexOf('[');
+                const jsonEnd = cleanedResult.lastIndexOf(']');
+                if (jsonStart !== -1 && jsonEnd !== -1) {
+                    cleanedResult = cleanedResult.substring(jsonStart, jsonEnd + 1);
+                }
+            }
+            
+            const greetings = JSON.parse(cleanedResult);
+            
+            if (!Array.isArray(greetings) || greetings.length === 0) {
+                throw new Error('AI返回的数据格式不正确');
+            }
+            
+            // 显示结果
+            resultsDiv.innerHTML = '<h4 style="color: var(--primary-color); margin-bottom: 15px;">✨ 生成的问候消息：</h4>';
+            
+            greetings.forEach((greeting, index) => {
+                const greetingCard = document.createElement('div');
+                greetingCard.style.cssText = 'background: rgba(0,0,0,0.2); padding: 15px; border-radius: 8px; margin-bottom: 15px; border: 1px solid var(--input-border);';
+                
+                greetingCard.innerHTML = `
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                        <h5 style="color: var(--primary-color); margin: 0;">${index + 1}. ${greeting.title || '场景' + (index + 1)}</h5>
+                        <div>
+                            <button onclick="useGreeting(${index}, 'first_mes')" style="background: var(--primary-color); color: white; padding: 5px 12px; border: none; border-radius: 4px; cursor: pointer; font-size: 12px; margin-right: 5px;">设为主问候</button>
+                            <button onclick="useGreeting(${index}, 'alternate')" style="background: #6c757d; color: white; padding: 5px 12px; border: none; border-radius: 4px; cursor: pointer; font-size: 12px;">添加到备选</button>
+                        </div>
+                    </div>
+                    <div style="color: var(--text-color); white-space: pre-wrap; line-height: 1.6; max-height: 200px; overflow-y: auto; padding: 10px; background: rgba(0,0,0,0.1); border-radius: 4px;">${greeting.content}</div>
+                `;
+                
+                resultsDiv.appendChild(greetingCard);
+                
+                // 存储生成的问候消息到全局变量
+                if (!window.generatedGreetings) window.generatedGreetings = [];
+                window.generatedGreetings[index] = greeting.content;
+            });
+            
+        } catch (error) {
+            console.error('生成问候消息失败:', error);
+            resultsDiv.innerHTML = `
+                <div style="text-align: center; color: #f44336; padding: 20px;">
+                    <h4>❌ 生成失败</h4>
+                    <p>错误信息: ${error.message}</p>
+                    <p style="font-size: 12px; color: #999;">请检查API设置和网络连接，或查看控制台获取更多信息。</p>
+                </div>
+            `;
+        } finally {
+            generateBtn.disabled = false;
+            generateBtn.textContent = '🎨 开始生成';
+            generateBtn.style.opacity = '1';
+        }
+    });
+}
+
+// 使用生成的问候消息
+function useGreeting(index, type) {
+    if (!window.generatedGreetings || !window.generatedGreetings[index]) {
+        alert('找不到该问候消息');
+        return;
+    }
+    
+    const content = window.generatedGreetings[index];
+    
+    if (type === 'first_mes') {
+        // 设为主问候消息
+        const firstMesField = document.getElementById('first_mes');
+        if (firstMesField) {
+            firstMesField.value = content;
+            alert('✅ 已设置为主问候消息');
+        }
+    } else if (type === 'alternate') {
+        // 添加到备选问候消息
+        addAlternateGreeting(content);
+        alert('✅ 已添加到备选问候消息');
+    }
 }
 
 function initializeNameGeneratorModal() {
@@ -4825,6 +5072,162 @@ setTimeout(() => {
         expandWorldbookEntry(newEntry);
     }
 }, 100);
+}
+
+// 导入世界书函数
+async function importWorldbook(event) {
+    const files = event.target.files;
+    if (!files.length) return;
+
+    for (const file of files) {
+        if (file.type === 'application/json') {
+            const reader = new FileReader();
+            reader.onload = e => {
+                try {
+                    const importedData = JSON.parse(e.target.result);
+                    processImportedWorldbook(importedData, file.name);
+                } catch (err) {
+                    console.error('世界书导入错误:', err);
+                    alert(t('import-worldbook-failed', {error: err.message}) || `导入失败: ${err.message}`);
+                }
+            };
+            reader.readAsText(file);
+        } else if (file.type === 'image/png') {
+            // 处理PNG格式的角色卡
+            const reader = new FileReader();
+            reader.onload = async e => {
+                try {
+                    const arrayBuffer = e.target.result;
+                    const charData = await extractDataFromPng(arrayBuffer);
+                    processImportedWorldbook(charData, file.name);
+                } catch (err) {
+                    console.error('PNG世界书导入错误:', err);
+                    alert(t('import-worldbook-failed', {error: err.message}) || `导入PNG失败: ${err.message}`);
+                }
+            };
+            reader.readAsArrayBuffer(file);
+        }
+    }
+    event.target.value = '';
+}
+
+// 处理导入的世界书数据
+function processImportedWorldbook(importedData, fileName) {
+    let entriesToImport = [];
+    
+    // 格式1: 纯世界书格式 (lorebook.json)
+    // { entries: { "0": {...}, "1": {...} }, originalData: {...} }
+    if (importedData.entries && typeof importedData.entries === 'object') {
+        const entriesObj = importedData.entries;
+        
+        // 转换对象格式的entries为数组
+        if (!Array.isArray(entriesObj)) {
+            entriesToImport = Object.values(entriesObj);
+        } else {
+            entriesToImport = entriesObj;
+        }
+    }
+    // 格式2: 角色卡V3格式 (包含character_book)
+    else if (importedData.spec === 'chara_card_v3' && importedData.data?.character_book?.entries) {
+        entriesToImport = importedData.data.character_book.entries;
+    }
+    // 格式3: 直接的entries数组
+    else if (Array.isArray(importedData)) {
+        entriesToImport = importedData;
+    }
+    
+    if (entriesToImport.length === 0) {
+        alert(t('import-worldbook-empty') || '导入的文件中没有找到世界书条目');
+        return;
+    }
+    
+    // 转换并添加条目
+    const currentWorldbook = buildWorldbookDataFromDOM();
+    let maxId = currentWorldbook.length > 0 ? Math.max(...currentWorldbook.map(e => e.id)) : -1;
+    
+    let importedCount = 0;
+    const importedEntryIds = []; // 记录导入的条目ID
+    
+    entriesToImport.forEach(entry => {
+        maxId++;
+        const convertedEntry = convertImportedEntry(entry, maxId);
+        if (convertedEntry) {
+            currentWorldbook.push(convertedEntry);
+            importedEntryIds.push(maxId); // 记录导入的ID
+            importedCount++;
+        }
+    });
+    
+    // 在渲染前，先将新导入的条目设置为折叠状态
+    importedEntryIds.forEach(entryId => {
+        saveWorldbookFoldState(entryId, true);
+    });
+    
+    // 重新渲染世界书（会自动应用折叠状态）
+    renderWorldbookFromData(currentWorldbook);
+    
+    alert(t('import-worldbook-success', {count: importedCount}) || `成功导入 ${importedCount} 个世界书条目`);
+}
+
+// 转换导入的条目格式
+function convertImportedEntry(entry, newId) {
+    // 转换V3格式的position到内部格式
+    function convertPositionToInternal(position) {
+        const positionMap = {
+            'before_char': 0,
+            'after_char': 1,
+            'top_an': 2,
+            'bottom_an': 3,
+            'at_depth': 4,
+            'em_top': 5,
+            'em_bottom': 6
+        };
+        if (typeof position === 'string') {
+            return positionMap[position] !== undefined ? positionMap[position] : 0;
+        }
+        return position || 0;
+    }
+    
+    // 递归转换子条目
+    function convertChildren(children) {
+        if (!children || !Array.isArray(children) || children.length === 0) {
+            return [];
+        }
+        return children.map(child => ({
+            id: child.id || child.uid || 0,
+            comment: child.comment || '',
+            keys: Array.isArray(child.keys) ? child.keys : (Array.isArray(child.key) ? child.key : []),
+            content: child.content || '',
+            priority: child.priority !== undefined ? child.priority : (child.order !== undefined ? child.order : 100),
+            constant: child.constant !== undefined ? child.constant : false,
+            enabled: child.enabled !== undefined ? child.enabled : !child.disable,
+            selective: child.selective !== undefined ? child.selective : true,
+            position: convertPositionToInternal(child.position || child.extensions?.position),
+            role: child.role !== undefined ? child.role : (child.extensions?.role !== undefined ? child.extensions.role : 0),
+            depth: child.depth !== undefined ? child.depth : (child.extensions?.depth !== undefined ? child.extensions.depth : 4),
+            children: convertChildren(child.children)
+        }));
+    }
+    
+    try {
+        return {
+            id: newId,
+            comment: entry.comment || '',
+            keys: Array.isArray(entry.keys) ? entry.keys : (Array.isArray(entry.key) ? entry.key : []),
+            content: entry.content || '',
+            priority: entry.priority !== undefined ? entry.priority : (entry.order !== undefined ? entry.order : 100),
+            constant: entry.constant !== undefined ? entry.constant : false,
+            enabled: entry.enabled !== undefined ? entry.enabled : !entry.disable,
+            selective: entry.selective !== undefined ? entry.selective : true,
+            position: convertPositionToInternal(entry.position || entry.extensions?.position),
+            role: entry.role !== undefined ? entry.role : (entry.extensions?.role !== undefined ? entry.extensions.role : 0),
+            depth: entry.depth !== undefined ? entry.depth : (entry.extensions?.depth !== undefined ? entry.extensions.depth : 4),
+            children: convertChildren(entry.children)
+        };
+    } catch (err) {
+        console.error('转换条目失败:', err, entry);
+        return null;
+    }
 }
 
 // 新增：设置优先级的辅助函数
@@ -9083,24 +9486,124 @@ const WB_FOLD_STATE_KEY = 'worldbookFoldStates';
 // 全局标志：是否跳过恢复折叠状态（用于新导入的角色）
 let skipRestoreFoldStates = false;
 
-// 获取当前角色的折叠状态
+// 内存缓存，用于同步访问
+let foldStatesCache = null;
+
+// IndexedDB 折叠状态管理
+const FoldStateDB = {
+    dbName: 'FoldStateDB',
+    storeName: 'foldStates',
+    db: null,
+    
+    async openDB() {
+        if (this.db) return this.db;
+        
+        return new Promise((resolve, reject) => {
+            const request = indexedDB.open(this.dbName, 1);
+            
+            request.onupgradeneeded = (event) => {
+                const db = event.target.result;
+                if (!db.objectStoreNames.contains(this.storeName)) {
+                    db.createObjectStore(this.storeName, { keyPath: 'key' });
+                }
+            };
+            
+            request.onsuccess = (event) => {
+                this.db = event.target.result;
+                resolve(this.db);
+            };
+            
+            request.onerror = (event) => {
+                reject(event.target.error);
+            };
+        });
+    },
+    
+    async loadToCache() {
+        try {
+            const db = await this.openDB();
+            const transaction = db.transaction([this.storeName], 'readonly');
+            const store = transaction.objectStore(this.storeName);
+            const request = store.get(WB_FOLD_STATE_KEY);
+            
+            return new Promise((resolve) => {
+                request.onsuccess = () => {
+                    foldStatesCache = request.result?.value || {};
+                    resolve(foldStatesCache);
+                };
+                request.onerror = () => {
+                    foldStatesCache = {};
+                    resolve(foldStatesCache);
+                };
+            });
+        } catch (error) {
+            console.error('加载折叠状态失败:', error);
+            foldStatesCache = {};
+            return foldStatesCache;
+        }
+    },
+    
+    async saveFromCache() {
+        if (!foldStatesCache) return;
+        
+        try {
+            const db = await this.openDB();
+            const transaction = db.transaction([this.storeName], 'readwrite');
+            const store = transaction.objectStore(this.storeName);
+            
+            store.put({
+                key: WB_FOLD_STATE_KEY,
+                value: foldStatesCache
+            });
+        } catch (error) {
+            console.error('保存折叠状态失败:', error);
+        }
+    }
+};
+
+// 初始化缓存（页面加载时调用）
+(async function initFoldStateCache() {
+    await FoldStateDB.loadToCache();
+    
+    // 从 localStorage 迁移数据（兼容旧版本）
+    const oldData = localStorage.getItem(WB_FOLD_STATE_KEY);
+    if (oldData && Object.keys(foldStatesCache).length === 0) {
+        try {
+            foldStatesCache = JSON.parse(oldData);
+            await FoldStateDB.saveFromCache();
+            localStorage.removeItem(WB_FOLD_STATE_KEY);
+            mylog('已从 localStorage 迁移折叠状态到 IndexedDB');
+        } catch (e) {
+            console.error('迁移折叠状态失败:', e);
+        }
+    }
+})();
+
+// 获取当前角色的折叠状态（同步方法）
 function getWorldbookFoldStates() {
     const charId = document.getElementById('charId')?.value || 'default';
-    const allStates = JSON.parse(localStorage.getItem(WB_FOLD_STATE_KEY) || '{}');
-    return allStates[charId] || {};
+    if (!foldStatesCache) {
+        foldStatesCache = {};
+    }
+    return foldStatesCache[charId] || {};
 }
 
-// 保存折叠状态
+// 保存折叠状态（同步方法，异步持久化）
 function saveWorldbookFoldState(entryId, isFolded) {
     const charId = document.getElementById('charId')?.value || 'default';
-    const allStates = JSON.parse(localStorage.getItem(WB_FOLD_STATE_KEY) || '{}');
     
-    if (!allStates[charId]) {
-        allStates[charId] = {};
+    if (!foldStatesCache) {
+        foldStatesCache = {};
     }
     
-    allStates[charId][entryId] = isFolded;
-    localStorage.setItem(WB_FOLD_STATE_KEY, JSON.stringify(allStates));
+    if (!foldStatesCache[charId]) {
+        foldStatesCache[charId] = {};
+    }
+    
+    foldStatesCache[charId][entryId] = isFolded;
+    
+    // 异步保存到 IndexedDB（不阻塞）
+    FoldStateDB.saveFromCache();
 }
 
 // 切换世界书条目的折叠状态

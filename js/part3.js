@@ -1648,12 +1648,14 @@ try {
     // 优化：移除不必要的延迟，让应用更快启动
     try {
     initializeApiSettingsModal();
+    initializeOtherSettingsModal();
     } catch (error) {
     alert('⚠️ API设置模态框初始化失败: ' + error.message);
     }
     
     try {
     loadApiSettings();
+    loadOtherSettings();
     } catch (error) {
     alert('⚠️ API设置加载失败: ' + error.message);
     }
