@@ -1,5 +1,5 @@
 //控制台日志输出
-const DEBUG = false;
+const DEBUG = true;
 
 function mylog(...logs){
 	if (DEBUG){
