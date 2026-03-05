@@ -12992,8 +12992,8 @@ You must structure your entire output strictly in the following format, without 
                     item.className = 'flex gap-2 items-center p-2 border rounded';
                     item.style.borderColor = 'var(--border-color)';
                     item.innerHTML = `
-                        <input type="text" placeholder="提示词" value="${prompt}" class="prompt-text flex-1 text-xs light-input rounded p-1">
-                        <input type="text" placeholder="lora标签(可选)" value="${loraTag}" class="prompt-lora flex-1 text-xs light-input rounded p-1" style="min-width: 100px;">
+                        <input type="text" placeholder="触发提示词" value="${prompt}" class="prompt-text flex-1 text-xs light-input rounded p-1">
+                        <input type="text" placeholder="lora文件名" value="${loraTag}" class="prompt-lora flex-1 text-xs light-input rounded p-1" style="min-width: 100px;">
                         <button class="text-red-500 hover:text-red-700 text-xs px-2" onclick="this.parentElement.remove()">
                             <i class="fas fa-trash"></i>
                         </button>
