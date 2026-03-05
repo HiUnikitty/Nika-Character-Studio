@@ -2984,7 +2984,7 @@ body {
                     'char.tags': '标签（用逗号分隔，如: 女性, 助手, 幻想）',
                     'char.sdPromptLibrary': 'SD角色提示词库',
                     'char.addPrompt': '添加',
-                    'char.sdPromptHint': '为此角色添加专属的SD提示词，支持lora标签',
+                    'char.sdPromptHint': '为此角色添加专属的SD提示词，如原创，可不填lora文件名',
                     'char.save': '保存',
                     
                     // SD生图设置
@@ -3413,7 +3413,7 @@ body {
                     'char.tags': 'Tags (comma-separated, e.g.: female, assistant, fantasy)',
                     'char.sdPromptLibrary': 'SD Character Prompt Library',
                     'char.addPrompt': 'Add',
-                    'char.sdPromptHint': 'Add exclusive SD prompts for this character, supports lora tags',
+                    'char.sdPromptHint': 'Add exclusive SD prompts for this character, supports lora',
                     'char.save': 'Save',
                     
                     // SD Generation Settings
@@ -13410,43 +13410,46 @@ CG信息：
                 },
                 
                 // 调用SD API (使用fetch，POST JSON格式)
-                async callSDAPI(prompt, negativePrompt = null) {
+                async callSDAPI(prompt, negativePrompt = null, customConfig = null) {
+                    // 使用自定义配置或默认配置
+                    const config = customConfig || this.config;
+                    
                     const params = {
                         // 基础参数
                         prompt: prompt,
-                        negative_prompt: negativePrompt !== null ? negativePrompt : (this.config.negativePrompt || ''),
-                        width: this.config.width || 512,
-                        height: this.config.height || 512,
-                        steps: this.config.steps || 50,
-                        cfg_scale: this.config.cfgScale || 7,
-                        sampler_name: this.config.sampler || 'Euler',
-                        sampler_index: this.config.sampler || 'Euler',
+                        negative_prompt: negativePrompt !== null ? negativePrompt : (config.negativePrompt || ''),
+                        width: config.width || 512,
+                        height: config.height || 512,
+                        steps: config.steps || 50,
+                        cfg_scale: config.cfgScale || 7,
+                        sampler_name: config.sampler || 'Euler',
+                        sampler_index: config.sampler || 'Euler',
                         
                         // 高清修复参数
-                        enable_hr: this.config.enableHr || false,
-                        denoising_strength: this.config.enableHr ? (this.config.denoisingStrength || 0.7) : 0,
-                        hr_scale: this.config.hrScale || 2,
-                        hr_upscaler: this.config.hrUpscaler || 'Latent',
-                        hr_second_pass_steps: this.config.hrSecondPassSteps || 0,
+                        enable_hr: config.enableHr || false,
+                        denoising_strength: config.enableHr ? (config.denoisingStrength || 0.7) : 0,
+                        hr_scale: config.hrScale || 2,
+                        hr_upscaler: config.hrUpscaler || 'Latent',
+                        hr_second_pass_steps: config.hrSecondPassSteps || 0,
                         hr_resize_x: 0,
                         hr_resize_y: 0,
                         firstphase_width: 0,
                         firstphase_height: 0,
                         
                         // 种子参数
-                        seed: this.config.seed || -1,
-                        subseed: this.config.subseed || -1,
-                        subseed_strength: this.config.subseedStrength || 0,
+                        seed: config.seed || -1,
+                        subseed: config.subseed || -1,
+                        subseed_strength: config.subseedStrength || 0,
                         seed_resize_from_h: -1,
                         seed_resize_from_w: -1,
                         
                         // 批量参数
-                        batch_size: this.config.batchSize || 1,
-                        n_iter: this.config.nIter || 1,
+                        batch_size: config.batchSize || 1,
+                        n_iter: config.nIter || 1,
                         
                         // 其他参数
-                        restore_faces: this.config.restoreFaces || false,
-                        tiling: this.config.tiling || false,
+                        restore_faces: config.restoreFaces || false,
+                        tiling: config.tiling || false,
                         do_not_save_samples: true,
                         do_not_save_grid: true,
                         eta: 0,
@@ -13483,7 +13486,7 @@ CG信息：
                     console.log('  - 高清修复:', params.enable_hr);
                     
                     // 清理API URL（移除可能的查询参数和末尾斜杠）
-                    let cleanApiUrl = this.config.apiUrl.split('?')[0].split('#')[0];
+                    let cleanApiUrl = config.apiUrl.split('?')[0].split('#')[0];
                     cleanApiUrl = cleanApiUrl.replace(/\/+$/, ''); // 移除末尾的所有斜杠
                     
                     const response = await fetch(`${cleanApiUrl}/sdapi/v1/txt2img`, {
@@ -13512,17 +13515,20 @@ CG信息：
                     btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>测试中...';
                     
                     try {
+                        // 从UI读取当前配置（而不是使用this.config），这样用户不需要先保存就能测试
+                        const testConfig = this.getConfigFromUI();
+                        
                         // 诊断信息
                         console.log('🔍 开始SD API诊断');
                         console.log('当前页面地址:', window.location.href);
-                        console.log('完整配置对象:', this.config);
-                        console.log('SD API地址:', this.config.apiUrl);
-                        console.log('API地址类型:', typeof this.config.apiUrl);
+                        console.log('测试配置对象:', testConfig);
+                        console.log('SD API地址:', testConfig.apiUrl);
+                        console.log('API地址类型:', typeof testConfig.apiUrl);
                         
                         // 检查混合内容问题
                         const isHttps = window.location.protocol === 'https:';
-                        const apiIsHttp = this.config.apiUrl.startsWith('http://');
-                        const apiIsLocalhost = this.config.apiUrl.includes('127.0.0.1') || this.config.apiUrl.includes('localhost');
+                        const apiIsHttp = testConfig.apiUrl.startsWith('http://');
+                        const apiIsLocalhost = testConfig.apiUrl.includes('127.0.0.1') || testConfig.apiUrl.includes('localhost');
                         
                         if (isHttps && apiIsHttp) {
                             const errorMsg = `❌ 混合内容错误\n\n当前网站使用 HTTPS，但SD API使用 HTTP\n浏览器安全策略阻止了此请求\n\n解决方案：\n1. 使用 HTTP 访问本网站（推荐）\n2. 为SD API配置HTTPS（使用cloudflared等工具）\n3. 在浏览器中允许不安全内容`;
@@ -13532,7 +13538,7 @@ CG信息：
                         }
                         
                         if (apiIsLocalhost && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
-                            const errorMsg = `❌ 本地地址访问错误\n\n您配置的API地址是 ${this.config.apiUrl}\n但当前页面地址是 ${window.location.href}\n\n127.0.0.1 只能在本机访问！\n\n解决方案：\n1. 将API地址改为电脑的局域网IP\n   例如：http://192.168.1.100:7860\n2. 或者在本机浏览器中打开此页面\n   使用：http://127.0.0.1:端口号\n\n如何查找电脑IP：\nWindows: 运行 ipconfig\nMac/Linux: 运行 ifconfig`;
+                            const errorMsg = `❌ 本地地址访问错误\n\n您配置的API地址是 ${testConfig.apiUrl}\n但当前页面地址是 ${window.location.href}\n\n127.0.0.1 只能在本机访问！\n\n解决方案：\n1. 将API地址改为电脑的局域网IP\n   例如：http://192.168.1.100:7860\n2. 或者在本机浏览器中打开此页面\n   使用：http://127.0.0.1:端口号\n\n如何查找电脑IP：\nWindows: 运行 ipconfig\nMac/Linux: 运行 ifconfig`;
                             alert(errorMsg);
                             console.error(errorMsg);
                             return;
@@ -13543,7 +13549,7 @@ CG信息：
                         btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>测试连接...';
                         
                         // 清理API URL（移除可能的查询参数和末尾斜杠）
-                        let cleanApiUrl = this.config.apiUrl.split('?')[0].split('#')[0];
+                        let cleanApiUrl = testConfig.apiUrl.split('?')[0].split('#')[0];
                         cleanApiUrl = cleanApiUrl.replace(/\/+$/, ''); // 移除末尾的所有斜杠
                         console.log('清理后的API地址:', cleanApiUrl);
                         
@@ -13587,7 +13593,8 @@ CG信息：
                         btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>生成中...';
                         
                         const testPrompt = '1girl, beautiful, masterpiece, best quality';
-                        const imageData = await this.callSDAPI(testPrompt);
+                        // 传入testConfig，这样测试时使用UI中的当前配置而不是保存的配置
+                        const imageData = await this.callSDAPI(testPrompt, null, testConfig);
                         
                         // 显示生成的图片
                         this.showFullImage(`data:image/png;base64,${imageData}`);
