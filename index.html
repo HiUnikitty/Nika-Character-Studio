@@ -2449,12 +2449,6 @@
               <option value="gemini-2.5-pro">Gemini 2.5 Pro</option>
             </select>
           </div>
-          <div class="field-group">
-            <label>
-              <input type="checkbox" id="gemini-use-system-prompt"><span data-i18n="enable-jailbreak"> 启用破限</span>
-            </label>
-            <small class="help-text" data-i18n="jailbreak-help">防止模型敏感</small>
-          </div>
         </div>
 
         <div id="gemini-proxy-options" class="api-provider-options">
@@ -2472,12 +2466,6 @@
               <option value="gemini-2.5-flash">Gemini 2.5 Flash</option>
               <option value="gemini-2.5-pro">Gemini 2.5 Pro</option>
             </select>
-          </div>
-          <div class="field-group">
-            <label>
-              <input type="checkbox" id="gemini-proxy-use-system-prompt"><span data-i18n="enable-jailbreak"> 启用破限</span>
-            </label>
-            <small class="help-text" data-i18n="jailbreak-help">防止模型敏感</small>
           </div>
           <p class="help-text" data-i18n="proxy-help">
             用于连接 Cloudflare Worker 等自定义反向代理。Endpoint URL 应为不包含模型名称的完整路径。
@@ -2564,12 +2552,6 @@
                 </button>
               </div>
             </div>
-            <div class="field-group">
-              <label>
-                <input type="checkbox" id="tavern-proxy-jailbreak"><span data-i18n="enable-jailbreak"> 启用破限</span>
-              </label>
-              <small class="help-text" data-i18n="jailbreak-help">防止模型敏感，适用于Gemini模型</small>
-            </div>
             <p class="help-text" data-i18n="proxy-help-text">通过反向代理连接到API服务，适用于Render等的CLI反代</p>
           </div>
         </div>
@@ -2597,6 +2579,38 @@
             </div>
             <label class="switch">
               <input type="checkbox" id="Plus-switch">
+              <span class="slider"></span>
+            </label>
+          </div>
+        </div>
+        
+        <!-- 全局破限开关 - 使用滑动开关样式 -->
+        <div class="field-group">
+          <div class="Plus-switch-container" style="margin: 0; justify-content: space-between; width: 100%;">
+            <div>
+              <span class="switch-label" data-i18n="enable-jailbreak">启用破限</span>
+              <p class="help-text" style="margin: 5px 0 0 0; font-size: 12px; color: #888;" data-i18n="jailbreak-help-global">
+                防止模型敏感，适用于所有API请求（包括角色卡生成、世界书转换等）
+              </p>
+            </div>
+            <label class="switch">
+              <input type="checkbox" id="gemini-use-system-prompt" checked>
+              <span class="slider"></span>
+            </label>
+          </div>
+        </div>
+        
+        <!-- 调试模式开关 -->
+        <div class="field-group">
+          <div class="Plus-switch-container" style="margin: 0; justify-content: space-between; width: 100%;">
+            <div>
+              <span class="switch-label" data-i18n="debug-mode">调试模式</span>
+              <p class="help-text" style="margin: 5px 0 0 0; font-size: 12px; color: #888;" data-i18n="debug-mode-help">
+                开启后会在控制台输出详细日志，⚠️ 非常占内存，不建议打开
+              </p>
+            </div>
+            <label class="switch">
+              <input type="checkbox" id="debug-mode-switch">
               <span class="slider"></span>
             </label>
           </div>
@@ -3864,6 +3878,9 @@
           'select-model': '选择模型',
           'enable-jailbreak': '启用破限',
           'jailbreak-help': '防止模型敏感',
+          'jailbreak-help-global': '防止模型敏感，适用于所有API请求（包括角色卡生成、世界书转换等）',
+          'debug-mode': '调试模式',
+          'debug-mode-help': '开启后会在控制台输出详细日志，⚠️ 非常占内存，不建议打开',
           'proxy-endpoint': '代理 Endpoint URL',
           'proxy-endpoint-placeholder': '例如: https://mydomain.com/v1beta/models',
           'proxy-help': '用于连接 Cloudflare Worker 等自定义反向代理。Endpoint URL 应为不包含模型名称的完整路径。',

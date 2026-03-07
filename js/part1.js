@@ -1,5 +1,5 @@
 //控制台日志输出
-const DEBUG = false;
+let DEBUG = false; // 默认关闭调试模式，可通过"其他设置"开启
 
 function mylog(...logs){
 	if (DEBUG){
@@ -870,10 +870,24 @@ modal.style.display = 'flex';
 function loadOtherSettings() {
 try {
     const settings = JSON.parse(localStorage.getItem('otherSettings')) || {
-    formatEnhancement: false
+    formatEnhancement: false,
+    debugMode: false
     };
     
+    // 加载格式增强和调试模式
     document.getElementById('Plus-switch').checked = settings.formatEnhancement || false;
+    document.getElementById('debug-mode-switch').checked = settings.debugMode || false;
+    
+    // 应用调试模式设置
+    DEBUG = settings.debugMode || false;
+    
+    // 加载破限开关状态（从apiSettings中读取）
+    const apiSettings = JSON.parse(localStorage.getItem('apiSettings')) || {};
+    const jailbreakEnabled = apiSettings.gemini?.useSystemPrompt !== false; // 默认为true
+    const jailbreakSwitch = document.getElementById('gemini-use-system-prompt');
+    if (jailbreakSwitch) {
+        jailbreakSwitch.checked = jailbreakEnabled;
+    }
     
     // 更新AI按钮文本
     toggleAiButtonText(settings.formatEnhancement);
@@ -882,7 +896,8 @@ try {
 } catch (error) {
     console.error('加载其他设置失败:', error);
     return {
-    formatEnhancement: false
+    formatEnhancement: false,
+    debugMode: false
     };
 }
 }
@@ -897,10 +912,35 @@ cancelBtn.onclick = () => {
 };
 
 saveBtn.onclick = () => {
+    // 保存格式增强和调试模式到otherSettings
     const settings = {
-    formatEnhancement: document.getElementById('Plus-switch').checked
+    formatEnhancement: document.getElementById('Plus-switch').checked,
+    debugMode: document.getElementById('debug-mode-switch').checked
     };
     localStorage.setItem('otherSettings', JSON.stringify(settings));
+    
+    // 应用调试模式设置
+    DEBUG = settings.debugMode;
+    
+    // 保存破限开关状态到apiSettings
+    const jailbreakSwitch = document.getElementById('gemini-use-system-prompt');
+    if (jailbreakSwitch) {
+        const apiSettings = JSON.parse(localStorage.getItem('apiSettings')) || {};
+        const jailbreakEnabled = jailbreakSwitch.checked;
+        
+        // 更新所有提供商的破限设置
+        if (apiSettings.gemini) {
+            apiSettings.gemini.useSystemPrompt = jailbreakEnabled;
+        }
+        if (apiSettings['gemini-proxy']) {
+            apiSettings['gemini-proxy'].useSystemPrompt = jailbreakEnabled;
+        }
+        if (apiSettings.tavern) {
+            apiSettings.tavern.jailbreak = jailbreakEnabled;
+        }
+        
+        localStorage.setItem('apiSettings', JSON.stringify(apiSettings));
+    }
     
     // 更新AI按钮文本
     toggleAiButtonText(settings.formatEnhancement);
@@ -982,6 +1022,11 @@ cancelBtn.onclick = () => {
 
 saveBtn.onclick = () => {
     apiModalInitialized = true;
+    
+    // 获取全局破限开关状态（在"其他设置"中）
+    const globalJailbreakSwitch = document.getElementById('gemini-use-system-prompt');
+    const useSystemPrompt = globalJailbreakSwitch ? globalJailbreakSwitch.checked : true; // 默认为true
+    
     const settings = {
     provider: document.getElementById('api-provider-selector').value,
     deepseek: {
@@ -990,13 +1035,13 @@ saveBtn.onclick = () => {
     gemini: {
         apiKey: document.getElementById('gemini-api-key').value.trim(),
         model: document.getElementById('gemini-model').value,
-        useSystemPrompt: document.getElementById('gemini-use-system-prompt').checked,
+        useSystemPrompt: useSystemPrompt, // 使用全局破限开关
     },
     'gemini-proxy': {
         endpoint: document.getElementById('gemini-proxy-endpoint').value.trim(),
         apiKey: document.getElementById('gemini-proxy-api-key').value.trim(),
         model: document.getElementById('gemini-proxy-model').value,
-        useSystemPrompt: document.getElementById('gemini-proxy-use-system-prompt').checked,
+        useSystemPrompt: useSystemPrompt, // 使用全局破限开关（保持兼容性）
     },
     ollama: {
         endpoint: document.getElementById('ollama-api-endpoint').value.trim() || 'http://localhost:11434',
@@ -1010,7 +1055,7 @@ saveBtn.onclick = () => {
         proxyUrl: document.getElementById('tavern-proxy-url').value.trim(),
         proxyPassword: document.getElementById('tavern-proxy-password').value.trim(),
         proxyModel: document.getElementById('tavern-proxy-model').value.trim() || '',
-        jailbreak: document.getElementById('tavern-proxy-jailbreak').checked,
+        jailbreak: useSystemPrompt, // 使用全局破限开关（保持兼容性）
     },
     local: {
         endpoint: document.getElementById('local-api-endpoint').value.trim(),
@@ -1030,13 +1075,13 @@ try {
     gemini: {
     apiKey: '', 
     model: 'gemini-2.5-flash',
-    useSystemPrompt: false
+    useSystemPrompt: true  // 默认启用破限
     },
     'gemini-proxy': { 
     endpoint: '', 
     apiKey: '', 
     model: 'gemini-2.5-flash',
-    useSystemPrompt: false
+    useSystemPrompt: true  // 默认启用破限
     },
     ollama: {
     endpoint: 'http://localhost:11434',
@@ -1050,10 +1095,39 @@ try {
     proxyUrl: '',
     proxyPassword: '',
     proxyModel: '',
-    jailbreak: false
+    jailbreak: true  // 默认启用破限
     },
     local: { endpoint: '' },
 };
+
+// 迁移逻辑：将旧版本的破限设置（false）更新为新版本的默认值（true）
+// 这样可以确保升级后用户默认启用破限
+let needsSave = false;
+
+if (settings.gemini) {
+    if (settings.gemini.useSystemPrompt === undefined || settings.gemini.useSystemPrompt === false) {
+        settings.gemini.useSystemPrompt = true;
+        needsSave = true;
+    }
+}
+if (settings['gemini-proxy']) {
+    if (settings['gemini-proxy'].useSystemPrompt === undefined || settings['gemini-proxy'].useSystemPrompt === false) {
+        settings['gemini-proxy'].useSystemPrompt = true;
+        needsSave = true;
+    }
+}
+if (settings.tavern) {
+    if (settings.tavern.jailbreak === undefined || settings.tavern.jailbreak === false) {
+        settings.tavern.jailbreak = true;
+        needsSave = true;
+    }
+}
+
+// 如果有更新，保存回localStorage
+if (needsSave) {
+    localStorage.setItem('apiSettings', JSON.stringify(settings));
+    console.log('✅ 已将破限设置迁移为默认启用');
+}
 
 // Migrate old "custom" settings if they exist
 if (settings.custom) {
@@ -1076,11 +1150,16 @@ document.getElementById('api-provider-selector').value = settings.provider;
 document.getElementById('deepseek-api-key').value = settings.deepseek?.apiKey || '';
 document.getElementById('gemini-api-key').value = settings.gemini?.apiKey || '';
 document.getElementById('gemini-model').value = settings.gemini?.model || 'gemini-2.5-flash';
-document.getElementById('gemini-use-system-prompt').checked = settings.gemini?.useSystemPrompt || false;
+// 全局破限开关已移至"其他设置"，使用相同的ID gemini-use-system-prompt
+const globalJailbreakSwitch = document.getElementById('gemini-use-system-prompt');
+if (globalJailbreakSwitch) {
+    // 默认为true，只有明确设为false时才是false
+    globalJailbreakSwitch.checked = settings.gemini?.useSystemPrompt !== false;
+}
 document.getElementById('gemini-proxy-endpoint').value = settings['gemini-proxy']?.endpoint || '';
 document.getElementById('gemini-proxy-api-key').value = settings['gemini-proxy']?.apiKey || '';
 document.getElementById('gemini-proxy-model').value = settings['gemini-proxy']?.model || 'gemini-2.5-flash';
-document.getElementById('gemini-proxy-use-system-prompt').checked = settings['gemini-proxy']?.useSystemPrompt || false;
+// gemini-proxy-use-system-prompt 已删除，使用全局开关
 
 // Load Ollama settings
 document.getElementById('ollama-api-endpoint').value = settings.ollama?.endpoint || 'http://localhost:11434';
@@ -1100,7 +1179,7 @@ document.getElementById('tavern-proxy-model').value = settings.tavern?.proxyMode
 
 // 从 IndexedDB 加载 CLI 反代模型列表
 loadModelListFromDB('tavern', 'tavern-proxy-model', settings.tavern?.proxyModel);
-document.getElementById('tavern-proxy-jailbreak').checked = settings.tavern?.jailbreak || false;
+// tavern-proxy-jailbreak 已删除，使用全局开关
 document.getElementById('local-api-endpoint').value = settings.local?.endpoint || '';
 
 // Trigger tavern connection type change to show correct settings
@@ -3406,5 +3485,4 @@ function applySortSuggestions() {
         alert(t('sort-suggestion-applied', { count: appliedCount }));
         closeSortSuggestionModal();
     }
-
 }
