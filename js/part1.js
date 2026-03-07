@@ -1,5 +1,5 @@
 //控制台日志输出
-const DEBUG = true;
+const DEBUG = false;
 
 function mylog(...logs){
 	if (DEBUG){
@@ -3406,4 +3406,5 @@ function applySortSuggestions() {
         alert(t('sort-suggestion-applied', { count: appliedCount }));
         closeSortSuggestionModal();
     }
+
 }
