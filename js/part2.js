@@ -2975,7 +2975,7 @@ async function callApi(prompt, button) {
 
     try {
         // 统一获取全局破限开关状态
-        const useJailbreak = apiSettings.gemini?.useSystemPrompt || false;
+        let useJailbreak = apiSettings.gemini?.useSystemPrompt || false;
         let systemMessage = '';
 
         // 为支持OpenAI格式的提供商生成破限系统消息
@@ -3235,9 +3235,6 @@ async function callApi(prompt, button) {
                     stream: false,
                 };
 
-                // 统一使用全局破限开关
-                const useJailbreak = apiSettings.gemini?.useSystemPrompt || false;
-
                 // 为CLI反代模式添加工具字段（如果反代支持的话）
                 // 注意：大部分CLI反代不支持metadata、thinking_config等非标准OpenAI字段
                 // 这些字段会导致400错误，已移除
@@ -3269,9 +3266,6 @@ async function callApi(prompt, button) {
                 // 如果是CLI反代的Gemini模型，添加额外的配置
                 if (isGeminiModel && isReverseProxy) {
                     mylog('Using OpenAI format for CLI reverse proxy with Gemini model');
-
-                    // 统一使用全局破限开关
-                    const useJailbreak = apiSettings.gemini?.useSystemPrompt || false;
 
                     // 为Gemini模型添加系统消息来模拟高级功能
                     let systemMessage = '';
