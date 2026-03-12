@@ -3675,16 +3675,32 @@ async function batchGenerateGreetings(button) {
         <div style="background: var(--light-bg); border-radius: 10px; padding: 20px; max-width: 900px; max-height: 90vh; overflow-y: auto; width: 90%;">
             <h3 style="color: var(--primary-color); margin-bottom: 15px;">🎲 批量生成问候消息</h3>
             
-            <div style="margin-bottom: 15px;">
-                <label style="display: block; color: var(--text-color); margin-bottom: 5px;">生成数量：</label>
-                <select id="greeting-count" style="width: 120px; padding: 8px; border: 1px solid var(--input-border); border-radius: 5px; background: var(--input-bg); color: var(--text-color);">
-                    <option value="3">3条</option>
-                    <option value="5" selected>5条</option>
-                    <option value="8">8条</option>
-                    <option value="10">10条</option>
-                </select>
+            <div style="display: flex; gap: 20px; margin-bottom: 15px;">
+                <div style="flex: 1;">
+                    <label style="display: block; color: var(--text-color); margin-bottom: 5px;">生成数量：</label>
+                    <select id="greeting-count" style="width: 120px; padding: 8px; border: 1px solid var(--input-border); border-radius: 5px; background: var(--input-bg); color: var(--text-color);">
+                        <option value="3">3条</option>
+                        <option value="5" selected>5条</option>
+                        <option value="8">8条</option>
+                        <option value="10">10条</option>
+                    </select>
+                </div>
+                <div style="flex: 1;">
+                    <label style="display: block; color: var(--text-color); margin-bottom: 5px;">每条字数：</label>
+                    <select id="greeting-word-count" style="width: 120px; padding: 8px; border: 1px solid var(--input-border); border-radius: 5px; background: var(--input-bg); color: var(--text-color);">
+                        <option value="300-500">300-500字</option>
+                        <option value="500-800" selected>500-800字</option>
+                        <option value="800-1200">800-1200字</option>
+                        <option value="1200-1500">1200-1500字</option>
+                    </select>
+                </div>
             </div>
             
+            <div style="margin-bottom: 15px;">
+                <label style="display: block; color: var(--text-color); margin-bottom: 5px;">User设定（可选）：</label>
+                <textarea id="user-setting-input" placeholder="例如：user是一名侦探、user失去了记忆、user拥有特殊能力等..." style="width: 100%; height: 80px; padding: 12px; border: 1px solid var(--input-border); border-radius: 5px; background: var(--input-bg); color: var(--text-color); resize: vertical; box-sizing: border-box;"></textarea>
+            </div>
+
             <div style="margin-bottom: 15px;">
                 <label style="display: block; color: var(--text-color); margin-bottom: 5px;">剧情风格偏向（可选）：</label>
                 <textarea id="greeting-style-input" placeholder="例如：恋爱向、科幻冒险、日常温馨、紧张悬疑等..." style="width: 100%; height: 80px; padding: 12px; border: 1px solid var(--input-border); border-radius: 5px; background: var(--input-bg); color: var(--text-color); resize: vertical; box-sizing: border-box;"></textarea>
@@ -3696,8 +3712,14 @@ async function batchGenerateGreetings(button) {
             </div>
             
             <div style="margin-bottom: 15px;">
-                <label style="display: block; color: var(--text-color); margin-bottom: 5px;">User设定（可选）：</label>
-                <textarea id="user-setting-input" placeholder="例如：user是一名侦探、user失去了记忆、user拥有特殊能力等..." style="width: 100%; height: 80px; padding: 12px; border: 1px solid var(--input-border); border-radius: 5px; background: var(--input-bg); color: var(--text-color); resize: vertical; box-sizing: border-box;"></textarea>
+                <label style="display: block; color: var(--text-color); margin-bottom: 5px;">场景人物设定（可选）：</label>
+                <textarea id="scene-character-input" placeholder="例如：场景中有一只猫、旁边有一位老人、远处有几个学生等..." style="width: 100%; height: 80px; padding: 12px; border: 1px solid var(--input-border); border-radius: 5px; background: var(--input-bg); color: var(--text-color); resize: vertical; box-sizing: border-box;"></textarea>
+                <div style="margin-top: 8px;">
+                    <label style="display: inline-flex; align-items: center; color: var(--text-color); cursor: pointer;">
+                        <input type="checkbox" id="no-extra-characters" style="margin-right: 8px; cursor: pointer;">
+                        <span>约束AI不要擅自添加人物</span>
+                    </label>
+                </div>
             </div>
             
             <div id="greeting-results" style="margin-top: 20px;"></div>
@@ -3722,9 +3744,12 @@ async function batchGenerateGreetings(button) {
 
     generateBtn.addEventListener('click', async () => {
         const count = document.getElementById('greeting-count').value;
+        const wordCount = document.getElementById('greeting-word-count').value;
         const styleInput = document.getElementById('greeting-style-input').value.trim();
         const locationInput = document.getElementById('location-setting-input').value.trim();
         const userSettingInput = document.getElementById('user-setting-input').value.trim();
+        const sceneCharacterInput = document.getElementById('scene-character-input').value.trim();
+        const noExtraCharacters = document.getElementById('no-extra-characters').checked;
         const resultsDiv = document.getElementById('greeting-results');
 
         // 禁用生成按钮
@@ -3773,9 +3798,11 @@ ${worldbookContext}
 ${styleInput ? `**用户指定的剧情风格偏向：** ${styleInput}\n` : ''}
 ${locationInput ? `**地点/场景：** ${locationInput}\n请在生成的问候消息中考虑这些地点或场景设定。\n` : ''}
 ${userSettingInput ? `**User设定：** ${userSettingInput}\n请在生成的问候消息中考虑这些user设定，让开场白更有针对性和代入感。\n` : ''}
+${sceneCharacterInput ? `**场景人物设定：** ${sceneCharacterInput}\n请在生成的问候消息中包含这些场景人物。\n` : ''}
+${noExtraCharacters ? `**重要约束：** 除了上述明确指定的人物外，不要擅自添加其他角色或人物。\n` : ''}
 
 **生成要求：**
-1. 每条问候消息都应该是一个完整的开场场景，篇幅在500-800字左右
+1. 每条问候消息都应该是一个完整的开场场景，篇幅在${wordCount}字左右
 2. 每条消息要有不同的剧情方向和氛围（例如：日常、冒险、紧张、温馨、神秘等）
 3. 包含丰富的环境描写、感官细节、角色动作和表情
 4. 使用第二人称"你"({{user}})的视角，营造代入感
