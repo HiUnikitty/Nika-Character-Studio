@@ -2600,6 +2600,30 @@
           </div>
         </div>
         
+        <!-- 自定义破限提示词 -->
+        <div class="field-group">
+          <label for="custom-limitless-prompt" style="display: block; margin-bottom: 8px;">
+            <span class="switch-label" data-i18n="custom-limitless-prompt">自定义破限提示词</span>
+            <p class="help-text" style="margin: 5px 0 0 0; font-size: 12px; color: #888;" data-i18n="custom-limitless-prompt-help">
+              自定义破限提示词内容，可直接修改
+            </p>
+          </label>
+          <textarea 
+            id="custom-limitless-prompt" 
+            rows="8" 
+            style="width: 100%; padding: 10px; background: rgba(0,0,0,0.3); border: 1px solid #555; border-radius: 5px; color: white; font-family: monospace; font-size: 13px; resize: vertical; box-sizing: border-box;"
+          ></textarea>
+          <div style="margin-top: 8px;">
+            <button 
+              id="reset-limitless-prompt-btn" 
+              style="background: #6c757d; color: white; padding: 6px 12px; border: none; border-radius: 4px; cursor: pointer; font-size: 12px;"
+              data-i18n="reset-to-default"
+            >
+              🔄 恢复默认
+            </button>
+          </div>
+        </div>
+        
         <!-- 调试模式开关 -->
         <div class="field-group">
           <div class="Plus-switch-container" style="margin: 0; justify-content: space-between; width: 100%;">
@@ -3879,6 +3903,9 @@
           'enable-jailbreak': '启用破限',
           'jailbreak-help': '防止模型敏感',
           'jailbreak-help-global': '防止模型敏感，适用于所有API请求（包括角色卡生成、世界书转换等）',
+          'custom-limitless-prompt': '自定义破限提示词',
+          'custom-limitless-prompt-help': '自定义头部破限提示词内容，可直接修改',
+          'reset-to-default': '🔄 恢复默认',
           'debug-mode': '调试模式',
           'debug-mode-help': '开启后会在控制台输出详细日志，⚠️ 非常占内存，不建议打开',
           'proxy-endpoint': '代理 Endpoint URL',
@@ -4565,6 +4592,9 @@
           'select-model': 'Select Model',
           'enable-jailbreak': 'Enable Jailbreak',
           'jailbreak-help': 'Prevent model sensitivity',
+          'custom-limitless-prompt': 'Custom Jailbreak Prompt',
+          'custom-limitless-prompt-help': 'Customize the jailbreak prompt content, can be edited directly',
+          'reset-to-default': '🔄 Reset to Default',
           'proxy-endpoint': 'Proxy Endpoint URL',
           'proxy-endpoint-placeholder': 'e.g.: https://mydomain.com/v1beta/models',
           'proxy-help': 'For connecting to custom reverse proxies like Cloudflare Worker. Endpoint URL should be the full path without model name.',
