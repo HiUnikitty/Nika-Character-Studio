@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="zh-CN">
   <head>
     <meta charset="UTF-8" />
@@ -223,16 +223,19 @@
         border: 1px solid #777;
       }
       #library-view .tag.type-personality {
-        background-color: #7f8c8d;
-        border-color: #95a5a6;
+        background-color: rgba(127, 140, 141, 0.7);
+        border-color: rgba(149, 165, 166, 0.8);
+        backdrop-filter: blur(4px);
       }
       #library-view .tag.type-internal {
-        background-color: #d18076;
-        border-color: #bc7168;
+        background-color: rgba(209, 128, 118, 0.7);
+        border-color: rgba(188, 113, 104, 0.8);
+        backdrop-filter: blur(4px);
       }
       #library-view .tag.type-special {
-        background-color: var(--secondary-color);
-        border-color: var(--primary-color);
+        background-color: rgba(211, 84, 0, 0.7);
+        border-color: rgba(230, 126, 34, 0.8);
+        backdrop-filter: blur(4px);
       }
       #library-view .tag:hover {
         opacity: 0.8;
@@ -335,6 +338,7 @@
         background: var(--default-card-bg);
         background-size: cover;
         background-position: center;
+        background-repeat: no-repeat;
       }
       #library-view .character-card > div:first-of-type {
         flex: 1;
@@ -2693,6 +2697,7 @@
         <div class="generation-type-selector">
           <button data-type="worldview" class="uniform-btn" data-i18n="wb-ai-gen-type-btn-worldview">生成世界观</button>
           <button data-type="main_plot" class="uniform-btn" data-i18n="wb-ai-gen-type-btn-main-plot">生成主线剧情</button>
+          <button data-type="ability_system" class="uniform-btn" data-i18n="wb-ai-gen-type-btn-ability-system">生成能力体系</button>
         </div>
         <!-- 通用输入区域 -->
         <div class="field-group" id="general-input-area">
@@ -2711,6 +2716,23 @@
             <span id="wb-ai-filename" style="color: #aaa; font-size: 14px;"></span>
           </div>
           <textarea id="wb-ai-request-input" rows="5" data-i18n-placeholder="wb-ai-request-input-placeholder" placeholder="请输入你对世界书条目的具体要求，例如：生成全部主要角色的外貌、性格、经历、技能，相互的关系"></textarea>
+        </div>
+        <!-- 能力体系专用输入区域 -->
+        <div class="field-group" id="ability-system-input-area" style="display: none;">
+          <label style="color: var(--text-color); margin-bottom: 10px; display: block;">
+            <input type="checkbox" id="ability-use-worldbook" checked style="margin-right: 8px;">
+            <span data-i18n="ability-use-worldbook-label">根据世界书设定生成</span>
+          </label>
+          
+          <label for="ability-description" data-i18n="ability-description-label">能力描述或应用场景：</label>
+          <textarea id="ability-description" rows="4" data-i18n-placeholder="ability-description-placeholder" placeholder="描述该能力的大致内容或应用场景，例如：火系魔法、剑术技能、超能力等..." style="width: 100%; padding: 10px; background: rgba(0,0,0,0.3); border: 1px solid var(--input-border); border-radius: 5px; color: var(--text-color); margin-bottom: 15px; resize: vertical;"></textarea>
+          
+          <label for="ability-count" data-i18n="ability-count-label">生成数量：</label>
+          <select id="ability-count" style="width: 100%; padding: 8px; background: rgba(0,0,0,0.3); border: 1px solid #555; border-radius: 5px; color: white; margin-bottom: 10px;">
+            <option value="3" data-i18n="ability-count-3">3个</option>
+            <option value="5" selected data-i18n="ability-count-5">5个</option>
+            <option value="7" data-i18n="ability-count-7">7个</option>
+          </select>
         </div>
         <div id="wb-ai-options-container"></div>
         <div class="modal-actions">
@@ -3838,13 +3860,24 @@
           'wb-ai-close-btn': '关闭',
           'wb-ai-type-worldview': '世界观',
           'wb-ai-type-main_plot': '主线剧情',
+          'wb-ai-type-ability_system': '能力体系',
           'wb-ai-type-literary_style': '文风',
           'wb-ai-gen-type-btn-worldview': '生成世界观',
           'wb-ai-gen-type-btn-main-plot': '生成主线剧情',
+          'wb-ai-gen-type-btn-ability-system': '生成能力体系',
           'wb-ai-gen-type-btn-literary-style': '生成文风',
           'wb-ai-generate-btn': '生成世界书条目',
           'wb-ai-quick-generate-label': '快速生成世界书条目：',
           'wb-ai-request-input-placeholder': '请输入你对世界书条目的具体要求，例如：生成全部主要角色的外貌、性格、经历、技能，相互的关系',
+          
+          // 能力体系生成
+          'ability-use-worldbook-label': '根据世界书设定生成',
+          'ability-description-label': '能力描述或应用场景：',
+          'ability-description-placeholder': '描述该能力的大致内容或应用场景，例如：火系魔法、剑术技能、超能力等...',
+          'ability-count-label': '生成数量：',
+          'ability-count-3': '3个',
+          'ability-count-5': '5个',
+          'ability-count-7': '7个',
           
           // 文风生成模态框
           'literary-style-modal-title': '📚 生成文风配置',
@@ -4528,13 +4561,24 @@
           'wb-ai-close-btn': 'Close',
           'wb-ai-type-worldview': 'worldview',
           'wb-ai-type-main_plot': 'main plot',
+          'wb-ai-type-ability_system': 'ability system',
           'wb-ai-type-literary_style': 'literary style',
           'wb-ai-gen-type-btn-worldview': 'Generate Worldview',
           'wb-ai-gen-type-btn-main-plot': 'Generate Main Plot',
+          'wb-ai-gen-type-btn-ability-system': 'Generate Ability System',
           'wb-ai-gen-type-btn-literary-style': 'Generate Literary Style',
           'wb-ai-generate-btn': 'Generate Worldbook Entries',
           'wb-ai-quick-generate-label': 'Quick Generate Worldbook Entries:',
           'wb-ai-request-input-placeholder': 'Enter your specific requirements for worldbook entries, e.g.: Generate appearance, personality, experience, skills, and relationships of all main characters',
+          
+          // Ability System Generation
+          'ability-use-worldbook-label': 'Generate based on worldbook settings',
+          'ability-description-label': 'Ability Description or Application Scenario:',
+          'ability-description-placeholder': 'Describe the ability content or application scenario, e.g.: fire magic, sword skills, superpowers, etc...',
+          'ability-count-label': 'Generation Count:',
+          'ability-count-3': '3 abilities',
+          'ability-count-5': '5 abilities',
+          'ability-count-7': '7 abilities',
           
           // Literary Style Modal
           'literary-style-modal-title': '📚 Generate Literary Style Config',

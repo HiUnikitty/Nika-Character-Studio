@@ -3984,16 +3984,26 @@ function initializeWorldbookAiModal() {
 
     // 新增：快速生成世界书条目按钮事件
     generateBtn.onclick = () => {
-        const requestInput = document.getElementById('wb-ai-request-input');
-        const userRequest = requestInput.value.trim();
+        // 获取当前选择的生成类型
+        const currentGenType = modal.dataset.lastGenType;
+        
+        // 如果还没有选择类型，使用通用生成逻辑
+        if (!currentGenType) {
+            const requestInput = document.getElementById('wb-ai-request-input');
+            const userRequest = requestInput.value.trim();
 
-        if (!userRequest) {
-            alert('请输入你对世界书条目的具体要求');
-            return;
+            if (!userRequest) {
+                alert('请输入你对世界书条目的具体要求');
+                return;
+            }
+
+            // 使用用户输入的内容生成世界书条目
+            generateWorldbookFromRequest(userRequest);
+        } else {
+            // 如果已经选择了类型，直接调用对应的生成函数
+            const generatorButton = document.getElementById('ai-lorebook-generator-btn');
+            fetchWorldbookStoryNodes(generatorButton, currentGenType);
         }
-
-        // 使用用户输入的内容生成世界书条目
-        generateWorldbookFromRequest(userRequest);
     };
 
     genTypeButtons.forEach(button => {
@@ -4004,17 +4014,32 @@ function initializeWorldbookAiModal() {
             // 切换输入区域显示
             const literaryStyleArea = document.getElementById('literary-style-input-area');
             const generalInputArea = document.getElementById('general-input-area');
+            const abilitySystemArea = document.getElementById('ability-system-input-area');
 
             if (genType === 'literary_style') {
                 if (literaryStyleArea) literaryStyleArea.style.display = 'block';
                 if (generalInputArea) generalInputArea.style.display = 'none';
+                if (abilitySystemArea) abilitySystemArea.style.display = 'none';
+            } else if (genType === 'ability_system') {
+                if (literaryStyleArea) literaryStyleArea.style.display = 'none';
+                if (generalInputArea) generalInputArea.style.display = 'none';
+                if (abilitySystemArea) abilitySystemArea.style.display = 'block';
             } else {
                 if (literaryStyleArea) literaryStyleArea.style.display = 'none';
                 if (generalInputArea) generalInputArea.style.display = 'block';
+                if (abilitySystemArea) abilitySystemArea.style.display = 'none';
             }
 
-            const generatorButton = document.getElementById('ai-lorebook-generator-btn');
-            fetchWorldbookStoryNodes(generatorButton, genType);
+            // 不再立即调用生成函数，而是等待用户点击"生成世界书条目"按钮
+            // 清空之前的结果
+            const container = document.getElementById('wb-ai-options-container');
+            if (container) container.innerHTML = '';
+            if (injectBtn) injectBtn.style.display = 'none';
+            if (regenerateBtn) regenerateBtn.style.display = 'none';
+            
+            // 更新描述文本
+            const typeName = t(`wb-ai-type-${genType}`);
+            if (desc) desc.textContent = t('wb-ai-modal-desc');
         };
     });
 
@@ -4283,6 +4308,33 @@ async function fetchWorldbookStoryNodes(button, generationType) {
         case 'main_plot':
             prompt = `你正在设计作品的剧情。请分析以下角色设定和【已有的世界书条目】，并为该角色创建一套包含1个主线目标和2-3个步骤的【新的、不重复的】【主线剧情】条目。`;
             break;
+        case 'ability_system':
+            // 获取能力体系相关输入
+            const useWorldbook = document.getElementById('ability-use-worldbook')?.checked || false;
+            const abilityDescription = document.getElementById('ability-description')?.value.trim() || '';
+            const abilityCount = parseInt(document.getElementById('ability-count')?.value || '5');
+
+            if (!abilityDescription) {
+                alert('请输入能力描述或应用场景');
+                if (container) container.innerHTML = '';
+                if (desc) desc.textContent = t('wb-ai-modal-desc');
+                return;
+            }
+
+            prompt = `你正在为角色设计能力体系。请根据以下信息生成${abilityCount}个不同的能力/技能/魔法条目。
+
+**用户需求的能力描述：**
+${abilityDescription}
+
+每个能力应该包含：
+- 能力名称
+- 能力等级/类型
+- 详细效果描述
+- 使用条件或限制
+- 可能的进阶方向
+
+${useWorldbook ? '请结合角色设定和已有世界书条目，确保生成的能力与世界观设定相符。' : '可以自由发挥创意，不必严格遵循现有设定。'}`;
+            break;
         case 'literary_style':
             // 获取文风参考内容
             const literaryStyleReference = document.getElementById('literary-style-reference')?.value.trim() || '';
@@ -4329,8 +4381,13 @@ ${literaryStyleReference}
 
 - 角色描述: ${characterContext.description || '未指定'}
 
+${generationType === 'ability_system' && document.getElementById('ability-use-worldbook')?.checked ? `
+**已有的世界书条目 (用于参考):**
+${existingEntriesText || '无'}
+` : generationType !== 'ability_system' ? `
 **已有的世界书条目 (用于参考，请勿重复):**
 ${existingEntriesText || '无'}
+` : ''}
 
 **你的任务:**
 **严格按照以下JSON格式返回你的答案，不要包含任何JSON格式之外的额外文字、解释或Markdown标记。**

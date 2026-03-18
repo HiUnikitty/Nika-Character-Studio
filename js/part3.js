@@ -1756,10 +1756,9 @@ try {
     editorView.style.display = 'none';
     document.getElementById('novel-to-worldbook-view').style.display = 'none';
     libraryView.style.display = 'block';
-    renderUI();
-    // 优化：在UI渲染后隐藏加载动画
-    document.getElementById('loading-overlay').style.display = 'none';
+    await renderUI(); // 等待渲染完成，renderUI内部会处理加载动画
 } catch (error) {
+    document.getElementById('loading-overlay').style.display = 'none';
     alert('❌ 显示库视图失败: ' + error.message);
 }
 }
@@ -2761,6 +2760,13 @@ event.target.classList.toggle('favorited');
 async function renderUI() {
 if (!(await checkDbReady())) return;
 
+// 显示加载动画
+const loadingOverlay = document.getElementById('loading-overlay');
+loadingOverlay.style.display = 'flex';
+
+// 记录开始时间，确保加载动画至少显示500ms
+const startTime = Date.now();
+
 try {
     const transaction = db.transaction(['characters'], 'readonly');
     const allChars = await new Promise((resolve, reject) => {
@@ -2775,9 +2781,62 @@ try {
     validChars.sort((a, b) => b.isFavorite - a.isFavorite || (b.lastUsed || 0) - (a.lastUsed || 0));
     renderTags(validChars);
     renderCharacters(validChars);
+    
+    // 等待所有图片加载完成
+    await waitForImagesToLoad();
+    
+    // 确保加载动画至少显示500ms
+    const elapsedTime = Date.now() - startTime;
+    const minDisplayTime = 500;
+    if (elapsedTime < minDisplayTime) {
+        await new Promise(resolve => setTimeout(resolve, minDisplayTime - elapsedTime));
+    }
+    
+    // 渲染完成后隐藏加载动画
+    loadingOverlay.style.display = 'none';
 } catch (error) {
+    loadingOverlay.style.display = 'none';
     alert('❌ UI渲染失败: ' + error.message + '\n请刷新页面重试');
 }
+}
+
+// 等待所有角色卡背景图片加载完成
+async function waitForImagesToLoad() {
+    const cards = document.querySelectorAll('.character-card');
+    const imagePromises = [];
+    
+    cards.forEach(card => {
+        const bgImage = card.style.backgroundImage;
+        if (bgImage && bgImage !== 'none') {
+            // 提取URL
+            const urlMatch = bgImage.match(/url\(['"]?([^'"]+)['"]?\)/);
+            if (urlMatch && urlMatch[1]) {
+                const imageUrl = urlMatch[1];
+                // 创建Image对象来预加载
+                const promise = new Promise((resolve) => {
+                    // 如果是data URL，直接resolve
+                    if (imageUrl.startsWith('data:')) {
+                        resolve();
+                        return;
+                    }
+                    
+                    const img = new Image();
+                    img.onload = () => resolve();
+                    img.onerror = () => resolve(); // 即使加载失败也继续
+                    img.src = imageUrl;
+                    
+                    // 设置超时，避免某个图片加载太久
+                    setTimeout(() => resolve(), 3000);
+                });
+                imagePromises.push(promise);
+            }
+        }
+    });
+    
+    // 等待所有图片加载完成（或超时）
+    if (imagePromises.length > 0) {
+        await Promise.all(imagePromises);
+    }
 }
 
 function renderTags(characters) {
@@ -2819,18 +2878,6 @@ tagContainer.innerHTML = tagsHtml;
 function renderCharacters(characters) {
 const grid = document.getElementById('character-grid');
 grid.innerHTML = '';
-
-// 优化：实现图片懒加载
-const lazyImageObserver = new IntersectionObserver((entries, observer) => {
-    entries.forEach(entry => {
-    if (entry.isIntersecting) {
-        const card = entry.target;
-        const imageUrl = card.dataset.bgImage;
-        card.style.backgroundImage = `var(--card-overlay), url('${imageUrl}')`;
-        observer.unobserve(card); // 停止观察已加载的图片
-    }
-    });
-});
 
 let filteredChars = characters;
 if (activeFilters.size > 0) {
@@ -2885,19 +2932,36 @@ filteredChars.forEach(char => {
     const card = document.createElement('div');
     card.className = 'character-card';
 
-    // 优化：为懒加载准备图片URL
+    // 直接设置背景图片，不使用懒加载
     let imageToDisplay;
     if (char.avatar && char.avatar.trim() !== '') {
-    imageToDisplay = char.avatar;
+        imageToDisplay = char.avatar;
     } else {
-    imageToDisplay = createDefaultImage('2:3');
+        imageToDisplay = createDefaultImage('2:3');
     }
-    card.dataset.bgImage = imageToDisplay;
-
-    // 初始时可以设置一个占位符背景
-    card.style.backgroundImage = `var(--default-card-bg)`;
+    
+    // 直接设置背景图片，使用!important确保覆盖CSS默认样式
+    card.style.setProperty('background-image', `url('${imageToDisplay}')`, 'important');
+    card.style.setProperty('background-size', 'cover', 'important');
+    card.style.setProperty('background-position', 'center', 'important');
+    
+    // 添加一个轻微的遮罩以确保文字可读性
+    const overlay = document.createElement('div');
+    overlay.style.cssText = `
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: linear-gradient(to top, rgba(28, 28, 28, 0.6) 0%, rgba(28, 28, 28, 0.2) 50%, rgba(28, 28, 28, 0.4) 100%);
+        pointer-events: none;
+        z-index: 1;
+    `;
+    card.appendChild(overlay);
 
     const headerDiv = document.createElement('div');
+    headerDiv.style.position = 'relative';
+    headerDiv.style.zIndex = '2'; // 确保内容在遮罩层之上
     const cardHeader = document.createElement('div');
     cardHeader.className = 'card-header';
 
@@ -2944,6 +3008,8 @@ filteredChars.forEach(char => {
 
     const footerDiv = document.createElement('div');
     footerDiv.className = 'card-footer';
+    footerDiv.style.position = 'relative';
+    footerDiv.style.zIndex = '2'; // 确保内容在遮罩层之上
     footerDiv.innerHTML = `
     <button onclick="showEditorView(${char.id})">✏️ ${t('edit')}</button>
     <button onclick="exportCharacter(${char.id})">📤 ${t('export')}</button>
@@ -2954,9 +3020,6 @@ filteredChars.forEach(char => {
     card.appendChild(headerDiv);
     card.appendChild(footerDiv);
     grid.appendChild(card);
-
-    // 优化：观察新创建的卡片
-    lazyImageObserver.observe(card);
 });
 }
 

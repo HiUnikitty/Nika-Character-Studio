@@ -280,6 +280,8 @@ document.querySelector('.generation-type-selector button[data-type="worldview"]'
     t('wb-ai-gen-type-btn-worldview');
 document.querySelector('.generation-type-selector button[data-type="main_plot"]').textContent =
     t('wb-ai-gen-type-btn-main-plot');
+document.querySelector('.generation-type-selector button[data-type="ability_system"]').textContent =
+    t('wb-ai-gen-type-btn-ability-system');
 document.getElementById('wb-ai-inject-btn').textContent = t('wb-ai-inject-btn');
 document.getElementById('wb-ai-regenerate-btn').textContent = t('wb-ai-regenerate-btn');
 document.getElementById('wb-ai-cancel-btn').textContent = t('wb-ai-close-btn');
@@ -1217,7 +1219,7 @@ if (settings.tavern) {
 // 如果有更新，保存回localStorage
 if (needsSave) {
     localStorage.setItem('apiSettings', JSON.stringify(settings));
-    console.log('✅ 已为未定义的破限设置提供默认值');
+    mylog('✅ 已为未定义的破限设置提供默认值');
 }
 
 // Migrate old "custom" settings if they exist
