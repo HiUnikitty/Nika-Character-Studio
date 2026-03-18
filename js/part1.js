@@ -1134,57 +1134,81 @@ saveBtn.onclick = () => {
 };
 }
 
+// 深度合并对象的辅助函数
+function deepMerge(target, source) {
+    const result = { ...target };
+    
+    for (const key in source) {
+        if (source.hasOwnProperty(key)) {
+            if (source[key] && typeof source[key] === 'object' && !Array.isArray(source[key])) {
+                result[key] = deepMerge(target[key] || {}, source[key]);
+            } else {
+                result[key] = source[key];
+            }
+        }
+    }
+    
+    return result;
+}
+
 function loadApiSettings() {
 try {
-    const settings = JSON.parse(localStorage.getItem('apiSettings')) || {
-    provider: 'deepseek',
-    deepseek: { apiKey: '' },
-    gemini: {
-    apiKey: '', 
-    model: 'gemini-2.5-flash',
-    useSystemPrompt: true  // 默认启用破限
-    },
-    'gemini-proxy': { 
-    endpoint: '', 
-    apiKey: '', 
-    model: 'gemini-2.5-flash',
-    useSystemPrompt: true  // 默认启用破限
-    },
-    ollama: {
-    endpoint: 'http://localhost:11434',
-    model: 'llama2'
-    },
-    tavern: { 
-    connectionType: 'direct',
-    endpoint: '', 
-    apiKey: '', 
-    model: '',
-    proxyUrl: '',
-    proxyPassword: '',
-    proxyModel: '',
-    jailbreak: true  // 默认启用破限
-    },
-    local: { endpoint: '' },
-};
+    // 先获取用户保存的设置
+    const userSettings = JSON.parse(localStorage.getItem('apiSettings')) || {};
+    
+    // 定义默认设置
+    const defaultSettings = {
+        provider: 'deepseek',
+        deepseek: { apiKey: '' },
+        gemini: {
+            apiKey: '', 
+            model: 'gemini-2.5-flash',
+            useSystemPrompt: true  // 默认启用破限
+        },
+        'gemini-proxy': { 
+            endpoint: '', 
+            apiKey: '', 
+            model: 'gemini-2.5-flash',
+            useSystemPrompt: true  // 默认启用破限
+        },
+        ollama: {
+            endpoint: 'http://localhost:11434',
+            model: 'llama2'
+        },
+        tavern: { 
+            connectionType: 'direct',
+            endpoint: '', 
+            apiKey: '', 
+            model: '',
+            proxyUrl: '',
+            proxyPassword: '',
+            proxyModel: '',
+            jailbreak: true  // 默认启用破限
+        },
+        local: { endpoint: '' },
+    };
+    
+    // 深度合并用户设置和默认设置，用户设置优先
+    const settings = deepMerge(defaultSettings, userSettings);
 
-// 迁移逻辑：将旧版本的破限设置（false）更新为新版本的默认值（true）
-// 这样可以确保升级后用户默认启用破限
+// 迁移逻辑：仅为未定义的破限设置提供默认值（true）
+// 不强制覆盖用户已经设置的false值
 let needsSave = false;
 
 if (settings.gemini) {
-    if (settings.gemini.useSystemPrompt === undefined || settings.gemini.useSystemPrompt === false) {
+    if (settings.gemini.useSystemPrompt === undefined) {
         settings.gemini.useSystemPrompt = true;
         needsSave = true;
     }
 }
 if (settings['gemini-proxy']) {
-    if (settings['gemini-proxy'].useSystemPrompt === undefined || settings['gemini-proxy'].useSystemPrompt === false) {
+    if (settings['gemini-proxy'].useSystemPrompt === undefined) {
         settings['gemini-proxy'].useSystemPrompt = true;
         needsSave = true;
     }
 }
 if (settings.tavern) {
-    if (settings.tavern.jailbreak === undefined || settings.tavern.jailbreak === false) {
+    if (settings.tavern.jailbreak === undefined) {
         settings.tavern.jailbreak = true;
         needsSave = true;
     }
@@ -1193,7 +1217,7 @@ if (settings.tavern) {
 // 如果有更新，保存回localStorage
 if (needsSave) {
     localStorage.setItem('apiSettings', JSON.stringify(settings));
-    console.log('✅ 已将破限设置迁移为默认启用');
+    console.log('✅ 已为未定义的破限设置提供默认值');
 }
 
 // Migrate old "custom" settings if they exist
