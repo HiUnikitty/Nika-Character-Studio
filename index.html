@@ -2697,7 +2697,7 @@
         <div class="generation-type-selector">
           <button data-type="worldview" class="uniform-btn" data-i18n="wb-ai-gen-type-btn-worldview">生成世界观</button>
           <button data-type="main_plot" class="uniform-btn" data-i18n="wb-ai-gen-type-btn-main-plot">生成主线剧情</button>
-          <button data-type="ability_system" class="uniform-btn" data-i18n="wb-ai-gen-type-btn-ability-system">生成能力体系</button>
+          <button data-type="ability_system" class="uniform-btn" data-i18n="wb-ai-gen-type-btn-ability-system">生成技能条目</button>
         </div>
         <!-- 通用输入区域 -->
         <div class="field-group" id="general-input-area">
@@ -2724,8 +2724,8 @@
             <span data-i18n="ability-use-worldbook-label">根据世界书设定生成</span>
           </label>
           
-          <label for="ability-description" data-i18n="ability-description-label">能力描述或应用场景：</label>
-          <textarea id="ability-description" rows="4" data-i18n-placeholder="ability-description-placeholder" placeholder="描述该能力的大致内容或应用场景，例如：火系魔法、剑术技能、超能力等..." style="width: 100%; padding: 10px; background: rgba(0,0,0,0.3); border: 1px solid var(--input-border); border-radius: 5px; color: var(--text-color); margin-bottom: 15px; resize: vertical;"></textarea>
+          <label for="ability-description" data-i18n="ability-description-label">技能需求与硬性条件：</label>
+          <textarea id="ability-description" rows="4" data-i18n-placeholder="ability-description-placeholder" placeholder="按条目列出硬性条件，例如：1. 可通过固定手段控制生物 2. 被控制生物绝对忠诚 3. 无副作用" style="width: 100%; padding: 10px; background: rgba(0,0,0,0.3); border: 1px solid var(--input-border); border-radius: 5px; color: var(--text-color); margin-bottom: 15px; resize: vertical;"></textarea>
           
           <label for="ability-count" data-i18n="ability-count-label">生成数量：</label>
           <select id="ability-count" style="width: 100%; padding: 8px; background: rgba(0,0,0,0.3); border: 1px solid #555; border-radius: 5px; color: white; margin-bottom: 10px;">
@@ -3860,20 +3860,20 @@
           'wb-ai-close-btn': '关闭',
           'wb-ai-type-worldview': '世界观',
           'wb-ai-type-main_plot': '主线剧情',
-          'wb-ai-type-ability_system': '能力体系',
+          'wb-ai-type-ability_system': '技能条目',
           'wb-ai-type-literary_style': '文风',
           'wb-ai-gen-type-btn-worldview': '生成世界观',
           'wb-ai-gen-type-btn-main-plot': '生成主线剧情',
-          'wb-ai-gen-type-btn-ability-system': '生成能力体系',
+          'wb-ai-gen-type-btn-ability-system': '生成技能条目',
           'wb-ai-gen-type-btn-literary-style': '生成文风',
           'wb-ai-generate-btn': '生成世界书条目',
           'wb-ai-quick-generate-label': '快速生成世界书条目：',
           'wb-ai-request-input-placeholder': '请输入你对世界书条目的具体要求，例如：生成全部主要角色的外貌、性格、经历、技能，相互的关系',
           
-          // 能力体系生成
+          // 技能条目生成
           'ability-use-worldbook-label': '根据世界书设定生成',
-          'ability-description-label': '能力描述或应用场景：',
-          'ability-description-placeholder': '描述该能力的大致内容或应用场景，例如：火系魔法、剑术技能、超能力等...',
+          'ability-description-label': '技能需求与硬性条件：',
+          'ability-description-placeholder': '按条目列出硬性条件，例如：1. 可通过固定手段控制生物 2. 被控制生物绝对忠诚 3. 无副作用',
           'ability-count-label': '生成数量：',
           'ability-count-3': '3个',
           'ability-count-5': '5个',
@@ -4561,20 +4561,20 @@
           'wb-ai-close-btn': 'Close',
           'wb-ai-type-worldview': 'worldview',
           'wb-ai-type-main_plot': 'main plot',
-          'wb-ai-type-ability_system': 'ability system',
+          'wb-ai-type-ability_system': 'skill entries',
           'wb-ai-type-literary_style': 'literary style',
           'wb-ai-gen-type-btn-worldview': 'Generate Worldview',
           'wb-ai-gen-type-btn-main-plot': 'Generate Main Plot',
-          'wb-ai-gen-type-btn-ability-system': 'Generate Ability System',
+          'wb-ai-gen-type-btn-ability-system': 'Generate Skill Entries',
           'wb-ai-gen-type-btn-literary-style': 'Generate Literary Style',
           'wb-ai-generate-btn': 'Generate Worldbook Entries',
           'wb-ai-quick-generate-label': 'Quick Generate Worldbook Entries:',
           'wb-ai-request-input-placeholder': 'Enter your specific requirements for worldbook entries, e.g.: Generate appearance, personality, experience, skills, and relationships of all main characters',
           
-          // Ability System Generation
+          // Skill Entry Generation
           'ability-use-worldbook-label': 'Generate based on worldbook settings',
-          'ability-description-label': 'Ability Description or Application Scenario:',
-          'ability-description-placeholder': 'Describe the ability content or application scenario, e.g.: fire magic, sword skills, superpowers, etc...',
+          'ability-description-label': 'Skill Requirements and Hard Constraints:',
+          'ability-description-placeholder': 'List hard constraints, e.g.: 1) Control creatures through a fixed method 2) Controlled target is absolutely loyal 3) No side effects',
           'ability-count-label': 'Generation Count:',
           'ability-count-3': '3 abilities',
           'ability-count-5': '5 abilities',

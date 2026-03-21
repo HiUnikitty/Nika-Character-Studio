@@ -4309,7 +4309,7 @@ async function fetchWorldbookStoryNodes(button, generationType) {
             prompt = `你正在设计作品的剧情。请分析以下角色设定和【已有的世界书条目】，并为该角色创建一套包含1个主线目标和2-3个步骤的【新的、不重复的】【主线剧情】条目。`;
             break;
         case 'ability_system':
-            // 获取能力体系相关输入
+            // 获取技能条目相关输入
             const useWorldbook = document.getElementById('ability-use-worldbook')?.checked || false;
             const abilityDescription = document.getElementById('ability-description')?.value.trim() || '';
             const abilityCount = parseInt(document.getElementById('ability-count')?.value || '5');
@@ -4321,19 +4321,23 @@ async function fetchWorldbookStoryNodes(button, generationType) {
                 return;
             }
 
-            prompt = `你正在为角色设计能力体系。请根据以下信息生成${abilityCount}个不同的能力/技能/魔法条目。
+            prompt = `你正在为角色创建【可直接注入世界书的单独技能条目】。
+请根据以下信息生成${abilityCount}个同类型但机制不同的技能方案。
 
-**用户需求的能力描述：**
+**用户需求（视为硬性条件，必须全部满足）：**
 ${abilityDescription}
 
-每个能力应该包含：
-- 能力名称
-- 能力等级/类型
-- 详细效果描述
-- 使用条件或限制
-- 可能的进阶方向
+生成要求（必须遵守）：
+1. 不要生成“能力体系总览/分类树/流派说明”，只生成【独立技能条目】。
+2. 每个技能都要完整满足用户给出的全部硬性条件。
+3. 多个结果应为同一方向下的不同实现，避免仅改名或轻微改写。
+4. 每个条目的 content 必须使用以下固定格式（逐行）：
+技能名称：...
+技能效果：...
+技能品阶：...
+5. comment 字段填写技能名称；keys 至少包含技能名称与2个相关触发词。`;
 
-${useWorldbook ? '请结合角色设定和已有世界书条目，确保生成的能力与世界观设定相符。' : '可以自由发挥创意，不必严格遵循现有设定。'}`;
+            prompt += `\n\n${useWorldbook ? '请结合角色设定和已有世界书条目，确保技能与世界观一致。' : '可以自由发挥创意，但仍要严格满足用户硬性条件。'}`;
             break;
         case 'literary_style':
             // 获取文风参考内容
@@ -4398,6 +4402,11 @@ ${existingEntriesText || '无'}
 - "priority": (数字) 优先级，越大越重要 (普通=100, 重要=200, 核心=1000)。
 - "constant": (布尔值) 是否为恒定注入。对于基础世界观、角色核心设定等应为 true，对于具体事件或地点等应为 false。
 `;
+    if (generationType === 'ability_system') {
+        prompt += `
+- 对于技能条目，请确保 comment 与 content 内的“技能名称”一致。
+- 对于技能条目，禁止输出“能力体系/总览/分支图/培养路线”这类总述。`;
+    }
 
     getAiGuidance(t('ai-guidance-title'), async userGuidance => {
         let finalPrompt = getLanguagePrefix() + prompt;
@@ -4441,6 +4450,12 @@ ${existingEntriesText || '无'}
                 }
 
                 if (Array.isArray(generatedEntries)) {
+                    if (generationType === 'ability_system') {
+                        generatedEntries = generatedEntries.map((entry, index) =>
+                            normalizeAbilityWorldbookEntry(entry, index)
+                        );
+                    }
+
                     desc.textContent = t('wb-ai-modal-desc-generated', { type: typeName });
                     container.innerHTML = ''; // Clear spinner
                     injectBtn.style.display = 'inline-block';
@@ -4509,6 +4524,41 @@ ${existingEntriesText || '无'}
             alert(t('ai-parse-failed'));
         }
     });
+}
+
+function normalizeAbilityWorldbookEntry(entry, index) {
+    const safeEntry = entry && typeof entry === 'object' ? entry : {};
+    const comment = String(safeEntry.comment || '').trim() || `技能方案${index + 1}`;
+    const rawContent = String(safeEntry.content || '').trim();
+    const rawKeys = Array.isArray(safeEntry.keys) ? safeEntry.keys : [];
+    const keys = rawKeys
+        .filter(k => typeof k === 'string' && k.trim())
+        .map(k => k.trim());
+
+    if (!keys.includes(comment)) {
+        keys.unshift(comment);
+    }
+
+    const priority = Number.isFinite(Number(safeEntry.priority)) ? Number(safeEntry.priority) : 200;
+    const hasStructuredContent =
+        /技能名称[:：]/.test(rawContent) &&
+        /技能效果[:：]/.test(rawContent) &&
+        /技能品阶[:：]/.test(rawContent);
+
+    let content = rawContent;
+    if (!hasStructuredContent) {
+        const inferredTier = priority >= 1000 ? '神话级' : priority >= 200 ? '高级' : '普通';
+        content = `技能名称：${comment}\n技能效果：${rawContent || '根据用户需求生成的技能效果。'}\n技能品阶：${inferredTier}`;
+    }
+
+    return {
+        ...safeEntry,
+        comment,
+        keys,
+        content,
+        priority,
+        constant: Boolean(safeEntry.constant),
+    };
 }
 
 async function aiCompleteAllFields(button) {
