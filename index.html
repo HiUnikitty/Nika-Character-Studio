@@ -167,7 +167,7 @@
       #library-view .header {
         display: flex;
         flex-wrap: wrap;
-        justify-content: space-between;
+        justify-content: flex-start;
         align-items: center;
         margin-bottom: 25px;
         padding-bottom: 15px;
@@ -386,10 +386,17 @@
         line-height: 1.4em;
         max-height: calc(1.4em * 4); /* 兼容性回退 */
       }
+      #library-view .card-tags {
+        flex: 0 0 auto;
+        overflow: hidden;
+        align-content: flex-start;
+      }
       #library-view .card-footer {
         display: flex;
         gap: 8px;
         flex-wrap: wrap;
+        flex: 0 0 auto;
+        align-content: flex-start;
       }
       #library-view .card-footer button {
         flex-grow: 1;

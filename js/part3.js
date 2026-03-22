@@ -2928,6 +2928,35 @@ if (filteredChars.length === 0) {
     return;
 }
 
+function fitCharacterCardTags(card, headerDiv, tagsDiv, footerDiv) {
+    if (!card || !headerDiv || !tagsDiv || !footerDiv) return;
+
+    const tags = Array.from(tagsDiv.children);
+    if (tags.length === 0) return;
+
+    const header = headerDiv.querySelector('.card-header');
+    const description = headerDiv.querySelector('.card-description');
+    const headerHeight = header ? header.offsetHeight : 0;
+    const descriptionHeight = description ? description.offsetHeight : 0;
+    const availableHeight = Math.max(0, card.clientHeight - footerDiv.offsetHeight - headerHeight - descriptionHeight - 18);
+
+    tagsDiv.innerHTML = '';
+    let usedHeight = 0;
+
+    for (const tag of tags) {
+        tagsDiv.appendChild(tag);
+        const nextHeight = tagsDiv.scrollHeight;
+        if (nextHeight <= availableHeight) {
+            usedHeight = nextHeight;
+            continue;
+        }
+        tagsDiv.removeChild(tag);
+        break;
+    }
+
+    tagsDiv.style.maxHeight = usedHeight > 0 ? `${usedHeight}px` : '0px';
+}
+
 filteredChars.forEach(char => {
     const card = document.createElement('div');
     card.className = 'character-card';
@@ -3020,6 +3049,8 @@ filteredChars.forEach(char => {
     card.appendChild(headerDiv);
     card.appendChild(footerDiv);
     grid.appendChild(card);
+
+    requestAnimationFrame(() => fitCharacterCardTags(card, headerDiv, tagsDiv, footerDiv));
 });
 }
 
