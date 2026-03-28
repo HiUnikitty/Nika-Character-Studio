@@ -3975,6 +3975,7 @@ function initializeWorldbookAiModal() {
     const regenerateBtn = document.getElementById('wb-ai-regenerate-btn');
     const generateBtn = document.getElementById('wb-ai-generate-btn');
     const cancelBtn = document.getElementById('wb-ai-cancel-btn');
+    const desc = document.getElementById('wb-ai-modal-desc');
     const genTypeButtons = modal.querySelectorAll('.generation-type-selector button');
 
     cancelBtn.onclick = () => (modal.style.display = 'none');
@@ -3984,14 +3985,20 @@ function initializeWorldbookAiModal() {
 
     // 新增：快速生成世界书条目按钮事件
     generateBtn.onclick = () => {
+        const requestInput = document.getElementById('wb-ai-request-input');
+        const userRequest = requestInput ? requestInput.value.trim() : '';
+
+        // 优先按“快速生成世界书条目”输入框的要求生成，避免旧的类型状态误导流程
+        if (userRequest) {
+            generateWorldbookFromRequest(userRequest);
+            return;
+        }
+
         // 获取当前选择的生成类型
         const currentGenType = modal.dataset.lastGenType;
-        
+
         // 如果还没有选择类型，使用通用生成逻辑
         if (!currentGenType) {
-            const requestInput = document.getElementById('wb-ai-request-input');
-            const userRequest = requestInput.value.trim();
-
             if (!userRequest) {
                 alert('请输入你对世界书条目的具体要求');
                 return;
@@ -4040,6 +4047,10 @@ function initializeWorldbookAiModal() {
             // 更新描述文本
             const typeName = t(`wb-ai-type-${genType}`);
             if (desc) desc.textContent = t('wb-ai-modal-desc');
+
+            // 点击类型按钮时立即生成，避免“点击无反应”
+            const generatorButton = document.getElementById('ai-lorebook-generator-btn');
+            fetchWorldbookStoryNodes(generatorButton, genType);
         };
     });
 
@@ -4266,6 +4277,17 @@ function openWorldbookAiModal(button) {
     if (injectBtn) injectBtn.style.display = 'none';
     if (regenerateBtn) regenerateBtn.style.display = 'none';
     if (requestInput) requestInput.value = '';
+    if (modal) {
+        delete modal.dataset.lastGenType;
+    }
+
+    // 重置输入区显示状态，确保每次打开都从“通用输入”开始
+    const literaryStyleArea = document.getElementById('literary-style-input-area');
+    const generalInputArea = document.getElementById('general-input-area');
+    const abilitySystemArea = document.getElementById('ability-system-input-area');
+    if (literaryStyleArea) literaryStyleArea.style.display = 'none';
+    if (generalInputArea) generalInputArea.style.display = 'block';
+    if (abilitySystemArea) abilitySystemArea.style.display = 'none';
 
     if (modal) modal.style.display = 'flex';
 }
