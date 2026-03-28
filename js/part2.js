@@ -3458,7 +3458,8 @@ async function callDeepSeek(fieldId) {
 
     getAiGuidance(t('ai-guidance-title') + `: ${labelText}`, async userGuidance => {
         const currentCard = buildCardObject();
-        const existingEntries = buildWorldbookDataFromDOM();
+        const referenceWorldbook = shouldReferenceWorldbookSettings('ai-guidance-reference-worldbook');
+        const existingEntries = referenceWorldbook ? buildWorldbookDataFromDOM() : [];
         const existingEntriesText = existingEntries
             .map(e => `- ${e.comment}: ${e.content.substring(0, 100)}...`)
             .join('\n');
@@ -3499,6 +3500,9 @@ ${fieldId === 'first_mes' ? `- 对于 "first_mes" 字段，请保证具有充足
   * **留白设计**：结尾留下互动空间，引导{{user}}做出回应` : ''}
 `;
 
+        if (!referenceWorldbook) {
+            prompt = prompt.replace(/- 已有的世界书条目[\s\S]*?\n\n/, '\n');
+        }
         if (userGuidance) {
             prompt += `\n用户的额外指令: ${userGuidance}\n`;
         }
@@ -3638,6 +3642,10 @@ function getAiGuidance(title, callback, placeholder = '') {
 
     if (modal) modal.style.display = 'flex';
     if (inputEl) inputEl.focus();
+}
+
+function shouldReferenceWorldbookSettings(checkboxId) {
+    return document.getElementById(checkboxId)?.checked ?? true;
 }
 
 // 批量生成问候消息
@@ -4116,7 +4124,8 @@ async function generateWorldbookFromRequest(userRequest) {
     generateBtn.textContent = '生成中...';
 
     const characterContext = buildCardObject();
-    const existingEntries = buildWorldbookDataFromDOM();
+    const referenceWorldbook = shouldReferenceWorldbookSettings('wb-reference-worldbook');
+    const existingEntries = referenceWorldbook ? buildWorldbookDataFromDOM() : [];
 
     const existingEntriesText = existingEntries
         .map(entry => `条目注释: ${entry.comment}\n关键词: ${entry.keys.join(', ')}\n内容: ${entry.content.substring(0, 200)}${entry.content.length > 200 ? '...' : ''}`)
@@ -4161,6 +4170,18 @@ ${existingEntriesText || '无'}
 3. 每个条目都应该有独特的关键词和内容
 4. 内容要生动、详细，符合角色和世界观设定
 5. 所有条目默认开启"额外匹配源"功能，使角色卡内容也能触发世界书条目`;
+
+    if (!referenceWorldbook) {
+        prompt = prompt.replace(
+            /\n已有的世界书条目（用于参考，请避免重复）：[\s\S]*?\n\n请按照JSON格式返回/,
+            '\n\n请按照JSON格式返回'
+        );
+    } else {
+        prompt = prompt.replace(
+            '已有的世界书条目（用于参考，请避免重复）：',
+            '世界书设定参考（避免重复）：'
+        );
+    }
 
     try {
         const response = await callApi(prompt, generateBtn);
@@ -4270,6 +4291,7 @@ function openWorldbookAiModal(button) {
     const injectBtn = document.getElementById('wb-ai-inject-btn');
     const regenerateBtn = document.getElementById('wb-ai-regenerate-btn');
     const requestInput = document.getElementById('wb-ai-request-input');
+    const referenceWorldbookCheckbox = document.getElementById('wb-reference-worldbook');
 
     // Reset modal state
     if (desc) desc.textContent = t('wb-ai-modal-desc');
@@ -4277,6 +4299,7 @@ function openWorldbookAiModal(button) {
     if (injectBtn) injectBtn.style.display = 'none';
     if (regenerateBtn) regenerateBtn.style.display = 'none';
     if (requestInput) requestInput.value = '';
+    if (referenceWorldbookCheckbox) referenceWorldbookCheckbox.checked = true;
     if (modal) {
         delete modal.dataset.lastGenType;
     }
@@ -4304,6 +4327,7 @@ async function fetchWorldbookStoryNodes(button, generationType) {
     if (container) container.innerHTML = `<div class="loading-spinner" style="margin: 20px auto;"></div>`;
     if (injectBtn) injectBtn.style.display = 'none';
     if (regenerateBtn) regenerateBtn.style.display = 'none';
+    const referenceWorldbook = shouldReferenceWorldbookSettings('wb-reference-worldbook');
 
     const characterContext = buildCardObject();
     const existingEntries = buildWorldbookDataFromDOM(); // 获取现有条目
@@ -4401,6 +4425,10 @@ ${literaryStyleReference}
             break;
     }
 
+    if (!referenceWorldbook && generationType !== 'ability_system') {
+        prompt = prompt.replace(/和【已有的世界书条目】/g, '');
+    }
+
     prompt += `
 **角色设定:**
 - 角色名: ${characterContext.name || '未指定'}
@@ -4410,7 +4438,7 @@ ${literaryStyleReference}
 ${generationType === 'ability_system' && document.getElementById('ability-use-worldbook')?.checked ? `
 **已有的世界书条目 (用于参考):**
 ${existingEntriesText || '无'}
-` : generationType !== 'ability_system' ? `
+` : generationType !== 'ability_system' && referenceWorldbook ? `
 **已有的世界书条目 (用于参考，请勿重复):**
 ${existingEntriesText || '无'}
 ` : ''}
@@ -4428,6 +4456,20 @@ ${existingEntriesText || '无'}
         prompt += `
 - 对于技能条目，请确保 comment 与 content 内的“技能名称”一致。
 - 对于技能条目，禁止输出“能力体系/总览/分支图/培养路线”这类总述。`;
+    }
+
+    if (generationType !== 'ability_system') {
+        if (!referenceWorldbook) {
+            prompt = prompt.replace(
+                /\n\*\*已有的世界书条目 \(用于参考，请勿重复\):\*\*[\s\S]*?(?=\n\*\*你的任务:\*\*)/,
+                '\n'
+            );
+        } else {
+            prompt = prompt.replace(
+                '**已有的世界书条目 (用于参考，请勿重复):**',
+                '**世界书设定参考（避免重复）:**'
+            );
+        }
     }
 
     getAiGuidance(t('ai-guidance-title'), async userGuidance => {
@@ -4612,7 +4654,8 @@ async function aiCompleteAllFields(button) {
     });
 
     const isAnythingFilled = Object.keys(filledFields).length > 0;
-    const existingEntries = buildWorldbookDataFromDOM();
+    const referenceWorldbook = shouldReferenceWorldbookSettings('ai-guidance-reference-worldbook');
+    const existingEntries = referenceWorldbook ? buildWorldbookDataFromDOM() : [];
 
     // DeepSeek 限制逻辑
     const apiSettings = loadApiSettings();
@@ -4627,11 +4670,15 @@ async function aiCompleteAllFields(button) {
         })
         .join('\n');
 
-    const worldbookContextPrompt = `
+    let worldbookContextPrompt = `
 ---
 **已有的信息 (用于参考):**
 ${existingEntriesText || '无'}
 ---`;
+
+    if (!referenceWorldbook) {
+        worldbookContextPrompt = '';
+    }
 
     if (isAnythingFilled) {
         // 方案1：有内容，补全其他

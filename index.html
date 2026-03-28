@@ -2690,6 +2690,10 @@
             <span id="ai-guidance-filename" style="color: #aaa; font-size: 14px;"></span>
           </div>
           <textarea id="ai-guidance-input" rows="5" data-i18n-placeholder="ai-guidance-input-placeholder" placeholder="在此输入你的具体要求、风格、关键词等... (可留空)"></textarea>
+          <label style="color: var(--text-color); margin-top: 10px; display: block;">
+            <input type="checkbox" id="ai-guidance-reference-worldbook" checked style="margin-right: 8px;">
+            <span data-i18n="wb-reference-worldbook-label">参考世界书设定生成</span>
+          </label>
         </div>
         
         <div class="modal-actions">
@@ -2724,6 +2728,10 @@
             <button onclick="openWikipediaModal('wb-ai')" class="uniform-btn" data-i18n="wb-ai-wikipedia-btn">📖 维基百科获取</button>
             <span id="wb-ai-filename" style="color: #aaa; font-size: 14px;"></span>
           </div>
+          <label style="color: var(--text-color); margin-bottom: 8px; display: block;">
+            <input type="checkbox" id="wb-reference-worldbook" checked style="margin-right: 8px;">
+            <span data-i18n="wb-reference-worldbook-label">参考世界书设定生成</span>
+          </label>
           <textarea id="wb-ai-request-input" rows="5" data-i18n-placeholder="wb-ai-request-input-placeholder" placeholder="请输入你对世界书条目的具体要求，例如：生成全部主要角色的外貌、性格、经历、技能，相互的关系"></textarea>
         </div>
         <!-- 能力体系专用输入区域 -->
@@ -3881,6 +3889,7 @@
           
           // 技能条目生成
           'ability-use-worldbook-label': '根据世界书设定生成',
+          'wb-reference-worldbook-label': '参考已有世界书',
           'ability-description-label': '技能需求与硬性条件：',
           'ability-description-placeholder': '按条目列出硬性条件，例如：1. 可通过固定手段控制生物 2. 被控制生物绝对忠诚 3. 无副作用',
           'ability-count-label': '生成数量：',
@@ -4582,6 +4591,7 @@
           
           // Skill Entry Generation
           'ability-use-worldbook-label': 'Generate based on worldbook settings',
+          'wb-reference-worldbook-label': 'Generate with worldbook settings',
           'ability-description-label': 'Skill Requirements and Hard Constraints:',
           'ability-description-placeholder': 'List hard constraints, e.g.: 1) Control creatures through a fixed method 2) Controlled target is absolutely loyal 3) No side effects',
           'ability-count-label': 'Generation Count:',
