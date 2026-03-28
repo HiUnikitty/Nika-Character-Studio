@@ -3458,8 +3458,10 @@ async function callDeepSeek(fieldId) {
 
     getAiGuidance(t('ai-guidance-title') + `: ${labelText}`, async userGuidance => {
         const currentCard = buildCardObject();
-        const referenceWorldbook = shouldReferenceWorldbookSettings('ai-guidance-reference-worldbook');
-        const existingEntries = referenceWorldbook ? buildWorldbookDataFromDOM() : [];
+        const allWorldbookEntries = buildWorldbookDataFromDOM();
+        const hasWorldbookEntries = countAllEntries(allWorldbookEntries) > 0;
+        const referenceWorldbook = shouldReferenceWorldbookSettings('ai-guidance-reference-worldbook') && hasWorldbookEntries;
+        const existingEntries = referenceWorldbook ? allWorldbookEntries : [];
         const existingEntriesText = existingEntries
             .map(e => `- ${e.comment}: ${e.content.substring(0, 100)}...`)
             .join('\n');
@@ -3633,6 +3635,17 @@ function getAiGuidance(title, callback, placeholder = '') {
         inputEl.placeholder = placeholder || t('ai-guidance-prompt');
     }
 
+    const aiGuidanceReferenceCheckbox = document.getElementById('ai-guidance-reference-worldbook');
+    const aiGuidanceReferenceLabel = aiGuidanceReferenceCheckbox?.closest('label');
+    if (aiGuidanceReferenceLabel && aiGuidanceReferenceCheckbox) {
+        const hasWorldbookEntries = getWorldbookEntryCount() > 0;
+        aiGuidanceReferenceLabel.style.display = hasWorldbookEntries ? 'block' : 'none';
+        aiGuidanceReferenceCheckbox.disabled = !hasWorldbookEntries;
+        if (!hasWorldbookEntries) {
+            aiGuidanceReferenceCheckbox.checked = false;
+        }
+    }
+
     if (generateBtn) {
         generateBtn.onclick = () => {
             if (modal) modal.style.display = 'none';
@@ -3646,6 +3659,11 @@ function getAiGuidance(title, callback, placeholder = '') {
 
 function shouldReferenceWorldbookSettings(checkboxId) {
     return document.getElementById(checkboxId)?.checked ?? true;
+}
+
+function getWorldbookEntryCount() {
+    const entries = buildWorldbookDataFromDOM();
+    return countAllEntries(entries);
 }
 
 // 批量生成问候消息
@@ -4124,8 +4142,10 @@ async function generateWorldbookFromRequest(userRequest) {
     generateBtn.textContent = '生成中...';
 
     const characterContext = buildCardObject();
-    const referenceWorldbook = shouldReferenceWorldbookSettings('wb-reference-worldbook');
-    const existingEntries = referenceWorldbook ? buildWorldbookDataFromDOM() : [];
+    const allWorldbookEntries = buildWorldbookDataFromDOM();
+    const hasWorldbookEntries = countAllEntries(allWorldbookEntries) > 0;
+    const referenceWorldbook = shouldReferenceWorldbookSettings('wb-reference-worldbook') && hasWorldbookEntries;
+    const existingEntries = referenceWorldbook ? allWorldbookEntries : [];
 
     const existingEntriesText = existingEntries
         .map(entry => `条目注释: ${entry.comment}\n关键词: ${entry.keys.join(', ')}\n内容: ${entry.content.substring(0, 200)}${entry.content.length > 200 ? '...' : ''}`)
@@ -4300,6 +4320,17 @@ function openWorldbookAiModal(button) {
     if (regenerateBtn) regenerateBtn.style.display = 'none';
     if (requestInput) requestInput.value = '';
     if (referenceWorldbookCheckbox) referenceWorldbookCheckbox.checked = true;
+    if (referenceWorldbookCheckbox) {
+        const hasWorldbookEntries = getWorldbookEntryCount() > 0;
+        const referenceWorldbookLabel = referenceWorldbookCheckbox.closest('label');
+        if (referenceWorldbookLabel) {
+            referenceWorldbookLabel.style.display = hasWorldbookEntries ? 'block' : 'none';
+        }
+        referenceWorldbookCheckbox.disabled = !hasWorldbookEntries;
+        if (!hasWorldbookEntries) {
+            referenceWorldbookCheckbox.checked = false;
+        }
+    }
     if (modal) {
         delete modal.dataset.lastGenType;
     }
@@ -4327,10 +4358,11 @@ async function fetchWorldbookStoryNodes(button, generationType) {
     if (container) container.innerHTML = `<div class="loading-spinner" style="margin: 20px auto;"></div>`;
     if (injectBtn) injectBtn.style.display = 'none';
     if (regenerateBtn) regenerateBtn.style.display = 'none';
-    const referenceWorldbook = shouldReferenceWorldbookSettings('wb-reference-worldbook');
-
     const characterContext = buildCardObject();
-    const existingEntries = buildWorldbookDataFromDOM(); // 获取现有条目
+    const allWorldbookEntries = buildWorldbookDataFromDOM(); // 获取现有条目
+    const hasWorldbookEntries = countAllEntries(allWorldbookEntries) > 0;
+    const referenceWorldbook = shouldReferenceWorldbookSettings('wb-reference-worldbook') && hasWorldbookEntries;
+    const existingEntries = referenceWorldbook ? allWorldbookEntries : [];
 
     // DeepSeek 限制逻辑
     const apiSettings = loadApiSettings();
@@ -4383,7 +4415,7 @@ ${abilityDescription}
 技能品阶：...
 5. comment 字段填写技能名称；keys 至少包含技能名称与2个相关触发词。`;
 
-            prompt += `\n\n${useWorldbook ? '请结合角色设定和已有世界书条目，确保技能与世界观一致。' : '可以自由发挥创意，但仍要严格满足用户硬性条件。'}`;
+            prompt += `\n\n${useWorldbook && referenceWorldbook ? '请结合角色设定和已有世界书条目，确保技能与世界观一致。' : '可以自由发挥创意，但仍要严格满足用户硬性条件。'}`;
             break;
         case 'literary_style':
             // 获取文风参考内容
@@ -4435,7 +4467,7 @@ ${literaryStyleReference}
 
 - 角色描述: ${characterContext.description || '未指定'}
 
-${generationType === 'ability_system' && document.getElementById('ability-use-worldbook')?.checked ? `
+${generationType === 'ability_system' && document.getElementById('ability-use-worldbook')?.checked && referenceWorldbook ? `
 **已有的世界书条目 (用于参考):**
 ${existingEntriesText || '无'}
 ` : generationType !== 'ability_system' && referenceWorldbook ? `
@@ -4654,8 +4686,10 @@ async function aiCompleteAllFields(button) {
     });
 
     const isAnythingFilled = Object.keys(filledFields).length > 0;
-    const referenceWorldbook = shouldReferenceWorldbookSettings('ai-guidance-reference-worldbook');
-    const existingEntries = referenceWorldbook ? buildWorldbookDataFromDOM() : [];
+    const allWorldbookEntries = buildWorldbookDataFromDOM();
+    const hasWorldbookEntries = countAllEntries(allWorldbookEntries) > 0;
+    const referenceWorldbook = shouldReferenceWorldbookSettings('ai-guidance-reference-worldbook') && hasWorldbookEntries;
+    const existingEntries = referenceWorldbook ? allWorldbookEntries : [];
 
     // DeepSeek 限制逻辑
     const apiSettings = loadApiSettings();
