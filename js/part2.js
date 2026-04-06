@@ -3533,15 +3533,17 @@ async function callWorldbookDeepSeek(button) {
         const characterContext = buildCardObject();
         const currentKeys = currentEntryElement.querySelector('.wb-keys').value;
 
-        // 增强: 构建全世界书上下文（参考所有条目）
+        // 检查“参考已有世界书”的 checkbox 状态
         const worldbookTree = buildWorldbookDataFromDOM();
+        const hasWBEntries = countAllEntries(worldbookTree) > 0;
+        const referenceWorldbook = shouldReferenceWorldbookSettings('ai-guidance-reference-worldbook') && hasWBEntries;
         const apiSettings = loadApiSettings();
         const isDeepSeek = apiSettings.provider === 'deepseek';
 
-        // 收集所有世界书条目
+        // 收集所有世界书条目（排除当前条目）
         function collectAllEntries(entries, result = []) {
             entries.forEach(entry => {
-                if (entry.element !== currentEntryElement) { // 排除当前条目
+                if (entry.element !== currentEntryElement) {
                     result.push(entry);
                 }
                 if (entry.children && entry.children.length > 0) {
@@ -3551,7 +3553,8 @@ async function callWorldbookDeepSeek(button) {
             return result;
         }
 
-        const allEntries = collectAllEntries(worldbookTree);
+        // 只有勾选“参考已有世界书”时才收集其他条目
+        const allEntries = referenceWorldbook ? collectAllEntries(worldbookTree) : [];
         const totalEntries = allEntries.length;
 
         // 根据模型类型调整截断长度
@@ -3568,7 +3571,7 @@ async function callWorldbookDeepSeek(button) {
             });
         }
 
-        let prompt = getLanguagePrefix() + `请基于以下提供的角色信息和世界书结构，为我撰写条目【${currentComment}】的"注入内容"。内容需要详细、富有想象力，并与角色设定保持高度一致。
+        let prompt = getLanguagePrefix() + `请基于以下提供的角色信息${referenceWorldbook ? '和世界书结构' : ''}，为我撰写条目【${currentComment}】的"注入内容"。内容需要详细、富有想象力，并与角色设定保持高度一致。
 
 ---
 **角色核心设定:**
@@ -3589,12 +3592,7 @@ ${worldbookContext}
 ---
 **你的任务:**
 现在，请为条目【${currentComment}】生成详细的"注入内容"。
-**写作指导:**
-1. 仔细参考上述所有现有世界书条目，确保内容与整个世界观保持一致
-2. 避免与现有条目内容重复，而是补充和丰富世界观
-3. 利用现有条目的信息作为背景支撑，创造更深入的内容
-4. 确保风格与现有条目保持统一
-
+${referenceWorldbook ? `**写作指导:**\r\n1. 仔细参考上述所有现有世界书条目，确保内容与整个世界观保持一致\r\n2. 避免与现有条目内容重复，而是补充和丰富世界观\r\n3. 利用现有条目的信息作为背景支撑，创造更深入的内容\r\n4. 确保风格与现有条目保持统一\r\n` : ''}
 **要求：** 直接返回注入内容本身，不要包含任何额外解释、标题或引用。`;
 
         const result = await callApi(prompt, button);
@@ -4319,7 +4317,8 @@ function openWorldbookAiModal(button) {
     if (injectBtn) injectBtn.style.display = 'none';
     if (regenerateBtn) regenerateBtn.style.display = 'none';
     if (requestInput) requestInput.value = '';
-    if (referenceWorldbookCheckbox) referenceWorldbookCheckbox.checked = true;
+    // 不强制重置 referenceWorldbook checkbox，保留用户上一次的选择
+    // 只在没有世界书条目时自动禁用并取消勾选
     if (referenceWorldbookCheckbox) {
         const hasWorldbookEntries = getWorldbookEntryCount() > 0;
         const referenceWorldbookLabel = referenceWorldbookCheckbox.closest('label');
