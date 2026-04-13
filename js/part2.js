@@ -3721,6 +3721,13 @@ async function batchGenerateGreetings(button) {
                     </label>
                 </div>
             </div>
+
+            <div id="batch-greeting-worldbook-row" style="margin-bottom: 15px; display: none;">
+                <label style="display: inline-flex; align-items: center; color: var(--text-color); cursor: pointer;">
+                    <input type="checkbox" id="batch-greeting-use-worldbook" style="margin-right: 8px; cursor: pointer;" checked>
+                    <span>参考已有世界书</span>
+                </label>
+            </div>
             
             <div id="greeting-results" style="margin-top: 20px;"></div>
             
@@ -3732,6 +3739,16 @@ async function batchGenerateGreetings(button) {
     `;
 
     document.body.appendChild(modal);
+
+    // 根据世界书条目数量决定是否显示“参考已有世界书”复选框
+    const _wbRow = modal.querySelector('#batch-greeting-worldbook-row');
+    const _wbChk = modal.querySelector('#batch-greeting-use-worldbook');
+    if (_wbRow && _wbChk) {
+        const _hasWB = getWorldbookEntryCount() > 0;
+        _wbRow.style.display = _hasWB ? 'block' : 'none';
+        _wbChk.disabled = !_hasWB;
+        if (!_hasWB) _wbChk.checked = false;
+    }
 
     // 绑定事件
     const generateBtn = modal.querySelector('#generate-greetings-btn');
@@ -3775,12 +3792,17 @@ async function batchGenerateGreetings(button) {
 
             // 获取当前角色信息
             const currentCard = buildCardObject();
-            const existingEntries = buildWorldbookDataFromDOM();
+            const _allWBEntries = buildWorldbookDataFromDOM();
+            const _useWB = document.getElementById('batch-greeting-use-worldbook')?.checked
+                && countAllEntries(_allWBEntries) > 0;
 
-            // 构建世界书上下文
-            const worldbookContext = existingEntries.length > 0
-                ? existingEntries.map(e => `- ${e.comment}: ${e.content.substring(0, 150)}...`).join('\n')
-                : '无';
+            // 构建世界书上下文（仅当勾选时）
+            let worldbookContext = '';
+            if (_useWB) {
+                const _flat = [];
+                (function _collect(arr) { arr.forEach(e => { _flat.push(e); if (e.children?.length) _collect(e.children); }); })(_allWBEntries);
+                worldbookContext = _flat.map(e => `- ${e.comment}: ${(e.content||'').substring(0,150)}...`).join('\n') || '无';
+            }
 
             // 构建提示词
             let prompt = getLanguagePrefix() + `你是一个专业的角色扮演剧情设计师。请根据以下角色信息，生成${count}个不同风格的问候消息（开场白）。
@@ -3792,8 +3814,7 @@ async function batchGenerateGreetings(button) {
 - 个性: ${currentCard.personality || '未指定'}
 - 场景设定: ${currentCard.scenario || '未指定'}
 
-**世界书参考：**
-${worldbookContext}
+${_useWB ? `**世界书参考：**\n${worldbookContext}\n` : ''}
 
 ${styleInput ? `**用户指定的剧情风格偏向：** ${styleInput}\n` : ''}
 ${locationInput ? `**地点/场景：** ${locationInput}\n请在生成的问候消息中考虑这些地点或场景设定。\n` : ''}
