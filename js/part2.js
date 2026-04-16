@@ -9375,12 +9375,9 @@ async function exportHistoryWorldbook(historyId) {
         const lorebookData = {
             entries: lorebookEntries,
             originalData: {
+                // 对齐ST标准，只保留 entries 和 name
+                entries: standardEntries,
                 name: worldbookName,
-                description: `由妮卡角色工作室从历史记录导出 (ID: ${historyId})`,
-                scan_depth: 10,
-                token_budget: 2048,
-                recursive_scanning: false,
-                entries: standardEntries
             }
         };
 

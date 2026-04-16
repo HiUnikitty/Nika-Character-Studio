@@ -2512,12 +2512,9 @@ if (v3Card.data.character_book && v3Card.data.character_book.entries) {
 return {
     entries: lorebookEntries,
     originalData: v3Card.data.character_book || {
-    name: `(${t('world-knowledge-book')}) ${cardData.name || 'Character Book'}`,
-    description: cardData.creator_notes || `Character book for ${cardData.name}.`,
-    scan_depth: 10,
-    token_budget: 2048,
-    recursive_scanning: false,
+    // 回退结构同样对齐ST标准，只保留 entries 和 name
     entries: [],
+    name: cardData.name || 'Character Book',
     },
 };
 }
@@ -3419,15 +3416,17 @@ const dataObject = {
     fav: cardData.isFavorite || false,
     depth_prompt: { prompt: '', depth: 4, role: 'system' },
     regex_scripts: cardData.regex_scripts || [],
+    // SillyTavern弹出"导入内嵌世界书"对话框所需的关键字段
+    // ST会读取此字段来判断角色是否已关联世界书，若未关联则弹出导入提示
+    world: worldbookHasContent ? (cardData.name || '') : undefined,
     },
     character_book: worldbookHasContent
     ? {
-        name: `(${t('world-knowledge-book')}) ${cardData.name || 'Character Book'}`,
-        description: cardData.creator_notes || `Character book for ${cardData.name}.`,
-        scan_depth: 10,
-        token_budget: 2048,
-        recursive_scanning: false,
+        // 严格对齐ST的convertWorldInfoToCharacterBook输出格式
+        // ST只使用 entries 和 name，其余字段（description/scan_depth/token_budget/recursive_scanning）均为冗余
+        // 字段顺序：entries在前，name在后（与ST一致）
         entries: v3BookEntries,
+        name: cardData.name || 'Character Book',
         }
     : undefined,
 };
