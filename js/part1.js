@@ -86,6 +86,94 @@ const ModelListDB = {
     }
 };
 
+// Tavern 多配置管理 - IndexedDB
+const TavernConfigDB = {
+    dbName: 'TavernConfigDB',
+    storeName: 'configs',
+    version: 1,
+
+    async openDB() {
+        return new Promise((resolve, reject) => {
+            const request = indexedDB.open(this.dbName, this.version);
+            request.onerror = () => reject(request.error);
+            request.onsuccess = () => resolve(request.result);
+            request.onupgradeneeded = (event) => {
+                const db = event.target.result;
+                if (!db.objectStoreNames.contains(this.storeName)) {
+                    db.createObjectStore(this.storeName, { keyPath: 'id' });
+                }
+            };
+        });
+    },
+
+    async getAll() {
+        try {
+            const db = await this.openDB();
+            const transaction = db.transaction([this.storeName], 'readonly');
+            const store = transaction.objectStore(this.storeName);
+            return new Promise((resolve, reject) => {
+                const request = store.getAll();
+                request.onsuccess = () => resolve(request.result || []);
+                request.onerror = () => reject(request.error);
+            });
+        } catch (error) {
+            console.error('❌ 读取Tavern配置列表失败:', error);
+            return [];
+        }
+    },
+
+    async get(id) {
+        try {
+            const db = await this.openDB();
+            const transaction = db.transaction([this.storeName], 'readonly');
+            const store = transaction.objectStore(this.storeName);
+            return new Promise((resolve, reject) => {
+                const request = store.get(id);
+                request.onsuccess = () => resolve(request.result || null);
+                request.onerror = () => reject(request.error);
+            });
+        } catch (error) {
+            console.error(`❌ 读取Tavern配置 ${id} 失败:`, error);
+            return null;
+        }
+    },
+
+    async save(config) {
+        try {
+            const db = await this.openDB();
+            const transaction = db.transaction([this.storeName], 'readwrite');
+            const store = transaction.objectStore(this.storeName);
+            config.updatedAt = Date.now();
+            await new Promise((resolve, reject) => {
+                const request = store.put(config);
+                request.onsuccess = () => resolve();
+                request.onerror = () => reject(request.error);
+            });
+            return true;
+        } catch (error) {
+            console.error('❌ 保存Tavern配置失败:', error);
+            return false;
+        }
+    },
+
+    async delete(id) {
+        try {
+            const db = await this.openDB();
+            const transaction = db.transaction([this.storeName], 'readwrite');
+            const store = transaction.objectStore(this.storeName);
+            await new Promise((resolve, reject) => {
+                const request = store.delete(id);
+                request.onsuccess = () => resolve();
+                request.onerror = () => reject(request.error);
+            });
+            return true;
+        } catch (error) {
+            console.error(`❌ 删除Tavern配置 ${id} 失败:`, error);
+            return false;
+        }
+    }
+};
+
 // 优化版自动编码检测函数 - 选择解码后字数最少的编码（乱码字数更多）
 async function detectBestEncoding(file) {
     const encodings = ['UTF-8', 'GBK', 'GB2312', 'Big5'];
@@ -1089,7 +1177,10 @@ cancelBtn.onclick = () => {
     modal.style.display = 'none';
 };
 
-saveBtn.onclick = () => {
+// 初始化Tavern多配置管理
+initTavernConfigManager();
+
+saveBtn.onclick = async () => {
     apiModalInitialized = true;
     
     // 获取全局破限开关状态（在"其他设置"中）
@@ -1100,6 +1191,7 @@ saveBtn.onclick = () => {
     provider: document.getElementById('api-provider-selector').value,
     deepseek: {
         apiKey: document.getElementById('deepseek-api-key').value.trim(),
+        model: document.getElementById('deepseek-model').value,
     },
     gemini: {
         apiKey: document.getElementById('gemini-api-key').value.trim(),
@@ -1131,6 +1223,21 @@ saveBtn.onclick = () => {
     },
     };
     localStorage.setItem('apiSettings', JSON.stringify(settings));
+
+    // 保存 tavern 配置到 IndexedDB
+    const tavernConfigId = document.getElementById('tavern-config-select')?.value;
+    if (settings.provider === 'tavern' && tavernConfigId) {
+        const tavernName = document.getElementById('tavern-config-name')?.value.trim() || '未命名配置';
+        const currentModels = await ModelListDB.getModelList('tavern') || [];
+        await TavernConfigDB.save({
+            id: tavernConfigId,
+            name: tavernName,
+            ...settings.tavern,
+            models: currentModels
+        });
+        await loadTavernConfigList(tavernConfigId);
+    }
+
     alert(t('api-settings-saved'));
     modal.style.display = 'none';
 };
@@ -1161,7 +1268,7 @@ try {
     // 定义默认设置
     const defaultSettings = {
         provider: 'deepseek',
-        deepseek: { apiKey: '' },
+        deepseek: { apiKey: '', model: 'deepseek-v4-flash' },
         gemini: {
             apiKey: '', 
             model: 'gemini-2.5-flash',
@@ -1241,6 +1348,7 @@ if (settings.custom) {
 
 document.getElementById('api-provider-selector').value = settings.provider;
 document.getElementById('deepseek-api-key').value = settings.deepseek?.apiKey || '';
+document.getElementById('deepseek-model').value = settings.deepseek?.model || 'deepseek-v4-flash';
 document.getElementById('gemini-api-key').value = settings.gemini?.apiKey || '';
 document.getElementById('gemini-model').value = settings.gemini?.model || 'gemini-2.5-flash';
 // 全局破限开关已移至"其他设置"，使用相同的ID gemini-use-system-prompt
@@ -1270,8 +1378,22 @@ document.getElementById('tavern-proxy-url').value = settings.tavern?.proxyUrl ||
 document.getElementById('tavern-proxy-password').value = settings.tavern?.proxyPassword || '';
 document.getElementById('tavern-proxy-model').value = settings.tavern?.proxyModel || '';
 
-// 从 IndexedDB 加载 CLI 反代模型列表
-loadModelListFromDB('tavern', 'tavern-proxy-model', settings.tavern?.proxyModel);
+	// 从 IndexedDB 加载 CLI 反代模型列表
+	loadModelListFromDB('tavern', 'tavern-proxy-model', settings.tavern?.proxyModel);
+	// 确保保存的模型名在 select 中可见
+	const savedProxyModel = settings.tavern?.proxyModel;
+	if (savedProxyModel) {
+	    const proxySelect = document.getElementById('tavern-proxy-model');
+	    if (proxySelect.value !== savedProxyModel) {
+	        const opt = document.createElement('option');
+	        opt.value = savedProxyModel;
+	        opt.textContent = savedProxyModel;
+	        proxySelect.appendChild(opt);
+	        proxySelect.value = savedProxyModel;
+	    }
+	}
+	// 加载 Tavern 多配置列表
+	loadTavernConfigList();
 // tavern-proxy-jailbreak 已删除，使用全局开关
 document.getElementById('local-api-endpoint').value = settings.local?.endpoint || '';
 
@@ -1425,6 +1547,17 @@ try {
     // 保存模型列表到 IndexedDB
     await ModelListDB.saveModelList('tavern', models);
 
+    // 同步到当前 tavern 配置
+    const configSelect = document.getElementById('tavern-config-select');
+    if (configSelect && configSelect.value) {
+        const existing = await TavernConfigDB.get(configSelect.value);
+        if (existing) {
+            existing.models = models;
+            existing.proxyModel = modelSelect.value;
+            await TavernConfigDB.save(existing);
+        }
+    }
+
     alert(t('models-fetched', {count: models.length}));
 
 } catch (error) {
@@ -1529,6 +1662,162 @@ try {
     refreshBtn.disabled = false;
     refreshBtn.textContent = originalText;
 }
+}
+
+// --- Tavern 多配置管理 ---
+let _tavernEditingId = null;
+
+async function loadTavernConfigList(selectedId) {
+    const select = document.getElementById('tavern-config-select');
+    if (!select) return;
+    const configs = await TavernConfigDB.getAll();
+    select.innerHTML = '<option value="">选择配置...</option>';
+    for (const cfg of configs) {
+        const opt = document.createElement('option');
+        opt.value = cfg.id;
+        opt.textContent = cfg.name || '未命名';
+        select.appendChild(opt);
+    }
+    if (selectedId) select.value = selectedId;
+}
+
+function applyTavernConfig(config) {
+    document.getElementById('tavern-connection-type').value = config.connectionType || 'direct';
+    document.getElementById('tavern-connection-type').dispatchEvent(new Event('change'));
+    document.getElementById('tavern-api-endpoint').value = config.endpoint || '';
+    document.getElementById('tavern-api-key').value = config.apiKey || '';
+    document.getElementById('tavern-model').value = config.model || '';
+    document.getElementById('tavern-proxy-url').value = config.proxyUrl || '';
+    document.getElementById('tavern-proxy-password').value = config.proxyPassword || '';
+    document.getElementById('tavern-config-name').value = config.name || '';
+
+    // 恢复模型列表和选中模型
+    const proxySelect = document.getElementById('tavern-proxy-model');
+    const models = config.models || [];
+    proxySelect.innerHTML = '<option value="">请选择模型...</option>';
+    for (const m of models) {
+        const opt = document.createElement('option');
+        opt.value = m.id;
+        opt.textContent = m.name;
+        proxySelect.appendChild(opt);
+    }
+    if (config.proxyModel) {
+        if (!models.some(m => m.id === config.proxyModel)) {
+            const opt = document.createElement('option');
+            opt.value = config.proxyModel;
+            opt.textContent = config.proxyModel;
+            proxySelect.appendChild(opt);
+        }
+        proxySelect.value = config.proxyModel;
+    }
+    // 同时保存到 model 输入框
+    document.getElementById('tavern-model').value = config.model || config.proxyModel || '';
+}
+
+function clearTavernForm() {
+    document.getElementById('tavern-api-endpoint').value = '';
+    document.getElementById('tavern-api-key').value = '';
+    document.getElementById('tavern-model').value = '';
+    document.getElementById('tavern-proxy-url').value = '';
+    document.getElementById('tavern-proxy-password').value = '';
+    const proxySelect = document.getElementById('tavern-proxy-model');
+    proxySelect.innerHTML = '<option value="">请刷新模型...</option>';
+    document.getElementById('tavern-config-name').value = '';
+}
+
+function initTavernConfigManager() {
+    const configSelect = document.getElementById('tavern-config-select');
+    const saveBtn = document.getElementById('tavern-config-save-btn');
+    const deleteBtn = document.getElementById('tavern-config-delete-btn');
+    if (!configSelect) return;
+
+    // 加载配置列表
+    loadTavernConfigList();
+
+    // 选择配置
+    configSelect.onchange = async () => {
+        const id = configSelect.value;
+        if (!id) {
+            _tavernEditingId = null;
+            clearTavernForm();
+            return;
+        }
+        const config = await TavernConfigDB.get(id);
+        if (config) {
+            _tavernEditingId = id;
+            applyTavernConfig(config);
+        }
+    };
+
+    // 保存 / 新建
+    saveBtn.onclick = async () => {
+        const name = document.getElementById('tavern-config-name').value.trim() || '未命名配置';
+        const editingId = configSelect.value; // 用 select 的实际值，比 _tavernEditingId 更可靠
+        if (editingId) {
+            // 更新已有配置
+            const existing = await TavernConfigDB.get(editingId);
+            if (existing) {
+                existing.name = name;
+                existing.connectionType = document.getElementById('tavern-connection-type').value;
+                existing.endpoint = document.getElementById('tavern-api-endpoint').value.trim();
+                existing.apiKey = document.getElementById('tavern-api-key').value.trim();
+                existing.model = document.getElementById('tavern-model').value.trim();
+                existing.proxyUrl = document.getElementById('tavern-proxy-url').value.trim();
+                existing.proxyPassword = document.getElementById('tavern-proxy-password').value.trim();
+                existing.proxyModel = document.getElementById('tavern-proxy-model').value.trim();
+                const currentModels = await ModelListDB.getModelList('tavern');
+                if (currentModels) existing.models = currentModels;
+                await TavernConfigDB.save(existing);
+                _tavernEditingId = editingId;
+                await loadTavernConfigList(editingId);
+            }
+        } else {
+            // 新建：使用 crypto.randomUUID 确保 ID 唯一
+            const newId = 'tavern_' + (crypto.randomUUID ? crypto.randomUUID() : Date.now() + '_' + Math.random().toString(36).slice(2, 8));
+            const config = {
+                id: newId,
+                name: name,
+                connectionType: document.getElementById('tavern-connection-type').value,
+                endpoint: document.getElementById('tavern-api-endpoint').value.trim(),
+                apiKey: document.getElementById('tavern-api-key').value.trim(),
+                model: document.getElementById('tavern-model').value.trim(),
+                proxyUrl: document.getElementById('tavern-proxy-url').value.trim(),
+                proxyPassword: document.getElementById('tavern-proxy-password').value.trim(),
+                proxyModel: document.getElementById('tavern-proxy-model').value.trim(),
+                models: []
+            };
+            const saved = await TavernConfigDB.save(config);
+            if (saved) {
+                _tavernEditingId = newId;
+                await loadTavernConfigList(newId);
+            } else {
+                console.error('❌ Tavern配置保存失败，请检查IndexedDB');
+            }
+        }
+    };
+
+    // 删除
+    deleteBtn.onclick = async () => {
+        const id = configSelect.value;
+        if (!id) return;
+        if (!confirm('确定要删除配置 "' + (configSelect.options[configSelect.selectedIndex]?.text || '') + '" 吗？')) return;
+        await TavernConfigDB.delete(id);
+        _tavernEditingId = null;
+        clearTavernForm();
+        configSelect.value = '';
+        await loadTavernConfigList();
+    };
+
+    // 重置
+    const resetBtn = document.getElementById('tavern-config-reset-btn');
+    if (resetBtn) {
+        resetBtn.onclick = () => {
+            _tavernEditingId = null;
+            configSelect.value = '';
+            clearTavernForm();
+            document.getElementById('tavern-config-name').value = '';
+        };
+    }
 }
 
 // --- Mobile Textarea Auto-Resize ---

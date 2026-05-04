@@ -1859,12 +1859,21 @@ async function callSimpleAPI(prompt, retryCount = 0) {
             requestOptions = {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiSettings.deepseek.apiKey}` },
-                body: JSON.stringify({
-                    model: 'deepseek-chat',
-                    messages: deepseekMessages,
-                    temperature: 0,
-                    max_tokens: 8192  // DeepSeek的最大输出限制
-                }),
+                body: (() => {
+                    const dsModel = apiSettings.deepseek.model || 'deepseek-v4-flash';
+                    const reqBody = {
+                        model: dsModel,
+                        messages: deepseekMessages,
+                        max_tokens: 384000
+                    };
+                    if (dsModel === 'deepseek-v4-pro') {
+                        reqBody.thinking = { type: 'enabled' };
+                        reqBody.reasoning_effort = 'high';
+                    } else {
+                        reqBody.temperature = 0;
+                    }
+                    return JSON.stringify(reqBody);
+                })(),
             };
             mylog('完整请求体:', JSON.stringify(JSON.parse(requestOptions.body), null, 2));
             break;
@@ -3009,12 +3018,21 @@ async function callApi(prompt, button) {
                 requestOptions = {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiSettings.deepseek.apiKey}` },
-                    body: JSON.stringify({
-                        model: 'deepseek-chat',
-                        messages: deepseekMessages,
-                        max_tokens: 8192,  // DeepSeek的最大输出限制
-                        temperature: 0.7
-                    }),
+                    body: (() => {
+                        const dsModel = apiSettings.deepseek.model || 'deepseek-v4-flash';
+                        const reqBody = {
+                            model: dsModel,
+                            messages: deepseekMessages,
+                            max_tokens: 384000
+                        };
+                        if (dsModel === 'deepseek-v4-pro') {
+                            reqBody.thinking = { type: 'enabled' };
+                            reqBody.reasoning_effort = 'high';
+                        } else {
+                            reqBody.temperature = 0.7;
+                        }
+                        return JSON.stringify(reqBody);
+                    })(),
                 };
 
                 mylog('完整请求体:', JSON.stringify(JSON.parse(requestOptions.body), null, 2));
@@ -3286,8 +3304,6 @@ async function callApi(prompt, button) {
                             { role: 'user', content: finalPrompt }
                         ];
                     }
-
-                    mylog('完整请求体:', JSON.stringify(requestBody, null, 2));
                 }
 
                 requestOptions = {
@@ -3295,6 +3311,7 @@ async function callApi(prompt, button) {
                     headers: headers,
                     body: JSON.stringify(requestBody),
                 };
+                mylog('完整请求体:', JSON.stringify(requestBody, null, 2));
                 break;
 
             default:

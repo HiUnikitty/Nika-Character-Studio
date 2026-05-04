@@ -642,23 +642,25 @@ try {
     const provider = settings.provider;
 
     if (provider === 'deepseek') {
+    const dsModel = settings.deepseek.model || 'deepseek-v4-flash';
+    const reqBody = {
+        model: dsModel,
+        messages: [{ role: 'user', content: prompt }],
+        max_tokens: 384000
+    };
+    if (dsModel === 'deepseek-v4-pro') {
+        reqBody.thinking = { type: 'enabled' };
+        reqBody.reasoning_effort = 'high';
+    } else {
+        reqBody.temperature = 0.7;
+    }
     response = await fetch('https://api.deepseek.com/v1/chat/completions', {
         method: 'POST',
         headers: {
         'Content-Type': 'application/json',
         Authorization: `Bearer ${settings.deepseek.apiKey}`,
         },
-        body: JSON.stringify({
-        model: 'deepseek-chat',
-        messages: [
-            {
-            role: 'user',
-            content: prompt,
-            },
-        ],
-        max_tokens: 8192,  // DeepSeek的最大输出限制
-        temperature: 0.7,
-        }),
+        body: JSON.stringify(reqBody),
     });
     } else if (provider === 'gemini') {
     response = await fetch(

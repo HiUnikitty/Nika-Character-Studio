@@ -2624,12 +2624,12 @@
       <div class="field-group">
         <label for="api-provider-selector" data-i18n="select-provider">选择服务商</label>
         <select id="api-provider-selector">
-          <option value="deepseek" data-i18n="api-provider-deepseek">DeepSeek</option>
-          <option value="gemini" data-i18n="api-provider-gemini">Gemini (直链，需魔法)</option>
-          <option value="gemini-proxy" data-i18n="api-provider-gemini-proxy">Gemini (中转站)</option>
+          <option value="deepseek" data-i18n="api-provider-deepseek">DeepSeek【已更新v4】</option>
+          <option value="gemini" data-i18n="api-provider-gemini">Gemini (直链，需魔法)[废弃]</option>
+          <option value="gemini-proxy" data-i18n="api-provider-gemini-proxy">Gemini (中转站)[废弃]</option>
           <option value="ollama" data-i18n="api-provider-ollama">Ollama</option>
           <option value="local" data-i18n="api-provider-local">本地大模型（bat启动用这个）</option>
-          <option value="tavern" data-i18n="api-provider-tavern">CLI反代 / 自定义</option>
+          <option value="tavern" data-i18n="api-provider-tavern">公益站/自定义（推荐）</option>
         </select>
       </div>
 
@@ -2638,6 +2638,13 @@
           <label for="deepseek-api-key" data-i18n="api-key">API Key</label>
           <input type="password" id="deepseek-api-key" data-i18n-placeholder="api-key-placeholder"
             placeholder="输入你的 DeepSeek API Key">
+        </div>
+        <div class="field-group">
+          <label for="deepseek-model" data-i18n="select-model">选择模型</label>
+          <select id="deepseek-model">
+            <option value="deepseek-v4-flash">DeepSeek V4 Flash</option>
+            <option value="deepseek-v4-pro">DeepSeek V4 Pro</option>
+          </select>
         </div>
       </div>
 
@@ -2708,11 +2715,23 @@
       </div>
 
       <div id="tavern-options" class="api-provider-options">
+        <!-- 多配置管理 -->
+        <div class="field-group" style="border-bottom: 1px solid var(--border-color); padding-bottom: 12px; margin-bottom: 12px;">
+          <div style="display: flex; gap: 6px; align-items: center; flex-wrap: wrap;">
+            <select id="tavern-config-select" style="flex: 1; min-width: 120px;">
+              <option value="">选择配置...</option>
+            </select>
+            <input type="text" id="tavern-config-name" placeholder="配置名称" style="flex: 0.6; min-width: 80px; padding: 6px 8px;">
+            <button type="button" id="tavern-config-save-btn" style="background: var(--primary-color); color: white; padding: 6px 10px; border: none; border-radius: 4px; cursor: pointer; white-space: nowrap;">保存</button>
+            <button type="button" id="tavern-config-delete-btn" style="background: var(--danger-color, #f44336); color: white; padding: 6px 10px; border: none; border-radius: 4px; cursor: pointer; white-space: nowrap;">删除</button>
+            <button type="button" id="tavern-config-reset-btn" style="background: #888; color: white; padding: 6px 10px; border: none; border-radius: 4px; cursor: pointer; white-space: nowrap;">重置</button>
+          </div>
+        </div>
         <div class="field-group">
           <label for="tavern-connection-type" data-i18n="connection-type">连接类型</label>
           <select id="tavern-connection-type">
-            <option value="direct" data-i18n="custom-api">自定义API</option>
-            <option value="reverse-proxy" data-i18n="cli-reverse-proxy">CLI反代</option>
+            <option value="direct" data-i18n="custom-api">手动填模型</option>
+            <option value="reverse-proxy" data-i18n="cli-reverse-proxy">自动拉取模型</option>
           </select>
         </div>
 
@@ -2737,7 +2756,7 @@
         <!-- 反向代理设置 -->
         <div id="tavern-proxy-settings" class="connection-type-settings" style="display: none;">
           <div class="field-group">
-            <label for="tavern-proxy-url" data-i18n="proxy-server-url">代理服务器 URL</label>
+            <label for="tavern-proxy-url" data-i18n="proxy-server-url">服务器URL</label>
             <input type="text" id="tavern-proxy-url" data-i18n-placeholder="proxy-url-placeholder"
               placeholder="https://gcli2api-xxxx.onrender.com/v1">
             <p class="help-text" data-i18n="proxy-url-help" style="margin-top: 5px; font-size: 12px; color: #888;">
@@ -2745,11 +2764,11 @@
             </p>
           </div>
           <div class="field-group">
-            <label for="tavern-proxy-password" data-i18n="proxy-password">代理密码</label>
+            <label for="tavern-proxy-password" data-i18n="proxy-password">密钥</label>
             <input type="password" id="tavern-proxy-password" data-i18n-placeholder="proxy-password-placeholder"
               placeholder="123456">
             <p class="help-text" data-i18n="proxy-password-help" style="margin-top: 5px; font-size: 12px; color: #888;">
-              将用作代理的密码，而不是 API 密钥。
+              代理的密码或者API密钥。
             </p>
           </div>
           <div class="field-group">
@@ -2764,7 +2783,6 @@
               </button>
             </div>
           </div>
-          <p class="help-text" data-i18n="proxy-help-text">通过反向代理连接到API服务，适用于Render等的CLI反代</p>
         </div>
       </div>
 
@@ -4317,22 +4335,21 @@
         'ollama-model-placeholder': '例如: llama2, mistral, qwen',
         'ollama-help': '用于连接本地运行的Ollama服务，默认地址为 http://localhost:11434',
         'connection-type': '连接类型',
-        'custom-api': '自定义API',
-        'cli-reverse-proxy': 'CLI反代',
+        'custom-api': '手动填模型',
+        'cli-reverse-proxy': '自动拉取模型',
         'api-url': 'API URL',
         'model-name': '模型名称',
         'model-placeholder': '例如: gpt-3.5-turbo',
         'custom-api-help': '用于连接远程的、兼容OpenAI格式的API服务。',
-        'proxy-server-url': '代理服务器 URL',
+        'proxy-server-url': '服务器URL',
         'proxy-url-placeholder': 'https://gcli2api-xxxx.onrender.com/v1',
         'proxy-url-help': '不起作用？在末尾添加 /v1 试试！/chat/completions 后缀将自动添加。',
-        'proxy-password': '代理密码',
+        'proxy-password': '密钥',
         'proxy-password-placeholder': '123456',
-        'proxy-password-help': '将用作代理的密码,而不是 API 密钥。',
+        'proxy-password-help': '代理的密码或者API密钥',
         'refresh-models': '刷新',
         'refresh-models-placeholder': '请刷新模型...',
         'select-model-placeholder': '请选择模型...',
-        'proxy-help-text': '通过反向代理连接到API服务,适用于Render等的CLI反代',
         'save': '保存',
         'cancel': '取消',
         'parse-error': '解析AI响应时出错：{error}',
@@ -4571,7 +4588,7 @@
 
         // Alert和确认消息
         'api-config-local-alert': '请先在 API 设置中配置本地大模型的API URL（例如: http://localhost:1234/v1）',
-        'api-config-reverse-proxy-alert': '请先在 API 设置中配置CLI反代的代理服务器URL和密码',
+        'api-config-reverse-proxy-alert': '请先在 API 设置中配置公益站的代理服务器URL和密码',
         'api-config-custom-alert': '请先在 API 设置中配置自定义API的endpoint和API Key',
         'api-config-provider-alert': '请先在 API 设置中配置您的服务商。',
         'no-content-to-translate': '没有需要翻译的内容。',
@@ -4579,8 +4596,8 @@
         'no-undo-translation': '没有可撤销的翻译。',
         'api-settings-saved': 'API 设置已保存！',
         'api-settings-load-failed': '⚠️ 加载API设置失败: {error}',
-        'proxy-url-required': '请先输入代理服务器 URL',
-        'proxy-password-required': '请先输入代理密码',
+        'proxy-url-required': '请先输入服务器URL',
+        'proxy-password-required': '请先输入密钥',
         'ollama-endpoint-required': '请先输入 Ollama API URL',
         'fetching': '获取中...',
         'models-parse-error': '无法解析模型列表格式',
@@ -4631,12 +4648,12 @@
         'api-settings-btn': '⚙️ API 设置',
         'other-settings-btn': '其他设置',
         'other-settings': '其他设置',
-        'api-provider-deepseek': 'DeepSeek',
-        'api-provider-gemini': 'Gemini (直链，需魔法)',
-        'api-provider-gemini-proxy': 'Gemini (中转站)',
+        'api-provider-deepseek': 'DeepSeek【已更新v4】',
+        'api-provider-gemini': 'Gemini (直链，需魔法)[废弃]',
+        'api-provider-gemini-proxy': 'Gemini (中转站)[废弃]',
         'api-provider-ollama': 'Ollama (bat启动)',
         'api-provider-local': 'LM Stuodio (bat启动)',
-        'api-provider-tavern': 'CLI反代 / 自定义',
+        'api-provider-tavern': '公益站/自定义（推荐）',
         'edit-instruction': '编辑指令',
         'instruction-beautify': '指令与前端美化',
         'instruction-name': '名称：',
@@ -5016,22 +5033,21 @@
         'ollama-model-placeholder': 'e.g.: llama2, mistral, qwen',
         'ollama-help': 'For connecting to locally running Ollama service. Default address is http://localhost:11434',
         'connection-type': 'Connection Type',
-        'custom-api': 'Custom API',
-        'cli-reverse-proxy': 'CLI Reverse Proxy',
+        'custom-api': 'Manual Enter Model Name',
+        'cli-reverse-proxy': 'Auto Fetch Model Name',
         'api-url': 'API URL',
         'model-name': 'Model Name',
         'model-placeholder': 'e.g.: gpt-3.5-turbo',
         'custom-api-help': 'For connecting to remote OpenAI-compatible API services.',
-        'proxy-server-url': 'Proxy Server URL',
+        'proxy-server-url': 'Server URL',
         'proxy-url-placeholder': 'https://gcli2api-xxxx.onrender.com/v1',
         'proxy-url-help': 'Not working? Try adding /v1 at the end! The /chat/completions suffix will be added automatically.',
-        'proxy-password': 'Proxy Password',
+        'proxy-password': 'API Key',
         'proxy-password-placeholder': '123456',
-        'proxy-password-help': 'Will be used as the proxy password, not the API key.',
+        'proxy-password-help': 'API Key for the proxy server',
         'refresh-models': 'Refresh',
         'refresh-models-placeholder': 'Please refresh models...',
         'select-model-placeholder': 'Please select a model...',
-        'proxy-help-text': 'Connect to API service through reverse proxy, suitable for CLI proxies on Render, etc.',
         'save': 'Save',
         'cancel': 'Cancel',
         'parse-error': 'Error parsing AI response: {error}',
@@ -5270,7 +5286,7 @@
 
         // Alert and Confirmation Messages
         'api-config-local-alert': 'Please configure the local model API URL in API settings (e.g., http://localhost:1234/v1)',
-        'api-config-reverse-proxy-alert': 'Please configure the CLI reverse proxy server URL and password in API settings',
+        'api-config-reverse-proxy-alert': 'Please configure the public proxy server URL and password in API settings',
         'api-config-custom-alert': 'Please configure the custom API endpoint and API Key in API settings',
         'api-config-provider-alert': 'Please configure your service provider in API settings.',
         'no-content-to-translate': 'No content to translate.',
@@ -5278,8 +5294,8 @@
         'no-undo-translation': 'No translation to undo.',
         'api-settings-saved': 'API settings saved!',
         'api-settings-load-failed': '⚠️ Failed to load API settings: {error}',
-        'proxy-url-required': 'Please enter the proxy server URL',
-        'proxy-password-required': 'Please enter the proxy password',
+        'proxy-url-required': 'Please enter the server URL',
+        'proxy-password-required': 'Please enter the API key',
         'ollama-endpoint-required': 'Please enter Ollama API URL',
         'fetching': 'Fetching...',
         'models-parse-error': 'Unable to parse model list format',
@@ -5330,12 +5346,12 @@
         'api-settings-btn': '⚙️ API Settings',
         'other-settings-btn': 'Other Settings',
         'other-settings': 'Other Settings',
-        'api-provider-deepseek': 'DeepSeek',
-        'api-provider-gemini': 'Gemini',
-        'api-provider-gemini-proxy': 'Gemini (Proxy)',
+        'api-provider-deepseek': 'DeepSeek[Updated to v4]',
+        'api-provider-gemini': 'Gemini (Direct)[Deprecated]',
+        'api-provider-gemini-proxy': 'Gemini (Proxy)[Deprecated]',
         'api-provider-ollama': 'Ollama (Use with .bat)',
         'api-provider-local': 'LM Studio (Use with .bat)',
-        'api-provider-tavern': 'CLI Reverse Proxy / Custom',
+        'api-provider-tavern': 'Public Proxy / Custom (Recommended)',
         'edit-instruction': 'Edit Instruction',
         'instruction-beautify': 'Instruction & Frontend Beautify',
         'instruction-name': 'Name:',
