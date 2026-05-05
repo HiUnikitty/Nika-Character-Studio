@@ -1801,10 +1801,21 @@ function isContextOverflowError(text) {
         errorString = text;
     }
 
-    // 需要同时命中至少2个关键词才算超限，避免误伤正常内容
-    var keywords = ['max', 'long', 'exceed', 'limit', 'token', 'context', 'reduce', 'length'];
-    var matchedCount = keywords.filter(function(kw) { return new RegExp(kw, 'i').test(errorString); }).length;
-    return matchedCount >= 2;
+	// 需要同时命中至少2个关键词才算超限，避免误伤正常内容
+	var keywords = ['max', 'long', 'exceed', 'limit', 'token', 'context', 'reduce', 'length'];
+	var matched = keywords.filter(function(kw) { return new RegExp(kw, 'i').test(errorString); });
+
+	if (matched.length >= 2) {
+		var preview = text.length > 300 ? text.substring(0, 300) + '...' : text;
+		mylog('⚠️ 判定为上下文超限，触发关键词: [' + matched.join(', ') + ']');
+		mylog('📄 响应内容: ' + preview);
+		var progressEl = document.getElementById('progress-text');
+		if (progressEl) {
+			progressEl.textContent = '🔀 上下文超限 (关键词: ' + matched.join(', ') + ')';
+		}
+	}
+
+	return matched.length >= 2;
 }
 
 // 简化的API调用函数（不依赖按钮）
