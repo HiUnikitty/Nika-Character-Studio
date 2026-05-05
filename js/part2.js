@@ -3538,6 +3538,367 @@ ${fieldId === 'first_mes' ? `- 对于 "first_mes" 字段，请保证具有充足
     });
 }
 
+// AI 帮填正则脚本
+async function callAiForRegex(index, button) {
+    const regexCard = document.querySelector(`#regex-scripts-container .regex-card:nth-child(${index + 1})`);
+    if (!regexCard) return;
+    const targetFind = regexCard.querySelector('.regex-field:nth-child(2) input');
+    const targetReplace = regexCard.querySelector('.regex-field:nth-child(3) textarea');
+    if (!targetFind || !targetReplace) return;
+
+    getAiGuidance(t('regex-ai-guidance-title'), async userGuidance => {
+        if (!userGuidance) {
+            alert('请输入你想要实现的效果描述');
+            return;
+        }
+
+        let prompt = getLanguagePrefix() + `你是一个正则表达式生成助手。根据用户的描述，生成对应的正则表达式脚本。
+
+用户描述：${userGuidance}
+
+请严格按照以下JSON格式返回，不要包含任何额外文字或Markdown标记：
+{
+    "scriptName": "脚本名称（简短描述用途，例如：粗体转HTML标签）",
+    "findRegex": "要查找的正则表达式",
+    "replaceString": "替换的字符串（使用$1、$2等引用捕获组）",
+    "affectsPrompt": true或false
+}
+
+判断标准：
+- affectsPrompt = true：该正则替换会改变AI实际看到或生成的内容，影响AI的行为或回复（例如：过滤敏感词、修改AI拒绝回复、替换角色名字等）
+- affectsPrompt = false：该正则替换仅为美化/格式调整，不影响AI实际看到的内容含义（例如：将**加粗**转换为<strong>标签、调整标点符号格式、添加颜色样式等）
+
+请确保：
+1. findRegex 是合法有效的正则表达式
+2. 正确转义特殊字符
+3. 使用适当的捕获组
+4. replaceString 正确引用捕获组`;
+
+        const result = await callApi(prompt, button);
+        if (!result) return;
+
+        try {
+            // 尝试提取JSON（兼容可能包含多余文本的情况）
+            const jsonMatch = result.match(/\{[\s\S]*\}/);
+            if (!jsonMatch) throw new Error('未找到JSON');
+            const parsed = JSON.parse(jsonMatch[0]);
+
+            // 填入脚本名称
+            if (parsed.scriptName) {
+                const nameInput = regexCard.querySelector('.regex-field:first-child input');
+                if (nameInput) {
+                    nameInput.value = parsed.scriptName;
+                    nameInput.dispatchEvent(new Event('change'));
+                    if (typeof updateRegexScript === 'function') {
+                        updateRegexScript(index, 'scriptName', parsed.scriptName);
+                    }
+                    if (typeof updateRegexHeader === 'function') {
+                        updateRegexHeader(nameInput, index);
+                    }
+                }
+            }
+
+            if (parsed.findRegex) {
+                const findInput = targetFind;
+                findInput.value = parsed.findRegex;
+                findInput.dispatchEvent(new Event('change'));
+                if (typeof updateRegexScript === 'function') {
+                    updateRegexScript(index, 'findRegex', parsed.findRegex);
+                }
+            }
+
+            if (parsed.replaceString !== undefined) {
+                targetReplace.value = parsed.replaceString;
+                targetReplace.dispatchEvent(new Event('change'));
+                if (typeof updateRegexScript === 'function') {
+                    updateRegexScript(index, 'replaceString', parsed.replaceString);
+                }
+                autoResizeTextarea(targetReplace);
+            }
+
+            // 显示影响判断
+            const resultEl = document.getElementById('regex-ai-result-' + index);
+            if (resultEl) {
+                const affectsPrompt = parsed.affectsPrompt === true;
+                resultEl.textContent = affectsPrompt ? t('regex-ai-affects-prompt') : t('regex-ai-no-affects-prompt');
+                resultEl.className = 'regex-ai-result ' + (affectsPrompt ? 'affects-prompt' : 'no-affect');
+                resultEl.style.display = 'inline-block';
+
+                // 自动设置 promptOnly 和 markdownOnly
+                if (typeof updateRegexScript === 'function') {
+                    if (affectsPrompt) {
+                        // 影响提示词 → 勾选"仅改变发送"
+                        updateRegexScript(index, 'markdownOnly', false);
+                        updateRegexScript(index, 'promptOnly', true);
+                    } else {
+                        // 不影响提示词 → 仅改变显示
+                        updateRegexScript(index, 'markdownOnly', true);
+                        updateRegexScript(index, 'promptOnly', affectsPrompt);
+                    }
+                    // 同步更新UI中的复选框状态
+                    const checkboxes = regexCard.querySelectorAll('.regex-options input[type="checkbox"]');
+                    if (checkboxes.length >= 5) {
+                        checkboxes[3].checked = !affectsPrompt; // markdownOnly
+                        checkboxes[4].checked = affectsPrompt; // promptOnly
+                    }
+                }
+            }
+
+            // 保存备份用于撤销
+            button.dataset.aiBackupFind = targetFind.value;
+            button.dataset.aiBackupReplace = targetReplace.value;
+
+            // 显示撤销按钮
+            const undoButton = button.nextElementSibling;
+            if (undoButton && undoButton.classList.contains('ai-undo-button')) {
+                undoButton.style.display = 'inline-block';
+            }
+
+        } catch (e) {
+            console.error('解析AI返回结果失败:', e);
+            alert('AI返回格式异常，请重试。返回内容：' + result.substring(0, 200));
+        }
+    }, t('regex-ai-prompt'));
+}
+
+// AI 帮测正则 - 自动生成测试输入
+async function aiTestRegex(index, button) {
+	const input = document.getElementById('regex-test-input-' + index);
+	if (!input) return;
+
+	const script = regexScriptsData[index];
+	if (!script) return;
+
+	if (!script.findRegex) {
+		alert('请先填写"查找正则"字段');
+		return;
+	}
+
+	const originalText = button.textContent;
+	button.disabled = true;
+	button.textContent = t('generating');
+
+	try {
+		let prompt = getLanguagePrefix() + `你是一个正则表达式测试助手。请根据以下正则脚本，生成一段合适的测试文本。
+
+查找正则: ${script.findRegex}
+替换为: ${script.replaceString || '(空)'}
+
+要求：
+1. 测试文本应该包含能够被该正则有匹配的内容
+2. 也要包含不会被匹配的内容，以验证选择性
+3. 文本要自然、通顺，像是真实的对话或文章片段
+4. 直接返回测试文本本身，不要包含任何额外解释或Markdown标记`;
+
+		const result = await callApi(prompt, button);
+		if (result) {
+			input.value = result.trim();
+			// 自动运行测试
+			runRegexLiveTest(index);
+		}
+	} finally {
+		button.disabled = false;
+		button.textContent = originalText;
+	}
+}
+
+// AI 帮我填并一直验证到对
+async function callAiForRegexAndVerify(index, button) {
+	const regexCard = document.querySelector('#regex-scripts-container .regex-card:nth-child(' + (index + 1) + ')');
+	if (!regexCard) return;
+	const targetFind = regexCard.querySelector('.regex-field:nth-child(2) input');
+	const targetReplace = regexCard.querySelector('.regex-field:nth-child(3) textarea');
+	if (!targetFind || !targetReplace) return;
+
+	getAiGuidance(t('regex-ai-guidance-title'), async userGuidance => {
+		if (!userGuidance) {
+			alert('请输入你想要实现的效果描述');
+			return;
+		}
+
+		const originalText = button.textContent;
+		button.disabled = true;
+		button.textContent = t('generating');
+
+		try {
+			// 先展开测试区域
+			const testSection = document.getElementById('regex-test-section-' + index);
+			if (testSection && !testSection.classList.contains('expanded')) {
+				toggleRegexTest(index);
+			}
+
+			let findRegex = '';
+			let replaceString = '';
+			let affectsPrompt = false;
+			let testPassed = false;
+			const maxAttempts = 5;
+			let attempt = 0;
+
+			while (!testPassed && attempt < maxAttempts) {
+				attempt++;
+				const statusEl = document.getElementById('regex-test-status-' + index);
+
+				let prompt;
+				if (attempt === 1) {
+					prompt = getLanguagePrefix() + `你是一个正则表达式生成助手。根据用户的描述，生成对应的正则表达式脚本。
+
+用户描述：${userGuidance}
+
+请严格按照以下JSON格式返回，不要包含任何额外文字或Markdown标记：
+{
+    "scriptName": "脚本名称（简短描述用途，例如：粗体转HTML标签）",
+    "findRegex": "要查找的正则表达式",
+    "replaceString": "替换的字符串（使用$1、$2等引用捕获组）",
+    "affectsPrompt": true或false,
+    "testInput": "一段用于验证的测试文本，必须包含能匹配到的内容"
+}
+
+判断标准：
+- affectsPrompt = true：该正则替换会改变AI实际看到或生成的内容
+- affectsPrompt = false：该正则替换仅为美化/格式调整
+
+请确保：
+1. findRegex 是合法有效的正则表达式
+2. 正确转义特殊字符
+3. 使用适当的捕获组
+4. replaceString 正确引用捕获组
+5. testInput 是能验证该正则的测试文本`;
+				} else {
+					prompt = getLanguagePrefix() + `我正在尝试生成一个正则表达式，但之前的版本没有通过验证。
+
+用户需求：${userGuidance}
+
+上一次生成的正则：
+- findRegex: ${findRegex}
+- replaceString: ${replaceString}
+
+验证时使用的测试输入和预期不匹配。
+
+请重新生成，严格按照以下JSON格式返回：
+{
+    "scriptName": "...（简短描述用途）",
+    "findRegex": "...",
+    "replaceString": "...",
+    "affectsPrompt": true/false,
+    "testInput": "用于验证的测试文本，必须包含能匹配到的内容"
+}
+
+请确保正则表达式能正确处理testInput中的内容，满足用户的需求。`;
+				}
+
+				if (statusEl) {
+					if (attempt > 1) {
+						statusEl.textContent = t('regex-ai-verify-failed', { n: attempt });
+						statusEl.className = 'regex-test-status error';
+					} else {
+						statusEl.textContent = '⏳ 正在生成...';
+						statusEl.className = 'regex-test-status';
+					}
+					statusEl.style.display = 'inline-block';
+				}
+
+				const result = await callApi(prompt, button);
+				if (!result) break;
+
+				try {
+					const jsonMatch = result.match(/\{[\s\S]*\}/);
+					if (!jsonMatch) throw new Error('未找到JSON');
+					const parsed = JSON.parse(jsonMatch[0]);
+
+					findRegex = parsed.findRegex || '';
+					replaceString = parsed.replaceString !== undefined ? parsed.replaceString : '';
+					affectsPrompt = parsed.affectsPrompt === true;
+
+					// 填入脚本名称
+					if (parsed.scriptName) {
+						const nameInput = regexCard.querySelector('.regex-field:first-child input');
+						if (nameInput) {
+							nameInput.value = parsed.scriptName;
+							nameInput.dispatchEvent(new Event('change'));
+							if (typeof updateRegexScript === 'function') {
+								updateRegexScript(index, 'scriptName', parsed.scriptName);
+							}
+							if (typeof updateRegexHeader === 'function') {
+								updateRegexHeader(nameInput, index);
+							}
+						}
+					}
+
+					// 填入正则字段
+					if (findRegex) {
+						targetFind.value = findRegex;
+						targetFind.dispatchEvent(new Event('change'));
+						if (typeof updateRegexScript === 'function') {
+							updateRegexScript(index, 'findRegex', findRegex);
+						}
+					}
+
+					if (replaceString !== undefined) {
+						targetReplace.value = replaceString;
+						targetReplace.dispatchEvent(new Event('change'));
+						if (typeof updateRegexScript === 'function') {
+							updateRegexScript(index, 'replaceString', replaceString);
+						}
+						if (typeof autoResizeTextarea === 'function') {
+							autoResizeTextarea(targetReplace);
+						}
+					}
+
+					// 填入测试输入并验证
+					const testInput = document.getElementById('regex-test-input-' + index);
+					if (testInput && parsed.testInput) {
+						testInput.value = parsed.testInput;
+						runRegexLiveTest(index);
+					}
+
+					// 检查验证结果
+					const output = document.getElementById('regex-test-output-' + index);
+					if (output && output.value && !output.value.startsWith('[')) {
+						// 如果输出和输入不同，说明正则有匹配，验证通过
+						if (output.value !== testInput.value && testInput.value) {
+							testPassed = true;
+							if (statusEl) {
+								statusEl.textContent = t('regex-ai-verify-success');
+								statusEl.className = 'regex-test-status success';
+								statusEl.style.display = 'inline-block';
+							}
+
+							// 显示影响判断
+							const resultEl = document.getElementById('regex-ai-result-' + index);
+							if (resultEl) {
+								resultEl.textContent = affectsPrompt ? t('regex-ai-affects-prompt') : t('regex-ai-no-affects-prompt');
+								resultEl.className = 'regex-ai-result ' + (affectsPrompt ? 'affects-prompt' : 'no-affect');
+								resultEl.style.display = 'inline-block';
+							}
+
+							// 设置 promptOnly 和 markdownOnly
+							if (typeof updateRegexScript === 'function') {
+								updateRegexScript(index, 'markdownOnly', !affectsPrompt);
+								updateRegexScript(index, 'promptOnly', affectsPrompt);
+								const checkboxes = regexCard.querySelectorAll('.regex-options input[type="checkbox"]');
+								if (checkboxes.length >= 5) {
+									checkboxes[3].checked = !affectsPrompt;
+									checkboxes[4].checked = affectsPrompt;
+								}
+							}
+							break;
+						}
+					}
+				} catch (e) {
+					console.error('解析AI返回结果失败:', e);
+				}
+			}
+
+			if (!testPassed) {
+				alert('已达到最大尝试次数(' + maxAttempts + '次)，请调整描述后重试。');
+			}
+		} finally {
+			button.disabled = false;
+			button.textContent = originalText;
+		}
+	}, t('regex-ai-prompt'));
+}
+
 async function callWorldbookDeepSeek(button) {
     const currentEntryElement = button.closest('.worldbook-entry');
     const targetElement = currentEntryElement.querySelector('.wb-content');

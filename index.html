@@ -1604,6 +1604,158 @@
       background: #777;
     }
 
+    .regex-ai-button {
+      background: var(--ai-button-bg);
+      color: white;
+      border: none;
+      padding: 6px 12px;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 12px;
+      margin-top: 6px;
+      align-self: flex-start;
+      transition: opacity 0.2s;
+    }
+
+    .regex-ai-button:hover {
+      opacity: 0.85;
+    }
+
+    .regex-ai-button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .regex-ai-result {
+      font-size: 11px;
+      padding: 3px 8px;
+      border-radius: 4px;
+      margin-top: 4px;
+      display: inline-block;
+    }
+
+    .regex-ai-result.affects-prompt {
+      background: rgba(70, 130, 255, 0.15);
+      color: #5b8ff9;
+    }
+
+    .regex-ai-result.no-affect {
+      background: rgba(100, 255, 100, 0.15);
+      color: #51cf66;
+    }
+
+    .regex-test-toggle {
+      background: none;
+      color: var(--text-muted);
+      border: 1px solid var(--input-border);
+      padding: 4px 10px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 12px;
+      transition: all 0.2s;
+    }
+
+    .regex-test-toggle:hover {
+      color: var(--primary-color);
+      border-color: var(--primary-color);
+    }
+
+    .regex-test-toggle.active {
+      background: var(--primary-color);
+      color: white;
+      border-color: var(--primary-color);
+    }
+
+    .regex-test-section {
+      display: none;
+      margin-top: 12px;
+      padding-top: 12px;
+      border-top: 1px solid var(--input-border);
+    }
+
+    .regex-test-section.expanded {
+      display: block;
+    }
+
+    .regex-test-container {
+      display: flex;
+      gap: 12px;
+      margin-top: 8px;
+    }
+
+    .regex-test-column {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .regex-test-column label {
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    .regex-test-textarea {
+      background: var(--input-bg);
+      border: 1px solid var(--input-border);
+      border-radius: 5px;
+      color: var(--text-color);
+      padding: 8px 10px;
+      font-size: 14px;
+      min-height: 80px;
+      resize: vertical;
+      font-family: monospace;
+      width: 100%;
+      box-sizing: border-box;
+    }
+
+    .regex-test-output {
+      background: rgba(0, 0, 0, 0.2);
+    }
+
+    .regex-test-actions {
+      display: flex;
+      gap: 8px;
+      margin-top: 8px;
+      align-items: center;
+    }
+
+    .regex-test-status {
+      font-size: 12px;
+      padding: 4px 10px;
+      border-radius: 4px;
+    }
+
+    .regex-test-status.success {
+      background: rgba(100, 255, 100, 0.15);
+      color: #51cf66;
+    }
+
+    .regex-test-status.error {
+      background: rgba(255, 100, 100, 0.15);
+      color: #ff6b6b;
+    }
+
+    .regex-test-btn {
+      background: var(--ai-button-bg);
+      color: white;
+      border: none;
+      padding: 6px 12px;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 12px;
+      transition: opacity 0.2s;
+    }
+
+    .regex-test-btn:hover {
+      opacity: 0.85;
+    }
+
+    .regex-test-btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
     .regex-fields {
       display: grid;
       gap: 10px;
@@ -1698,7 +1850,8 @@
     /* 折叠卡片样式 */
     .greeting-card.collapsed .greeting-content,
     .regex-card.collapsed .regex-fields,
-    .regex-card.collapsed .regex-options {
+    .regex-card.collapsed .regex-options,
+    .regex-card.collapsed .regex-test-section {
       display: none;
     }
 
@@ -4076,6 +4229,18 @@
         'regex-placement': '应用位置',
         'regex-placement-ai': 'AI输出',
         'regex-placement-user': '用户输入',
+        'regex-ai-btn': '🔮 AI 帮我填',
+        'regex-ai-guidance-title': '🔮 AI 帮你填写正则脚本',
+        'regex-ai-prompt': '请描述你想要用正则实现什么效果。例如：将**加粗**的内容改为<strong>标签包裹',
+        'regex-ai-affects-prompt': '影响提示词发送',
+        'regex-ai-no-affects-prompt': '不影响提示词发送',
+        'regex-test-btn': '测试',
+        'regex-test-input-label': '测试输入',
+        'regex-test-output-label': '测试输出',
+        'regex-ai-test-btn': '🤖 AI 帮我测',
+        'regex-ai-fill-verify-btn': '🔮 AI 帮我填并验证',
+        'regex-ai-verify-success': '✅ 验证成功！正则达到预期效果',
+        'regex-ai-verify-failed': '❌ 验证失败，正在重新生成...（第{n}次）',
         'message-example': '示例消息',
         'message-example-placeholder':
           'AI会模仿。例如：\n<START>\n{{user}}: 你好\n{{char}}: 你好呀！\n<START>...',
@@ -4763,6 +4928,18 @@
         'regex-placement': 'Placement',
         'regex-placement-ai': 'AI Output',
         'regex-placement-user': 'User Input',
+        'regex-ai-btn': '🔮 AI Fill',
+        'regex-ai-guidance-title': '🔮 AI Fill Regex Script',
+        'regex-ai-prompt': 'Describe what you want the regex to do. E.g.: change **bold** text to <strong> tags',
+        'regex-ai-affects-prompt': 'Affects prompt sending',
+        'regex-ai-no-affects-prompt': 'Does not affect prompt sending',
+        'regex-test-btn': 'Test',
+        'regex-test-input-label': 'Test Input',
+        'regex-test-output-label': 'Test Output',
+        'regex-ai-test-btn': '🤖 AI Test',
+        'regex-ai-fill-verify-btn': '🔮 AI Fill & Verify',
+        'regex-ai-verify-success': '✅ Verified! Regex works as expected',
+        'regex-ai-verify-failed': '❌ Verification failed, regenerating... (attempt {n})',
         'message-example': 'Message Example',
         'message-example-placeholder': 'Example dialogues for the AI to imitate. Very important! Example: {{user}}: Hello\n{{char}}: Hello!',
         'advanced-settings': 'Meta Data',

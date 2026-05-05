@@ -2484,9 +2484,10 @@ regexScriptsData.forEach((script, index) => {
     <div class="regex-header" onclick="toggleRegexCard(this)">
         <span>${escapeHtml(displayName)}</span>
         <div class="regex-actions" onclick="event.stopPropagation()">
-        <button class="regex-toggle ${script.disabled ? 'off' : 'on'}" 
+        <button class="regex-toggle ${script.disabled ? 'off' : 'on'}"
             onclick="toggleRegexScript(${index})">
         </button>
+        <button class="regex-test-toggle" onclick="toggleRegexTest(${index})" id="regex-test-toggle-${index}">${t('regex-test-btn')}</button>
         <button class="regex-delete" onclick="deleteRegexScript(${index})">${t('delete-btn')}</button>
         </div>
     </div>
@@ -2505,10 +2506,15 @@ regexScriptsData.forEach((script, index) => {
         </div>
         <div class="regex-field">
         <label>${t('regex-replace')}</label>
-        <textarea 
+        <textarea
             placeholder="例如: <strong>$1</strong>"
             onchange="updateRegexScript(${index}, 'replaceString', this.value)"
             oninput="autoResizeTextarea(this)">${escapeHtml(script.replaceString || '')}</textarea>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;">
+            <button class="regex-ai-button" onclick="callAiForRegex(${index}, this)" type="button">${t('regex-ai-btn')}</button>
+            <button class="regex-ai-button" onclick="callAiForRegexAndVerify(${index}, this)" type="button">${t('regex-ai-fill-verify-btn')}</button>
+        </div>
+        <div id="regex-ai-result-${index}" class="regex-ai-result" style="display:none;"></div>
         </div>
     </div>
     <div class="regex-options">
@@ -2529,17 +2535,36 @@ regexScriptsData.forEach((script, index) => {
         </label>
         <label class="regex-option">
         <input type="checkbox" ${script.markdownOnly ? 'checked' : ''} 
-            onchange="updateRegexScript(${index}, 'markdownOnly', this.checked)">
+            onchange="updateRegexScript(${index}, 'markdownOnly', this.checked); updateRegexAffectIndicator(${index})">
         ${t('regex-markdown-only')}
         </label>
         <label class="regex-option">
         <input type="checkbox" ${script.promptOnly ? 'checked' : ''} 
-            onchange="updateRegexScript(${index}, 'promptOnly', this.checked)">
+            onchange="updateRegexScript(${index}, 'promptOnly', this.checked); updateRegexAffectIndicator(${index})">
         ${t('regex-prompt-only')}
         </label>
     </div>
+    <div class="regex-test-section" id="regex-test-section-${index}">
+        <div class="regex-test-container">
+            <div class="regex-test-column">
+                <label>${t('regex-test-input-label')}</label>
+                <textarea class="regex-test-textarea" id="regex-test-input-${index}"
+                    oninput="runRegexLiveTest(${index})" placeholder="在此输入测试文本..."></textarea>
+            </div>
+            <div class="regex-test-column">
+                <label>${t('regex-test-output-label')}</label>
+                <textarea class="regex-test-textarea regex-test-output" id="regex-test-output-${index}" readonly
+                    placeholder="正则处理结果将在此显示..."></textarea>
+            </div>
+        </div>
+        <div class="regex-test-actions">
+            <button class="regex-test-btn" onclick="aiTestRegex(${index}, this)" type="button">${t('regex-ai-test-btn')}</button>
+            <span id="regex-test-status-${index}" class="regex-test-status" style="display:none;"></span>
+        </div>
+    </div>
     `;
     container.appendChild(card);
+    updateRegexAffectIndicator(index);
 });
 }
 
@@ -2626,6 +2651,92 @@ if (confirm(t('confirm-delete'))) {
     regexScriptsData.splice(index, 1);
     renderRegexScripts();
 }
+}
+// 切换正则测试模式
+function toggleRegexTest(index) {
+	const section = document.getElementById('regex-test-section-' + index);
+	const toggleBtn = document.getElementById('regex-test-toggle-' + index);
+	if (!section || !toggleBtn) return;
+	section.classList.toggle('expanded');
+	toggleBtn.classList.toggle('active');
+	// 展开时自动运行一次测试
+	setTimeout(() => runRegexLiveTest(index), 50);
+}
+
+// 实时运行正则测试
+function runRegexLiveTest(index) {
+	const input = document.getElementById('regex-test-input-' + index);
+	const output = document.getElementById('regex-test-output-' + index);
+	if (!input || !output) return;
+
+	const testText = input.value;
+	if (!testText) {
+		output.value = '';
+		return;
+	}
+
+	const script = regexScriptsData[index];
+	if (!script) return;
+
+	const findRegex = script.findRegex;
+	const replaceString = script.replaceString;
+	if (!findRegex) {
+		output.value = '[请先填写"查找正则"字段]';
+		return;
+	}
+
+	try {
+		const flags = script.runOnEdit ? 'gms' : 'g';
+		const regex = new RegExp(findRegex, flags);
+		const result = testText.replace(regex, replaceString || '');
+		output.value = result;
+
+		// 更新状态指示
+		const statusEl = document.getElementById('regex-test-status-' + index);
+		if (statusEl) {
+			if (result !== testText) {
+				statusEl.textContent = '✓ 已匹配';
+				statusEl.className = 'regex-test-status success';
+				statusEl.style.display = 'inline-block';
+			} else {
+				statusEl.textContent = '- 无匹配';
+				statusEl.className = 'regex-test-status';
+				statusEl.style.display = 'inline-block';
+			}
+		}
+	} catch (e) {
+		output.value = '[正则错误: ' + e.message + ']';
+		const statusEl = document.getElementById('regex-test-status-' + index);
+		if (statusEl) {
+			statusEl.textContent = '✗ 正则错误';
+			statusEl.className = 'regex-test-status error';
+			statusEl.style.display = 'inline-block';
+		}
+	}
+}
+
+// 更新正则在的影响提示词指示器（手动勾选复选框时调用）
+function updateRegexAffectIndicator(index) {
+	const resultEl = document.getElementById('regex-ai-result-' + index);
+	if (!resultEl) return;
+
+	const script = regexScriptsData[index];
+	if (!script) return;
+
+	// promptOnly = true → 影响提示词发送
+	// markdownOnly = true (且promptOnly = false) → 不影响提示词发送（仅改变显示）
+	// 其他情况 → 隐藏指示器
+	if (script.promptOnly) {
+		resultEl.textContent = t('regex-ai-affects-prompt');
+		resultEl.className = 'regex-ai-result affects-prompt';
+		resultEl.style.display = 'inline-block';
+	} else if (script.markdownOnly) {
+		resultEl.textContent = t('regex-ai-no-affects-prompt');
+		resultEl.className = 'regex-ai-result no-affect';
+		resultEl.style.display = 'inline-block';
+	} else {
+		resultEl.style.display = 'none';
+	}
 }
 
 (function() {
