@@ -1518,20 +1518,6 @@ ${memory.content}
         mylog(`API调用完成，返回内容长度: ${response.length}`);
         mylog(response);
 
-        // ========== 检查返回内容是否包含token超限错误（上下文超限的表现） ==========
-        if (isContextOverflowError(response)) {
-            mylog(`⚠️ 返回内容包含token超限错误，判定为上下文超限`);
-            document.getElementById('progress-text').textContent = `🔀 返回内容包含token超限错误，判定为上下文超限，分裂所有后续记忆...`;
-
-            // 分裂所有后续记忆
-            splitAllRemainingMemories(index);
-            updateMemoryQueueUI();
-            mylog(`💾 分裂后保存状态，队列长度: ${memoryQueue.length}，队列标题: ${memoryQueue.map(m => m.title).join(', ')}`);
-            await NovelState.saveState(memoryQueue.filter(m => m.processed).length);
-
-            throw new Error(`返回内容包含token超限错误，判定为上下文超限，已分裂所有后续记忆`);
-        }
-
         // 清理和解析返回的JSON
         let memoryUpdate;
         try {
@@ -1815,8 +1801,10 @@ function isContextOverflowError(text) {
         errorString = text;
     }
 
-    // 使用正则表达式检测超限关键词（不区分大小写）
-    return /max|long|exceed|limit|token|context|reduce|length/i.test(errorString);
+    // 需要同时命中至少2个关键词才算超限，避免误伤正常内容
+    var keywords = ['max', 'long', 'exceed', 'limit', 'token', 'context', 'reduce', 'length'];
+    var matchedCount = keywords.filter(function(kw) { return new RegExp(kw, 'i').test(errorString); }).length;
+    return matchedCount >= 2;
 }
 
 // 简化的API调用函数（不依赖按钮）
