@@ -1365,6 +1365,193 @@ if (modal) {
 }
 }
 
+// 预览正则脚本的HTML渲染效果
+function previewRegexHTML() {
+    if (!regexScriptsData || regexScriptsData.length === 0) {
+        alert('请先添加正则脚本');
+        return;
+    }
+
+    const enabledScripts = regexScriptsData.filter(s => !s.disabled);
+    if (enabledScripts.length === 0) {
+        alert('没有启用的正则脚本');
+        return;
+    }
+
+    // 收集所有包含 HTML 标签的替换字符串
+    let htmlContentItems = [];
+    enabledScripts.forEach(script => {
+        const content = script.replaceString || '';
+        // 检查是否包含 HTML 标签
+        if (/<[a-z][\s\S]*>/i.test(content)) {
+            // 提取其中的代码块或直接使用
+            const blocks = extractHTMLCodeBlocks(content);
+            if (blocks.length > 0) {
+                htmlContentItems.push(...blocks);
+            } else {
+                htmlContentItems.push(content);
+            }
+        }
+    });
+
+    if (htmlContentItems.length === 0) {
+        alert('没有发现包含 HTML 的正则脚本内容。请确保脚本已启用并填写了包含 HTML 标签的替换文本。');
+        return;
+    }
+
+    // 合并显示
+    const combinedHTML = htmlContentItems.join('\n<hr style="border-color:#444;margin:30px 0;border-style:dashed;opacity:0.5;">\n');
+    
+    // 构建完整的预览 HTML，模拟酒馆深色主题
+    const finalHtml = `<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        :root {
+            --bg-color: #1e1e1e;
+            --text-color: #d4d4d4;
+            --hr-color: #444;
+        }
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif; 
+            padding: 24px; 
+            color: var(--text-color); 
+            background: var(--bg-color); 
+            line-height: 1.6;
+            margin: 0;
+        }
+        /* 模拟酒馆的一些常见容器样式 */
+        .nika-container, .stat-bar, .status-panel { 
+            margin-bottom: 20px; 
+        }
+        /* 允许预览中的脚本运行 */
+        script { display: none; }
+    </style>
+</head>
+<body>
+    <div style="margin-bottom: 20px; border-bottom: 1px solid #333; padding-bottom: 10px;">
+        <span style="color: #888; font-size: 13px;">提示：以下内容是所有启用正则脚本中提取的 HTML 组件集合。</span>
+    </div>
+    ${combinedHTML}
+</body>
+</html>`;
+
+    // 创建预览弹窗
+    const modalId = 'html-preview-modal';
+    const existingModal = document.getElementById(modalId);
+    if (existingModal) existingModal.remove();
+
+    const previewModalHTML = `
+    <div id="${modalId}" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 10002; display: flex; justify-content: center; align-items: center; backdrop-filter: blur(5px);">
+        <div style="background: #1a1a2e; padding: 24px; border-radius: 12px; box-shadow: 0 20px 50px rgba(0,0,0,0.5); max-width: 95%; max-height: 95%; width: 1000px; height: 800px; display: flex; flex-direction: column; border: 1px solid #30363d;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <div>
+                    <h3 style="margin: 0; color: #e0e0e0; font-size: 20px; display: flex; align-items: center; gap: 10px;">
+                        <span style="color: #e67e22;">🎨</span> 组件效果预览
+                    </h3>
+                    <p style="font-size: 12px; color: #888; margin: 5px 0 0 0;">已合并显示 ${htmlContentItems.length} 个 HTML 组件块</p>
+                </div>
+                <div style="display:flex;gap:12px;">
+                    <button onclick="refreshRegexPreview()" style="background: #e67e22; color: white; padding: 8px 20px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; transition: background 0.2s;">刷新</button>
+                    <button onclick="closeHTMLPreviewModal()" style="background: #30363d; color: #e0e0e0; padding: 8px 20px; border: 1px solid #444; border-radius: 6px; cursor: pointer; transition: all 0.2s;">关闭</button>
+                </div>
+            </div>
+            <div style="flex: 1; border: 1px solid #30363d; border-radius: 8px; overflow: hidden; background: #1e1e1e; box-shadow: inset 0 2px 10px rgba(0,0,0,0.2);">
+                <iframe id="html-preview-frame" sandbox="allow-scripts allow-same-origin allow-forms allow-modals" style="width: 100%; height: 100%; border: none;"></iframe>
+            </div>
+        </div>
+    </div>
+    `;
+
+    document.body.insertAdjacentHTML('beforeend', previewModalHTML);
+
+    setTimeout(() => {
+        const iframe = document.getElementById('html-preview-frame');
+        if (iframe) {
+            try {
+                iframe.contentDocument.open();
+                iframe.contentDocument.write(finalHtml);
+                iframe.contentDocument.close();
+            } catch (e) {
+                console.error('HTML预览渲染失败:', e);
+                iframe.src = 'data:text/html;charset=utf-8,' + encodeURIComponent(finalHtml);
+            }
+        }
+    }, 100);
+}
+
+// 刷新正则预览（从modal中调用）
+function refreshRegexPreview() {
+    closeHTMLPreviewModal();
+    previewRegexHTML();
+}
+
+// 预览单条正则脚本的HTML效果
+function previewSingleRegexHTML(index) {
+    if (!regexScriptsData || !regexScriptsData[index]) {
+        alert('脚本不存在');
+        return;
+    }
+
+    const script = regexScriptsData[index];
+    if (!script.replaceString) {
+        alert('请先填写替换文本（包含HTML标签）');
+        return;
+    }
+
+    const processedContent = script.replaceString;
+
+    // 提取并构建HTML内容
+    const htmlBlocks = extractHTMLCodeBlocks(processedContent);
+    let htmlContent;
+
+    if (htmlBlocks.length > 0) {
+        htmlContent = htmlBlocks.join('\n<hr style="border-color:#444;margin:20px 0;">\n');
+    } else if (/<\/?[a-z][\s\S]*>/i.test(processedContent)) {
+        htmlContent = '<!DOCTYPE html>\n<html>\n<head><meta charset="UTF-8"><style>body{font-family:sans-serif;padding:16px;color:#d4d4d4;background:#1e1e1e;}</style></head>\n<body>\n' + processedContent + '\n</body>\n</html>';
+    } else {
+        htmlContent = '<!DOCTYPE html>\n<html>\n<head><meta charset="UTF-8"><style>body{font-family:monospace;padding:16px;color:#d4d4d4;background:#1e1e1e;white-space:pre-wrap;}</style></head>\n<body>\n' + escapeHtml(processedContent) + '\n</body>\n</html>';
+    }
+
+    // 复用之前的预览弹窗逻辑
+    const previewModalHTML = `
+    <div id="html-preview-modal" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 10002; display: flex; justify-content: center; align-items: center;">
+        <div style="background: var(--bg-color, #1a1a2e); padding: 20px; border-radius: 10px; box-shadow: 0 10px 30px rgba(0,0,0,0.3); max-width: 95%; max-height: 95%; width: 900px; height: 700px; display: flex; flex-direction: column;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                <div>
+                    <h3 style="margin: 0; color: var(--text-color, #e0e0e0);">单条正则预览 - ${escapeHtml(script.scriptName || '未命名')}</h3>
+                </div>
+                <div style="display:flex;gap:8px;">
+                    <button onclick="closeHTMLPreviewModal(); previewSingleRegexHTML(${index})" style="background: #e67e22; color: white; padding: 8px 12px; border: none; border-radius: 5px; cursor: pointer;">刷新</button>
+                    <button onclick="closeHTMLPreviewModal()" style="background: #6c757d; color: white; padding: 8px 12px; border: none; border-radius: 5px; cursor: pointer;">关闭</button>
+                </div>
+            </div>
+            <div style="flex: 1; border: 1px solid var(--input-border, #444); border-radius: 5px; overflow: hidden;">
+                <iframe id="html-preview-frame" sandbox="allow-scripts allow-same-origin allow-forms allow-modals" style="width: 100%; height: 100%; border: none; background: white;"></iframe>
+            </div>
+        </div>
+    </div>
+    `;
+
+    document.body.insertAdjacentHTML('beforeend', previewModalHTML);
+
+    setTimeout(() => {
+        const iframe = document.getElementById('html-preview-frame');
+        if (iframe) {
+            try {
+                iframe.contentDocument.open();
+                iframe.contentDocument.write(htmlContent);
+                iframe.contentDocument.close();
+            } catch (e) {
+                console.error('HTML预览渲染失败:', e);
+                iframe.src = 'data:text/html;charset=utf-8,' + encodeURIComponent(htmlContent);
+            }
+        }
+    }, 100);
+}
+
 // 生成指令AI修改指令
 async function generateInstructionAIModify(modifyRequest = null) {
 const currentContent = document.getElementById('instruction-content-input').value;
@@ -1838,9 +2025,17 @@ if (characterId) {
     document.getElementById('avatar-preview').src = createDefaultImage('2:3');
     // 隐藏加载圈
     document.getElementById('loading-overlay').style.display = 'none';
+    // 新建角色 → 清空agent聊天记录
+    if (typeof loadAgentMessages === 'function') {
+        agentMessages = [];
+        renderAgentMessages();
+    }
 }
 // 确保每次进入编辑器时，按钮文本都根据开关状态刷新
 toggleAiButtonText(document.getElementById('Plus-switch').checked);
+
+// 初始化智能体面板（首次打开编辑器时设置欢迎消息）
+if (typeof initAgentPanel === 'function') initAgentPanel();
 
 initAutoSave();
 }
@@ -2062,6 +2257,7 @@ if (originalCard.spec === 'chara_card_v3' && originalCard.data) {
     // 新增：备用问候语和正则脚本
     alternate_greetings: data.alternate_greetings || [],
     regex_scripts: extensions.regex_scripts || [],
+    xiaobaix_tasks: (extensions['xiaobaix-tasks'] && extensions['xiaobaix-tasks'].tasks) || [],
     };
 } else if (originalCard.spec === 'chara_card_v2' && originalCard.data) {
     const data = originalCard.data;
@@ -2232,6 +2428,10 @@ if (!db) return;
 
 try {
     const card = buildCardObject();
+    // 记录当前智能体正在使用的 ID (确保刷新后能找回消息)
+    if (typeof resolveCharId === 'function') {
+        card.agentCharId = resolveCharId();
+    }
     
     // 处理 ID 
     if (card.id && String(card.id) !== String(DRAFT_ID)) {
@@ -2407,6 +2607,11 @@ if (cardForDb.id) {
     const request = store.put(cardForDb);
     request.onsuccess = () => {
     deleteDraft();
+    // 迁移agent聊天记录（从临时ID到真实角色ID）
+    const newId = request.result;
+    if (newId && typeof migrateAgentMessages === 'function') {
+        migrateAgentMessages(resolveCharId(), String(newId));
+    }
     alert(t('character-saved', { name: card.name }));
     setTimeout(() => {
         showLibraryView();
@@ -3094,6 +3299,7 @@ avatarImageBase64 = null;
 // 清空备用问候语和正则脚本数据
 alternateGreetingsData = [];
 regexScriptsData = [];
+xiaobaixTasksData = [];
 document.querySelector('#editor-view .editor-body').scrollTop = 0;
 }
 
@@ -3187,6 +3393,16 @@ if (regexData && Array.isArray(regexData)) {
     renderRegexScripts();
 }
 
+// 恢复小白X任务数据
+const xiaobaixData = charData.xiaobaix_tasks || (charData.extensions && charData.extensions['xiaobaix-tasks'] && charData.extensions['xiaobaix-tasks'].tasks);
+if (xiaobaixData && Array.isArray(xiaobaixData)) {
+    xiaobaixTasksData = xiaobaixData;
+    renderXiaobaixTasks();
+} else {
+    xiaobaixTasksData = [];
+    renderXiaobaixTasks();
+}
+
 // 新增: 角色加载后，自动调整所有文本框大小以适应内容，改善移动端编辑体验
 document.querySelectorAll('#editor-view textarea').forEach(autoResizeTextarea);
 
@@ -3214,6 +3430,28 @@ document.querySelector('#editor-view .editor-body').scrollTop = 0;
 
 // 隐藏加载圈
 document.getElementById('loading-overlay').style.display = 'none';
+
+// 加载智能体的聊天记录（此时charId已设置）
+const agentCharId = document.getElementById('charId').value;
+const isRestoringDraft = charData.id === DRAFT_ID;
+
+if (isRestoringDraft && typeof migrateAgentMessages === 'function') {
+    // 优先从草稿记录的 agentCharId 迁移 (解决新建角色刷新后 ID 丢失问题)
+    const sourceId = charData.agentCharId || DRAFT_ID;
+    const targetId = agentCharId || (typeof resolveCharId === 'function' ? resolveCharId() : 'new');
+    
+    if (String(sourceId) !== String(targetId)) {
+        migrateAgentMessages(sourceId, targetId).then(() => {
+            if (typeof loadAgentMessages === 'function') loadAgentMessages(targetId);
+        });
+    } else {
+        if (typeof loadAgentMessages === 'function') loadAgentMessages(targetId);
+    }
+} else if (agentCharId && typeof loadAgentMessages === 'function') {
+    loadAgentMessages(agentCharId);
+} else if (typeof initAgentPanel === 'function') {
+    initAgentPanel();
+}
 }
 
 document.getElementById('avatar-input').addEventListener('change', function (event) {
@@ -3296,6 +3534,7 @@ const card = {
     // 新增：备用问候语和正则脚本
     alternate_greetings: alternateGreetingsData || [],
     regex_scripts: regexScriptsData || [],
+    xiaobaix_tasks: xiaobaixTasksData || [],
 };
 const charId = parseInt(document.getElementById('charId').value, 10);
 if (!isNaN(charId)) card.id = charId;
@@ -3418,6 +3657,9 @@ const dataObject = {
     fav: cardData.isFavorite || false,
     depth_prompt: { prompt: '', depth: 4, role: 'system' },
     regex_scripts: cardData.regex_scripts || [],
+    'xiaobaix-tasks': {
+        tasks: cardData.xiaobaix_tasks || [],
+    },
     // SillyTavern弹出"导入内嵌世界书"对话框所需的关键字段
     // ST会读取此字段来判断角色是否已关联世界书，若未关联则弹出导入提示
     world: worldbookHasContent ? (cardData.name || '') : undefined,

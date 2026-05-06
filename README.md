@@ -35,6 +35,12 @@ A one-stop free AI role-playing studio inspired by Silly Tavern.
 - **世界书生成**: AI自动生成角色书条目
 - **智能指引**: 为AI提供具体要求和风格指导
 
+### 🤖 妮卡智能体 (Nika AI Agent)
+- **智能编卡助手**: 内置专业的 AI 角色设计助手，提供修改建议与润色功能
+- **自动化变量系统**: AI 自动构建基于“小白X 2.0 (state)”语法的变量管理系统
+- **隐藏正则生成**: 自动生成用于隐藏 `<state>` 同步标签的正则脚本，确保护更佳沉浸感
+- **交互式变量卡**: 轻松制作带生命值、金币、背包等 UI 的互动冒险角色卡
+
 ### 小说转世界书系统
 - **实时编码切换**: 支持txt多种编码格式
 - **章回自动检测**: 智能识别小说章节结构
@@ -180,6 +186,12 @@ An elegant AI character card management system designed specifically for ST char
 ### One-click Translation
 - **Smart Translation**: Translate Chinese character cards to English with all fields
 - **Undo Support**: Support undo translation operations, restore original content
+
+### 🤖 Nika AI Agent
+- **Smart Creation Assistant**: Built-in professional AI character design assistant providing modification suggestions and polishing
+- **Automated Variable System**: AI automatically builds variable management systems based on "LWB 2.0 (state)" syntax
+- **Hidden Regex Generation**: Automatically generates regex scripts to hide `<state>` sync tags for better immersion
+- **Interactive Variable Cards**: Easily create interactive adventure character cards with UI elements like HP, gold, and inventory
 
 ### Complete Image Format Support
 - Support all image format uploads (PNG, JPG, JPEG, WEBP, GIF, BMP)

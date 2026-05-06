@@ -1056,7 +1056,7 @@
     .search-float-btn {
       position: fixed;
       bottom: 20px;
-      right: 20px;
+      left: 20px;
       width: 56px;
       height: 56px;
       background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
@@ -1088,20 +1088,21 @@
       transform: scale(0.95);
     }
 
-    /* --- 搜索面板样式 --- */
+    /* --- 搜索面板样式（从左边滑入） --- */
     .search-panel {
       position: fixed;
       top: 0;
-      right: -400px;
+      left: 0;
       width: 380px;
       height: 100vh;
       background: rgba(28, 28, 28, 0.85);
       backdrop-filter: blur(15px);
       -webkit-backdrop-filter: blur(15px);
-      border-left: 2px solid var(--input-border);
-      box-shadow: -4px 0 12px rgba(0, 0, 0, 0.3);
-      transition: right 0.3s ease;
-      z-index: 999;
+      border-right: 2px solid var(--input-border);
+      box-shadow: 4px 0 12px rgba(0, 0, 0, 0.3);
+      transform: translateX(-102%);
+      transition: transform 0.3s ease;
+      z-index: 998;
       display: none;
       flex-direction: column;
     }
@@ -1112,7 +1113,15 @@
     }
 
     .search-panel.open {
-      right: 0;
+      transform: translateX(0);
+      z-index: 1000;
+    }
+
+    /* 手机搜索面板 */
+    @media (max-width: 800px) {
+      .search-panel {
+        width: 100%;
+      }
     }
 
     .search-panel-header {
@@ -1877,6 +1886,182 @@
       text-overflow: ellipsis;
       white-space: nowrap;
       max-width: 300px;
+    }
+
+    /* 小白X 任务卡片样式 */
+    .xiaobaix-tasks-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin-bottom: 10px;
+    }
+
+    .xiaobaix-task-card {
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid var(--input-border);
+      border-radius: 8px;
+      overflow: hidden;
+      transition: all 0.2s;
+    }
+
+    .xiaobaix-task-card.disabled {
+      opacity: 0.6;
+      border-color: #555;
+    }
+
+    .xiaobaix-task-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 14px;
+      background: rgba(255, 255, 255, 0.05);
+      cursor: pointer;
+      user-select: none;
+      font-weight: 600;
+      font-size: 14px;
+    }
+
+    .xiaobaix-task-header:hover {
+      background: rgba(255, 255, 255, 0.08);
+    }
+
+    .xiaobaix-task-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .xiaobaix-task-toggle {
+      width: 36px;
+      height: 20px;
+      border-radius: 10px;
+      border: none;
+      cursor: pointer;
+      transition: background 0.2s;
+      position: relative;
+    }
+
+    .xiaobaix-task-toggle.on {
+      background: #27ae60;
+    }
+
+    .xiaobaix-task-toggle.off {
+      background: #7f8c8d;
+    }
+
+    .xiaobaix-task-toggle::after {
+      content: '';
+      position: absolute;
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      background: white;
+      top: 3px;
+      transition: left 0.2s;
+    }
+
+    .xiaobaix-task-toggle.on::after {
+      left: 19px;
+    }
+
+    .xiaobaix-task-toggle.off::after {
+      left: 4px;
+    }
+
+    .xiaobaix-task-delete {
+      background: #c0392b;
+      color: white;
+      border: none;
+      padding: 3px 8px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 12px;
+    }
+
+    .xiaobaix-task-delete:hover {
+      background: #e74c3c;
+    }
+
+    .xiaobaix-task-fields {
+      padding: 12px 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .xiaobaix-task-field {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .xiaobaix-task-field label {
+      font-size: 12px;
+      color: var(--text-muted);
+      font-weight: 500;
+    }
+
+    .xiaobaix-task-field input,
+    .xiaobaix-task-field select,
+    .xiaobaix-task-field textarea {
+      background: var(--input-bg);
+      border: 1px solid var(--input-border);
+      border-radius: 5px;
+      color: var(--text-color);
+      padding: 8px 10px;
+      font-size: 13px;
+      font-family: 'Consolas', 'Courier New', monospace;
+    }
+
+    .xiaobaix-task-field textarea {
+      resize: vertical;
+      min-height: 80px;
+      font-family: 'Consolas', 'Courier New', monospace;
+    }
+
+    .xiaobaix-task-row {
+      display: flex;
+      gap: 10px;
+    }
+
+    .xiaobaix-task-half {
+      flex: 1;
+    }
+
+    .xiaobaix-task-ai-button {
+      background: var(--ai-button-bg);
+      color: white;
+      border: none;
+      padding: 6px 12px;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 12px;
+    }
+
+    .xiaobaix-task-ai-button:hover {
+      opacity: 0.85;
+    }
+
+    .xiaobaix-task-meta {
+      display: flex;
+      align-items: center;
+      gap: 15px;
+      font-size: 11px;
+      color: #666;
+      flex-wrap: wrap;
+    }
+
+    .xiaobaix-task-checkbox {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 12px;
+      color: var(--text-muted);
+      cursor: pointer;
+    }
+
+    .xiaobaix-task-card.collapsed .xiaobaix-task-fields {
+      display: none;
     }
 
     /* 全局修改模态框样式 */
@@ -2760,6 +2945,371 @@
         min-width: 60px;
       }
     }
+
+    /* --- Agent 浮球 --- */
+    .agent-float-btn {
+      position: fixed;
+      bottom: 88px;
+      right: 20px;
+      width: 56px;
+      height: 56px;
+      background: linear-gradient(135deg, #8e44ad, #6c3483);
+      border: none;
+      border-radius: 50%;
+      color: white;
+      font-size: 24px;
+      cursor: pointer;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+      transition: all 0.3s ease;
+      z-index: 1000;
+      display: none;
+      align-items: center;
+      justify-content: center;
+    }
+
+    body:has(#editor-view[style*="display: flex"]) .agent-float-btn {
+      display: flex;
+    }
+
+    .agent-float-btn:hover {
+      transform: scale(1.1);
+    }
+
+    /* --- Agent 面板（从右边滑入） --- */
+    .agent-panel {
+      position: fixed;
+      top: 0;
+      right: 0;
+      width: 400px;
+      height: 100vh;
+      background: rgba(24, 24, 28, 0.92);
+      backdrop-filter: blur(15px);
+      -webkit-backdrop-filter: blur(15px);
+      border-left: 2px solid #444;
+      box-shadow: -4px 0 12px rgba(0, 0, 0, 0.3);
+      transform: translateX(102%);
+      transition: transform 0.3s ease;
+      z-index: 999;
+      display: none;
+      flex-direction: column;
+    }
+
+    body:has(#editor-view[style*="display: flex"]) .agent-panel {
+      display: flex;
+    }
+
+    .agent-panel.open {
+      transform: translateX(0);
+      z-index: 1001;
+    }
+
+    body:has(#editor-view[style*="display: flex"]) .agent-panel {
+      display: flex;
+    }
+
+    .agent-panel.open {
+      right: 0;
+    }
+
+    .agent-panel-header {
+      padding: 16px 18px;
+      border-bottom: 1px solid #444;
+      background: rgba(0, 0, 0, 0.2);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-shrink: 0;
+    }
+
+    .agent-panel-header h3 {
+      margin: 0;
+      color: #c39bdd;
+      font-size: 16px;
+    }
+
+    .agent-panel-header .agent-close-btn {
+      background: none;
+      border: none;
+      color: #aaa;
+      font-size: 22px;
+      cursor: pointer;
+      padding: 0 6px;
+      line-height: 1;
+    }
+
+    .agent-panel-header .agent-close-btn:hover {
+      color: #fff;
+    }
+
+    .agent-panel-messages {
+      flex: 1;
+      overflow-y: auto;
+      padding: 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .agent-msg {
+      max-width: 88%;
+      padding: 10px 14px;
+      border-radius: 12px;
+      font-size: 13px;
+      line-height: 1.55;
+      word-break: break-word;
+    }
+
+    .agent-msg-user {
+      align-self: flex-end;
+      background: var(--primary-color);
+      color: white;
+      border-bottom-right-radius: 4px;
+    }
+
+    .agent-msg-ai {
+      align-self: flex-start;
+      background: #2a2a2a;
+      color: #e0e0e0;
+      border: 1px solid #3a3a3a;
+      border-bottom-left-radius: 4px;
+    }
+
+    .agent-msg-system {
+      align-self: center;
+      background: transparent;
+      color: #888;
+      font-size: 11px;
+      max-width: 95%;
+      text-align: center;
+      padding: 4px 8px;
+    }
+
+    /* Agent 代码块 */
+    .agent-code-block {
+      margin: 6px 0;
+      border: 1px solid #444;
+      border-radius: 6px;
+      overflow: hidden;
+      background: #1a1a1a;
+    }
+
+    .agent-code-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 5px 10px;
+      background: #252525;
+      border-bottom: 1px solid #444;
+      font-size: 11px;
+      color: #aaa;
+    }
+
+    .agent-code-header button {
+      background: var(--primary-color);
+      color: white;
+      border: none;
+      padding: 3px 10px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 11px;
+    }
+
+    .agent-code-block pre {
+      padding: 10px;
+      margin: 0;
+      overflow-x: auto;
+      font-size: 12px;
+      line-height: 1.4;
+      color: #d4d4d4;
+      background: #111;
+      max-height: 200px;
+      overflow-y: auto;
+    }
+
+    .agent-code-block code {
+      font-family: 'Consolas', 'Courier New', monospace;
+    }
+
+    .agent-inline-code {
+      background: #333;
+      color: #e67e22;
+      padding: 1px 5px;
+      border-radius: 3px;
+      font-family: 'Consolas', 'Courier New', monospace;
+      font-size: 12px;
+    }
+
+    /* Agent 推理过程 */
+    .agent-reasoning {
+      background: #1a1a2e;
+      border: 1px solid #6c3483;
+      border-radius: 6px;
+      padding: 8px 12px;
+      margin: 6px 0;
+      color: #b8b8d4;
+      font-size: 12px;
+      line-height: 1.5;
+    }
+
+    .agent-reasoning summary {
+      cursor: pointer;
+      color: #c39bdd;
+      font-weight: bold;
+      font-size: 12px;
+    }
+
+    .agent-reasoning[open] summary {
+      margin-bottom: 6px;
+      padding-bottom: 6px;
+      border-bottom: 1px solid #2a2a3e;
+    }
+
+    /* Agent 预览区域 */
+    .agent-preview-area {
+      border-top: 1px solid #444;
+      padding: 8px 12px;
+      background: #1a1a1a;
+      display: none;
+      flex-shrink: 0;
+      font-size: 12px;
+    }
+
+    .agent-preview-area .patch-success {
+      color: #27ae60;
+      margin-bottom: 4px;
+    }
+
+    .agent-preview-area .patch-error {
+      color: #e74c3c;
+      margin-bottom: 4px;
+    }
+
+    .agent-preview-area .patch-actions {
+      display: flex;
+      gap: 8px;
+      margin-top: 6px;
+    }
+
+    .agent-preview-area .patch-accept {
+      background: #27ae60;
+      color: white;
+      border: none;
+      padding: 5px 12px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 12px;
+    }
+
+    .agent-preview-area .patch-reject {
+      background: #555;
+      color: white;
+      border: none;
+      padding: 5px 12px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 12px;
+    }
+
+    /* Agent HTML 预览 */
+    .agent-html-preview {
+      border-top: 1px solid #444;
+      display: none;
+      flex-shrink: 0;
+      height: 220px;
+    }
+
+    .agent-html-preview .preview-header {
+      display: flex;
+      justify-content: space-between;
+      padding: 5px 12px;
+      background: #252525;
+      border-bottom: 1px solid #444;
+      font-size: 11px;
+      color: #aaa;
+    }
+
+    .agent-html-preview iframe {
+      width: 100%;
+      height: calc(100% - 26px);
+      border: none;
+      background: white;
+    }
+
+    /* Agent 输入 */
+    .agent-panel-input {
+      border-top: 1px solid #333;
+      padding: 10px;
+      display: flex;
+      gap: 8px;
+      flex-shrink: 0;
+    }
+
+    .agent-panel-input textarea {
+      flex: 1;
+      background: #2a2a2a;
+      border: 1px solid #444;
+      border-radius: 8px;
+      color: #e0e0e0;
+      padding: 8px 12px;
+      font-size: 13px;
+      resize: none;
+      min-height: 36px;
+      max-height: 100px;
+      font-family: inherit;
+    }
+
+    .agent-panel-input textarea:focus {
+      outline: none;
+      border-color: #8e44ad;
+    }
+
+    .agent-panel-input button {
+      background: #8e44ad;
+      color: white;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 13px;
+      white-space: nowrap;
+    }
+
+    .agent-panel-input button:disabled {
+      opacity: 0.5;
+    }
+
+    /* Agent 快捷操作 */
+    .agent-quick-row {
+      display: flex;
+      gap: 6px;
+      padding: 5px 10px;
+      border-top: 1px solid #2a2a2a;
+      flex-shrink: 0;
+      flex-wrap: wrap;
+    }
+
+    .agent-quick-row button {
+      background: #2a2a2a;
+      border: 1px solid #3a3a3a;
+      color: #aaa;
+      padding: 3px 8px;
+      border-radius: 10px;
+      cursor: pointer;
+      font-size: 11px;
+      white-space: nowrap;
+    }
+
+    .agent-quick-row button:hover {
+      background: #3a3a3a;
+      color: #fff;
+      border-color: #8e44ad;
+    }
+
+    @media (max-width: 800px) {
+      .agent-panel {
+        width: 100%;
+      }
+    }
   </style>
 </head>
 
@@ -2869,15 +3419,20 @@
 
       <div id="tavern-options" class="api-provider-options">
         <!-- 多配置管理 -->
-        <div class="field-group" style="border-bottom: 1px solid var(--border-color); padding-bottom: 12px; margin-bottom: 12px;">
+        <div class="field-group"
+          style="border-bottom: 1px solid var(--border-color); padding-bottom: 12px; margin-bottom: 12px;">
           <div style="display: flex; gap: 6px; align-items: center; flex-wrap: wrap;">
             <select id="tavern-config-select" style="flex: 1; min-width: 120px;">
               <option value="">选择配置...</option>
             </select>
-            <input type="text" id="tavern-config-name" placeholder="配置名称" style="flex: 0.6; min-width: 80px; padding: 6px 8px;">
-            <button type="button" id="tavern-config-save-btn" style="background: var(--primary-color); color: white; padding: 6px 10px; border: none; border-radius: 4px; cursor: pointer; white-space: nowrap;">保存</button>
-            <button type="button" id="tavern-config-delete-btn" style="background: var(--danger-color, #f44336); color: white; padding: 6px 10px; border: none; border-radius: 4px; cursor: pointer; white-space: nowrap;">删除</button>
-            <button type="button" id="tavern-config-reset-btn" style="background: #888; color: white; padding: 6px 10px; border: none; border-radius: 4px; cursor: pointer; white-space: nowrap;">重置</button>
+            <input type="text" id="tavern-config-name" placeholder="配置名称"
+              style="flex: 0.6; min-width: 80px; padding: 6px 8px;">
+            <button type="button" id="tavern-config-save-btn"
+              style="background: var(--primary-color); color: white; padding: 6px 10px; border: none; border-radius: 4px; cursor: pointer; white-space: nowrap;">保存</button>
+            <button type="button" id="tavern-config-delete-btn"
+              style="background: var(--danger-color, #f44336); color: white; padding: 6px 10px; border: none; border-radius: 4px; cursor: pointer; white-space: nowrap;">删除</button>
+            <button type="button" id="tavern-config-reset-btn"
+              style="background: #888; color: white; padding: 6px 10px; border: none; border-radius: 4px; cursor: pointer; white-space: nowrap;">重置</button>
           </div>
         </div>
         <div class="field-group">
@@ -3797,7 +4352,7 @@
               </div>
               <div class="instruction-card add-instruction" onclick="addNewInstruction()">
                 <div class="add-icon">+</div>
-                <div class="add-text">系统指令 · 状态栏 · 美化</div>
+                <div class="add-text">简易美化和指令</div>
               </div>
             </div>
             <!-- 隐藏的原始textarea，用于兼容性 -->
@@ -3840,10 +4395,27 @@
           </div>
 
           <!-- 正则脚本区域 -->
-          <h3 class="section-title" id="regex-scripts-title">正则脚本</h3>
+          <h3 class="section-title" id="regex-scripts-title"
+            style="display: flex; justify-content: space-between; align-items: center;">
+            <span>正则脚本</span>
+            <button onclick="previewRegexHTML()" id="preview-regex-html-btn"
+              style="background-color: #e67e22; color: white; padding: 4px 12px; border: none; border-radius: 3px; font-size: 13px; margin: 0; cursor: pointer;">预览所有HTML组件</button>
+          </h3>
           <p class="help-text" id="regex-scripts-help-text">用于文本替换的正则表达式脚本，可实现美化等效果</p>
           <div id="regex-scripts-container" class="regex-scripts-list"></div>
           <button class="add-item-button" onclick="addRegexScript()" id="add-regex-btn">+ 添加正则脚本</button>
+
+          <!-- 小白X 任务区域 -->
+          <h3 class="section-title" id="xiaobaix-tasks-title"
+            style="margin-top: 25px; display: flex; align-items: center; justify-content: space-between;">
+            <span>小白X 任务</span>
+            <span onclick="openLWBInstallTutorial()"
+              style="font-size: 12px; font-weight: normal; color: #3498db; cursor: pointer; border: 1px solid #3498db; padding: 2px 8px; border-radius: 4px; transition: all 0.2s;">📦
+              安装教程 & 必看</span>
+          </h3>
+          <p class="help-text" id="xiaobaix-tasks-help-text">变量卡初始化必须的脚本，如需帮助，请点击右下角智能体图标</p>
+          <div id="xiaobaix-tasks-container" class="xiaobaix-tasks-list"></div>
+          <button class="add-item-button" onclick="addXiaobaixTask()" id="add-xiaobaix-task-btn">+ 添加任务</button>
 
           <h3 class="section-title" id="advanced-settings-title">卡片信息 </h3>
           <div class="field-group">
@@ -3905,6 +4477,7 @@
         </div>
       </div>
     </div>
+
   </div>
 
   <!-- 教程弹窗 -->
@@ -3986,7 +4559,7 @@
     </div>
   </div>
 
-  <!-- 搜索浮球和搜索面板 -->
+  <!-- 搜索浮球和搜索面板（左侧） -->
   <button class="search-float-btn" id="search-float-btn">🔍</button>
 
   <div class="search-panel" id="search-panel">
@@ -4012,6 +4585,60 @@
     </div>
     <div class="search-results" id="search-results">
       <!-- 搜索结果将在这里显示 -->
+    </div>
+  </div>
+
+  <!-- Agent 浮球和面板（右侧） -->
+  <button class="agent-float-btn" id="agent-float-btn" onclick="toggleAgentPanel()">🤖</button>
+
+  <div class="agent-panel" id="agent-panel">
+    <div class="agent-panel-header">
+      <h3 style="display: flex; align-items: center; gap: 8px;">
+        <span>🤖 妮卡变量助手</span>
+        <span onclick="openLWBInstallTutorial()"
+          style="font-size: 11px; font-weight: normal; color: #3498db; cursor: pointer; border: 1px solid #3498db; padding: 1px 6px; border-radius: 3px;">安装教程</span>
+      </h3>
+      <div style="display:flex;gap:6px;">
+        <button onclick="agentClearChat()" style="background:none;border:none;color:#aaa;cursor:pointer;font-size:14px;"
+          title="清空对话">🗑</button>
+        <button class="agent-close-btn" onclick="toggleAgentPanel()">×</button>
+      </div>
+    </div>
+    <div class="agent-panel-messages" id="agent-messages">
+      <div class="agent-msg agent-msg-ai">
+        👋 你好！我是角色卡制作助手。<br><br>
+        <b>我能做什么：</b><br>
+        • 审查角色卡并提出修改建议<br>
+        • 设计状态栏等前端HTML效果（通过正则脚本实现）<br>
+        • 创建变量管理系统（小白X任务 + &lt;state&gt; 语法）<br>
+        • 设计世界书条目<br>
+        • 创建正则脚本<br><br>
+        <b>怎么用：</b><br>
+        • 直接描述你想要的效果，我会先理解再动手<br>
+        • 代码块带"预览变更"按钮，确认后生效<br>
+        • HTML效果可在右侧iframe中预览<br><br>
+        试试说："帮我设计一个RPG状态栏" 或 "审查当前角色卡"
+      </div>
+    </div>
+    <div class="agent-preview-area" id="agent-preview-area"></div>
+    <div class="agent-html-preview" id="agent-html-preview-panel">
+      <div class="preview-header">
+        <span>HTML 预览</span>
+        <button onclick="document.getElementById('agent-html-preview-panel').style.display='none'"
+          style="background:none;border:none;color:#aaa;cursor:pointer;">✕</button>
+      </div>
+      <iframe id="agent-html-preview" sandbox="allow-scripts allow-same-origin allow-forms allow-modals"></iframe>
+    </div>
+    <div class="agent-quick-row">
+      <button onclick="agentQuickAction('review')">审查角色卡</button>
+      <button onclick="agentQuickAction('statusbar')">设计状态栏</button>
+      <button onclick="agentQuickAction('worldbook')">建议世界书</button>
+      <button onclick="agentQuickAction('variables')">设计变量系统</button>
+    </div>
+    <div class="agent-panel-input">
+      <textarea id="agent-input" rows="1" placeholder="输入消息，Enter发送..."
+        onkeydown="handleAgentKeypress(event)"></textarea>
+      <button id="agent-send-btn" onclick="agentSendMessage()">发送</button>
     </div>
   </div>
 
@@ -4194,7 +4821,7 @@
         'personality-placeholder': '详细性格特质',
         'ai-settings': 'AI设定',
         'system-prompt': '系统设定',
-        'system-prompt-placeholder': '和预设一个级别',
+        'system-prompt-placeholder': '预设开启后重要',
         scenario: '环境设定',
         'scenario-placeholder': '角色所处的环境',
         'first-message': '问候消息',
@@ -4593,7 +5220,7 @@
         // 系统指令相关
         'bracket-mode': '括号模式',
         'simple-statusbar': '简易状态栏',
-        'system-instruction': '系统指令 · 状态栏 · 美化',
+        'system-instruction': '简易美化和指令',
         'edit': '编辑',
         'delete': '删除',
 
@@ -4794,7 +5421,7 @@
         'save-template-btn': '💾 保存为模板',
         'cancel-instruction': '取消',
         'save-instruction': '加入设定',
-        'add-instruction-text': '系统指令 · 状态栏 · 美化',
+        'add-instruction-text': '简易美化和指令',
 
         // 世界书相关
         'wb-entry-format': '条目注释: {comment}\n关键词: {keys}\n内容: {content}',
@@ -5577,10 +6204,80 @@
     }
   </script>
 
+  <!-- 小白X 安装教程弹窗 -->
+  <div id="lwbInstallModal"
+    style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 20000; justify-content: center; align-items: center; backdrop-filter: blur(5px);">
+    <div
+      style="background: #2a2a2a; border: 1px solid #444; border-radius: 12px; padding: 25px; max-width: 500px; width: 90%; color: white; box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
+      <div
+        style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid #444; padding-bottom: 10px;">
+        <h3 style="margin: 0; color: #3498db; display: flex; align-items: center; gap: 8px;">📦 小白X 插件安装教程</h3>
+        <button onclick="closeLWBInstallTutorial()"
+          style="background: none; border: none; color: #888; font-size: 24px; cursor: pointer; line-height: 1;">×</button>
+      </div>
+
+      <div style="margin-bottom: 20px;">
+        <h4 style="color: #f1c40f; margin-bottom: 8px;">1. 安装</h4>
+        <p style="font-size: 14px; color: #ccc; margin-bottom: 10px;">复制仓库地址：</p>
+        <div
+          style="display: flex; gap: 8px; background: #1a1a1a; padding: 10px; border-radius: 6px; align-items: center; margin-bottom: 10px;">
+          <code id="lwb-repo-url"
+            style="flex-grow: 1; font-size: 12px; color: #3498db; word-break: break-all;">https://github.com/RT15548/LittleWhiteBox</code>
+          <button onclick="copyLWBRepo()"
+            style="background: #3498db; color: white; border: none; padding: 4px 10px; border-radius: 4px; font-size: 12px; cursor: pointer; white-space: nowrap;">复制</button>
+        </div>
+      </div>
+
+      <div style="margin-bottom: 20px;">
+        <h4 style="color: #f1c40f; margin-bottom: 8px;">2. 安装扩展</h4>
+        <p style="font-size: 14px; color: #ccc;">进入 SillyTavern → <b>扩展管理器</b> → <b>安装扩展</b>，粘贴地址后确认。</p>
+      </div>
+
+      <div style="margin-bottom: 25px;">
+        <h4 style="color: #f1c40f; margin-bottom: 8px;">3. 启用功能 (必看)</h4>
+        <p style="font-size: 14px; color: #ccc; line-height: 1.6;">
+          刷新页面后，在 <b>扩展设置</b> → <b>小白X</b> 中开启所需功能模块。<br>
+          <span
+            style="color: #e74c3c; font-weight: bold; background: rgba(231, 76, 60, 0.1); padding: 2px 4px; border-radius: 3px;">
+            ⚠️ 特别是“数据互动”中的“变量管理”，必须选择“2.0(state)”
+            另外，预设中的Main Prompt要打勾哦！
+          </span>
+        </p>
+      </div>
+
+      <button onclick="closeLWBInstallTutorial()"
+        style="width: 100%; background: #e67e22; color: white; border: none; padding: 12px; border-radius: 6px; cursor: pointer; font-weight: bold;">我知道了</button>
+    </div>
+  </div>
+
+  <script>
+    function openLWBInstallTutorial() {
+      document.getElementById('lwbInstallModal').style.display = 'flex';
+    }
+    function closeLWBInstallTutorial() {
+      document.getElementById('lwbInstallModal').style.display = 'none';
+    }
+    function copyLWBRepo() {
+      const url = 'https://github.com/RT15548/LittleWhiteBox';
+      navigator.clipboard.writeText(url).then(() => {
+        const btn = event.target;
+        const originalText = btn.textContent;
+        btn.textContent = '已复制!';
+        btn.style.background = '#27ae60';
+        setTimeout(() => {
+          btn.textContent = originalText;
+          btn.style.background = '#3498db';
+        }, 2000);
+      });
+    }
+  </script>
+
   <!-- 加载拆分的 JavaScript 文件 -->
   <script src="js/part1.js"></script>
   <script src="js/part2.js"></script>
   <script src="js/part3.js"></script>
+  <script src="js/agent.js"></script>
+
 </body>
 
 </html>

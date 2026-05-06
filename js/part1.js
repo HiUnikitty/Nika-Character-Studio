@@ -2141,6 +2141,9 @@ let alternateGreetingsData = [];
 // [NEW] 正则脚本数据
 let regexScriptsData = [];
 
+// [NEW] 小白X任务数据
+let xiaobaixTasksData = [];
+
 // 预设指令模板
 const instructionTemplates = {
 'game-style': {
@@ -2480,6 +2483,8 @@ regexScriptsData.forEach((script, index) => {
     
     const displayName = script.scriptName || t('regex-name');
     
+    const isHtmlReplacement = script.replaceString && /<[a-z][\s\S]*>/i.test(script.replaceString);
+    
     card.innerHTML = `
     <div class="regex-header" onclick="toggleRegexCard(this)">
         <span>${escapeHtml(displayName)}</span>
@@ -2487,6 +2492,7 @@ regexScriptsData.forEach((script, index) => {
         <button class="regex-toggle ${script.disabled ? 'off' : 'on'}"
             onclick="toggleRegexScript(${index})">
         </button>
+        <button class="regex-preview-html" onclick="previewSingleRegexHTML(${index})" id="regex-preview-html-${index}" style="display: ${isHtmlReplacement ? 'inline-block' : 'none'}; background-color: #e67e22; color: white; padding: 2px 8px; border: none; border-radius: 3px; font-size: 12px; margin-right: 5px;">预览HTML</button>
         <button class="regex-test-toggle" onclick="toggleRegexTest(${index})" id="regex-test-toggle-${index}">${t('regex-test-btn')}</button>
         <button class="regex-delete" onclick="deleteRegexScript(${index})">${t('delete-btn')}</button>
         </div>
@@ -2610,6 +2616,15 @@ setTimeout(() => {
 function updateRegexScript(index, property, value) {
 if (regexScriptsData[index]) {
     regexScriptsData[index][property] = value;
+    
+    // 如果修改了 replaceString，则动态更新预览HTML按钮的显示状态
+    if (property === 'replaceString') {
+        const previewBtn = document.getElementById(`regex-preview-html-${index}`);
+        if (previewBtn) {
+            const isHtmlReplacement = value && /<[a-z][\s\S]*>/i.test(value);
+            previewBtn.style.display = isHtmlReplacement ? 'inline-block' : 'none';
+        }
+    }
 }
 }
 
@@ -2736,6 +2751,150 @@ function updateRegexAffectIndicator(index) {
 		resultEl.style.display = 'inline-block';
 	} else {
 		resultEl.style.display = 'none';
+	}
+}
+
+// ============================================================
+// 小白X 任务管理
+// ============================================================
+
+function renderXiaobaixTasks() {
+	const container = document.getElementById('xiaobaix-tasks-container');
+	if (!container) return;
+
+	container.innerHTML = '';
+
+	xiaobaixTasksData.forEach((task, index) => {
+		const card = document.createElement('div');
+		card.className = 'xiaobaix-task-card collapsed' + (task.disabled ? ' disabled' : '');
+		card.dataset.taskIndex = index;
+
+		const triggerTimingLabels = {
+			'initialization': '角色卡初始化',
+			'each_turn': '每回合',
+			'before_ai': 'AI回复前',
+			'after_ai': 'AI回复后',
+			'manual': '手动触发',
+			'each_turn_chat': '每次对话',
+		};
+		const timingLabel = triggerTimingLabels[task.triggerTiming] || task.triggerTiming || '未设置';
+
+		card.innerHTML = `
+		<div class="xiaobaix-task-header" onclick="toggleXiaobaixTaskCard(this)">
+			<span>${escapeHtml(task.name || '未命名任务')}</span>
+			<div class="xiaobaix-task-actions" onclick="event.stopPropagation()">
+				<button class="xiaobaix-task-toggle ${task.disabled ? 'off' : 'on'}"
+					onclick="toggleXiaobaixTask(${index})" title="${task.disabled ? '已禁用' : '已启用'}">
+				</button>
+				<button class="xiaobaix-task-delete" onclick="deleteXiaobaixTask(${index})">删除</button>
+			</div>
+		</div>
+		<div class="xiaobaix-task-fields">
+			<div class="xiaobaix-task-field">
+				<label>任务名称</label>
+				<input type="text" value="${escapeHtml(task.name || '')}"
+					onchange="updateXiaobaixTask(${index}, 'name', this.value); updateXiaobaixTaskHeader(this, ${index})">
+			</div>
+			<div class="xiaobaix-task-row">
+				<div class="xiaobaix-task-field xiaobaix-task-half">
+					<label>触发时机</label>
+					<select onchange="updateXiaobaixTask(${index}, 'triggerTiming', this.value)">
+						<option value="initialization" ${task.triggerTiming === 'initialization' ? 'selected' : ''}>角色卡初始化</option>
+						<option value="each_turn" ${task.triggerTiming === 'each_turn' ? 'selected' : ''}>每回合</option>
+						<option value="before_ai" ${task.triggerTiming === 'before_ai' ? 'selected' : ''}>AI回复前</option>
+						<option value="after_ai" ${task.triggerTiming === 'after_ai' ? 'selected' : ''}>AI回复后</option>
+						<option value="each_turn_chat" ${task.triggerTiming === 'each_turn_chat' ? 'selected' : ''}>每次对话</option>
+						<option value="manual" ${task.triggerTiming === 'manual' ? 'selected' : ''}>手动触发</option>
+					</select>
+				</div>
+				<div class="xiaobaix-task-field xiaobaix-task-half">
+					<label>间隔(秒)</label>
+					<input type="number" value="${task.interval || 3}" min="0"
+						onchange="updateXiaobaixTask(${index}, 'interval', parseInt(this.value) || 3)">
+				</div>
+			</div>
+			<div class="xiaobaix-task-field">
+				<label>楼层限制</label>
+				<select onchange="updateXiaobaixTask(${index}, 'floorType', this.value)">
+					<option value="all" ${task.floorType === 'all' ? 'selected' : ''}>全部楼层</option>
+					<option value="odd" ${task.floorType === 'odd' ? 'selected' : ''}>奇数楼层</option>
+					<option value="even" ${task.floorType === 'even' ? 'selected' : ''}>偶数楼层</option>
+				</select>
+			</div>
+			<div class="xiaobaix-task-field">
+				<label>任务代码 (&lt;&lt;taskjs&gt;&gt;...&lt;&lt;/taskjs&gt;&gt;)</label>
+				<textarea rows="8" spellcheck="false"
+					placeholder="<<taskjs>>\nawait STscript('/setvar key=hp 100');\n<</taskjs>>"
+					onchange="updateXiaobaixTask(${index}, 'commands', this.value)"
+					oninput="autoResizeTextarea(this)">${escapeHtml(task.commands || '')}</textarea>
+				<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:4px;">
+					<button class="xiaobaix-task-ai-button" onclick="callAiForXiaobaixTask(${index}, this)" type="button">AI 帮我写</button>
+				</div>
+			</div>
+			<div class="xiaobaix-task-meta">
+				<span>ID: ${escapeHtml(task.id || '自动生成')}</span>
+				${task.createdAt ? '<span>创建: ' + new Date(task.createdAt).toLocaleString() + '</span>' : ''}
+				<label class="xiaobaix-task-checkbox">
+					<input type="checkbox" ${task.buttonActivated ? 'checked' : ''}
+						onchange="updateXiaobaixTask(${index}, 'buttonActivated', this.checked)">
+					按钮激活
+				</label>
+			</div>
+		</div>
+		`;
+		container.appendChild(card);
+	});
+}
+
+function toggleXiaobaixTaskCard(header) {
+	const card = header.closest('.xiaobaix-task-card');
+	card.classList.toggle('collapsed');
+}
+
+function updateXiaobaixTaskHeader(input, index) {
+	const card = input.closest('.xiaobaix-task-card');
+	const headerSpan = card.querySelector('.xiaobaix-task-header > span');
+	headerSpan.textContent = input.value || '未命名任务';
+}
+
+function addXiaobaixTask() {
+	const newTask = {
+		id: 'task_' + Date.now(),
+		name: '',
+		commands: '<<taskjs>>\n\n<</taskjs>>',
+		interval: 3,
+		floorType: 'all',
+		triggerTiming: 'initialization',
+		disabled: false,
+		buttonActivated: false,
+		createdAt: new Date().toISOString()
+	};
+	xiaobaixTasksData.push(newTask);
+	renderXiaobaixTasks();
+	setTimeout(() => {
+		const container = document.getElementById('xiaobaix-tasks-container');
+		const lastCard = container.querySelector('.xiaobaix-task-card:last-child');
+		if (lastCard) lastCard.classList.remove('collapsed');
+	}, 50);
+}
+
+function updateXiaobaixTask(index, property, value) {
+	if (xiaobaixTasksData[index]) {
+		xiaobaixTasksData[index][property] = value;
+	}
+}
+
+function toggleXiaobaixTask(index) {
+	if (xiaobaixTasksData[index]) {
+		xiaobaixTasksData[index].disabled = !xiaobaixTasksData[index].disabled;
+		renderXiaobaixTasks();
+	}
+}
+
+function deleteXiaobaixTask(index) {
+	if (confirm('确定要删除这个任务吗？')) {
+		xiaobaixTasksData.splice(index, 1);
+		renderXiaobaixTasks();
 	}
 }
 
