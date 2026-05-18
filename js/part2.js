@@ -513,6 +513,11 @@ document.addEventListener('DOMContentLoaded', async function () {
         // 然后初始化UI
         initIncrementalOutputModeToggle();
         initCustomCategoriesUI();
+        initContextThresholdUI();
+
+        // 加载历史token统计，显示推荐阈值（如有数据）
+        await TokenStats.loadAll();
+        updateRecommendedThresholdDisplay(1000000);
     }, 500);
 });
 
@@ -1217,6 +1222,15 @@ async function startAIProcessing() {
     // 重置停止标志
     isProcessingStopped = false;
 
+    // 初始化token统计和显示条
+    const initSettings = loadApiSettings();
+    const initProvider = initSettings.provider;
+    const initModel = initSettings[initProvider]?.model || initSettings[initProvider]?.proxyModel || 'unknown';
+    await TokenStats.init(currentFile ? currentFile.name : '未知文件', initModel);
+    initTokenBarUI();
+    // 立即刷新推荐阈值（恢复进度后也能看到）
+    updateRecommendedThresholdDisplay(initSettings[initProvider]?.context_window || 1000000);
+
     generatedWorldbook = {
         地图环境: {},
         剧情节点: {},
@@ -1257,6 +1271,11 @@ async function startAIProcessing() {
 
                 mylog(`修复完成，从索引 ${i} 继续处理`);
                 document.getElementById('progress-text').textContent = `继续处理: ${memoryQueue[i].title} (${i + 1}/${memoryQueue.length})`;
+            }
+
+            // 跳过已被预分裂递归处理过的记忆块（避免重复处理，迷惑用户）
+            if (memoryQueue[i].processed) {
+                continue;
             }
 
             await processMemoryChunk(i);
@@ -1508,6 +1527,43 @@ ${memory.content}
     mylog(prompt);
     mylog('=====================');
 
+    // ===== 预分裂检查：基于当前 prompt 的 token 数 =====
+    if (typeof window.countTokens === 'function') {
+        const checkSettings = loadApiSettings();
+        const checkProvider = checkSettings.provider;
+        const contextWin = checkSettings[checkProvider]?.context_window || 1000000;
+        const threshold = getContextThreshold();
+        const promptTokens = countTokens(prompt);
+
+        mylog('📊 Token检查: prompt=' + promptTokens + '/' + contextWin + ' (' + (promptTokens / contextWin * 100).toFixed(1) + '%), 阈值: ' + threshold + '%');
+
+        if (promptTokens / contextWin * 100 > threshold) {
+            // 如果记忆内容太小，分裂也没用（prompt开销占大头），直接跳过
+            if (memory.content.length < 200) {
+                mylog('⚠️ Token超阈值但记忆块内容太小(' + memory.content.length + '字)，不分裂，继续尝试API调用');
+            } else {
+                mylog('⚠️ Prompt token 数 (' + promptTokens + ') 超出阈值 ' + threshold + '%，预分裂当前记忆块');
+                document.getElementById('progress-text').textContent = '🔀 Token数超出阈值，正在分裂: ' + memory.title;
+
+                const splitResult = splitMemoryIntoTwo(index);
+                if (splitResult) {
+                    mylog('✅ 预分裂成功: ' + splitResult.part1.title + ' + ' + splitResult.part2.title);
+                    updateMemoryQueueUI();
+                    await NovelState.saveState(memoryQueue.filter(m => m.processed).length);
+                    await new Promise(r => setTimeout(r, 500));
+                    await processMemoryChunk(memoryQueue.indexOf(splitResult.part1), 0);
+                    await processMemoryChunk(memoryQueue.indexOf(splitResult.part2), 0);
+                    return;
+                } else {
+                    mylog('⚠️ 预分裂失败，继续使用原记忆块处理');
+                }
+            }
+        }
+    } else {
+        mylog('⚠️ gpt-tokenizer 未加载，跳过预分裂检查');
+    }
+    // ===== 预分裂检查结束 =====
+
     try {
         mylog(`开始调用API处理第${index + 1}个记忆块...`);
         document.getElementById('progress-text').textContent = `正在调用API: ${memory.title} (${index + 1}/${memoryQueue.length})`;
@@ -1645,8 +1701,10 @@ ${secondError.message}
 ${cleanResponse}
 `;
 
-                            // 调用API进行格式纠正
+                            // 调用API进行格式纠正（保存/恢复__lastApiUsage，避免污染统计）
+                            const savedUsage = __lastApiUsage;
                             const fixedResponse = await callSimpleAPI(fixPrompt);
+                            __lastApiUsage = savedUsage;
                             mylog('API返回的纠正结果长度:', fixedResponse.length);
 
                             // 清理纠正后的响应
@@ -1700,6 +1758,24 @@ ${cleanResponse}
             mylog(summary);
         }
 
+        // 保存token统计数据到持久化存储
+        if (__lastApiUsage) {
+            await TokenStats.addRecord({
+                est_prompt: countTokens ? countTokens(prompt) : 0,
+                actual_prompt: __lastApiUsage.prompt_tokens,
+                completion_tokens: __lastApiUsage.completion_tokens,
+                total_tokens: __lastApiUsage.total_tokens
+            });
+        }
+
+        // 更新token显示条和推荐阈值
+        const tsSettings = loadApiSettings();
+        const tsProvider = tsSettings.provider;
+        const tsContextWin = tsSettings[tsProvider]?.context_window || 1000000;
+        const tsThreshold = getContextThreshold();
+        updateTokenBar(countTokens ? countTokens(prompt) : 0, tsContextWin, tsThreshold);
+        updateRecommendedThresholdDisplay(tsContextWin);
+
         // 标记为已处理
         memory.processed = true;
         updateMemoryQueueUI();
@@ -1708,49 +1784,7 @@ ${cleanResponse}
     } catch (error) {
         console.error(`处理记忆块 ${index + 1} 时出错 (第${retryCount + 1}次尝试):`, error);
 
-        // ========== 检查是否是上下文超限错误 ==========
-        const errorMsg = error.message || '';
-
-        // 使用统一的检测函数，或者检查特殊标记
-        const isTokenLimitError = errorMsg.startsWith('CONTEXT_OVERFLOW:') || isContextOverflowError(errorMsg);
-
-        if (isTokenLimitError) {
-            mylog(`⚠️ 检测到token超限错误，直接分裂记忆: ${memory.title}`);
-            document.getElementById('progress-text').textContent = `🔀 字数超限，正在分裂记忆: ${memory.title}`;
-
-            // 直接分裂记忆
-            const splitResult = splitMemoryIntoTwo(index);
-            if (splitResult) {
-                mylog(`✅ 记忆分裂成功: ${splitResult.part1.title} 和 ${splitResult.part2.title}`);
-                updateMemoryQueueUI();
-                // 分裂后立即保存状态，确保刷新后能恢复
-                await NovelState.saveState(memoryQueue.filter(m => m.processed).length);
-                await new Promise(resolve => setTimeout(resolve, 500));
-
-                // 递归处理第一个分裂记忆
-                const part1Index = memoryQueue.indexOf(splitResult.part1);
-                await processMemoryChunk(part1Index, 0);
-
-                // 第一个完全处理完后，再处理第二个
-                const part2Index = memoryQueue.indexOf(splitResult.part2);
-                await processMemoryChunk(part2Index, 0);
-
-                return; // 分裂处理完成，直接返回
-            } else {
-                console.error(`❌ 记忆分裂失败: ${memory.title}`);
-                // 分裂失败，标记为失败
-                memory.processed = true;
-                memory.failed = true;
-                memory.failedError = error.message;
-                if (!failedMemoryQueue.find(m => m.index === index)) {
-                    failedMemoryQueue.push({ index, memory, error: error.message });
-                }
-                updateMemoryQueueUI();
-                return;
-            }
-        }
-
-        // 非token超限错误，使用原有的重试机制
+        // 使用原有的重试机制
         if (retryCount < maxRetries) {
             mylog(`准备重试，当前重试次数: ${retryCount + 1}/${maxRetries}`);
             const retryDelay = Math.min(1000 * Math.pow(2, retryCount), 10000); // 指数退避，最大10秒
@@ -1788,35 +1822,7 @@ ${cleanResponse}
     }
 }
 
-// ========== 统一的上下文超限检测函数 ==========
-function isContextOverflowError(text) {
-    // 将错误响应转为字符串（无论是JSON对象还是纯文本）
-    let errorString = text;
-    try {
-        // 尝试解析为JSON，然后转回字符串（这样可以检测深层嵌套的内容）
-        const errorObj = JSON.parse(text);
-        errorString = JSON.stringify(errorObj);
-    } catch (e) {
-        // 如果不是JSON，直接使用原文本
-        errorString = text;
-    }
 
-	// 需要同时命中至少2个关键词才算超限，避免误伤正常内容
-	var keywords = ['max', 'long', 'exceed', 'limit', 'token', 'context', 'reduce', 'length'];
-	var matched = keywords.filter(function(kw) { return new RegExp(kw, 'i').test(errorString); });
-
-	if (matched.length >= 2) {
-		var preview = text.length > 300 ? text.substring(0, 300) + '...' : text;
-		mylog('⚠️ 判定为上下文超限，触发关键词: [' + matched.join(', ') + ']');
-		mylog('📄 响应内容: ' + preview);
-		var progressEl = document.getElementById('progress-text');
-		if (progressEl) {
-			progressEl.textContent = '🔀 上下文超限 (关键词: ' + matched.join(', ') + ')';
-		}
-	}
-
-	return matched.length >= 2;
-}
 
 // 简化的API调用函数（不依赖按钮）
 async function callSimpleAPI(prompt, retryCount = 0) {
@@ -2071,14 +2077,6 @@ async function callSimpleAPI(prompt, retryCount = 0) {
             const errorText = await response.text();
             mylog('API错误响应:', errorText);
 
-            // ========== 优先检查是否是上下文超限错误 ==========
-            if (isContextOverflowError(errorText)) {
-                mylog('⚠️ 检测到上下文超限错误，立即抛出特殊错误');
-                mylog('匹配的错误内容:', errorText.substring(0, 200));
-                // 抛出特殊的超限错误，包含完整的错误信息
-                throw new Error(`CONTEXT_OVERFLOW: ${errorText}`);
-            }
-
             // 检查是否是限流错误
             if (response.status === 429 || errorText.includes('resource_exhausted') || errorText.includes('rate limit')) {
                 if (retryCount < maxRetries) {
@@ -2095,6 +2093,15 @@ async function callSimpleAPI(prompt, retryCount = 0) {
         }
 
         const data = await response.json();
+
+        // 提取API用量数据（用于token统计和推荐阈值）
+        if (data.usage && typeof data.usage.prompt_tokens === 'number') {
+            __lastApiUsage = {
+                prompt_tokens: data.usage.prompt_tokens,
+                completion_tokens: data.usage.completion_tokens || 0,
+                total_tokens: data.usage.total_tokens || (data.usage.prompt_tokens + (data.usage.completion_tokens || 0))
+            };
+        }
 
         // 解析响应
         if (provider === 'deepseek' || provider === 'tavern' || provider === 'local') {
@@ -2123,6 +2130,80 @@ async function callSimpleAPI(prompt, retryCount = 0) {
             throw new Error('网络连接失败，请检查网络设置');
         }
         throw networkError;
+    }
+}
+
+// 获取上下文分裂阈值百分比（从localStorage读取，默认95）
+function getContextThreshold() {
+    const saved = localStorage.getItem('contextSplitThreshold');
+    if (saved !== null) {
+        const val = parseInt(saved, 10);
+        if (!isNaN(val) && val >= 1 && val <= 100) return val;
+    }
+    return 95;
+}
+
+// 初始化上下文分裂阈值设置UI（在高级设置中动态添加）
+function initContextThresholdUI() {
+    const advancedSettings = document.getElementById('advanced-novel-settings');
+    if (!advancedSettings) return;
+    if (document.getElementById('context-threshold-container')) return;
+
+    const container = document.createElement('div');
+    container.id = 'context-threshold-container';
+    container.style.cssText = 'padding: 10px; background: rgba(0,0,0,0.2); border-radius: 5px; border: 1px solid RGB(52,52,52); margin-bottom: 10px;';
+
+    const currentVal = getContextThreshold();
+    container.innerHTML = `
+        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 5px;">
+            <span style="color: var(--label-color); font-weight: bold;">📏 上下文分裂阈值</span>
+            <input type="number" id="context-threshold-input"
+                   style="width: 60px; padding: 4px; background: rgba(0,0,0,0.3); border: 1px solid #555; border-radius: 3px; color: white; text-align: center;"
+                   value="${currentVal}" min="1" max="100">
+            <span style="color: var(--text-color);">%</span>
+        </div>
+        <p style="margin: 0; font-size: 12px; color: var(--text-secondary-color);">当token使用量超过此百分比时自动分裂记忆块，避免上下文超限</p>
+        <p id="recommended-threshold-text" style="margin: 4px 0 0 0; font-size: 11px; color: #888;"></p>
+    `;
+
+    // 插入到高级设置中（在增量输出模式之后）
+    const incrementalContainer = document.getElementById('incremental-output-mode-container');
+    if (incrementalContainer && incrementalContainer.nextSibling) {
+        advancedSettings.insertBefore(container, incrementalContainer.nextSibling);
+    } else {
+        advancedSettings.appendChild(container);
+    }
+
+    // 保存到localStorage
+    document.getElementById('context-threshold-input').addEventListener('change', function() {
+        const val = parseInt(this.value, 10);
+        if (!isNaN(val) && val >= 1 && val <= 100) {
+            localStorage.setItem('contextSplitThreshold', val.toString());
+            mylog('上下文分裂阈值已更新:', val + '%');
+        } else {
+            this.value = getContextThreshold();
+            alert('请输入1-100之间的数值');
+        }
+    });
+}
+
+// 更新推荐阈值显示（基于TokenStats数据）
+function updateRecommendedThresholdDisplay(contextWin) {
+    const el = document.getElementById('recommended-threshold-text');
+    if (!el) return;
+    const recommended = TokenStats.getRecommendedThreshold(contextWin || 1000000);
+    if (recommended !== null) {
+        const modelLabel = TokenStats._modelName || '未知模型';
+        el.innerHTML = `系统推荐阈值: <b style="color: #FF9800;">${recommended}%</b> (基于 ${TokenStats.getRecordCount()} 轮[${modelLabel}]数据推算)`;
+        el.style.display = '';
+    } else {
+        const count = TokenStats.getRecordCount();
+        if (count > 0) {
+            el.innerHTML = `还需 ${3 - count} 轮数据后显示推荐阈值`;
+            el.style.display = '';
+        } else {
+            el.style.display = 'none';
+        }
     }
 }
 
@@ -2167,6 +2248,232 @@ function normalizeWorldbookData(data) {
         }
     }
     return data;
+}
+
+// ========== Token用量统计与持久化（IndexedDB） ==========
+// 数据结构: { "小说名.txt": { "模型名": { records: [...] } } }
+const TokenStats = {
+    _data: null,
+    _novelName: null,
+    _modelName: null,
+    _loaded: false,
+
+    async loadAll() {
+        if (this._loaded) return;
+        try {
+            this._data = await IndexedDBHelper.getItem('token_stats') || {};
+        } catch (e) {
+            this._data = {};
+        }
+        this._loaded = true;
+    },
+
+    async init(novelFileName, modelName) {
+        await this.loadAll();
+        this._novelName = novelFileName;
+        this._modelName = modelName || 'unknown';
+
+        if (!this._data[novelFileName]) {
+            this._data[novelFileName] = {};
+        } else if (this._data[novelFileName].records) {
+            // 旧格式迁移: { records: [...] } → { "unknown": { records: [...] } }
+            const oldRecords = this._data[novelFileName].records;
+            this._data[novelFileName] = { 'unknown': { records: oldRecords } };
+            await this._persist();
+        }
+
+        // 确保当前模型命名空间存在
+        if (!this._data[novelFileName][this._modelName]) {
+            this._data[novelFileName][this._modelName] = { records: [] };
+            await this._persist();
+        }
+    },
+
+    async addRecord(record) {
+        if (!this._data || !this._novelName || !this._modelName) return;
+        if (!this._data[this._novelName]) {
+            this._data[this._novelName] = {};
+        }
+        if (!this._data[this._novelName][this._modelName]) {
+            this._data[this._novelName][this._modelName] = { records: [] };
+        }
+        this._data[this._novelName][this._modelName].records.push({ ...record, model: this._modelName, timestamp: Date.now() });
+        await this._persist();
+    },
+
+    async _persist() {
+        try {
+            await IndexedDBHelper.setItem('token_stats', this._data);
+        } catch (e) {
+            console.error('TokenStats 保存失败:', e);
+        }
+    },
+
+    // 以下为同步读取方法
+    _getRecords() {
+        if (!this._data) return [];
+        if (this._novelName && this._modelName) {
+            return this._data[this._novelName]?.[this._modelName]?.records || [];
+        }
+        if (this._novelName) {
+            // 有文件名但无模型名，取该文件名下最新的模型数据
+            return this._getLatestRecords();
+        }
+        // 未指定任何条件，找全局最新有数据的
+        return this._getLatestRecords();
+    },
+
+    _getLatestRecords() {
+        if (!this._data) return [];
+        let best = [], bestTime = 0;
+        for (const name in this._data) {
+            const models = this._data[name];
+            if (!models || typeof models !== 'object') continue;
+            // 旧格式 { records: [...] } —— 跳过，由 init 迁移
+            if (models.records) continue;
+            for (const modelKey in models) {
+                const recs = models[modelKey]?.records || [];
+                if (recs.length === 0) continue;
+                const last = recs[recs.length - 1]?.timestamp || 0;
+                if (last > bestTime) {
+                    bestTime = last;
+                    best = recs;
+                    this._novelName = name;
+                    this._modelName = modelKey;
+                }
+            }
+        }
+        return best;
+    },
+
+    getRecordCount() { return this._getRecords().length; },
+
+    getMedianCompletionTokens() {
+        const vals = this._getRecords().map(r => r.completion_tokens).filter(v => v > 0).sort((a, b) => a - b);
+        if (vals.length === 0) return 0;
+        const mid = Math.floor(vals.length / 2);
+        return vals.length % 2 ? vals[mid] : Math.round((vals[mid - 1] + vals[mid]) / 2);
+    },
+
+    getAvgGap() {
+        const gaps = this._getRecords().map(r => r.est_prompt - r.actual_prompt).filter(v => !isNaN(v));
+        if (gaps.length === 0) return 0;
+        return Math.round(gaps.reduce((a, b) => a + b, 0) / gaps.length);
+    },
+
+    getRecommendedThreshold(contextWindow) {
+        if (this.getRecordCount() < 3) return null;
+        const medianCompletion = this.getMedianCompletionTokens();
+        if (!medianCompletion) return null;
+        const recommended = (contextWindow - medianCompletion) / contextWindow * 100;
+        return Math.round(Math.min(99, Math.max(50, recommended)) * 10) / 10;
+    },
+
+    getLastActualPrompt() {
+        const recs = this._getRecords();
+        return recs.length > 0 ? recs[recs.length - 1].actual_prompt : null;
+    }
+};
+
+// ========== Token实时显示条UI ==========
+let _tokenBarUpdater = null;
+
+function initTokenBarUI() {
+    const title = document.getElementById('ai-processing-title');
+    if (!title || document.getElementById('token-bar-container')) return;
+
+    const container = document.createElement('div');
+    container.id = 'token-bar-container';
+    container.style.cssText = 'margin: 10px 0;';
+
+    container.innerHTML = `
+        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 4px;">
+            <div id="token-bar-wrapper" style="flex: 1; height: 10px; background: rgba(255,255,255,0.08); border-radius: 5px; position: relative; overflow: visible; cursor: pointer;">
+                <div id="token-bar-fill" style="height: 100%; width: 0%; background: linear-gradient(90deg, #4CAF50, #8BC34A); border-radius: 5px; transition: width 0.5s;"></div>
+                <div id="token-bar-threshold" style="position: absolute; top: -3px; bottom: -3px; width: 2px; background: #FF9800; border-radius: 1px; transition: left 0.5s; display: none;"></div>
+                <div id="token-bar-max" style="position: absolute; top: -3px; bottom: -3px; right: 0; width: 2px; background: rgba(255,255,255,0.3); border-radius: 1px;"></div>
+            </div>
+            <span id="token-bar-stats" style="color: #aaa; font-size: 12px; white-space: nowrap; min-width: 140px; text-align: right;"></span>
+            <span id="token-bar-detail-btn" style="color: #FF9800; cursor: pointer; font-size: 12px; white-space: nowrap;">📊 详情</span>
+        </div>
+        <div id="token-bar-detail" style="display: none; margin-top: 6px; padding: 10px 12px; background: rgba(0,0,0,0.25); border: 1px solid rgba(255,255,255,0.08); border-radius: 6px; font-size: 12px; color: #ccc; line-height: 1.8;"></div>
+    `;
+
+    title.parentNode.insertBefore(container, title.nextSibling);
+
+    document.getElementById('token-bar-detail-btn').onclick = () => {
+        const panel = document.getElementById('token-bar-detail');
+        panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
+    };
+}
+
+function updateTokenBar(promptTokens, contextWin, threshold) {
+    const fill = document.getElementById('token-bar-fill');
+    const thresholdBar = document.getElementById('token-bar-threshold');
+    const statsEl = document.getElementById('token-bar-stats');
+    const detailEl = document.getElementById('token-bar-detail');
+    if (!fill) return;
+
+    const thresholdPct = threshold / 100;
+    const usagePct = Math.min(100, (promptTokens / contextWin) * 100);
+    const thresholdLeftPct = Math.min(100, thresholdPct * 100);
+
+    fill.style.width = usagePct + '%';
+    fill.style.background = usagePct > thresholdPct * 0.9
+        ? 'linear-gradient(90deg, #FF9800, #f44336)'
+        : 'linear-gradient(90deg, #4CAF50, #8BC34A)';
+
+    if (thresholdPct < 1) {
+        thresholdBar.style.display = 'none';
+    } else {
+        thresholdBar.style.display = 'block';
+        thresholdBar.style.left = thresholdLeftPct + '%';
+    }
+
+    const displayPrompt = promptTokens.toLocaleString();
+    const displayThreshold = Math.round(contextWin * thresholdPct).toLocaleString();
+    const displayContext = contextWin.toLocaleString();
+    statsEl.textContent = `⚡${displayPrompt}  ▎▲${displayThreshold}  ▎■${displayContext}`;
+    statsEl.title = `当前prompt / 阈值量(${threshold}%) / 最大上下文`;
+
+    // 详情面板
+    if (detailEl) {
+        let html = '<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 4px 16px;">';
+
+        html += `<div><span style="color: #888;">预估prompt</span><br><b style="color: #fff; font-size: 14px;">${displayPrompt}</b> <span style="color: #888;">tokens</span></div>`;
+
+        const lastActual = TokenStats.getLastActualPrompt();
+        if (lastActual !== null) {
+            const gap = promptTokens - lastActual;
+            const sign = gap >= 0 ? '+' : '';
+            const color = Math.abs(gap) > 1000 ? '#FF9800' : '#8BC34A';
+            html += `<div><span style="color: #888;">上次实际prompt</span><br><b style="color: #fff; font-size: 14px;">${lastActual.toLocaleString()}</b> <span style="color: ${color};">(${sign}${gap.toLocaleString()})</span></div>`;
+        }
+
+        const medianComp = TokenStats.getMedianCompletionTokens();
+        if (medianComp > 0) {
+            html += `<div><span style="color: #888;">中位数输出</span><br><b style="color: #fff; font-size: 14px;">${medianComp.toLocaleString()}</b> <span style="color: #888;">tokens/次</span></div>`;
+        }
+
+        const avgGap = TokenStats.getAvgGap();
+        if (avgGap !== 0) {
+            const color = Math.abs(avgGap) > 1000 ? '#FF9800' : '#8BC34A';
+            html += `<div><span style="color: #888;">平均预估差值</span><br><b style="color: #fff; font-size: 14px;">${avgGap >= 0 ? '+' : ''}${avgGap.toLocaleString()}</b></div>`;
+        }
+
+        const recCount = TokenStats.getRecordCount();
+        if (recCount > 0) {
+            html += `<div><span style="color: #888;">采集数据</span><br><b style="color: #fff; font-size: 14px;">${recCount}</b> <span style="color: #888;">轮</span></div>`;
+        }
+
+        const thresholdVal = document.getElementById('context-threshold-input');
+        if (thresholdVal) {
+            html += `<div><span style="color: #888;">当前阈值</span><br><b style="color: #FF9800; font-size: 14px;">${thresholdVal.value}%</b></div>`;
+        }
+
+        html += '</div>';
+        detailEl.innerHTML = html;
+    }
 }
 
 // 合并世界书数据
@@ -8316,6 +8623,12 @@ function splitMemoryIntoTwo(memoryIndex) {
     const content1 = content.substring(0, splitPoint);
     const content2 = content.substring(splitPoint);
 
+    // 如果分裂后某部分太小，拒绝分裂（避免0字块和无限递归）
+    if (content1.length < 50 || content2.length < 50) {
+        mylog('⚠️ 分裂后某部分过小(content1=' + content1.length + '字, content2=' + content2.length + '字)，取消分裂');
+        return null;
+    }
+
     // 解析原标题，获取基础名称和编号
     const originalTitle = memory.title;
     let baseName = originalTitle;
@@ -8340,7 +8653,7 @@ function splitMemoryIntoTwo(memoryIndex) {
         title: baseName + suffix1,
         content: content1,
         processed: false,
-        failed: true,  // 标记为失败，等待修复
+        failed: false,
         failedError: null
     };
 
@@ -8348,7 +8661,7 @@ function splitMemoryIntoTwo(memoryIndex) {
         title: baseName + suffix2,
         content: content2,
         processed: false,
-        failed: true,  // 标记为失败，等待修复
+        failed: false,
         failedError: null
     };
 
@@ -8453,44 +8766,11 @@ async function repairMemoryWithSplit(memoryIndex, stats) {
         await NovelState.saveState(memoryQueue.filter(m => m.processed).length);
         await new Promise(resolve => setTimeout(resolve, 1000));
     } catch (error) {
-        // ========== 检查是否是上下文超限错误 ==========
-        const errorMsg = error.message || '';
-
-        // 使用统一的检测函数，或者检查特殊标记
-        const isTokenLimitError = errorMsg.startsWith('CONTEXT_OVERFLOW:') || isContextOverflowError(errorMsg);
-
-        if (isTokenLimitError) {
-            mylog(`⚠️ 检测到token超限错误，开始分裂记忆: ${memory.title}`);
-            document.getElementById('progress-text').textContent = `🔀 正在分裂记忆: ${memory.title}`;
-
-            // 分裂记忆
-            const splitResult = splitMemoryIntoTwo(memoryIndex);
-            if (splitResult) {
-                mylog(`✅ 记忆分裂成功: ${splitResult.part1.title} 和 ${splitResult.part2.title}`);
-                updateMemoryQueueUI();
-                // 分裂后立即保存状态，确保刷新后能恢复
-                await NovelState.saveState(memoryQueue.filter(m => m.processed).length);
-                await new Promise(resolve => setTimeout(resolve, 500));
-
-                // 递归处理第一个分裂记忆
-                const part1Index = memoryQueue.indexOf(splitResult.part1);
-                await repairMemoryWithSplit(part1Index, stats);
-
-                // 第一个完全处理完后，再处理第二个
-                const part2Index = memoryQueue.indexOf(splitResult.part2);
-                await repairMemoryWithSplit(part2Index, stats);
-            } else {
-                stats.stillFailedCount++;
-                memory.failedError = error.message;
-                console.error(`❌ 记忆分裂失败: ${memory.title}`);
-            }
-        } else {
-            stats.stillFailedCount++;
-            memory.failedError = error.message;
-            console.error(`❌ 修复失败: ${memory.title}`, error);
-            updateMemoryQueueUI();
-            await new Promise(resolve => setTimeout(resolve, 1000));
-        }
+        stats.stillFailedCount++;
+        memory.failedError = error.message;
+        console.error(`❌ 修复失败: ${memory.title}`, error);
+        updateMemoryQueueUI();
+        await new Promise(resolve => setTimeout(resolve, 1000));
     }
 }
 

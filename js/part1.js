@@ -1220,6 +1220,19 @@ function initializeApiSettingsModal() {
                 endpoint: document.getElementById('local-api-endpoint').value.trim(),
             },
         };
+
+        // 读取每个服务商的最大上下文设置
+        const providersWithContext = ['deepseek', 'gemini', 'gemini-proxy', 'ollama', 'tavern', 'local'];
+        for (const p of providersWithContext) {
+            const input = document.getElementById(p + '-context-window');
+            if (input) {
+                const val = parseInt(input.value, 10);
+                if (!isNaN(val) && val > 0) {
+                    settings[p].context_window = val;
+                }
+            }
+        }
+
         localStorage.setItem('apiSettings', JSON.stringify(settings));
 
         // 保存 tavern 配置到 IndexedDB
@@ -1266,21 +1279,24 @@ function loadApiSettings() {
         // 定义默认设置
         const defaultSettings = {
             provider: 'deepseek',
-            deepseek: { apiKey: '', model: 'deepseek-v4-flash' },
+            deepseek: { apiKey: '', model: 'deepseek-v4-flash', context_window: 1000000 },
             gemini: {
                 apiKey: '',
                 model: 'gemini-2.5-flash',
-                useSystemPrompt: true  // 默认启用破限
+                useSystemPrompt: true,  // 默认启用破限
+                context_window: 1000000
             },
             'gemini-proxy': {
                 endpoint: '',
                 apiKey: '',
                 model: 'gemini-2.5-flash',
-                useSystemPrompt: true  // 默认启用破限
+                useSystemPrompt: true,  // 默认启用破限
+                context_window: 1000000
             },
             ollama: {
                 endpoint: 'http://localhost:11434',
-                model: 'llama2'
+                model: 'llama2',
+                context_window: 1000000
             },
             tavern: {
                 connectionType: 'direct',
@@ -1290,9 +1306,10 @@ function loadApiSettings() {
                 proxyUrl: '',
                 proxyPassword: '',
                 proxyModel: '',
-                jailbreak: true  // 默认启用破限
+                jailbreak: true,  // 默认启用破限
+                context_window: 1000000
             },
-            local: { endpoint: '' },
+            local: { endpoint: '', context_window: 1000000 },
         };
 
         // 深度合并用户设置和默认设置，用户设置优先
@@ -1401,6 +1418,16 @@ function loadApiSettings() {
             tavernConnectionType.dispatchEvent(new Event('change'));
         }
 
+        // 加载每个服务商的最大上下文设置
+        const providersWithContext = ['deepseek', 'gemini', 'gemini-proxy', 'ollama', 'tavern', 'local'];
+        for (const p of providersWithContext) {
+            const input = document.getElementById(p + '-context-window');
+            if (input) {
+                const val = settings[p]?.context_window;
+                if (val !== undefined) input.value = val;
+            }
+        }
+
         // Trigger change to show correct options
         document.getElementById('api-provider-selector').dispatchEvent(new Event('change'));
 
@@ -1457,11 +1484,6 @@ async function refreshProxyModels() {
         return;
     }
 
-    if (!proxyPassword) {
-        alert(t('proxy-password-required'));
-        return;
-    }
-
     const originalText = refreshBtn.textContent;
     refreshBtn.disabled = true;
     refreshBtn.textContent = '获取中...';
@@ -1490,7 +1512,7 @@ async function refreshProxyModels() {
         const response = await fetch(modelsUrl, {
             method: 'GET',
             headers: {
-                'Authorization': `Bearer ${proxyPassword}`,
+                ...(proxyPassword ? { 'Authorization': `Bearer ${proxyPassword}` } : {}),
                 'Content-Type': 'application/json'
             }
         });
@@ -1688,6 +1710,8 @@ function applyTavernConfig(config) {
     document.getElementById('tavern-proxy-url').value = config.proxyUrl || '';
     document.getElementById('tavern-proxy-password').value = config.proxyPassword || '';
     document.getElementById('tavern-config-name').value = config.name || '';
+    const ctxInput = document.getElementById('tavern-context-window');
+    if (ctxInput && config.context_window) ctxInput.value = config.context_window;
 
     // 恢复模型列表和选中模型
     const proxySelect = document.getElementById('tavern-proxy-model');
@@ -1721,6 +1745,8 @@ function clearTavernForm() {
     const proxySelect = document.getElementById('tavern-proxy-model');
     proxySelect.innerHTML = '<option value="">请刷新模型...</option>';
     document.getElementById('tavern-config-name').value = '';
+    const ctxInput = document.getElementById('tavern-context-window');
+    if (ctxInput) ctxInput.value = 1000000;
 }
 
 function initTavernConfigManager() {
@@ -1763,6 +1789,7 @@ function initTavernConfigManager() {
                 existing.proxyUrl = document.getElementById('tavern-proxy-url').value.trim();
                 existing.proxyPassword = document.getElementById('tavern-proxy-password').value.trim();
                 existing.proxyModel = document.getElementById('tavern-proxy-model').value.trim();
+                existing.context_window = parseInt(document.getElementById('tavern-context-window').value, 10) || 1000000;
                 const currentModels = await ModelListDB.getModelList('tavern');
                 if (currentModels) existing.models = currentModels;
                 await TavernConfigDB.save(existing);
@@ -1782,6 +1809,7 @@ function initTavernConfigManager() {
                 proxyUrl: document.getElementById('tavern-proxy-url').value.trim(),
                 proxyPassword: document.getElementById('tavern-proxy-password').value.trim(),
                 proxyModel: document.getElementById('tavern-proxy-model').value.trim(),
+                context_window: parseInt(document.getElementById('tavern-context-window').value, 10) || 1000000,
                 models: []
             };
             const saved = await TavernConfigDB.save(config);
@@ -3979,6 +4007,33 @@ if (document.readyState === 'loading') {
         literaryBtn.textContent = '📚 生成文风';
         lorebookBtn.parentNode.appendChild(literaryBtn);
     }
+}
+
+// 自定义阅读字数输入框的显示/隐藏逻辑
+function initCustomSplitSize() {
+    const splitSelect = document.getElementById('split-size');
+    const customInput = document.getElementById('split-size-custom');
+    if (!splitSelect || !customInput) return;
+
+    const toggleCustomInput = () => {
+        customInput.style.display = splitSelect.value === 'custom' ? 'block' : 'none';
+    };
+
+    splitSelect.addEventListener('change', toggleCustomInput);
+    customInput.addEventListener('input', function () {
+        // 实时更新 select 的 dataset，供 part3.js 读取
+        splitSelect.dataset.customValue = this.value;
+    });
+
+    // 页面加载时检查初始状态
+    toggleCustomInput();
+}
+
+// 在 DOM 加载完成后执行
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initCustomSplitSize);
+} else {
+    initCustomSplitSize();
 }
 
 // ==================== AI 排序建议功能 ====================

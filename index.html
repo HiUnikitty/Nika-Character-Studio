@@ -2982,6 +2982,7 @@
       right: 0;
       width: 400px;
       height: 100vh;
+      height: calc(100vh - env(safe-area-inset-bottom, 0px));
       background: rgba(24, 24, 28, 0.92);
       backdrop-filter: blur(15px);
       -webkit-backdrop-filter: blur(15px);
@@ -2992,6 +2993,9 @@
       z-index: 999;
       display: none;
       flex-direction: column;
+      padding-top: env(safe-area-inset-top, 0px);
+      padding-bottom: env(safe-area-inset-bottom, 0px);
+      box-sizing: border-box;
     }
 
     body:has(#editor-view[style*="display: flex"]) .agent-panel {
@@ -3150,14 +3154,12 @@
       font-size: 12px;
       line-height: 1.5;
     }
-
     .agent-reasoning summary {
       cursor: pointer;
       color: #c39bdd;
       font-weight: bold;
       font-size: 12px;
     }
-
     .agent-reasoning[open] summary {
       margin-bottom: 6px;
       padding-bottom: 6px;
@@ -3174,41 +3176,11 @@
       font-size: 12px;
     }
 
-    .agent-preview-area .patch-success {
-      color: #27ae60;
-      margin-bottom: 4px;
-    }
-
-    .agent-preview-area .patch-error {
-      color: #e74c3c;
-      margin-bottom: 4px;
-    }
-
-    .agent-preview-area .patch-actions {
-      display: flex;
-      gap: 8px;
-      margin-top: 6px;
-    }
-
-    .agent-preview-area .patch-accept {
-      background: #27ae60;
-      color: white;
-      border: none;
-      padding: 5px 12px;
-      border-radius: 4px;
-      cursor: pointer;
-      font-size: 12px;
-    }
-
-    .agent-preview-area .patch-reject {
-      background: #555;
-      color: white;
-      border: none;
-      padding: 5px 12px;
-      border-radius: 4px;
-      cursor: pointer;
-      font-size: 12px;
-    }
+    .agent-preview-area .patch-success { color: #27ae60; margin-bottom: 4px; }
+    .agent-preview-area .patch-error { color: #e74c3c; margin-bottom: 4px; }
+    .agent-preview-area .patch-actions { display: flex; gap: 8px; margin-top: 6px; }
+    .agent-preview-area .patch-accept { background: #27ae60; color: white; border: none; padding: 5px 12px; border-radius: 4px; cursor: pointer; font-size: 12px; }
+    .agent-preview-area .patch-reject { background: #555; color: white; border: none; padding: 5px 12px; border-radius: 4px; cursor: pointer; font-size: 12px; }
 
     /* Agent HTML 预览 */
     .agent-html-preview {
@@ -3349,6 +3321,12 @@
             <option value="deepseek-v4-pro">DeepSeek V4 Pro</option>
           </select>
         </div>
+        <div class="field-group">
+          <label for="deepseek-context-window">最大上下文</label>
+          <input type="number" id="deepseek-context-window" value="1000000" min="1000" step="1000"
+            placeholder="默认 1000000 (1M)">
+          <p class="help-text">模型的最大上下文窗口大小（token），用于小说转世界书判断是否超限</p>
+        </div>
       </div>
 
       <div id="gemini-options" class="api-provider-options">
@@ -3362,6 +3340,12 @@
             <option value="gemini-2.5-flash">Gemini 2.5 Flash</option>
             <option value="gemini-2.5-pro">Gemini 2.5 Pro</option>
           </select>
+        </div>
+        <div class="field-group">
+          <label for="gemini-context-window">最大上下文</label>
+          <input type="number" id="gemini-context-window" value="1000000" min="1000" step="1000"
+            placeholder="默认 1000000 (1M)">
+          <p class="help-text">模型的最大上下文窗口大小（token），用于小说转世界书判断是否超限</p>
         </div>
       </div>
 
@@ -3381,6 +3365,12 @@
             <option value="gemini-2.5-flash">Gemini 2.5 Flash</option>
             <option value="gemini-2.5-pro">Gemini 2.5 Pro</option>
           </select>
+        </div>
+        <div class="field-group">
+          <label for="gemini-proxy-context-window">最大上下文</label>
+          <input type="number" id="gemini-proxy-context-window" value="1000000" min="1000" step="1000"
+            placeholder="默认 1000000 (1M)">
+          <p class="help-text">模型的最大上下文窗口大小（token），用于小说转世界书判断是否超限</p>
         </div>
         <p class="help-text" data-i18n="proxy-help">
           用于连接 Cloudflare Worker 等自定义反向代理。Endpoint URL 应为不包含模型名称的完整路径。
@@ -3405,6 +3395,12 @@
             </button>
           </div>
         </div>
+        <div class="field-group">
+          <label for="ollama-context-window">最大上下文</label>
+          <input type="number" id="ollama-context-window" value="1000000" min="1000" step="1000"
+            placeholder="默认 1000000 (1M)">
+          <p class="help-text">模型的最大上下文窗口大小（token），用于小说转世界书判断是否超限</p>
+        </div>
         <p class="help-text" data-i18n="ollama-help">用于连接本地运行的Ollama服务，默认地址为 http://localhost:11434</p>
       </div>
 
@@ -3414,25 +3410,26 @@
           <input type="text" id="local-api-endpoint" data-i18n-placeholder="local-api-placeholder"
             placeholder="例如: http://localhost:1234/v1">
         </div>
+        <div class="field-group">
+          <label for="local-context-window">最大上下文</label>
+          <input type="number" id="local-context-window" value="1000000" min="1000" step="1000"
+            placeholder="默认 1000000 (1M)">
+          <p class="help-text">模型的最大上下文窗口大小（token），用于小说转世界书判断是否超限</p>
+        </div>
         <p class="help-text" data-i18n="local-help">用于连接LM Studio, 需下载项目源文件启动才能使用。</p>
       </div>
 
       <div id="tavern-options" class="api-provider-options">
         <!-- 多配置管理 -->
-        <div class="field-group"
-          style="border-bottom: 1px solid var(--border-color); padding-bottom: 12px; margin-bottom: 12px;">
+        <div class="field-group" style="border-bottom: 1px solid var(--border-color); padding-bottom: 12px; margin-bottom: 12px;">
           <div style="display: flex; gap: 6px; align-items: center; flex-wrap: wrap;">
             <select id="tavern-config-select" style="flex: 1; min-width: 120px;">
               <option value="">选择配置...</option>
             </select>
-            <input type="text" id="tavern-config-name" placeholder="配置名称"
-              style="flex: 0.6; min-width: 80px; padding: 6px 8px;">
-            <button type="button" id="tavern-config-save-btn"
-              style="background: var(--primary-color); color: white; padding: 6px 10px; border: none; border-radius: 4px; cursor: pointer; white-space: nowrap;">保存</button>
-            <button type="button" id="tavern-config-delete-btn"
-              style="background: var(--danger-color, #f44336); color: white; padding: 6px 10px; border: none; border-radius: 4px; cursor: pointer; white-space: nowrap;">删除</button>
-            <button type="button" id="tavern-config-reset-btn"
-              style="background: #888; color: white; padding: 6px 10px; border: none; border-radius: 4px; cursor: pointer; white-space: nowrap;">重置</button>
+            <input type="text" id="tavern-config-name" placeholder="配置名称" style="flex: 0.6; min-width: 80px; padding: 6px 8px;">
+            <button type="button" id="tavern-config-save-btn" style="background: var(--primary-color); color: white; padding: 6px 10px; border: none; border-radius: 4px; cursor: pointer; white-space: nowrap;">保存</button>
+            <button type="button" id="tavern-config-delete-btn" style="background: var(--danger-color, #f44336); color: white; padding: 6px 10px; border: none; border-radius: 4px; cursor: pointer; white-space: nowrap;">删除</button>
+            <button type="button" id="tavern-config-reset-btn" style="background: #888; color: white; padding: 6px 10px; border: none; border-radius: 4px; cursor: pointer; white-space: nowrap;">重置</button>
           </div>
         </div>
         <div class="field-group">
@@ -3491,6 +3488,11 @@
               </button>
             </div>
           </div>
+        </div>
+        <div class="field-group">
+          <label for="tavern-context-window">最大上下文</label>
+          <input type="number" id="tavern-context-window" value="1000000" min="1000" step="1000" style="width: 150px;" placeholder="默认 1000000 (1M)">
+          <p class="help-text">模型的最大上下文窗口大小（token），用于小说转世界书字数超限判断</p>
         </div>
       </div>
 
@@ -4143,11 +4145,14 @@
                 <option value="10000" data-i18n="10k-words">1万字 </option>
                 <option value="30000" data-i18n="30k-words">3万字</option>
                 <option value="50000" data-i18n="50k-words">5万字</option>
-                <option value="100000" data-i18n="100k-words">10万字（Deepseek不要超过）</option>
+                <option value="100000" data-i18n="100k-words">10万字</option>
                 <option value="200000" data-i18n="200k-words">20万字</option>
-                <option value="500000" data-i18n="500k-words">50万字 (建议Gemini)</option>
-                <!-- <option value="5000000" data-i18n="5000k-words">500万字</option> -->
+                <option value="500000" data-i18n="500k-words">50万字</option>
+                <option value="custom" data-i18n="custom-words">🎯 自定义</option>
               </select>
+              <input type="number" id="split-size-custom"
+                style="display: none; width: 100%; padding: 8px; background: rgba(0,0,0,0.3); border: 1px solid #FF9800; border-radius: 4px; color: white; margin-top: 5px;"
+                placeholder="输入自定义字数" min="1000">
               <button id="generate-worldbook-btn" onclick="bruteForceSplit()"
                 style="margin-top: 10px; padding: 8px 15px; background: var(--secondary-color); color: white; border: none; border-radius: 4px;">生成世界书</button>
             </div>
@@ -4352,7 +4357,7 @@
               </div>
               <div class="instruction-card add-instruction" onclick="addNewInstruction()">
                 <div class="add-icon">+</div>
-                <div class="add-text">简易美化和指令</div>
+                <div class="add-text">系统指令 · 状态栏 · 美化</div>
               </div>
             </div>
             <!-- 隐藏的原始textarea，用于兼容性 -->
@@ -4395,25 +4400,22 @@
           </div>
 
           <!-- 正则脚本区域 -->
-          <h3 class="section-title" id="regex-scripts-title"
-            style="display: flex; justify-content: space-between; align-items: center;">
-            <span>正则脚本</span>
-            <button onclick="previewRegexHTML()" id="preview-regex-html-btn"
-              style="background-color: #e67e22; color: white; padding: 4px 12px; border: none; border-radius: 3px; font-size: 13px; margin: 0; cursor: pointer;">预览所有HTML组件</button>
-          </h3>
+          <h3 class="section-title" id="regex-scripts-title">正则脚本</h3>
           <p class="help-text" id="regex-scripts-help-text">用于文本替换的正则表达式脚本，可实现美化等效果</p>
           <div id="regex-scripts-container" class="regex-scripts-list"></div>
+          <div style="margin-top: 15px; margin-bottom: 10px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
+              <label style="font-size:14px;color:var(--text-color);">全局预览测试文本：</label>
+              <button onclick="previewRegexHTML()" id="preview-regex-html-btn" style="background-color: #e67e22; color: white; padding: 4px 12px; border: none; border-radius: 3px; font-size: 13px; margin: 0; cursor: pointer;">预览正则效果</button>
+            </div>
+            <textarea id="global-regex-preview-text" style="width:100%;height:80px;background:rgba(0,0,0,0.3);border:1px solid #555;border-radius:4px;color:white;padding:8px;" placeholder="在此输入要预览的原始测试文本...">【状态栏】
+在这里输入测试内容...</textarea>
+          </div>
           <button class="add-item-button" onclick="addRegexScript()" id="add-regex-btn">+ 添加正则脚本</button>
 
           <!-- 小白X 任务区域 -->
-          <h3 class="section-title" id="xiaobaix-tasks-title"
-            style="margin-top: 25px; display: flex; align-items: center; justify-content: space-between;">
-            <span>小白X 任务</span>
-            <span onclick="openLWBInstallTutorial()"
-              style="font-size: 12px; font-weight: normal; color: #3498db; cursor: pointer; border: 1px solid #3498db; padding: 2px 8px; border-radius: 4px; transition: all 0.2s;">📦
-              安装教程 & 必看</span>
-          </h3>
-          <p class="help-text" id="xiaobaix-tasks-help-text">变量卡初始化必须的脚本，如需帮助，请点击右下角智能体图标</p>
+          <h3 class="section-title" id="xiaobaix-tasks-title" style="margin-top: 25px;">小白X 任务</h3>
+          <p class="help-text" id="xiaobaix-tasks-help-text">在SillyTavern小白X插件中运行的循环任务脚本</p>
           <div id="xiaobaix-tasks-container" class="xiaobaix-tasks-list"></div>
           <button class="add-item-button" onclick="addXiaobaixTask()" id="add-xiaobaix-task-btn">+ 添加任务</button>
 
@@ -4593,14 +4595,9 @@
 
   <div class="agent-panel" id="agent-panel">
     <div class="agent-panel-header">
-      <h3 style="display: flex; align-items: center; gap: 8px;">
-        <span>🤖 妮卡变量助手</span>
-        <span onclick="openLWBInstallTutorial()"
-          style="font-size: 11px; font-weight: normal; color: #3498db; cursor: pointer; border: 1px solid #3498db; padding: 1px 6px; border-radius: 3px;">安装教程</span>
-      </h3>
+      <h3>🤖 智能助手</h3>
       <div style="display:flex;gap:6px;">
-        <button onclick="agentClearChat()" style="background:none;border:none;color:#aaa;cursor:pointer;font-size:14px;"
-          title="清空对话">🗑</button>
+        <button onclick="agentClearChat()" style="background:none;border:none;color:#aaa;cursor:pointer;font-size:14px;" title="清空对话">🗑</button>
         <button class="agent-close-btn" onclick="toggleAgentPanel()">×</button>
       </div>
     </div>
@@ -4624,8 +4621,7 @@
     <div class="agent-html-preview" id="agent-html-preview-panel">
       <div class="preview-header">
         <span>HTML 预览</span>
-        <button onclick="document.getElementById('agent-html-preview-panel').style.display='none'"
-          style="background:none;border:none;color:#aaa;cursor:pointer;">✕</button>
+        <button onclick="document.getElementById('agent-html-preview-panel').style.display='none'" style="background:none;border:none;color:#aaa;cursor:pointer;">✕</button>
       </div>
       <iframe id="agent-html-preview" sandbox="allow-scripts allow-same-origin allow-forms allow-modals"></iframe>
     </div>
@@ -4821,7 +4817,7 @@
         'personality-placeholder': '详细性格特质',
         'ai-settings': 'AI设定',
         'system-prompt': '系统设定',
-        'system-prompt-placeholder': '预设开启后重要',
+        'system-prompt-placeholder': '和预设一个级别',
         scenario: '环境设定',
         'scenario-placeholder': '角色所处的环境',
         'first-message': '问候消息',
@@ -5220,7 +5216,7 @@
         // 系统指令相关
         'bracket-mode': '括号模式',
         'simple-statusbar': '简易状态栏',
-        'system-instruction': '简易美化和指令',
+        'system-instruction': '系统指令 · 状态栏 · 美化',
         'edit': '编辑',
         'delete': '删除',
 
@@ -5259,9 +5255,10 @@
         '10k-words': '1万字',
         '30k-words': '3万字',
         '50k-words': '5万字',
-        '100k-words': '10万字（Deepseek不要超过）',
+        '100k-words': '10万字',
         '200k-words': '20万字',
-        '500k-words': '50万字 (建议Gemini)',
+        '500k-words': '50万字',
+        'custom-words': '🎯 自定义',
 
         // 搜索面板
         'worldbook-management': '世界书管理',
@@ -5380,8 +5377,8 @@
 
         // Alert和确认消息
         'api-config-local-alert': '请先在 API 设置中配置本地大模型的API URL（例如: http://localhost:1234/v1）',
-        'api-config-reverse-proxy-alert': '请先在 API 设置中配置公益站的代理服务器URL和密码',
-        'api-config-custom-alert': '请先在 API 设置中配置自定义API的endpoint和API Key',
+        'api-config-reverse-proxy-alert': '请先在 API 设置中配置公益站的代理服务器URL',
+        'api-config-custom-alert': '请先在 API 设置中配置自定义API的endpoint',
         'api-config-provider-alert': '请先在 API 设置中配置您的服务商。',
         'no-content-to-translate': '没有需要翻译的内容。',
         'translation-failed': '翻译失败，请检查控制台获取详情。',
@@ -5421,7 +5418,7 @@
         'save-template-btn': '💾 保存为模板',
         'cancel-instruction': '取消',
         'save-instruction': '加入设定',
-        'add-instruction-text': '简易美化和指令',
+        'add-instruction-text': '系统指令 · 状态栏 · 美化',
 
         // 世界书相关
         'wb-entry-format': '条目注释: {comment}\n关键词: {keys}\n内容: {content}',
@@ -5969,9 +5966,10 @@
         '10k-words': '10k words',
         '30k-words': '30k words',
         '50k-words': '50k words',
-        '100k-words': '100k words (DeepSeek limit)',
+        '100k-words': '100k words',
         '200k-words': '200k words',
-        '500k-words': '500k words (Recommended for Gemini)',
+        '500k-words': '500k words',
+        'custom-words': '🎯 Custom',
 
         // 搜索面板
         'worldbook-management': 'Worldbook Management',
@@ -6090,8 +6088,8 @@
 
         // Alert and Confirmation Messages
         'api-config-local-alert': 'Please configure the local model API URL in API settings (e.g., http://localhost:1234/v1)',
-        'api-config-reverse-proxy-alert': 'Please configure the public proxy server URL and password in API settings',
-        'api-config-custom-alert': 'Please configure the custom API endpoint and API Key in API settings',
+        'api-config-reverse-proxy-alert': 'Please configure the public proxy server URL in API settings',
+        'api-config-custom-alert': 'Please configure the custom API endpoint in API settings',
         'api-config-provider-alert': 'Please configure your service provider in API settings.',
         'no-content-to-translate': 'No content to translate.',
         'translation-failed': 'Translation failed. Please check the console for details.',
@@ -6204,75 +6202,12 @@
     }
   </script>
 
-  <!-- 小白X 安装教程弹窗 -->
-  <div id="lwbInstallModal"
-    style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 20000; justify-content: center; align-items: center; backdrop-filter: blur(5px);">
-    <div
-      style="background: #2a2a2a; border: 1px solid #444; border-radius: 12px; padding: 25px; max-width: 500px; width: 90%; color: white; box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
-      <div
-        style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid #444; padding-bottom: 10px;">
-        <h3 style="margin: 0; color: #3498db; display: flex; align-items: center; gap: 8px;">📦 小白X 插件安装教程</h3>
-        <button onclick="closeLWBInstallTutorial()"
-          style="background: none; border: none; color: #888; font-size: 24px; cursor: pointer; line-height: 1;">×</button>
-      </div>
-
-      <div style="margin-bottom: 20px;">
-        <h4 style="color: #f1c40f; margin-bottom: 8px;">1. 安装</h4>
-        <p style="font-size: 14px; color: #ccc; margin-bottom: 10px;">复制仓库地址：</p>
-        <div
-          style="display: flex; gap: 8px; background: #1a1a1a; padding: 10px; border-radius: 6px; align-items: center; margin-bottom: 10px;">
-          <code id="lwb-repo-url"
-            style="flex-grow: 1; font-size: 12px; color: #3498db; word-break: break-all;">https://github.com/RT15548/LittleWhiteBox</code>
-          <button onclick="copyLWBRepo()"
-            style="background: #3498db; color: white; border: none; padding: 4px 10px; border-radius: 4px; font-size: 12px; cursor: pointer; white-space: nowrap;">复制</button>
-        </div>
-      </div>
-
-      <div style="margin-bottom: 20px;">
-        <h4 style="color: #f1c40f; margin-bottom: 8px;">2. 安装扩展</h4>
-        <p style="font-size: 14px; color: #ccc;">进入 SillyTavern → <b>扩展管理器</b> → <b>安装扩展</b>，粘贴地址后确认。</p>
-      </div>
-
-      <div style="margin-bottom: 25px;">
-        <h4 style="color: #f1c40f; margin-bottom: 8px;">3. 启用功能 (必看)</h4>
-        <p style="font-size: 14px; color: #ccc; line-height: 1.6;">
-          刷新页面后，在 <b>扩展设置</b> → <b>小白X</b> 中开启所需功能模块。<br>
-          <span
-            style="color: #e74c3c; font-weight: bold; background: rgba(231, 76, 60, 0.1); padding: 2px 4px; border-radius: 3px;">
-            ⚠️ 特别是“数据互动”中的“变量管理”，必须选择“2.0(state)”
-            另外，预设中的Main Prompt要打勾哦！
-          </span>
-        </p>
-      </div>
-
-      <button onclick="closeLWBInstallTutorial()"
-        style="width: 100%; background: #e67e22; color: white; border: none; padding: 12px; border-radius: 6px; cursor: pointer; font-weight: bold;">我知道了</button>
-    </div>
-  </div>
-
-  <script>
-    function openLWBInstallTutorial() {
-      document.getElementById('lwbInstallModal').style.display = 'flex';
-    }
-    function closeLWBInstallTutorial() {
-      document.getElementById('lwbInstallModal').style.display = 'none';
-    }
-    function copyLWBRepo() {
-      const url = 'https://github.com/RT15548/LittleWhiteBox';
-      navigator.clipboard.writeText(url).then(() => {
-        const btn = event.target;
-        const originalText = btn.textContent;
-        btn.textContent = '已复制!';
-        btn.style.background = '#27ae60';
-        setTimeout(() => {
-          btn.textContent = originalText;
-          btn.style.background = '#3498db';
-        }, 2000);
-      });
-    }
-  </script>
-
   <!-- 加载拆分的 JavaScript 文件 -->
+  <script type="module">
+    import { encode } from 'https://esm.sh/gpt-tokenizer@2';
+    window.countTokens = (text) => encode(text).length;
+    console.log('✅ gpt-tokenizer 已加载');
+  </script>
   <script src="js/part1.js"></script>
   <script src="js/part2.js"></script>
   <script src="js/part3.js"></script>
