@@ -1361,87 +1361,101 @@ if (modal) {
 }
 }
 
-// 预览正则脚本的HTML渲染效果
+// 预览正则脚本的HTML渲染效果 - 收集所有启用脚本中的HTML组件并预览
 function previewRegexHTML() {
     if (!regexScriptsData || regexScriptsData.length === 0) {
         alert('请先添加正则脚本');
         return;
     }
 
-    const enabledScripts = regexScriptsData.filter(s => !s.disabled && s.findRegex);
+    const enabledScripts = regexScriptsData.filter(s => !s.disabled);
     if (enabledScripts.length === 0) {
-        alert('没有启用的正则脚本（请填写查找正则并确保脚本已启用）');
+        alert('没有启用的正则脚本');
         return;
     }
 
-    // 构建测试文本 - 从全局测试文本框读取
-    const globalTestInput = document.getElementById('global-regex-preview-text');
-    let testContent = globalTestInput ? globalTestInput.value : '';
-
-    if (!testContent.trim()) {
-        testContent = '【状态栏】\n在这里输入测试内容...';
-    }
-
-    // 应用所有启用的正则脚本
-    let processedContent = testContent;
+    // 收集所有包含 HTML 标签的替换字符串
+    let htmlContentItems = [];
     enabledScripts.forEach(script => {
-        try {
-            let pattern = script.findRegex;
-            let flags = 'g';
-            if (pattern.startsWith('/')) {
-                const lastSlashIndex = pattern.lastIndexOf('/');
-                if (lastSlashIndex > 0) {
-                    const extractedFlags = pattern.substring(lastSlashIndex + 1);
-                    pattern = pattern.substring(1, lastSlashIndex);
-                    flags = extractedFlags.includes('g') ? extractedFlags : extractedFlags + 'g';
-                }
+        const content = script.replaceString || '';
+        // 检查是否包含 HTML 标签
+        if (/<[a-z][\s\S]*>/i.test(content)) {
+            // 提取其中的代码块或直接使用
+            const blocks = extractHTMLCodeBlocks(content);
+            if (blocks.length > 0) {
+                htmlContentItems.push(...blocks);
+            } else {
+                htmlContentItems.push(content);
             }
-            const re = new RegExp(pattern, flags);
-            processedContent = processedContent.replace(re, function(match, ...groups) {
-                let result = script.replaceString;
-                groups.forEach((group, idx) => {
-                    if (group !== undefined) {
-                        const placeholder = new RegExp('\\$' + (idx + 1), 'g');
-                        result = result.replace(placeholder, group);
-                    }
-                });
-                return result;
-            });
-        } catch (e) {
-            console.error('正则预览错误:', script.scriptName, e);
         }
     });
 
-    // 提取HTML代码块
-    const htmlBlocks = extractHTMLCodeBlocks(processedContent);
-    let htmlContent;
-
-    if (htmlBlocks.length > 0) {
-        htmlContent = htmlBlocks.join('\n<hr style="border-color:#444;margin:20px 0;">\n');
-    } else if (/<\/?[a-z][\s\S]*>/i.test(processedContent)) {
-        // 包含HTML标签但不是完整文档，包装一下
-        htmlContent = '<!DOCTYPE html>\n<html>\n<head><meta charset="UTF-8"><style>body{font-family:sans-serif;padding:16px;color:#d4d4d4;background:#1e1e1e;}</style></head>\n<body>\n' + processedContent + '\n</body>\n</html>';
-    } else {
-        // 纯文本，包装成HTML显示
-        htmlContent = '<!DOCTYPE html>\n<html>\n<head><meta charset="UTF-8"><style>body{font-family:monospace;padding:16px;color:#d4d4d4;background:#1e1e1e;white-space:pre-wrap;}</style></head>\n<body>\n' + escapeHtml(processedContent) + '\n</body>\n</html>';
+    if (htmlContentItems.length === 0) {
+        alert('没有发现包含 HTML 的正则脚本内容。请确保脚本已启用并填写了包含 HTML 标签的替换文本。');
+        return;
     }
 
+    // 合并显示
+    const combinedHTML = htmlContentItems.join('\n<hr style="border-color:#444;margin:30px 0;border-style:dashed;opacity:0.5;">\n');
+
+    // 构建完整的预览 HTML，模拟酒馆深色主题
+    const finalHtml = `<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        :root {
+            --bg-color: #1e1e1e;
+            --text-color: #d4d4d4;
+            --hr-color: #444;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+            padding: 24px;
+            color: var(--text-color);
+            background: var(--bg-color);
+            line-height: 1.6;
+            margin: 0;
+        }
+        /* 模拟酒馆的一些常见容器样式 */
+        .nika-container, .stat-bar, .status-panel {
+            margin-bottom: 20px;
+        }
+        /* 允许预览中的脚本运行 */
+        script { display: none; }
+    </style>
+</head>
+<body>
+    <div style="margin-bottom: 20px; border-bottom: 1px solid #333; padding-bottom: 10px;">
+        <span style="color: #888; font-size: 13px;">提示：以下内容是所有启用正则脚本中提取的 HTML 组件集合。</span>
+    </div>
+    ${combinedHTML}
+</body>
+</html>`;
+
     // 创建预览弹窗
+    const modalId = 'html-preview-modal';
+    const existingModal = document.getElementById(modalId);
+    if (existingModal) existingModal.remove();
+
     const previewModalHTML = `
-    <div id="html-preview-modal" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 10002; display: flex; justify-content: center; align-items: center;">
-        <div style="background: var(--bg-color, #1a1a2e); padding: 20px; border-radius: 10px; box-shadow: 0 10px 30px rgba(0,0,0,0.3); max-width: 95%; max-height: 95%; width: 900px; height: 700px; display: flex; flex-direction: column;">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+    <div id="${modalId}" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 10002; display: flex; justify-content: center; align-items: center; backdrop-filter: blur(5px);">
+        <div style="background: #1a1a2e; padding: 24px; border-radius: 12px; box-shadow: 0 20px 50px rgba(0,0,0,0.5); max-width: 95%; max-height: 95%; width: 1000px; height: 800px; display: flex; flex-direction: column; border: 1px solid #30363d;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
                 <div>
-                    <h3 style="margin: 0; color: var(--text-color, #e0e0e0);">正则效果预览</h3>
-                    <span style="font-size: 12px; color: #888;">已应用 ${enabledScripts.length} 个正则脚本: ${enabledScripts.map(s => escapeHtml(s.scriptName || '未命名')).join(', ')}</span>
+                    <h3 style="margin: 0; color: #e0e0e0; font-size: 20px; display: flex; align-items: center; gap: 10px;">
+                        <span style="color: #e67e22;">🎨</span> 组件效果预览
+                    </h3>
+                    <p style="font-size: 12px; color: #888; margin: 5px 0 0 0;">已合并显示 ${htmlContentItems.length} 个 HTML 组件块</p>
                 </div>
-                <div style="display:flex;gap:8px;">
-                    <button onclick="refreshRegexPreview()" style="background: #8e44ad; color: white; padding: 8px 12px; border: none; border-radius: 5px; cursor: pointer;">刷新</button>
-                    <button onclick="closeHTMLPreviewModal()" style="background: #6c757d; color: white; padding: 8px 12px; border: none; border-radius: 5px; cursor: pointer;">关闭</button>
+                <div style="display:flex;gap:12px;">
+                    <button onclick="refreshRegexPreview()" style="background: #e67e22; color: white; padding: 8px 20px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; transition: background 0.2s;">刷新</button>
+                    <button onclick="closeHTMLPreviewModal()" style="background: #30363d; color: #e0e0e0; padding: 8px 20px; border: 1px solid #444; border-radius: 6px; cursor: pointer; transition: all 0.2s;">关闭</button>
                 </div>
             </div>
-            <div style="flex: 1; border: 1px solid var(--input-border, #444); border-radius: 5px; overflow: hidden;">
-                <iframe id="html-preview-frame" sandbox="allow-scripts allow-same-origin allow-forms allow-modals" style="width: 100%; height: 100%; border: none; background: white;"></iframe>
+            <div style="flex: 1; border: 1px solid #30363d; border-radius: 8px; overflow: hidden; background: #1e1e1e; box-shadow: inset 0 2px 10px rgba(0,0,0,0.2);">
+                <iframe id="html-preview-frame" sandbox="allow-scripts allow-same-origin allow-forms allow-modals" style="width: 100%; height: 100%; border: none;"></iframe>
             </div>
         </div>
     </div>
@@ -1454,11 +1468,11 @@ function previewRegexHTML() {
         if (iframe) {
             try {
                 iframe.contentDocument.open();
-                iframe.contentDocument.write(htmlContent);
+                iframe.contentDocument.write(finalHtml);
                 iframe.contentDocument.close();
             } catch (e) {
                 console.error('HTML预览渲染失败:', e);
-                iframe.src = 'data:text/html;charset=utf-8,' + encodeURIComponent(htmlContent);
+                iframe.src = 'data:text/html;charset=utf-8,' + encodeURIComponent(finalHtml);
             }
         }
     }, 100);
