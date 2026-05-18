@@ -857,7 +857,22 @@ function stopAgentGeneration() {
 
 async function _agentStreamFetch(url, headers, body, signal, onToken, onReasoning) {
     const res = await fetch(url, { method: 'POST', headers, body, signal });
-    if (!res.ok) throw new Error('API ' + res.status);
+    if (!res.ok) {
+        let errorDetail = '';
+        try {
+            errorDetail = await res.text();
+            console.error('[Agent] API错误响应:', res.status, errorDetail);
+        } catch (e) { /* ignore */ }
+        // 尝试提取简短错误信息
+        let shortMsg = '';
+        try {
+            const errObj = JSON.parse(errorDetail);
+            shortMsg = errObj.error?.message || errObj.message || errObj.error || '';
+        } catch (e) {
+            shortMsg = errorDetail.substring(0, 200);
+        }
+        throw new Error('API ' + res.status + (shortMsg ? ': ' + shortMsg : ''));
+    }
     if (!res.body) throw new Error('浏览器不支持流式读取');
 
     const reader = res.body.getReader();
@@ -927,20 +942,32 @@ async function agentStreamCall(systemPrompt, historyMessages, userMessage, signa
         } else {
             const cfg = apiSettings.tavern || {};
             const ct = cfg.connectionType || 'direct';
+            let tavernModel;
             if (ct === 'reverse-proxy') {
                 if (!cfg.proxyUrl || !cfg.proxyPassword) throw new Error('missing');
+                tavernModel = cfg.proxyModel || cfg.model || '';
             } else {
                 if (!cfg.apiKey || !cfg.endpoint) throw new Error('missing');
+                tavernModel = cfg.model || '';
             }
             const auth = ct === 'reverse-proxy' ? cfg.proxyPassword : cfg.apiKey;
             let base = ct === 'reverse-proxy' ? cfg.proxyUrl : cfg.endpoint;
             if (!base.startsWith('http')) base = 'https://' + base;
             base = base.replace(/\/+$/, '');
-            url = base + (base.endsWith('/v1') ? '/chat/completions' : '/v1/chat/completions');
-            headers = { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + auth };
-            bodyObj = { model: cfg.model || '', messages, max_tokens: 8192, stream: true };
+            // 构建URL：避免重复添加 /v1/chat/completions
+            if (base.includes('/chat/completions')) {
+                url = base;
+            } else if (base.endsWith('/v1')) {
+                url = base + '/chat/completions';
+            } else {
+                url = base + '/v1/chat/completions';
+            }
+            headers = { 'Content-Type': 'application/json' };
+            if (auth) headers['Authorization'] = 'Bearer ' + auth;
+            bodyObj = { model: tavernModel, messages, max_tokens: 8192, stream: true };
         }
 
+        console.log('[Agent] 请求URL:', url, '| 模型:', bodyObj.model, '| 消息数:', messages.length);
         await _agentStreamFetch(url, headers, JSON.stringify(bodyObj), signal, onToken, onReasoning);
         return;
     }
