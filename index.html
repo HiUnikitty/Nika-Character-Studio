@@ -1105,6 +1105,10 @@
       z-index: 998;
       display: none;
       flex-direction: column;
+      box-sizing: border-box;
+      /* iOS safe-area: push content below notch / above home indicator */
+      padding-top: env(safe-area-inset-top, 0px);
+      padding-bottom: env(safe-area-inset-bottom, 0px);
     }
 
     /* 只在编辑器页面显示搜索面板 */
@@ -2871,6 +2875,8 @@
     @media (max-width: 800px) {
       body {
         padding: 10px;
+        padding-top: max(10px, env(safe-area-inset-top));
+        padding-bottom: max(10px, env(safe-area-inset-bottom));
       }
 
       #library-view .header {
@@ -2982,7 +2988,6 @@
       right: 0;
       width: 400px;
       height: 100vh;
-      height: calc(100vh - env(safe-area-inset-bottom, 0px));
       background: rgba(24, 24, 28, 0.92);
       backdrop-filter: blur(15px);
       -webkit-backdrop-filter: blur(15px);
@@ -2993,9 +2998,10 @@
       z-index: 999;
       display: none;
       flex-direction: column;
+      box-sizing: border-box;
+      /* iOS safe-area: push content below notch / above home indicator */
       padding-top: env(safe-area-inset-top, 0px);
       padding-bottom: env(safe-area-inset-bottom, 0px);
-      box-sizing: border-box;
     }
 
     body:has(#editor-view[style*="display: flex"]) .agent-panel {
