@@ -3761,9 +3761,40 @@
       <p class="help-text" style="text-align: center; margin-top: -15px; margin-bottom: 20px"
         data-i18n="sort-suggestion-modal-desc">AI 将根据世界书条目的内容分析，给出排序和深度位置的建议</p>
 
+      <div id="sort-suggestion-batch-config" style="margin-bottom: 15px; padding: 12px 15px; background: rgba(0,0,0,0.2); border-radius: 8px; border: 1px solid rgba(255,255,255,0.08);">
+        <div style="display: flex; align-items: center; gap: 20px; flex-wrap: wrap; margin-bottom: 10px;">
+          <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 14px;">
+            <input type="radio" name="sort-batch-mode" value="single" checked style="width: 16px; height: 16px; accent-color: var(--primary-color);" onchange="toggleSortBatchSize()">
+            <span data-i18n="sort-batch-mode-single">一次性处理</span>
+          </label>
+          <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 14px;">
+            <input type="radio" name="sort-batch-mode" value="batch" style="width: 16px; height: 16px; accent-color: var(--primary-color);" onchange="toggleSortBatchSize()">
+            <span data-i18n="sort-batch-mode-batch">分批处理</span>
+          </label>
+          <label id="sort-batch-size-label" style="display: none; align-items: center; gap: 6px; font-size: 14px;">
+            <span data-i18n="sort-batch-size-label">每批</span>
+            <input type="number" id="sort-batch-size" value="10" min="1" max="200"
+              style="width: 65px; padding: 3px 5px; background: var(--input-bg); border: 1px solid var(--input-border); color: var(--text-color); border-radius: 4px;">
+            <span data-i18n="sort-batch-unit">条</span>
+          </label>
+        </div>
+        <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+          <label style="display: flex; align-items: center; gap: 6px; font-size: 14px;">
+            <span data-i18n="sort-default-truncate-label">每条内容最多发送</span>
+            <input type="number" id="sort-default-truncate-length" value="300" min="0"
+              style="width: 70px; padding: 3px 5px; background: var(--input-bg); border: 1px solid var(--input-border); color: var(--text-color); border-radius: 4px;">
+            <span data-i18n="sort-truncate-unit">字 (0=发送完整内容)</span>
+          </label>
+          <button type="button" id="sort-toggle-per-entry-btn" onclick="toggleSortPerEntryTruncation()"
+            style="background: transparent; color: var(--primary-color); border: 1px solid var(--primary-color); padding: 4px 12px; border-radius: 4px; font-size: 12px; cursor: pointer;"
+            data-i18n="sort-toggle-per-entry">按条目自定义...</button>
+        </div>
+        <div id="sort-per-entry-truncation" style="display: none; margin-top: 10px; padding: 10px; background: rgba(0,0,0,0.15); border-radius: 6px; max-height: 250px; overflow-y: auto;"></div>
+      </div>
+
       <div id="sort-suggestion-loading" style="display: none; text-align: center; padding: 40px;">
         <div style="font-size: 24px; margin-bottom: 15px;">⏳</div>
-        <p data-i18n="sort-suggestion-analyzing">正在分析世界书条目...</p>
+        <p id="sort-suggestion-analyzing-text" data-i18n="sort-suggestion-analyzing">正在分析世界书条目...</p>
       </div>
 
       <div id="sort-suggestion-results" style="display: none;">
@@ -5245,6 +5276,16 @@
         'sort-suggestion-analyze-btn': '🔍 开始分析',
         'sort-suggestion-apply-btn': '✅ 应用选中建议',
         'sort-suggestion-cancel-btn': '关闭',
+        'sort-batch-mode-single': '一次性处理',
+        'sort-batch-mode-batch': '分批处理',
+        'sort-batch-size-label': '每批',
+        'sort-batch-unit': '条',
+        'sort-default-truncate-label': '每条内容最多发送',
+        'sort-truncate-unit': '字 (0=发送完整内容)',
+        'sort-toggle-per-entry': '按条目自定义...',
+        'sort-toggle-per-entry-hide': '收起...',
+        'sort-per-entry-truncate-desc': '每条可单独设置发送给AI分析的内容长度：',
+        'sort-suggestion-batch-progress': '正在分析第 {current}/{total} 批...',
         'sort-suggestion-no-entries': '没有世界书条目可供分析',
         'sort-suggestion-current': '当前',
         'sort-suggestion-suggested': '建议',
@@ -5956,6 +5997,16 @@
         'sort-suggestion-analyze-btn': '🔍 Start Analysis',
         'sort-suggestion-apply-btn': '✅ Apply Selected Suggestions',
         'sort-suggestion-cancel-btn': 'Close',
+        'sort-batch-mode-single': 'Process all at once',
+        'sort-batch-mode-batch': 'Process in batches',
+        'sort-batch-size-label': 'Batch size:',
+        'sort-batch-unit': 'entries',
+        'sort-default-truncate-label': 'Max chars per entry:',
+        'sort-truncate-unit': '(0=full content)',
+        'sort-toggle-per-entry': 'Per-entry settings...',
+        'sort-toggle-per-entry-hide': 'Collapse...',
+        'sort-per-entry-truncate-desc': 'Set max content length per entry:',
+        'sort-suggestion-batch-progress': 'Analyzing batch {current}/{total}...',
         'sort-suggestion-no-entries': 'No worldbook entries to analyze',
         'sort-suggestion-current': 'Current',
         'sort-suggestion-suggested': 'Suggested',

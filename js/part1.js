@@ -4050,13 +4050,60 @@ function openSortSuggestionModal(button) {
         document.getElementById('sort-suggestion-analyze-btn').style.display = 'inline-block';
         document.getElementById('sort-suggestion-apply-btn').style.display = 'none';
         document.getElementById('sort-suggestion-list').innerHTML = '';
+        document.getElementById('sort-per-entry-truncation').style.display = 'none';
+        document.getElementById('sort-toggle-per-entry-btn').textContent = t('sort-toggle-per-entry') || '按条目自定义...';
         currentSortSuggestions = [];
+        toggleSortBatchSize();
     }
 }
 
 function closeSortSuggestionModal() {
     const modal = document.getElementById('sort-suggestion-modal');
     if (modal) modal.style.display = 'none';
+}
+
+function toggleSortBatchSize() {
+    const batchMode = document.querySelector('input[name="sort-batch-mode"]:checked');
+    const batchSizeLabel = document.getElementById('sort-batch-size-label');
+    if (batchMode && batchMode.value === 'batch') {
+        batchSizeLabel.style.display = 'inline-flex';
+    } else {
+        batchSizeLabel.style.display = 'none';
+    }
+}
+
+function toggleSortPerEntryTruncation() {
+    const container = document.getElementById('sort-per-entry-truncation');
+    if (container.style.display === 'none') {
+        populateSortPerEntryTruncation();
+        container.style.display = 'block';
+        document.getElementById('sort-toggle-per-entry-btn').textContent = t('sort-toggle-per-entry-hide') || '收起...';
+    } else {
+        container.style.display = 'none';
+        document.getElementById('sort-toggle-per-entry-btn').textContent = t('sort-toggle-per-entry') || '按条目自定义...';
+    }
+}
+
+function populateSortPerEntryTruncation() {
+    const container = document.getElementById('sort-per-entry-truncation');
+    const entries = buildWorldbookDataFromDOM();
+    if (!entries || entries.length === 0) {
+        container.innerHTML = '<div style="color:#888; font-size:13px; text-align:center; padding:10px;">' +
+            (t('sort-no-entries') || '没有条目') + '</div>';
+        return;
+    }
+    const defaultVal = document.getElementById('sort-default-truncate-length').value;
+    let html = '<div style="font-size:13px; color:#aaa; margin-bottom:8px;">' +
+        (t('sort-per-entry-truncate-desc') || '每条可单独设置发送给AI分析的内容长度：') + '</div>';
+    entries.forEach(function (entry) {
+        html += '<div style="display:flex; align-items:center; gap:8px; padding:5px 0; border-bottom:1px solid rgba(255,255,255,0.05); font-size:13px;">' +
+            '<span style="color:#888; min-width:40px;">ID:' + entry.id + '</span>' +
+            '<span style="flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:#ccc;">' + (entry.comment || '无标题') + '</span>' +
+            '<input type="number" class="per-entry-truncate" data-entry-id="' + entry.id + '" value="' + defaultVal + '" min="0" style="width:65px; padding:2px 4px; background:var(--input-bg); border:1px solid var(--input-border); color:var(--text-color); border-radius:3px; font-size:12px;">' +
+            '<span style="color:#888; font-size:11px;">字</span>' +
+            '</div>';
+    });
+    container.innerHTML = html;
 }
 
 function getPositionDisplayName(position, role, depth) {
@@ -4086,18 +4133,41 @@ async function analyzeSortSuggestions() {
     const emptyDiv = document.getElementById('sort-suggestion-empty');
     const applyBtn = document.getElementById('sort-suggestion-apply-btn');
 
+    const analyzingText = document.getElementById('sort-suggestion-analyzing-text');
+
     analyzeBtn.style.display = 'none';
     loadingDiv.style.display = 'block';
     resultsDiv.style.display = 'none';
     emptyDiv.style.display = 'none';
 
+    // 读取用户设置
+    const batchModeInput = document.querySelector('input[name="sort-batch-mode"]:checked');
+    const isBatch = batchModeInput && batchModeInput.value === 'batch';
+    const batchSize = isBatch ? parseInt(document.getElementById('sort-batch-size').value) || 10 : worldbookEntries.length;
+    const defaultTruncate = parseInt(document.getElementById('sort-default-truncate-length').value) || 300;
+
+    // 读取按条目自定义截断设置
+    const perEntryTruncate = {};
+    document.querySelectorAll('.per-entry-truncate').forEach(function (input) {
+        perEntryTruncate[input.dataset.entryId] = parseInt(input.value) || 0;
+    });
+
     try {
+        function getEntryContent(entry) {
+            if (!entry.content) return '';
+            var truncateLen = perEntryTruncate[entry.id] !== undefined ? (perEntryTruncate[entry.id] || 0) : defaultTruncate;
+            if (truncateLen <= 0) return entry.content;
+            return entry.content.length > truncateLen
+                ? entry.content.substring(0, truncateLen) + '...'
+                : entry.content;
+        }
+
         const entriesSummary = worldbookEntries.map(function (entry) {
             return {
                 id: entry.id,
                 comment: entry.comment || '无标题',
                 keys: Array.isArray(entry.keys) ? entry.keys.join(', ') : entry.keys,
-                content: entry.content ? entry.content.substring(0, 300) + (entry.content.length > 300 ? '...' : '') : '',
+                content: getEntryContent(entry),
                 currentPosition: entry.position,
                 currentRole: entry.role,
                 currentDepth: entry.depth,
@@ -4106,7 +4176,8 @@ async function analyzeSortSuggestions() {
             };
         });
 
-        const prompt = '你是一个SillyTavern世界书条目排序专家。请分析以下世界书条目，并给出排序和深度位置的建议。\n\n' +
+        // 生成prompt头部（不含条目列表，每个批次会附加自己的条目列表）
+        const promptHeader = '你是一个SillyTavern世界书条目排序专家。请分析以下世界书条目，并给出排序和深度位置的建议。\n\n' +
             '## 第一步：识别作品信息\n' +
             '请先从条目内容中推断：\n' +
             '1. 作品名称/类型（如：游戏、小说、原创等）\n' +
@@ -4155,7 +4226,6 @@ async function analyzeSortSuggestions() {
             '6. **真正的NPC（路人、功能性角色）**: position=1, priority=100-150\n' +
             '7. **技能/能力**: position=1, priority=100\n' +
             '8. **剧情/事件**: position=1, priority=100-150\n\n' +
-            '## 当前条目列表\n' + JSON.stringify(entriesSummary, null, 2) + '\n\n' +
             '## 输出要求\n' +
             '请以JSON数组格式输出建议，只输出需要调整的条目。每个建议包含：\n' +
             '- id: 条目ID\n' +
@@ -4167,28 +4237,51 @@ async function analyzeSortSuggestions() {
             '- reason: 简短的调整原因（中文）\n\n' +
             '只输出JSON数组，不要包含任何其他文字或markdown标记。如果没有需要调整的条目，输出空数组 []';
 
-        mylog(`📤 [AI排序建议] 发送分析请求...\n${prompt}`);
-        const response = await callSimpleAPI(prompt);
-        mylog('📥 [AI排序建议] 收到响应:', response);
+        // 拆分条目为批次
+        var batches = [];
+        for (var i = 0; i < entriesSummary.length; i += batchSize) {
+            batches.push(entriesSummary.slice(i, i + batchSize));
+        }
 
-        let suggestions = [];
-        try {
-            const jsonMatch = response.match(/\[[\s\S]*\]/);
-            if (jsonMatch) {
-                suggestions = JSON.parse(jsonMatch[0]);
-            } else {
-                suggestions = JSON.parse(response);
+        var allSuggestions = [];
+
+        for (var batchIdx = 0; batchIdx < batches.length; batchIdx++) {
+            var batch = batches[batchIdx];
+
+            if (isBatch) {
+                analyzingText.textContent = (t('sort-suggestion-batch-progress') || 'Analyzing batch {current}/{total}...')
+                    .replace('{current}', batchIdx + 1).replace('{total}', batches.length);
             }
-        } catch (parseError) {
-            console.error('解析AI响应失败:', parseError);
-            suggestions = [];
+
+            var batchPrompt = promptHeader + '\n\n## 当前条目列表\n' + JSON.stringify(batch, null, 2);
+
+            mylog(`📤 [AI排序建议] ` + (isBatch ? '批次' + (batchIdx + 1) + '/' + batches.length + ' ' : '') + `发送分析请求...`);
+            const response = await callSimpleAPI(batchPrompt);
+            mylog('📥 [AI排序建议] ' + (isBatch ? '批次' + (batchIdx + 1) + '/' + batches.length + ' ' : '') + '收到响应:', response);
+
+            let suggestions = [];
+            try {
+                const jsonMatch = response.match(/\[[\s\S]*\]/);
+                if (jsonMatch) {
+                    suggestions = JSON.parse(jsonMatch[0]);
+                } else {
+                    suggestions = JSON.parse(response);
+                }
+            } catch (parseError) {
+                console.error('解析AI响应失败:', parseError);
+                suggestions = [];
+            }
+
+            if (suggestions && suggestions.length > 0) {
+                allSuggestions = allSuggestions.concat(suggestions);
+            }
         }
 
         loadingDiv.style.display = 'none';
 
-        if (suggestions && suggestions.length > 0) {
-            currentSortSuggestions = suggestions;
-            renderSortSuggestions(suggestions, worldbookEntries);
+        if (allSuggestions && allSuggestions.length > 0) {
+            currentSortSuggestions = allSuggestions;
+            renderSortSuggestions(allSuggestions, worldbookEntries);
             resultsDiv.style.display = 'block';
             applyBtn.style.display = 'inline-block';
 

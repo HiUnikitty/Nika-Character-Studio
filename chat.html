@@ -3175,6 +3175,21 @@ body {
                     </div>
                 </div>
 
+                <!-- 流式渲染模式设置 -->
+                <div class="card p-4">
+                    <h3 class="font-medium mb-3" data-i18n="preferences.streamingMode">流式渲染模式</h3>
+                    <div class="space-y-2">
+                        <label class="flex items-center gap-2 cursor-pointer">
+                            <input type="radio" name="streaming-mode" id="streaming-mode-direct" value="direct" class="accent-primary-color">
+                            <span class="text-sm" data-i18n="preferences.streamingDirect">直接渲染（接受到文本就渲染）</span>
+                        </label>
+                        <label class="flex items-center gap-2 cursor-pointer">
+                            <input type="radio" name="streaming-mode" id="streaming-mode-slow" value="slow" class="accent-primary-color">
+                            <span class="text-sm" data-i18n="preferences.streamingSlow">阅读模式（逐字显示）</span>
+                        </label>
+                    </div>
+                </div>
+
                 <!-- 界面布局设置 -->
                 <div class="card p-4">
                     <h3 class="font-medium mb-3" data-i18n="preferences.layout">界面布局</h3>
@@ -3791,6 +3806,9 @@ body {
                     'preferences.behavior': '用户行为',
                     'preferences.autoLangInstruction': '自动发送语言要求',
                     'preferences.showTyping': '显示打字状态',
+                    'preferences.streamingMode': '流式渲染模式',
+                    'preferences.streamingDirect': '直接渲染（接受到文本就渲染）',
+                    'preferences.streamingSlow': '阅读模式（逐字显示）',
                     'preferences.layout': '界面布局',
                     'preferences.chatWidth': '聊天框宽度',
                     'preferences.fontSize': '字体大小',
@@ -4219,6 +4237,9 @@ body {
                     'preferences.behavior': 'User Behavior',
                     'preferences.autoLangInstruction': 'Auto-send language instruction',
                     'preferences.showTyping': 'Show typing indicator',
+                    'preferences.streamingMode': 'Streaming Render Mode',
+                    'preferences.streamingDirect': 'Direct Render (Render text immediately)',
+                    'preferences.streamingSlow': 'Reading Mode (Typewriter effect)',
                     'preferences.layout': 'Interface Layout',
                     'preferences.chatWidth': 'Chat Width',
                     'preferences.fontSize': 'Font Size',
@@ -5477,7 +5498,8 @@ body {
                         showApiResult(`✅ 测试成功！模型 [${model}] 回复: "${reply}"`, 'success', 'api-test-result');
                     } else {
                         const err = await response.json().catch(() => ({}));
-                        throw new Error(`HTTP ${response.status}: ${err.error?.message || response.statusText}`);
+                        const errMsg = err.error?.message || err.message || err.error || response.statusText;
+                        throw new Error(`HTTP ${response.status}: ${errMsg}`);
                     }
                 } catch (e) {
                     showApiResult(`❌ 测试失败: ${e.message}`, 'error', 'api-test-result');
@@ -8001,6 +8023,7 @@ body {
 
             // 懒加载相关变量
             let lazyLoadEnabled = true; // 懒加载开关
+            let streamingRenderMode = 'direct'; // 流式渲染模式: 'direct' 直接渲染, 'slow' 慢速阅读
             let INITIAL_RENDER_COUNT = 50; // 初始渲染消息数量（默认50条，即25对）
             const LOAD_MORE_COUNT = 30; // 每次加载更多的数量
             let renderedStartIndex = 0; // 当前已渲染的起始索引（在chatHistory中的位置）
@@ -10777,7 +10800,7 @@ body {
 
                     // 获取当前预设参数
                     const currentPreset = document.querySelector('.preset-item.active')?.dataset.name;
-                    const presets = getPresets();
+                    const presets = await getPresets();
                     const preset = presets[currentPreset] || presets['Default'];
 
                     let body = {
@@ -10886,7 +10909,8 @@ body {
 
                         if (!response.ok) {
                             const err = await response.json();
-                            throw new Error(err.error?.message || `HTTP Error ${response.status}`);
+                            const errMsg = err.error?.message || err.message || err.error || JSON.stringify(err);
+                            throw new Error(`${errMsg} (HTTP ${response.status})`);
                         }
 
                         // 创建AI消息并获取其ID
@@ -10974,17 +10998,23 @@ body {
                                             const json = JSON.parse(data);
                                             const delta = json.choices?.[0]?.delta?.content;
                                             if (delta) {
-                                                // 模拟 SillyTavern 的逐字队列和平滑滑动延迟
-                                                for (let i = 0; i < delta.length; i++) {
-                                                    const char = delta[i];
-                                                    fullContent += char;
+                                                if (streamingRenderMode === 'direct') {
+                                                    // 直接渲染模式：整段追加并更新，无延迟
+                                                    fullContent += delta;
                                                     scheduleUpdate();
-                                                    
-                                                    // 应用打字机停顿
-                                                    if (document.hasFocus()) {
-                                                        const waitTime = getDelay(char);
-                                                        if (waitTime > 0) {
-                                                            await delayFn(waitTime);
+                                                } else {
+                                                    // 阅读模式：逐字显示并应用打字机停顿
+                                                    for (let i = 0; i < delta.length; i++) {
+                                                        const char = delta[i];
+                                                        fullContent += char;
+                                                        scheduleUpdate();
+
+                                                        // 应用打字机停顿
+                                                        if (document.hasFocus()) {
+                                                            const waitTime = getDelay(char);
+                                                            if (waitTime > 0) {
+                                                                await delayFn(waitTime);
+                                                            }
                                                         }
                                                     }
                                                 }
@@ -11038,7 +11068,8 @@ body {
 
                         if (!response.ok) {
                             const err = await response.json();
-                            throw new Error(err.error?.message || `HTTP Error ${response.status}`);
+                            const errMsg = err.error?.message || err.message || err.error || JSON.stringify(err);
+                            throw new Error(`${errMsg} (HTTP ${response.status})`);
                         }
 
                         const data = await response.json();
@@ -12183,6 +12214,9 @@ You must structure your entire output strictly in the following format, without 
                     // Load lazy load settings on page load
                     await this.loadLazyLoadSettings();
 
+                    // Load streaming render mode on page load
+                    await this.loadStreamingRenderMode();
+
                     // Load developer mode settings
                     await devLogs.load();
                 },
@@ -12245,6 +12279,19 @@ You must structure your entire output strictly in the following format, without 
                     document.getElementById('dev-show-prompts').checked = devLogs.showPrompts;
                     document.getElementById('dev-show-worldbook-logs').checked = devLogs.showWorldbookLogs;
                     document.getElementById('dev-show-other-logs').checked = devLogs.showOtherLogs;
+
+                    // Load streaming render mode
+                    const savedMode = await idbStorage.getItem('streaming_render_mode') || 'direct';
+                    streamingRenderMode = savedMode;
+                    const directRadio = document.getElementById('streaming-mode-direct');
+                    const slowRadio = document.getElementById('streaming-mode-slow');
+                    if (directRadio && slowRadio) {
+                        if (savedMode === 'slow') {
+                            slowRadio.checked = true;
+                        } else {
+                            directRadio.checked = true;
+                        }
+                    }
                 },
 
                 async savePreferences() {
@@ -12300,6 +12347,15 @@ You must structure your entire output strictly in the following format, without 
                     devLogs.showOtherLogs = document.getElementById('dev-show-other-logs').checked;
                     await devLogs.save();
 
+                    // Save streaming render mode
+                    const directRadio = document.getElementById('streaming-mode-direct');
+                    const slowRadio = document.getElementById('streaming-mode-slow');
+                    if (directRadio && slowRadio) {
+                        const mode = slowRadio.checked ? 'slow' : 'direct';
+                        await idbStorage.setItem('streaming_render_mode', mode);
+                        streamingRenderMode = mode;
+                    }
+
                     userManagement.saveUsers();
                     alert('偏好设置已保存！');
                 },
@@ -12312,6 +12368,11 @@ You must structure your entire output strictly in the following format, without 
                 async loadFontSize() {
                     const fontSize = await idbStorage.getItem('font_size') || '100';
                     this.applyFontSize(fontSize);
+                },
+
+                async loadStreamingRenderMode() {
+                    const mode = await idbStorage.getItem('streaming_render_mode') || 'direct';
+                    streamingRenderMode = mode;
                 },
 
                 async loadLazyLoadSettings() {
