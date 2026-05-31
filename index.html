@@ -10,6 +10,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <title>妮卡角色工作室Pro</title>
   <script src="https://unpkg.com/pako@2.1.0/dist/pako.min.js"></script>
+  <script src="https://unpkg.com/marked@12.0.2/marked.min.js"></script>
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-7PYFG35VCZ"></script>
   <script>
     window.dataLayer = window.dataLayer || [];
@@ -3067,6 +3068,45 @@
       font-size: 13px;
       line-height: 1.55;
       word-break: break-word;
+    }
+
+    /* Markdown 元素样式适配 */
+    .agent-msg p {
+      margin: 8px 0;
+    }
+    .agent-msg p:first-child {
+      margin-top: 0;
+    }
+    .agent-msg p:last-child {
+      margin-bottom: 0;
+    }
+    .agent-msg ul, .agent-msg ol {
+      margin: 8px 0;
+      padding-left: 24px;
+    }
+    .agent-msg li {
+      margin-bottom: 4px;
+    }
+    .agent-msg h1, .agent-msg h2, .agent-msg h3, .agent-msg h4 {
+      margin: 12px 0 8px 0;
+      font-weight: bold;
+      line-height: 1.3;
+    }
+    .agent-msg h1 { font-size: 1.3em; }
+    .agent-msg h2 { font-size: 1.2em; }
+    .agent-msg h3, .agent-msg h4 { font-size: 1.1em; }
+    .agent-msg table {
+      border-collapse: collapse;
+      width: 100%;
+      margin: 8px 0;
+    }
+    .agent-msg th, .agent-msg td {
+      border: 1px solid #444;
+      padding: 6px 10px;
+      text-align: left;
+    }
+    .agent-msg th {
+      background: #333;
     }
 
     .agent-msg-user {
