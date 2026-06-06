@@ -2207,6 +2207,36 @@ function updateRecommendedThresholdDisplay(contextWin) {
     }
 }
 
+// 递归将可能的对象或数组值转换为字符串，防止产生 [object Object]
+function convertWorldbookValueToString(val, depth = 0) {
+    if (val === null || val === undefined) {
+        return '';
+    }
+    if (typeof val === 'string') {
+        return val;
+    }
+    if (typeof val !== 'object') {
+        return String(val);
+    }
+    if (Array.isArray(val)) {
+        return val.map(item => {
+            if (typeof item === 'object' && item !== null) {
+                return convertWorldbookValueToString(item, depth + 1);
+            }
+            return String(item);
+        }).join('\n');
+    }
+    return Object.keys(val).map(key => {
+        const subVal = val[key];
+        const indent = '  '.repeat(depth);
+        if (typeof subVal === 'object' && subVal !== null) {
+            const nestedStr = convertWorldbookValueToString(subVal, depth + 1);
+            return `${indent}**${key}**:\n${nestedStr}`;
+        }
+        return `${indent}**${key}**: ${subVal}`;
+    }).join('\n');
+}
+
 // 标准化世界书条目字段（将content转为内容）
 function normalizeWorldbookEntry(entry) {
     if (!entry || typeof entry !== 'object' || Array.isArray(entry)) return entry;
@@ -2223,6 +2253,27 @@ function normalizeWorldbookEntry(entry) {
         // 只有 content，转为 内容
         entry['内容'] = entry.content;
         delete entry.content;
+    }
+
+    // 确保内容字段转换为字符串，避免 object 嵌套导致 [object Object]
+    if (entry['内容'] !== undefined) {
+        entry['内容'] = convertWorldbookValueToString(entry['内容']);
+    }
+
+    // 确保关键词字段标准化为字符串数组
+    if (entry['关键词'] !== undefined) {
+        if (Array.isArray(entry['关键词'])) {
+            entry['关键词'] = entry['关键词'].map(k => typeof k === 'object' ? convertWorldbookValueToString(k) : String(k));
+        } else if (typeof entry['关键词'] === 'string') {
+            entry['关键词'] = entry['关键词'].split(/[,，、\s]+/).map(k => k.trim()).filter(Boolean);
+        } else {
+            entry['关键词'] = [convertWorldbookValueToString(entry['关键词'])];
+        }
+    }
+
+    // 确保备注/注释字段是字符串
+    if (entry.comment !== undefined) {
+        entry.comment = convertWorldbookValueToString(entry.comment);
     }
 
     return entry;
