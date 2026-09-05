@@ -125,61 +125,109 @@ function buildAgentContext() {
     const card = buildCardObject ? buildCardObject() : {};
     const parts = [];
 
-    parts.push(`## 当前角色卡\n名称: ${card.name || '(未命名)'} | 性别: ${card.gender || '未设'} | 版本: ${card.character_version || '1.0'}`);
-    if (card.tags && card.tags.length) parts.push(`标签: ${card.tags.join(', ')}`);
+    const isDual = typeof window.DualPane !== 'undefined' && window.DualPane.isActive && window.DualPane.isActive();
+    const secCard = isDual && typeof window.DualPane.getSecondaryCardObject === 'function' ? window.DualPane.getSecondaryCardObject() : null;
 
-    // 描述前300字
-    if (card.description) {
-        parts.push(`\n### 描述 (前300字)\n${truncateText(card.description, 300)}`);
-    }
-    // 个性前200字
-    if (card.personality) {
-        parts.push(`\n### 个性 (前200字)\n${truncateText(card.personality, 200)}`);
-    }
-    // 系统提示词前300字
-    if (card.system_prompt) {
-        parts.push(`\n### 系统提示词 (前300字)\n${truncateText(card.system_prompt, 300)}`);
-    }
-    // 额外要求前200字
-    if (card.post_history_instructions) {
-        parts.push(`\n### 额外要求 (前200字)\n${truncateText(card.post_history_instructions, 200)}`);
-    }
+    if (isDual && secCard) {
+        parts.push(`## 当前处于【左右双卡对比模式】`);
+        parts.push(`用户在编辑页左右两栏双开角色卡。左栏为主角色卡，右栏为副角色卡。你可以同时参考两张角色卡的内容，对比它们之间的差异，或者协助用户将副卡的优质设定融合转移到主卡。`);
 
-    // 世界书条目清单（只列名称和触发词）
-    const wb = card.worldbook || [];
-    if (wb.length > 0) {
-        parts.push(`\n### 世界书条目 (${wb.length}条) — 用 /peek worldbook <名称或索引> 查看全文`);
-        wb.forEach((entry, i) => {
-            const keys = (entry.keys || []).join(', ');
-            parts.push(`  [${i}] ${entry.comment || '(未命名)'} | 触发: ${keys || '(无)'}`);
-        });
-    }
+        // 主卡概览
+        parts.push(`\n### 【主角色卡 (左栏)】\n名称: ${card.name || '(未命名)'} | 性别: ${card.gender || '未设'} | 版本: ${card.character_version || '1.0'}`);
+        if (card.tags && card.tags.length) parts.push(`主卡标签: ${card.tags.join(', ')}`);
+        if (card.description) parts.push(`主卡描述 (前250字):\n${truncateText(card.description, 250)}`);
+        if (card.personality) parts.push(`主卡个性 (前150字):\n${truncateText(card.personality, 150)}`);
+        if (card.system_prompt) parts.push(`主卡系统提示词 (前200字):\n${truncateText(card.system_prompt, 200)}`);
+        if (card.first_mes) parts.push(`主卡开场白 (前150字):\n${truncateText(card.first_mes, 150)}`);
+        const wb = card.worldbook || [];
+        if (wb.length > 0) {
+            parts.push(`主卡世界书 (${wb.length}条): ` + wb.slice(0, 8).map((e, i) => `[${i}] ${e.comment || '条目'}`).join(', ') + (wb.length > 8 ? ' 等...' : ''));
+        }
+        const regex = card.regex_scripts || [];
+        if (regex.length > 0) {
+            parts.push(`主卡正则脚本 (${regex.length}个): ` + regex.map(s => s.scriptName || '脚本').join(', '));
+        }
+        const tasks = card.xiaobaix_tasks || [];
+        if (tasks.length > 0) {
+            parts.push(`主卡小白X任务 (${tasks.length}个): ` + tasks.map(t => t.name || '任务').join(', '));
+        }
 
-    // 正则脚本清单
-    const regex = card.regex_scripts || [];
-    if (regex.length > 0) {
-        parts.push(`\n### 正则脚本 (${regex.length}个) — 用 /peek regex <名称或索引> 查看完整内容`);
-        regex.forEach((s, i) => {
-            parts.push(`  [${i}] ${s.scriptName || '(未命名)'} | 匹配: ${truncateText(s.findRegex || '', 60)}`);
-        });
-    }
+        // 副卡概览
+        parts.push(`\n### 【副角色卡 (右栏)】\n名称: ${secCard.name || '(未命名)'} | 性别: ${secCard.gender || '未设'} | 版本: ${secCard.character_version || '1.0'}`);
+        if (secCard.tags && secCard.tags.length) parts.push(`副卡标签: ${secCard.tags.join(', ')}`);
+        if (secCard.description) parts.push(`副卡描述 (前250字):\n${truncateText(secCard.description, 250)}`);
+        if (secCard.personality) parts.push(`副卡个性 (前150字):\n${truncateText(secCard.personality, 150)}`);
+        if (secCard.system_prompt) parts.push(`副卡系统提示词 (前200字):\n${truncateText(secCard.system_prompt, 200)}`);
+        if (secCard.first_mes) parts.push(`副卡开场白 (前150字):\n${truncateText(secCard.first_mes, 150)}`);
+        const secWb = secCard.worldbook || [];
+        if (secWb.length > 0) {
+            parts.push(`副卡世界书 (${secWb.length}条): ` + secWb.slice(0, 8).map((e, i) => `[${i}] ${e.comment || '条目'}`).join(', ') + (secWb.length > 8 ? ' 等...' : ''));
+        }
+        const secRegex = secCard.regex_scripts || [];
+        if (secRegex.length > 0) {
+            parts.push(`副卡正则脚本 (${secRegex.length}个): ` + secRegex.map(s => s.scriptName || '脚本').join(', '));
+        }
+        const secTasks = secCard.xiaobaix_tasks || [];
+        if (secTasks.length > 0) {
+            parts.push(`副卡小白X任务 (${secTasks.length}个): ` + secTasks.map(t => t.name || '任务').join(', '));
+        }
+    } else {
+        parts.push(`## 当前角色卡\n名称: ${card.name || '(未命名)'} | 性别: ${card.gender || '未设'} | 版本: ${card.character_version || '1.0'}`);
+        if (card.tags && card.tags.length) parts.push(`标签: ${card.tags.join(', ')}`);
 
-    // 小白X任务清单
-    const tasks = card.xiaobaix_tasks || [];
-    if (tasks.length > 0) {
-        parts.push(`\n### 小白X任务 (${tasks.length}个) — 用 /peek task <名称或索引> 查看完整代码`);
-        tasks.forEach((t, i) => {
-            parts.push(`  [${i}] ${t.name || '(未命名)'} | 触发: ${t.triggerTiming || '?'} | 间隔: ${t.interval || 0}s`);
-        });
-    }
+        // 描述前300字
+        if (card.description) {
+            parts.push(`\n### 描述 (前300字)\n${truncateText(card.description, 300)}`);
+        }
+        // 个性前200字
+        if (card.personality) {
+            parts.push(`\n### 个性 (前200字)\n${truncateText(card.personality, 200)}`);
+        }
+        // 系统提示词前300字
+        if (card.system_prompt) {
+            parts.push(`\n### 系统提示词 (前300字)\n${truncateText(card.system_prompt, 300)}`);
+        }
+        // 额外要求前200字
+        if (card.post_history_instructions) {
+            parts.push(`\n### 额外要求 (前200字)\n${truncateText(card.post_history_instructions, 200)}`);
+        }
 
-    // 问候语清单 (不暴露内容)
-    const greetings = card.alternate_greetings || [];
-    if (card.first_mes) {
-        parts.push(`\n### 开场白 — 用 /peek greeting 0 查看`);
-    }
-    if (greetings.length > 0) {
-        parts.push(`备用问候语 ${greetings.length}条 — 用 /peek greeting <索引> 查看`);
+        // 世界书条目清单（只列名称和触发词）
+        const wb = card.worldbook || [];
+        if (wb.length > 0) {
+            parts.push(`\n### 世界书条目 (${wb.length}条) — 用 /peek worldbook <名称或索引> 查看全文`);
+            wb.forEach((entry, i) => {
+                const keys = (entry.keys || []).join(', ');
+                parts.push(`  [${i}] ${entry.comment || '(未命名)'} | 触发: ${keys || '(无)'}`);
+            });
+        }
+
+        // 正则脚本清单
+        const regex = card.regex_scripts || [];
+        if (regex.length > 0) {
+            parts.push(`\n### 正则脚本 (${regex.length}个) — 用 /peek regex <名称或索引> 查看完整内容`);
+            regex.forEach((s, i) => {
+                parts.push(`  [${i}] ${s.scriptName || '(未命名)'} | 匹配: ${truncateText(s.findRegex || '', 60)}`);
+            });
+        }
+
+        // 小白X任务清单
+        const tasks = card.xiaobaix_tasks || [];
+        if (tasks.length > 0) {
+            parts.push(`\n### 小白X任务 (${tasks.length}个) — 用 /peek task <名称或索引> 查看完整代码`);
+            tasks.forEach((t, i) => {
+                parts.push(`  [${i}] ${t.name || '(未命名)'} | 触发: ${t.triggerTiming || '?'} | 间隔: ${t.interval || 0}s`);
+            });
+        }
+
+        // 问候语清单 (不暴露内容)
+        const greetings = card.alternate_greetings || [];
+        if (card.first_mes) {
+            parts.push(`\n### 开场白 — 用 /peek greeting 0 查看`);
+        }
+        if (greetings.length > 0) {
+            parts.push(`备用问候语 ${greetings.length}条 — 用 /peek greeting <索引> 查看`);
+        }
     }
 
     // 可用命令清单
@@ -187,14 +235,14 @@ function buildAgentContext() {
 ## 可用命令
 | 命令 | 作用 |
 |------|------|
-| \`/peek field <字段名>\` | 查看指定字段完整内容 (description/personality/system_prompt/scenario/first_mes/post_history_instructions/mes_example/creator_notes) |
-| \`/peek worldbook <名称或索引>\` | 查看世界书条目全文 |
-| \`/peek regex <名称或索引>\` | 查看正则脚本完整内容 |
-| \`/peek task <名称或索引>\` | 查看小白X任务完整代码 |
-| \`/peek greeting <索引>\` | 查看指定问候语 |
+| \`/peek [left|right] field <字段名>\` | 查看主卡或副卡指定字段完整内容 (description/personality/system_prompt/scenario/first_mes/post_history_instructions/mes_example/creator_notes/depth_prompt) |
+| \`/peek [left|right] worldbook <名称或索引>\` | 查看指定卡片世界书条目全文 |
+| \`/peek [left|right] regex <名称或索引>\` | 查看指定卡片正则脚本完整内容 |
+| \`/peek [left|right] task <名称或索引>\` | 查看指定卡片小白X任务完整代码 |
+| \`/peek [left|right] greeting <索引>\` | 查看指定问候语 |
+| \`/diff\` | 快速生成左右两卡核心设定与世界书对比表格 |
 | \`/list all\` | 列出所有字段及其长度概览 |
 | \`/list worldbook\` | 列出世界书条目名称 |
-| \`/list fields\` | 列出所有顶层字段 |
 
 修改角色卡请输出 \`\`\`json:patch 代码块，格式如下：
 \`\`\`json:patch
@@ -216,20 +264,37 @@ function buildAgentContext() {
 }
 
 // ============================================================
-// Agent Peek 命令实现
+// Agent Peek 命令实现 (支持主副卡切换)
 // ============================================================
 
 function agentPeek(args) {
-    const card = buildCardObject ? buildCardObject() : {};
-    const arg = args.trim();
+    let side = 'left';
+    let arg = args.trim();
+    if (arg.startsWith('left ') || arg.startsWith('prim ')) {
+        side = 'left';
+        arg = arg.replace(/^(left|prim)\s+/, '').trim();
+    } else if (arg.startsWith('right ') || arg.startsWith('sec ')) {
+        side = 'right';
+        arg = arg.replace(/^(right|sec)\s+/, '').trim();
+    }
+
+    const isDual = typeof window.DualPane !== 'undefined' && window.DualPane.isActive && window.DualPane.isActive();
+    const card = (side === 'right' && isDual && typeof window.DualPane.getSecondaryCardObject === 'function')
+        ? window.DualPane.getSecondaryCardObject()
+        : (buildCardObject ? buildCardObject() : {});
+    const prefix = isDual ? (side === 'right' ? '【副卡】' : '【主卡】') : '';
 
     // /peek field <name>
     if (arg.startsWith('field ')) {
         const fieldName = arg.slice(6).trim();
+        if (fieldName === 'depth_prompt' || fieldName === 'character_note') {
+            const dp = card.depth_prompt || { prompt: '', depth: 4, role: 'system' };
+            return `${prefix} **Character's Note (depth_prompt)** (深度: ${dp.depth}, 角色: ${dp.role}, ${dp.prompt.length}字):\n\`\`\`\n${dp.prompt}\n\`\`\``;
+        }
         const value = card[fieldName];
-        if (value === undefined) return `❌ 字段 "${fieldName}" 不存在。可用 /list fields 查看所有字段。`;
+        if (value === undefined) return `❌ ${prefix}字段 "${fieldName}" 不存在。可用 /list fields 查看所有字段。`;
         const preview = String(value).substring(0, 2000);
-        return `**${fieldName}** (${String(value).length}字):\n\`\`\`\n${preview}\n\`\`\`${String(value).length > 2000 ? '\n...(截断，已显示前2000字)' : ''}`;
+        return `${prefix} **${fieldName}** (${String(value).length}字):\n\`\`\`\n${preview}\n\`\`\`${String(value).length > 2000 ? '\n...(截断，已显示前2000字)' : ''}`;
     }
 
     // /peek worldbook <name or index>
@@ -242,9 +307,9 @@ function agentPeek(args) {
         } else {
             entry = wb.find(e => (e.comment || '').includes(query) || (e.keys || []).some(k => k.includes(query)));
         }
-        if (!entry) return `❌ 未找到世界书条目 "${query}"。用 /list worldbook 查看所有条目。`;
+        if (!entry) return `❌ ${prefix}未找到世界书条目 "${query}"。用 /list worldbook 查看所有条目。`;
         const displayIndex = wb.indexOf(entry);
-        return `**世界书 [${displayIndex}] ${entry.comment || '(未命名)'}**\n触发词: ${(entry.keys || []).join(', ')}\n\`\`\`\n${entry.content || '(空)'}\n\`\`\``;
+        return `${prefix} **世界书 [${displayIndex}] ${entry.comment || '(未命名)'}**\n触发词: ${(entry.keys || []).join(', ')}\n\`\`\`\n${entry.content || '(空)'}\n\`\`\``;
     }
 
     // /peek regex <name or index>
@@ -257,9 +322,9 @@ function agentPeek(args) {
         } else {
             script = regex.find(s => (s.scriptName || '').includes(query) || (s.findRegex || '').includes(query));
         }
-        if (!script) return `❌ 未找到正则脚本 "${query}"。`;
+        if (!script) return `❌ ${prefix}未找到正则脚本 "${query}"。`;
         const idx = regex.indexOf(script);
-        return `**正则 [${idx}] ${script.scriptName || '(未命名)'}**\n匹配: \`${script.findRegex || ''}\`\n替换: \n\`\`\`\n${script.replaceString || ''}\n\`\`\``;
+        return `${prefix} **正则 [${idx}] ${script.scriptName || '(未命名)'}**\n匹配: \`${script.findRegex || ''}\`\n替换: \n\`\`\`\n${script.replaceString || ''}\n\`\`\``;
     }
 
     // /peek task <name or index>
@@ -272,48 +337,92 @@ function agentPeek(args) {
         } else {
             task = tasks.find(t => (t.name || '').includes(query));
         }
-        if (!task) return `❌ 未找到任务 "${query}"。`;
+        if (!task) return `❌ ${prefix}未找到任务 "${query}"。`;
         const idx = tasks.indexOf(task);
-        return `**任务 [${idx}] ${task.name || '(未命名)'}**\n触发: ${task.triggerTiming || '?'} | 间隔: ${task.interval || 0}s\n\`\`\`\n${task.commands || ''}\n\`\`\``;
+        return `${prefix} **任务 [${idx}] ${task.name || '(未命名)'}**\n触发: ${task.triggerTiming || '?'} | 间隔: ${task.interval || 0}s\n\`\`\`\n${task.commands || ''}\n\`\`\``;
     }
 
     // /peek greeting <index>
     if (arg.startsWith('greeting ')) {
         const query = arg.slice(9).trim();
         if (query === '0' && card.first_mes) {
-            return `**开场白 (first_mes)** (${card.first_mes.length}字):\n\`\`\`\n${card.first_mes}\n\`\`\``;
+            return `${prefix} **开场白 (first_mes)** (${card.first_mes.length}字):\n\`\`\`\n${card.first_mes}\n\`\`\``;
         }
         const idx = parseInt(query);
         const greetings = card.alternate_greetings || [];
-        if (isNaN(idx) || idx >= greetings.length) return `❌ 问候语索引 ${query} 无效。共 ${greetings.length}条备用问候语，开场白索引为0。`;
+        if (isNaN(idx) || idx >= greetings.length) return `❌ ${prefix}问候语索引 ${query} 无效。共 ${greetings.length}条备用问候语，开场白索引为0。`;
         const g = greetings[idx];
-        return `**备用问候语 [${idx}]** (${g.length}字):\n\`\`\`\n${g}\n\`\`\``;
+        return `${prefix} **备用问候语 [${idx}]** (${g.length}字):\n\`\`\`\n${g}\n\`\`\``;
     }
 
-    return '用法: /peek field <字段名> | /peek worldbook <名称/索引> | /peek regex <名称/索引> | /peek task <名称/索引> | /peek greeting <索引>';
+    return '用法: /peek [left|right] field <字段名> | /peek [left|right] worldbook <名称/索引> | /peek [left|right] regex <名称/索引> | /peek [left|right] task <名称/索引> | /peek [left|right] greeting <索引>';
 }
 
 function agentList(args) {
-    const card = buildCardObject ? buildCardObject() : {};
+    let side = 'left';
+    let raw = args.trim();
+    if (raw.startsWith('left ') || raw.startsWith('prim ')) {
+        side = 'left';
+        raw = raw.replace(/^(left|prim)\s+/, '').trim();
+    } else if (raw.startsWith('right ') || raw.startsWith('sec ')) {
+        side = 'right';
+        raw = raw.replace(/^(right|sec)\s+/, '').trim();
+    }
 
-    if (args.trim() === 'all' || args.trim() === 'fields') {
+    const isDual = typeof window.DualPane !== 'undefined' && window.DualPane.isActive && window.DualPane.isActive();
+    const card = (side === 'right' && isDual && typeof window.DualPane.getSecondaryCardObject === 'function')
+        ? window.DualPane.getSecondaryCardObject()
+        : (buildCardObject ? buildCardObject() : {});
+    const prefix = isDual ? (side === 'right' ? '【副卡】' : '【主卡】') : '';
+
+    if (raw === 'all' || raw === 'fields') {
         const fieldNames = ['name', 'gender', 'description', 'personality', 'system_prompt', 'scenario',
-            'first_mes', 'mes_example', 'post_history_instructions', 'creator_notes', 'character_version', 'tags'];
+            'first_mes', 'mes_example', 'post_history_instructions', 'creator_notes', 'character_version', 'tags', 'depth_prompt'];
         const lines = fieldNames.map(f => {
+            if (f === 'depth_prompt') {
+                const dp = card.depth_prompt;
+                const len = (dp && dp.prompt) ? `${dp.prompt.length}字 (@深度${dp.depth} ${dp.role})` : '空';
+                return `  depth_prompt: ${len}`;
+            }
             const val = card[f];
             const len = val ? (Array.isArray(val) ? val.length + '项' : String(val).length + '字') : '空';
             return `  ${f}: ${len}`;
         });
-        return `**所有字段概览:**\n${lines.join('\n')}`;
+        return `${prefix} **所有字段概览:**\n${lines.join('\n')}`;
     }
 
-    if (args.trim() === 'worldbook') {
+    if (raw === 'worldbook') {
         const wb = card.worldbook || [];
-        if (wb.length === 0) return '世界书为空。';
+        if (wb.length === 0) return `${prefix}世界书为空。`;
         return wb.map((e, i) => `  [${i}] ${e.comment || '(未命名)'} | 触发: ${(e.keys || []).join(', ') || '(无)'} | 内容${(e.content || '').length}字`).join('\n');
     }
 
-    return '用法: /list all | /list fields | /list worldbook';
+    return '用法: /list [left|right] all | /list [left|right] fields | /list [left|right] worldbook';
+}
+
+function agentDiff() {
+    const isDual = typeof window.DualPane !== 'undefined' && window.DualPane.isActive && window.DualPane.isActive();
+    if (!isDual) {
+        return 'ℹ️ 当前未开启双开对比模式。请先点击编辑页顶部的 "🪟 双开对比" 按钮开启副卡对比。';
+    }
+    const primCard = typeof buildCardObject === 'function' ? buildCardObject() : {};
+    const secCard = typeof window.DualPane.getSecondaryCardObject === 'function' ? window.DualPane.getSecondaryCardObject() : {};
+
+    const diffLines = [
+        '### ⚖️ 主次角色卡核心差异对比',
+        '| 项目 | 主卡 (左栏) | 副卡 (右栏) | 状态 |',
+        '|:---|:---|:---|:---|',
+        `| **名称** | ${primCard.name || '(空)'} | ${secCard.name || '(空)'} | ${primCard.name === secCard.name ? '✅ 相同' : '⚠️ 不同'} |`,
+        `| **版本** | ${primCard.character_version || '1.0'} | ${secCard.character_version || '1.0'} | ${primCard.character_version === secCard.character_version ? '✅ 相同' : '⚠️ 不同'} |`,
+        `| **性别** | ${primCard.gender || '(空)'} | ${secCard.gender || '(空)'} | ${primCard.gender === secCard.gender ? '✅ 相同' : '⚠️ 不同'} |`,
+        `| **描述** | ${(primCard.description || '').length}字 | ${(secCard.description || '').length}字 | 长度差 ${Math.abs((primCard.description || '').length - (secCard.description || '').length)}字 |`,
+        `| **性格** | ${(primCard.personality || '').length}字 | ${(secCard.personality || '').length}字 | 长度差 ${Math.abs((primCard.personality || '').length - (secCard.personality || '').length)}字 |`,
+        `| **系统提示词** | ${(primCard.system_prompt || '').length}字 | ${(secCard.system_prompt || '').length}字 | 长度差 ${Math.abs((primCard.system_prompt || '').length - (secCard.system_prompt || '').length)}字 |`,
+        `| **世界书条目** | ${(primCard.worldbook || []).length}条 | ${(secCard.worldbook || []).length}条 | 条目差 ${Math.abs((primCard.worldbook || []).length - (secCard.worldbook || []).length)}条 |`,
+        `| **正则脚本** | ${(primCard.regex_scripts || []).length}个 | ${(secCard.regex_scripts || []).length}个 | 数量差 ${Math.abs((primCard.regex_scripts || []).length - (secCard.regex_scripts || []).length)}个 |`,
+        `| **小白X任务** | ${(primCard.xiaobaix_tasks || []).length}个 | ${(secCard.xiaobaix_tasks || []).length}个 | 数量差 ${Math.abs((primCard.xiaobaix_tasks || []).length - (secCard.xiaobaix_tasks || []).length)}个 |`
+    ];
+    return diffLines.join('\n');
 }
 
 // ============================================================
@@ -384,6 +493,54 @@ function agentApplyPatch(jsonStr) {
                 } else if (key === 'gender' && document.getElementById('gender')) {
                     document.getElementById('gender').value = value;
                     results.push(`✅ 已设置 gender`);
+                } else if (key === 'depth_prompt' || key === 'character_note') {
+                    if (typeof value === 'string') {
+                        const dpEl = document.getElementById('depth_prompt_prompt');
+                        if (dpEl) {
+                            dpEl.value = value;
+                            dpEl.dispatchEvent(new Event('input', { bubbles: true }));
+                            results.push(`✅ 已设置 depth_prompt (Character's Note)`);
+                        } else {
+                            errors.push(`❌ 未找到输入框: depth_prompt_prompt`);
+                        }
+                    } else if (value && typeof value === 'object') {
+                        if (value.prompt !== undefined) {
+                            const dpEl = document.getElementById('depth_prompt_prompt');
+                            if (dpEl) {
+                                dpEl.value = value.prompt;
+                                dpEl.dispatchEvent(new Event('input', { bubbles: true }));
+                            }
+                        }
+                        if (value.depth !== undefined) {
+                            const dpDepthEl = document.getElementById('depth_prompt_depth');
+                            if (dpDepthEl) {
+                                dpDepthEl.value = value.depth;
+                                dpDepthEl.dispatchEvent(new Event('change', { bubbles: true }));
+                            }
+                        }
+                        if (value.role !== undefined) {
+                            const dpRoleEl = document.getElementById('depth_prompt_role');
+                            if (dpRoleEl) {
+                                dpRoleEl.value = value.role;
+                                dpRoleEl.dispatchEvent(new Event('change', { bubbles: true }));
+                            }
+                        }
+                        results.push(`✅ 已设置 depth_prompt (Character's Note)`);
+                    }
+                } else if (key === 'depth_prompt_depth') {
+                    const dpDepthEl = document.getElementById('depth_prompt_depth');
+                    if (dpDepthEl) {
+                        dpDepthEl.value = value;
+                        dpDepthEl.dispatchEvent(new Event('change', { bubbles: true }));
+                        results.push(`✅ 已设置 depth_prompt_depth`);
+                    }
+                } else if (key === 'depth_prompt_role') {
+                    const dpRoleEl = document.getElementById('depth_prompt_role');
+                    if (dpRoleEl) {
+                        dpRoleEl.value = value;
+                        dpRoleEl.dispatchEvent(new Event('change', { bubbles: true }));
+                        results.push(`✅ 已设置 depth_prompt_role`);
+                    }
                 } else if (['name', 'description', 'personality', 'system_prompt', 'scenario', 'first_mes',
                     'mes_example', 'post_history_instructions', 'creator_notes', 'character_version'
                 ].includes(key)) {
@@ -397,7 +554,7 @@ function agentApplyPatch(jsonStr) {
                         errors.push(`❌ 未找到字段: ${key}`);
                     }
                 } else {
-                    errors.push(`❌ 不支持的字段: ${key} (支持的字段: name, gender, description, personality, system_prompt, scenario, first_mes, mes_example, post_history_instructions, creator_notes, character_version, tags)`);
+                    errors.push(`❌ 不支持的字段: ${key} (支持的字段: name, gender, description, personality, system_prompt, scenario, first_mes, mes_example, post_history_instructions, creator_notes, character_version, tags, depth_prompt)`);
                 }
             }
         }
@@ -1354,6 +1511,13 @@ async function agentSendMessage() {
         addAgentSystemMessage(result.success ? `🔄 ${result.message}` : `❌ ${result.message}`);
         return;
     }
+
+    // 支持 /diff 快速对比指令
+    if (userText === '/diff' || userText.startsWith('/diff')) {
+        const result = agentDiff();
+        addAgentSystemMessage(result);
+        return;
+    }
     
     addAgentUserMessage(userText);
 
@@ -1896,7 +2060,7 @@ await STscript('/popup large=true "<h3>恭喜升级！</h3><p>你升到了5级</
 }
 \`\`\`
 
-可用字段: name, gender, description, personality, system_prompt, scenario, first_mes, mes_example, post_history_instructions, creator_notes, character_version
+可用字段: name, gender, description, personality, system_prompt, scenario, first_mes, mes_example, post_history_instructions, creator_notes, character_version, depth_prompt
 
 ## 🚨 极其重要：json:patch 中的 HTML 规则 (CRITICAL)
 - 在 json:patch 的字段值中直接写入原始 HTML 即可，**不要在 JSON 字符串值中添加反引号(\`\`\`)包裹**！系统会自动处理 HTML 的渲染包裹。
@@ -2299,6 +2463,7 @@ function agentQuickAction(action) {
         'statusbar': '请为这个角色设计一个精美的状态栏（包含角色名、生命值、魔法值等游戏化元素）。',
         'worldbook': '请分析当前角色的设定，建议需要补充的世界书条目，并用/json:patch添加。',
         'variables': '请为这个角色设计一套变量管理系统。',
+        'compare': '请深入对比当前左栏主卡与右栏副卡两张角色卡的各项设定差异（包括性格、描述、世界书条目和脚本风格），指出各自的特色亮点，并针对如何取长补短或互相融合提出具体的修改建议。'
     };
     input.value = prompts[action] || '';
     agentSendMessage();

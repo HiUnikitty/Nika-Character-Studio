@@ -11,6 +11,8 @@
   <title>妮卡角色工作室Pro</title>
   <script src="https://unpkg.com/pako@2.1.0/dist/pako.min.js"></script>
   <script src="https://unpkg.com/marked@12.0.2/marked.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
+  <script>window.JSZip || document.write('<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"><\/script>')</script>
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-7PYFG35VCZ"></script>
   <script>
     window.dataLayer = window.dataLayer || [];
@@ -564,6 +566,172 @@
       margin-bottom: 10px;
     }
 
+    /* --- EPUB 章节管理面板样式 --- */
+    .epub-chapter-panel {
+      background: rgba(0, 0, 0, 0.25);
+      border: 1px solid rgba(230, 126, 34, 0.35);
+      border-radius: 8px;
+      padding: 18px;
+      grid-column: 1 / -1;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.25);
+      transition: all 0.3s ease;
+    }
+
+    .epub-panel-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-bottom: 12px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .epub-panel-title {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .epub-panel-title h4 {
+      margin: 0;
+      color: var(--primary-color);
+      font-size: 16px;
+      font-weight: bold;
+    }
+
+    .epub-stats-badge {
+      font-size: 12px;
+      background: rgba(230, 126, 34, 0.15);
+      color: #f39c12;
+      border: 1px solid rgba(230, 126, 34, 0.3);
+      padding: 3px 10px;
+      border-radius: 12px;
+      white-space: nowrap;
+    }
+
+    .epub-panel-toolbar {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .epub-btn-sm {
+      padding: 5px 12px;
+      background: rgba(255, 255, 255, 0.08);
+      color: #ddd;
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 12px;
+      transition: all 0.2s ease;
+    }
+
+    .epub-btn-sm:hover {
+      background: rgba(230, 126, 34, 0.25);
+      color: #fff;
+      border-color: var(--primary-color);
+    }
+
+    .epub-tips {
+      font-size: 12px;
+      color: #bbb;
+      margin-bottom: 10px;
+      line-height: 1.5;
+    }
+
+    .epub-chapter-list-container {
+      max-height: 380px;
+      overflow-y: auto;
+      background: rgba(0, 0, 0, 0.35);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 6px;
+      padding: 6px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .epub-chapter-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 7px 12px;
+      border-radius: 4px;
+      background: rgba(255, 255, 255, 0.03);
+      transition: background 0.2s ease;
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .epub-chapter-item:hover {
+      background: rgba(230, 126, 34, 0.15);
+    }
+
+    .epub-chapter-item input[type="checkbox"] {
+      width: 16px;
+      height: 16px;
+      accent-color: var(--primary-color);
+      cursor: pointer;
+    }
+
+    .epub-chapter-num {
+      color: #888;
+      font-size: 12px;
+      min-width: 2.5em;
+      font-family: monospace;
+    }
+
+    .epub-chapter-name {
+      flex: 1;
+      color: #eee;
+      font-size: 13px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .epub-chapter-item.unchecked .epub-chapter-name {
+      color: #777;
+      text-decoration: line-through;
+    }
+
+    .epub-chapter-cnt {
+      color: #999;
+      font-size: 12px;
+      white-space: nowrap;
+      background: rgba(0, 0, 0, 0.3);
+      padding: 2px 8px;
+      border-radius: 10px;
+    }
+
+    .epub-panel-footer {
+      margin-top: 15px;
+      display: flex;
+      justify-content: flex-end;
+      align-items: center;
+    }
+
+    .epub-generate-btn {
+      padding: 10px 24px;
+      background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+      color: white;
+      border: none;
+      border-radius: 5px;
+      font-size: 14px;
+      font-weight: bold;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      box-shadow: 0 4px 10px rgba(230, 126, 34, 0.3);
+    }
+
+    .epub-generate-btn:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 6px 16px rgba(230, 126, 34, 0.5);
+    }
+
     .progress-section {
       background: rgba(0, 0, 0, 0.2);
       padding: 20px;
@@ -687,6 +855,96 @@
     #editor-view .field-group {
       margin-bottom: 15px;
       position: relative;
+    }
+
+    /* --- 双开对比模式专属样式 --- */
+    #editor-view.dual-pane-active {
+      display: flex !important;
+      flex-direction: row !important;
+      flex-wrap: wrap !important;
+      gap: 16px !important;
+      padding: 10px 15px 30px !important;
+      width: 100% !important;
+      max-width: 100% !important;
+      justify-content: center !important;
+      align-items: flex-start !important;
+    }
+
+    #editor-view.dual-pane-active > .editor-container {
+      flex: 1 1 50% !important;
+      max-width: calc(50% - 8px) !important;
+      min-width: 440px !important;
+      box-sizing: border-box !important;
+    }
+
+    #editor-view.dual-pane-active > .editor-container .editor-body {
+      max-height: calc(100vh - 120px) !important;
+      overflow-y: auto !important;
+      overflow-x: hidden !important;
+    }
+
+    /* 批量操作工具栏 */
+    .dp-batch-bar {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: #222;
+      border: 1px solid #444;
+      border-radius: 5px;
+      padding: 6px 12px;
+      margin-bottom: 8px;
+    }
+
+    .dp-batch-btn {
+      border: none;
+      border-radius: 3px;
+      padding: 4px 10px;
+      font-size: 11px;
+      cursor: pointer;
+      font-weight: 500;
+    }
+
+    .dp-batch-btn.transfer {
+      background: #2980b9;
+      color: white;
+    }
+
+    .dp-batch-btn.transfer:hover {
+      background: #3498db;
+    }
+
+    .dp-batch-btn.delete {
+      background: #c0392b;
+      color: white;
+    }
+
+    .dp-batch-btn.delete:hover {
+      background: #e74c3c;
+    }
+
+    .dp-entry-transfer-btn {
+      border: 1px solid #555;
+      border-radius: 3px;
+      padding: 2px 8px;
+      font-size: 11px;
+      cursor: pointer;
+      background: #2c3e50;
+      color: #ecf0f1;
+      transition: 0.2s;
+    }
+
+    .dp-entry-transfer-btn:hover {
+      background: #3498db;
+      color: white;
+    }
+
+    .dp-entry-transfer-btn.to-sec {
+      background: #d35400;
+      border-color: #e67e22;
+    }
+
+    .dp-entry-transfer-btn.to-sec:hover {
+      background: #e67e22;
     }
 
     #editor-view .field-group label {
@@ -861,13 +1119,17 @@
       text-shadow: 0 0 5px var(--primary-color);
     }
 
-    #editor-view #avatar-preview {
+    #editor-view #avatar-preview,
+    #editor-view #sec-avatar-preview {
+      width: 100%;
       max-width: 250px;
       border-radius: 8px;
       border: 2px dashed var(--input-border);
       object-fit: cover;
       aspect-ratio: 2/3;
       margin-bottom: 10px;
+      display: block;
+      box-sizing: border-box;
     }
 
     #editor-view .action-buttons {
@@ -3074,37 +3336,60 @@
     .agent-msg p {
       margin: 8px 0;
     }
+
     .agent-msg p:first-child {
       margin-top: 0;
     }
+
     .agent-msg p:last-child {
       margin-bottom: 0;
     }
-    .agent-msg ul, .agent-msg ol {
+
+    .agent-msg ul,
+    .agent-msg ol {
       margin: 8px 0;
       padding-left: 24px;
     }
+
     .agent-msg li {
       margin-bottom: 4px;
     }
-    .agent-msg h1, .agent-msg h2, .agent-msg h3, .agent-msg h4 {
+
+    .agent-msg h1,
+    .agent-msg h2,
+    .agent-msg h3,
+    .agent-msg h4 {
       margin: 12px 0 8px 0;
       font-weight: bold;
       line-height: 1.3;
     }
-    .agent-msg h1 { font-size: 1.3em; }
-    .agent-msg h2 { font-size: 1.2em; }
-    .agent-msg h3, .agent-msg h4 { font-size: 1.1em; }
+
+    .agent-msg h1 {
+      font-size: 1.3em;
+    }
+
+    .agent-msg h2 {
+      font-size: 1.2em;
+    }
+
+    .agent-msg h3,
+    .agent-msg h4 {
+      font-size: 1.1em;
+    }
+
     .agent-msg table {
       border-collapse: collapse;
       width: 100%;
       margin: 8px 0;
     }
-    .agent-msg th, .agent-msg td {
+
+    .agent-msg th,
+    .agent-msg td {
       border: 1px solid #444;
       padding: 6px 10px;
       text-align: left;
     }
+
     .agent-msg th {
       background: #333;
     }
@@ -3200,12 +3485,14 @@
       font-size: 12px;
       line-height: 1.5;
     }
+
     .agent-reasoning summary {
       cursor: pointer;
       color: #c39bdd;
       font-weight: bold;
       font-size: 12px;
     }
+
     .agent-reasoning[open] summary {
       margin-bottom: 6px;
       padding-bottom: 6px;
@@ -3222,11 +3509,41 @@
       font-size: 12px;
     }
 
-    .agent-preview-area .patch-success { color: #27ae60; margin-bottom: 4px; }
-    .agent-preview-area .patch-error { color: #e74c3c; margin-bottom: 4px; }
-    .agent-preview-area .patch-actions { display: flex; gap: 8px; margin-top: 6px; }
-    .agent-preview-area .patch-accept { background: #27ae60; color: white; border: none; padding: 5px 12px; border-radius: 4px; cursor: pointer; font-size: 12px; }
-    .agent-preview-area .patch-reject { background: #555; color: white; border: none; padding: 5px 12px; border-radius: 4px; cursor: pointer; font-size: 12px; }
+    .agent-preview-area .patch-success {
+      color: #27ae60;
+      margin-bottom: 4px;
+    }
+
+    .agent-preview-area .patch-error {
+      color: #e74c3c;
+      margin-bottom: 4px;
+    }
+
+    .agent-preview-area .patch-actions {
+      display: flex;
+      gap: 8px;
+      margin-top: 6px;
+    }
+
+    .agent-preview-area .patch-accept {
+      background: #27ae60;
+      color: white;
+      border: none;
+      padding: 5px 12px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 12px;
+    }
+
+    .agent-preview-area .patch-reject {
+      background: #555;
+      color: white;
+      border: none;
+      padding: 5px 12px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 12px;
+    }
 
     /* Agent HTML 预览 */
     .agent-html-preview {
@@ -3467,15 +3784,20 @@
 
       <div id="tavern-options" class="api-provider-options">
         <!-- 多配置管理 -->
-        <div class="field-group" style="border-bottom: 1px solid var(--border-color); padding-bottom: 12px; margin-bottom: 12px;">
+        <div class="field-group"
+          style="border-bottom: 1px solid var(--border-color); padding-bottom: 12px; margin-bottom: 12px;">
           <div style="display: flex; gap: 6px; align-items: center; flex-wrap: wrap;">
             <select id="tavern-config-select" style="flex: 1; min-width: 120px;">
               <option value="">选择配置...</option>
             </select>
-            <input type="text" id="tavern-config-name" placeholder="配置名称" style="flex: 0.6; min-width: 80px; padding: 6px 8px;">
-            <button type="button" id="tavern-config-save-btn" style="background: var(--primary-color); color: white; padding: 6px 10px; border: none; border-radius: 4px; cursor: pointer; white-space: nowrap;">保存</button>
-            <button type="button" id="tavern-config-delete-btn" style="background: var(--danger-color, #f44336); color: white; padding: 6px 10px; border: none; border-radius: 4px; cursor: pointer; white-space: nowrap;">删除</button>
-            <button type="button" id="tavern-config-reset-btn" style="background: #888; color: white; padding: 6px 10px; border: none; border-radius: 4px; cursor: pointer; white-space: nowrap;">重置</button>
+            <input type="text" id="tavern-config-name" placeholder="配置名称"
+              style="flex: 0.6; min-width: 80px; padding: 6px 8px;">
+            <button type="button" id="tavern-config-save-btn"
+              style="background: var(--primary-color); color: white; padding: 6px 10px; border: none; border-radius: 4px; cursor: pointer; white-space: nowrap;">保存</button>
+            <button type="button" id="tavern-config-delete-btn"
+              style="background: var(--danger-color, #f44336); color: white; padding: 6px 10px; border: none; border-radius: 4px; cursor: pointer; white-space: nowrap;">删除</button>
+            <button type="button" id="tavern-config-reset-btn"
+              style="background: #888; color: white; padding: 6px 10px; border: none; border-radius: 4px; cursor: pointer; white-space: nowrap;">重置</button>
           </div>
         </div>
         <div class="field-group">
@@ -3492,8 +3814,11 @@
             <label for="tavern-api-endpoint" data-i18n="api-url">API URL</label>
             <div style="display:flex;gap:8px;align-items:center;">
               <input type="text" id="tavern-api-endpoint" placeholder="http://api.xxx.com/v1" style="flex:1;">
-              <button type="button" id="pick-provider-btn" onclick="showProviderPickerModal(function(r){document.getElementById('tavern-api-endpoint').value=r.endpoint;document.getElementById('tavern-model').value=r.model;var hint=document.getElementById('tavern-model-hint');if(r.context){hint.textContent='根据数据库，来自'+r.providerName+'的「'+r.modelName+'」模型的最大上下文为 '+r.context.toLocaleString()+(r.maxTokens?'，最大输出为 '+r.maxTokens.toLocaleString():'')+'。';hint.style.display='block';}else{hint.style.display='none';}})" style="background:var(--primary-color,#e67e22);color:white;padding:8px 12px;border:none;border-radius:4px;cursor:pointer;white-space:nowrap;font-size:13px;">从模型库选择</button>
-              <button type="button" onclick="checkProvidersUpdate()" style="background:#555;color:white;padding:8px 12px;border:none;border-radius:4px;cursor:pointer;white-space:nowrap;font-size:13px;">同步云端模型库</button>
+              <button type="button" id="pick-provider-btn"
+                onclick="showProviderPickerModal(function(r){document.getElementById('tavern-api-endpoint').value=r.endpoint;document.getElementById('tavern-model').value=r.model;var hint=document.getElementById('tavern-model-hint');if(r.context){hint.textContent='根据数据库，来自'+r.providerName+'的「'+r.modelName+'」模型的最大上下文为 '+r.context.toLocaleString()+(r.maxTokens?'，最大输出为 '+r.maxTokens.toLocaleString():'')+'。';hint.style.display='block';}else{hint.style.display='none';}})"
+                style="background:var(--primary-color,#e67e22);color:white;padding:8px 12px;border:none;border-radius:4px;cursor:pointer;white-space:nowrap;font-size:13px;">从模型库选择</button>
+              <button type="button" onclick="checkProvidersUpdate()"
+                style="background:#555;color:white;padding:8px 12px;border:none;border-radius:4px;cursor:pointer;white-space:nowrap;font-size:13px;">同步云端模型库</button>
             </div>
           </div>
           <div class="field-group">
@@ -3541,7 +3866,8 @@
         </div>
         <div class="field-group">
           <label for="tavern-context-window">最大上下文</label>
-          <input type="number" id="tavern-context-window" value="1000000" min="1000" step="1000" style="width: 150px;" placeholder="默认 1000000 (1M)">
+          <input type="number" id="tavern-context-window" value="1000000" min="1000" step="1000" style="width: 150px;"
+            placeholder="默认 1000000 (1M)">
           <p class="help-text">模型的最大上下文窗口大小（token），用于小说转世界书字数超限判断</p>
           <p id="tavern-model-hint" class="help-text" style="display:none;color:#e67e22;"></p>
         </div>
@@ -3806,14 +4132,17 @@
       <p class="help-text" style="text-align: center; margin-top: -15px; margin-bottom: 20px"
         data-i18n="sort-suggestion-modal-desc">AI 将根据世界书条目的内容分析，给出排序和深度位置的建议</p>
 
-      <div id="sort-suggestion-batch-config" style="margin-bottom: 15px; padding: 12px 15px; background: rgba(0,0,0,0.2); border-radius: 8px; border: 1px solid rgba(255,255,255,0.08);">
+      <div id="sort-suggestion-batch-config"
+        style="margin-bottom: 15px; padding: 12px 15px; background: rgba(0,0,0,0.2); border-radius: 8px; border: 1px solid rgba(255,255,255,0.08);">
         <div style="display: flex; align-items: center; gap: 20px; flex-wrap: wrap; margin-bottom: 10px;">
           <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 14px;">
-            <input type="radio" name="sort-batch-mode" value="single" checked style="width: 16px; height: 16px; accent-color: var(--primary-color);" onchange="toggleSortBatchSize()">
+            <input type="radio" name="sort-batch-mode" value="single" checked
+              style="width: 16px; height: 16px; accent-color: var(--primary-color);" onchange="toggleSortBatchSize()">
             <span data-i18n="sort-batch-mode-single">一次性处理</span>
           </label>
           <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 14px;">
-            <input type="radio" name="sort-batch-mode" value="batch" style="width: 16px; height: 16px; accent-color: var(--primary-color);" onchange="toggleSortBatchSize()">
+            <input type="radio" name="sort-batch-mode" value="batch"
+              style="width: 16px; height: 16px; accent-color: var(--primary-color);" onchange="toggleSortBatchSize()">
             <span data-i18n="sort-batch-mode-batch">分批处理</span>
           </label>
           <label id="sort-batch-size-label" style="display: none; align-items: center; gap: 6px; font-size: 14px;">
@@ -3834,7 +4163,9 @@
             style="background: transparent; color: var(--primary-color); border: 1px solid var(--primary-color); padding: 4px 12px; border-radius: 4px; font-size: 12px; cursor: pointer;"
             data-i18n="sort-toggle-per-entry">按条目自定义...</button>
         </div>
-        <div id="sort-per-entry-truncation" style="display: none; margin-top: 10px; padding: 10px; background: rgba(0,0,0,0.15); border-radius: 6px; max-height: 250px; overflow-y: auto;"></div>
+        <div id="sort-per-entry-truncation"
+          style="display: none; margin-top: 10px; padding: 10px; background: rgba(0,0,0,0.15); border-radius: 6px; max-height: 250px; overflow-y: auto;">
+        </div>
       </div>
 
       <div id="sort-suggestion-loading" style="display: none; text-align: center; padding: 40px;">
@@ -4180,13 +4511,13 @@
             onclick="document.getElementById('novel-file-input').click()">
             <div style="font-size: 48px; margin-bottom: 15px;">📄</div>
             <p id="drop-zone-text">点击或拖拽文件到此处</p>
-            <p id="supported-formats-text" style="color: #aaa; font-size: 14px; margin-top: 10px;">支持格式：txt</p>
+            <p id="supported-formats-text" style="color: #aaa; font-size: 14px; margin-top: 10px;">支持格式：txt、epub</p>
           </div>
-          <input type="file" id="novel-file-input" accept=".txt" style="display: none;"
+          <input type="file" id="novel-file-input" accept=".txt,.epub" style="display: none;"
             onchange="handleNovelFile(event)">
 
           <!-- 编码选择 -->
-          <div style="margin-top: 10px; display: flex; align-items: center; gap: 10px;">
+          <div id="file-encoding-container" style="margin-top: 10px; display: flex; align-items: center; gap: 10px;">
             <label id="file-encoding-label" style="color: #aaa; font-size: 14px;">文件编码：</label>
             <select id="file-encoding"
               style="padding: 5px; background: rgba(0,0,0,0.3); border: 1px solid #555; border-radius: 4px; color: white;">
@@ -4200,7 +4531,7 @@
 
           <!-- 切分设置 -->
           <div class="split-settings">
-            <div class="split-option">
+            <div class="split-option" id="chapter-reading-section">
               <h4 id="chapter-reading-title">📆 自动化章回阅读</h4>
               <label id="chapter-regex-label">章回正则：</label>
               <input type="text" id="chapter-regex" value="第[零一二三四五六七八九十百千万0-9]+[章回卷节部篇]"
@@ -4219,7 +4550,7 @@
                 style="margin-top: 10px; padding: 8px 15px; background: var(--primary-color); color: white; border: none; border-radius: 4px;">检测+生成</button>
             </div>
 
-            <div class="split-option">
+            <div class="split-option" id="continuous-reading-section">
               <h4 id="continuous-reading-title">⚙️ 自动化连续阅读</h4>
               <label id="read-size-label">每次阅读字数：</label>
               <select id="split-size"
@@ -4237,6 +4568,33 @@
                 placeholder="输入自定义字数" min="1000">
               <button id="generate-worldbook-btn" onclick="bruteForceSplit()"
                 style="margin-top: 10px; padding: 8px 15px; background: var(--secondary-color); color: white; border: none; border-radius: 4px;">生成世界书</button>
+            </div>
+
+            <!-- EPUB 章节管理面板 -->
+            <div id="epub-chapter-section" class="epub-chapter-panel" style="display: none;">
+              <div class="epub-panel-header">
+                <div class="epub-panel-title">
+                  <h4>📖 EPUB 章节列表</h4>
+                  <span id="epub-chapter-stats" class="epub-stats-badge">共 0 章，已勾选 0 章</span>
+                </div>
+                <div class="epub-panel-toolbar">
+                  <button type="button" class="epub-btn-sm" onclick="toggleAllEpubChapters(true)">全选</button>
+                  <button type="button" class="epub-btn-sm" onclick="toggleAllEpubChapters(false)">全不选</button>
+                  <button type="button" class="epub-btn-sm" onclick="invertEpubChapters()">反选</button>
+                  <button type="button" class="epub-btn-sm" onclick="exportEpubChaptersJson()"
+                    title="导出当前勾选章节为JSON">导出JSON</button>
+                </div>
+              </div>
+              <p class="epub-tips">💡 请取消非正文内容（如封面、插图、版权页、目录、广告等）的勾选，以便组合高质量章节分块：</p>
+              <div id="epub-chapter-list" class="epub-chapter-list-container">
+                <!-- 动态渲染章节条目 -->
+              </div>
+              <div class="epub-panel-footer">
+                <button id="epub-generate-btn" type="button" class="epub-generate-btn"
+                  onclick="generateEpubWorldbook()">
+                  🚀 生成世界书 (已选 <span id="epub-btn-count">0</span> 个章节分块)
+                </button>
+              </div>
             </div>
 
             <div>
@@ -4318,7 +4676,16 @@
     <div class="editor-container">
       <div class="editor-header">
         <h1 id="editor-title">创建新角色</h1>
-        <div style="display: flex; gap: 10px;">
+        <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+          <button id="dp-sync-scroll-btn" onclick="DualPane.toggleSyncScroll()"
+            style="display: none; background: rgba(0, 0, 0, 0.35); color: white; border: 1px solid rgba(255, 255, 255, 0.4); border-radius: 5px; padding: 8px 15px; cursor: pointer; font-weight: bold; align-items: center; gap: 6px; transition: all 0.2s;"
+            title="点击切换 同步滚动 / 分别独立滚动">
+            🔗 同步滚动: 开启
+          </button>
+          <button id="dual-pane-toggle-btn" onclick="toggleDualPaneMode()"
+            style="background: var(--secondary-color); color: white; padding: 8px 15px; border-radius: 5px">
+            🪟 双开对比
+          </button>
           <button onclick="openApiSettingsModal()"
             style="background: var(--secondary-color); color: white; padding: 8px 15px; border-radius: 5px"
             data-i18n="api-settings-btn">
@@ -4519,6 +4886,26 @@
             <label for="character_version">版本</label>
             <input id="character_version" placeholder="例如：1.0, 测试版">
           </div>
+          <div class="field-group">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+              <label for="depth_prompt_prompt" style="margin-bottom: 0;" data-i18n="character-note">角色备忘录 (Character's Note)</label>
+              <div style="display: flex; gap: 12px; align-items: center;">
+                <div style="display: flex; align-items: center; gap: 4px;">
+                  <span style="font-size: 12px; color: var(--text-color, #ccc);" data-i18n="depth-prompt-depth">深度:</span>
+                  <input id="depth_prompt_depth" type="number" min="0" max="9999" value="4" style="width: 60px; padding: 2px 6px; font-size: 12px; height: 26px;" title="插入深度 (@ Depth)">
+                </div>
+                <div style="display: flex; align-items: center; gap: 4px;">
+                  <span style="font-size: 12px; color: var(--text-color, #ccc);" data-i18n="depth-prompt-role">角色:</span>
+                  <select id="depth_prompt_role" style="padding: 2px 6px; font-size: 12px; height: 26px;" title="插入角色 (Role)">
+                    <option value="system" selected>System</option>
+                    <option value="user">User</option>
+                    <option value="assistant">Assistant</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+            <textarea id="depth_prompt_prompt" rows="3" placeholder="在聊天指定深度插入的提示词内容 (depth_prompt)" data-i18n="[placeholder]character-note-placeholder"></textarea>
+          </div>
 
           <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
             <div style="display: flex; align-items: center; gap: 8px;">
@@ -4682,7 +5069,8 @@
     <div class="agent-panel-header">
       <h3>🤖 智能助手</h3>
       <div style="display:flex;gap:6px;">
-        <button onclick="agentClearChat()" style="background:none;border:none;color:#aaa;cursor:pointer;font-size:14px;" title="清空对话">🗑</button>
+        <button onclick="agentClearChat()" style="background:none;border:none;color:#aaa;cursor:pointer;font-size:14px;"
+          title="清空对话">🗑</button>
         <button class="agent-close-btn" onclick="toggleAgentPanel()">×</button>
       </div>
     </div>
@@ -4706,7 +5094,8 @@
     <div class="agent-html-preview" id="agent-html-preview-panel">
       <div class="preview-header">
         <span>HTML 预览</span>
-        <button onclick="document.getElementById('agent-html-preview-panel').style.display='none'" style="background:none;border:none;color:#aaa;cursor:pointer;">✕</button>
+        <button onclick="document.getElementById('agent-html-preview-panel').style.display='none'"
+          style="background:none;border:none;color:#aaa;cursor:pointer;">✕</button>
       </div>
       <iframe id="agent-html-preview" sandbox="allow-scripts allow-same-origin allow-forms allow-modals"></iframe>
     </div>
@@ -4715,6 +5104,7 @@
       <button onclick="agentQuickAction('statusbar')">设计状态栏</button>
       <button onclick="agentQuickAction('worldbook')">建议世界书</button>
       <button onclick="agentQuickAction('variables')">设计变量系统</button>
+      <button id="agent-compare-btn" onclick="agentQuickAction('compare')" style="background: #8e44ad; color: white;">⚖️ 对比两卡差异</button>
     </div>
     <div class="agent-panel-input">
       <textarea id="agent-input" rows="1" placeholder="输入消息，Enter发送..."
@@ -4900,6 +5290,10 @@
         'tags-placeholder': '方便角色库查找',
         personality: '个性',
         'personality-placeholder': '详细性格特质',
+        'character-note': '角色备忘录 (Character\'s Note)',
+        'character-note-placeholder': '在聊天指定深度插入的提示词内容 (depth_prompt)',
+        'depth-prompt-depth': '深度:',
+        'depth-prompt-role': '角色:',
         'ai-settings': 'AI设定',
         'system-prompt': '系统设定',
         'system-prompt-placeholder': '和预设一个级别',
@@ -5168,7 +5562,7 @@
 
         // 新增翻译
         'continue-chatting': '💬 继续聊天',
-        'txt-to-worldbook': '📚 txt转世界书',
+        'txt-to-worldbook': '📚 小说转世界书',
         'resource-box': '📦 资源箱',
         'english-cards': '🌍 英文卡资源',
         'community-resources': '💬 社区资源',
@@ -5234,7 +5628,7 @@
         'return': '返回',
         'import-novel': '📁 导入小说/资料文件',
         'drop-zone-text': '点击或拖拽文件到此处',
-        'supported-formats': '支持格式：txt',
+        'supported-formats': '支持格式：txt、epub',
         'file-encoding': '文件编码：',
         'auto-detect': '自动检测',
         'chapter-reading': '📆 自动化章回阅读',
@@ -5608,6 +6002,10 @@
         'tags-placeholder': 'Tags for filtering. e.g.: Original, Game, Yandere (comma separated)',
         personality: 'Personality',
         'personality-placeholder': 'Detailed personality traits. e.g.: Eloquent, Mature, Yandere (comma separated)',
+        'character-note': "Character's Note",
+        'character-note-placeholder': 'Text to be inserted in-chat @ designated depth and role (depth_prompt)',
+        'depth-prompt-depth': '@ Depth:',
+        'depth-prompt-role': 'Role:',
         'ai-settings': 'AI Settings',
         'system-prompt': 'Personality Setting',
         'system-prompt-placeholder':
@@ -5892,7 +6290,7 @@
 
         // 新增翻译
         'continue-chatting': '💬 Continue Chatting',
-        'txt-to-worldbook': '📚 TXT to Worldbook',
+        'txt-to-worldbook': '📚 Novel to Worldbook',
         'resource-box': '📦 Resource Box',
         'english-cards': '🌍 English Character Cards',
         'community-resources': '💬 Community Resources',
@@ -5955,7 +6353,7 @@
         'return': 'Return',
         'import-novel': '📁 Import Novel/Document File',
         'drop-zone-text': 'Click or drag file here',
-        'supported-formats': 'Supported formats: txt',
+        'supported-formats': 'Supported formats: txt, epub',
         'file-encoding': 'File Encoding:',
         'auto-detect': 'Auto Detect',
         'chapter-reading': '📆 Automated Chapter Reading',
@@ -6385,6 +6783,7 @@
   <script src="js/part2.js"></script>
   <script src="js/part3.js"></script>
   <script src="js/agent.js"></script>
+  <script src="js/dual_pane.js"></script>
 
 </body>
 

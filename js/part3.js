@@ -1716,105 +1716,143 @@ if (contentInput) {
 }
 }
 
+// 统一的世界书条目规范化函数，严格对齐SillyTavern规范并避免与part2同名函数冲突
+function normalizeTavernWorldbookEntry(entry, fallbackIndex = 0) {
+    if (!entry || typeof entry !== 'object') return null;
+    const entryExt = entry.extensions || {};
+
+    // 优先读取 extensions.position（数值 0~7），对齐 SillyTavern 规则
+    let position = 0;
+    if (entryExt.position !== undefined && entryExt.position !== null) {
+        position = Number(entryExt.position);
+    } else if (typeof entry.position === 'number') {
+        position = entry.position;
+    } else if (typeof entry.position === 'string') {
+        const positionMap = {
+            'before_char': 0,
+            'after_char': 1,
+            'top_an': 2,
+            'bottom_an': 3,
+            'at_depth': 4,
+            'em_top': 5,
+            'em_bottom': 6,
+            'outlet': 7
+        };
+        position = positionMap[entry.position] !== undefined ? positionMap[entry.position] : 0;
+    }
+
+    let role = null;
+    if (entryExt.role !== undefined && entryExt.role !== null) {
+        role = Number(entryExt.role);
+    } else if (entry.role !== undefined && entry.role !== null) {
+        role = Number(entry.role);
+    }
+
+    const depth = entryExt.depth !== undefined && entryExt.depth !== null
+        ? Number(entryExt.depth)
+        : (entry.depth !== undefined && entry.depth !== null ? Number(entry.depth) : 4);
+
+    const priority = entry.insertion_order !== undefined && entry.insertion_order !== null
+        ? Number(entry.insertion_order)
+        : (entry.priority !== undefined && entry.priority !== null ? Number(entry.priority) : (entry.order !== undefined && entry.order !== null ? Number(entry.order) : 100));
+
+    const display_index = entryExt.display_index !== undefined && entryExt.display_index !== null
+        ? entryExt.display_index
+        : (entry.displayIndex !== undefined && entry.displayIndex !== null ? entry.displayIndex : (entry.display_index !== undefined && entry.display_index !== null ? entry.display_index : fallbackIndex));
+
+    let cleanRawTavern = entry.rawTavernData ? { ...entry.rawTavernData } : { ...entry };
+    delete cleanRawTavern.element; // 剔除DOM节点引用防止循环引用
+
+    const internalEntry = {
+        id: entry.id !== undefined ? entry.id : (entry.uid !== undefined ? entry.uid : fallbackIndex),
+        keys: Array.isArray(entry.keys) ? entry.keys : (Array.isArray(entry.key) ? entry.key : (Array.isArray(entry['关键词']) ? entry['关键词'] : [])),
+        secondary_keys: Array.isArray(entry.secondary_keys) ? entry.secondary_keys : (Array.isArray(entry.keysecondary) ? entry.keysecondary : []),
+        secondary_keys_logic: entryExt.secondary_keys_logic || entry.secondary_keys_logic || 'any',
+        comment: entry.comment || entry['注释'] || entry['备注'] || entry.name || '',
+        content: entry.content !== undefined ? entry.content : (entry['内容'] !== undefined ? entry['内容'] : ''),
+        priority: priority,
+        enabled: entry.enabled !== undefined ? Boolean(entry.enabled) : (entry.disable !== undefined ? !entry.disable : true),
+        position: position,
+        role: role,
+        constant: Boolean(entry.constant),
+        selective: entry.selective === undefined ? true : Boolean(entry.selective),
+        use_regex: entry.use_regex !== undefined ? Boolean(entry.use_regex) : true,
+        prevent_recursion: entryExt.prevent_recursion !== undefined ? Boolean(entryExt.prevent_recursion) : (entry.prevent_recursion !== undefined ? Boolean(entry.prevent_recursion) : (entry.preventRecursion !== undefined ? Boolean(entry.preventRecursion) : false)),
+        exclude_recursion: entryExt.exclude_recursion !== undefined ? Boolean(entryExt.exclude_recursion) : (entry.exclude_recursion !== undefined ? Boolean(entry.exclude_recursion) : (entry.excludeRecursion !== undefined ? Boolean(entry.excludeRecursion) : false)),
+        group: entryExt.group !== undefined ? entryExt.group : (entry.group || ''),
+        scope: 'chat',
+        display_index: display_index,
+        depth: depth,
+        probability: entryExt.probability !== undefined && entryExt.probability !== null ? Number(entryExt.probability) : (entry.probability !== undefined && entry.probability !== null ? Number(entry.probability) : 100),
+        match_whole_words: entryExt.match_whole_words !== undefined ? entryExt.match_whole_words : (entry.match_whole_words !== undefined ? entry.match_whole_words : (entry.matchWholeWords !== undefined ? entry.matchWholeWords : null)),
+        case_sensitive: entryExt.case_sensitive !== undefined ? entryExt.case_sensitive : (entry.case_sensitive !== undefined ? entry.case_sensitive : (entry.caseSensitive !== undefined ? entry.caseSensitive : null)),
+        rawExtensions: { ...entryExt },
+        rawTavernData: cleanRawTavern,
+        children: [],
+    };
+
+    if (entry.children && entry.children.length > 0) {
+        internalEntry.children = entry.children.map((child, cIdx) => normalizeTavernWorldbookEntry(child, cIdx)).filter(Boolean);
+    }
+
+    return internalEntry;
+}
+
 /**
  * [NEW] Converts a SillyTavern lorebook object into the application's internal format.
  * @param {object} lorebook - The raw lorebook object from the imported JSON.
  * @returns {Array} An array of worldbook entries in the internal format.
  */
 function convertTavernLorebookToInternal(lorebook) {
-const internalEntries = [];
-let entriesSource = null;
+    const internalEntries = [];
+    let entriesSource = null;
 
-// 支持数组格式（纯世界书JSON）
-if (lorebook.entries && Array.isArray(lorebook.entries)) {
-    entriesSource = lorebook.entries;
-}
-// 支持对象格式（传统Tavern格式）
-else if (lorebook.entries && typeof lorebook.entries === 'object' && !Array.isArray(lorebook.entries)) {
-    entriesSource = lorebook.entries;
-}
-// 支持extensions格式
-else if (lorebook.extensions &&
-        lorebook.extensions.entries &&
-        typeof lorebook.extensions.entries === 'object' &&
-        !Array.isArray(lorebook.extensions.entries)) {
-    entriesSource = lorebook.extensions.entries;
-}
-
-if (!entriesSource) {
-    console.warn("Could not find a valid 'entries' in the provided file.");
-    return [];
-}
-
-const positionMap = {
-    0: 'before_prompt',
-    1: 'after_char',
-    2: 'before_char',
-};
-
-// 递归函数：转换条目及其子条目
-function convertTavernEntryToInternal(tavernEntry, index) {
-    const internalEntry = {
-        id: tavernEntry.uid !== undefined ? tavernEntry.uid : (tavernEntry.order || index),
-        keys: tavernEntry.keys || tavernEntry.key || [],
-        secondary_keys: tavernEntry.keysecondary || tavernEntry.secondary_keys || [],
-        comment: tavernEntry.name || tavernEntry.comment || '',
-        content: tavernEntry.content || '',
-        priority: tavernEntry.order || 100,
-        enabled:
-        tavernEntry.disable !== undefined
-            ? !tavernEntry.disable
-            : tavernEntry.enabled !== undefined
-            ? tavernEntry.enabled
-            : true,
-        constant: tavernEntry.constant || false,
-        selective: tavernEntry.selective || false,
-        prevent_recursion: tavernEntry.excludeRecursion || tavernEntry.preventRecursion || false,
-        position: positionMap[tavernEntry.position] || 'before_char',
-        secondary_keys_logic: 'any',
-        use_regex: tavernEntry.use_regex || false,
-        group: tavernEntry.group || '',
-        scope: 'chat',
-        probability: tavernEntry.probability !== undefined ? tavernEntry.probability : 100,
-        wb_depth: tavernEntry.depth || 4,
-        match_whole_words: tavernEntry.matchWholeWords || tavernEntry.match_whole_words || false,
-        case_sensitive: tavernEntry.caseSensitive || tavernEntry.case_sensitive || false,
-        children: [],
-    };
-    
-    // 递归处理子词条
-    if (tavernEntry.children && Array.isArray(tavernEntry.children) && tavernEntry.children.length > 0) {
-        internalEntry.children = tavernEntry.children.map((child, childIndex) => 
-            convertTavernEntryToInternal(child, childIndex)
-        );
+    // 支持数组格式（纯世界书JSON）
+    if (lorebook.entries && Array.isArray(lorebook.entries)) {
+        entriesSource = lorebook.entries;
     }
-    
-    return internalEntry;
-}
+    // 支持对象格式（传统Tavern格式）
+    else if (lorebook.entries && typeof lorebook.entries === 'object' && !Array.isArray(lorebook.entries)) {
+        entriesSource = lorebook.entries;
+    }
+    // 支持extensions格式
+    else if (lorebook.extensions &&
+            lorebook.extensions.entries &&
+            typeof lorebook.extensions.entries === 'object' &&
+            !Array.isArray(lorebook.extensions.entries)) {
+        entriesSource = lorebook.extensions.entries;
+    }
 
-// 处理数组格式
-if (Array.isArray(entriesSource)) {
-    entriesSource.forEach((tavernEntry, index) => {
-        const internalEntry = convertTavernEntryToInternal(tavernEntry, index);
-        internalEntries.push(internalEntry);
+    if (!entriesSource) {
+        console.warn("Could not find a valid 'entries' in the provided file.");
+        return [];
+    }
+
+    // 处理数组格式
+    if (Array.isArray(entriesSource)) {
+        entriesSource.forEach((tavernEntry, index) => {
+            const internalEntry = normalizeTavernWorldbookEntry(tavernEntry, index);
+            if (internalEntry) internalEntries.push(internalEntry);
+        });
+    }
+    // 处理对象格式
+    else {
+        const keys = Object.keys(entriesSource);
+        keys.forEach((key, index) => {
+            const tavernEntry = entriesSource[key];
+            const fallbackIdx = parseInt(key, 10);
+            const internalEntry = normalizeTavernWorldbookEntry(tavernEntry, isNaN(fallbackIdx) ? index : fallbackIdx);
+            if (internalEntry) internalEntries.push(internalEntry);
+        });
+    }
+
+    internalEntries.sort((a, b) => a.id - b.id);
+    internalEntries.forEach((entry, index) => {
+        entry.id = index;
     });
-}
-// 处理对象格式
-else {
-    for (const key in entriesSource) {
-        const tavernEntry = entriesSource[key];
-        const internalEntry = convertTavernEntryToInternal(tavernEntry, parseInt(key, 10) || 0);
-        internalEntries.push(internalEntry);
-    }
-}
 
-internalEntries.sort((a, b) => a.id - b.id);
-internalEntries.forEach((entry, index) => {
-    entry.id = index;
-});
-
-mylog(`✅ 成功转换 ${internalEntries.length} 个世界书条目`);
-return internalEntries;
+    mylog(`✅ 成功转换 ${internalEntries.length} 个世界书条目`);
+    return internalEntries;
 }
 
 window.onload = function () {
@@ -2058,7 +2096,7 @@ for (const file of files) {
         try {
             const charData = await extractDataFromPng(buffer);
             const pngDataUrl = await convertImageToPng(dataUrl);
-            saveImportedCharacter(charData, pngDataUrl);
+            saveImportedCharacter(charData, pngDataUrl, file.name);
         } catch (err) {
             console.error(currentLanguage === 'zh' ? 'PNG导入错误:' : 'PNG import error:', err);
             alert(
@@ -2114,7 +2152,7 @@ for (const file of files) {
                 character_book: { entries: [] },
             },
             };
-            saveImportedCharacter(charData, pngDataUrl);
+            saveImportedCharacter(charData, pngDataUrl, file.name);
         } catch (err) {
             console.error(currentLanguage === 'zh' ? '图片导入错误:' : 'Image import error:', err);
             alert(
@@ -2131,12 +2169,12 @@ for (const file of files) {
         .catch(err => {
         alert(t('file-read-error-with-name', { name: file.name, error: err }));
         });
-    } else if (file.type === 'application/json') {
+    } else if (file.type === 'application/json' || (file.name && file.name.toLowerCase().endsWith('.json'))) {
     const reader = new FileReader();
     reader.onload = e => {
         try {
         const charData = JSON.parse(e.target.result);
-        saveImportedCharacter(charData, null);
+        saveImportedCharacter(charData, null, file.name);
         } catch (err) {
         console.error(currentLanguage === 'zh' ? 'JSON导入错误:' : 'JSON import error:', err);
         alert(t('import-json-failed'));
@@ -2153,7 +2191,7 @@ event.target.value = '';
  * @param {object} originalCard - The parsed data from the imported file.
  * @param {string|null} avatarBase64 - The base64-encoded avatar image, if any.
  */
-async function saveImportedCharacter(originalCard, avatarBase64 = null) {
+async function saveImportedCharacter(originalCard, avatarBase64 = null, fileName = '') {
 if (!(await checkDbReady())) return;
 
 let charDataForDb;
@@ -2178,61 +2216,14 @@ if (originalCard.spec === 'chara_card_v3' && originalCard.data) {
     const extensions = data.extensions || {};
     const book = data.character_book || {};
 
-    // 转换外部卡片的 position 字段到内部格式
-    function convertPositionToInternal(position) {
-    // 参考SillyTavern的world_info_position定义
-    const positionMap = {
-        'before_char': 0,    // before
-        'after_char': 1,     // after
-        'top_an': 2,         // ANTop
-        'bottom_an': 3,      // ANBottom
-        'at_depth': 4,       // atDepth
-        'em_top': 5,         // EMTop
-        'em_bottom': 6       // EMBottom
-    };
-    
-    if (typeof position === 'number') {
-        return position; // 已经是数值格式
-    }
-    
-    return positionMap[position] !== undefined ? positionMap[position] : 0;
-    }
+    const rawDp = extensions.depth_prompt || data.depth_prompt || originalCard.depth_prompt || null;
+    const depthPrompt = rawDp ? {
+        prompt: rawDp.prompt || '',
+        depth: rawDp.depth !== undefined && rawDp.depth !== null ? Number(rawDp.depth) : 4,
+        role: rawDp.role || 'system'
+    } : { prompt: '', depth: 4, role: 'system' };
 
-    function convertV3EntryToInternal(entry) {
-    const entryExt = entry.extensions || {};
-    const internalEntry = {
-        id: entry.id,
-        keys: entry.keys || [],
-        secondary_keys: entry.secondary_keys || [],
-        secondary_keys_logic: entryExt.secondary_keys_logic || 'any',
-        comment: entry.comment || '',
-        content: entry.content || '',
-        priority: entry.insertion_order || 100,
-        enabled: entry.enabled,
-        position: entryExt.position !== undefined ? entryExt.position : convertPositionToInternal(entry.position),
-        role: entryExt.role !== undefined ? entryExt.role : 0,
-        constant: entry.constant || false,
-        selective: entry.selective === undefined ? true : entry.selective,
-        use_regex: entry.use_regex || false,
-        prevent_recursion: entryExt.prevent_recursion || false,
-        group: entryExt.group || '',
-        scope: 'chat',
-        display_index: entryExt.display_index || 0,
-        depth: entryExt.depth !== undefined ? Number(entryExt.depth) : (entry.depth !== undefined ? Number(entry.depth) : 4),
-        probability: entryExt.probability === undefined ? 100 : entryExt.probability,
-        match_whole_words: entryExt.match_whole_words || false,
-        case_sensitive: entryExt.case_sensitive || false,
-        children: [],
-    };
-
-    if (entry.children && entry.children.length > 0) {
-        internalEntry.children = entry.children.map(child => convertV3EntryToInternal(child));
-    }
-
-    return internalEntry;
-    }
-
-    const internalBookEntries = (book.entries || []).map(entry => convertV3EntryToInternal(entry));
+    const internalBookEntries = (book.entries || []).map((entry, idx) => normalizeTavernWorldbookEntry(entry, idx)).filter(Boolean);
 
     charDataForDb = {
     name: data.name || '',
@@ -2250,6 +2241,8 @@ if (originalCard.spec === 'chara_card_v3' && originalCard.data) {
     character_version: data.character_version || '',
     worldbook: internalBookEntries,
     isFavorite: extensions.fav || false,
+    depth_prompt: depthPrompt,
+    rawExtensions: { ...extensions },
     // 新增：备用问候语和正则脚本
     alternate_greetings: data.alternate_greetings || [],
     regex_scripts: extensions.regex_scripts || [],
@@ -2258,6 +2251,17 @@ if (originalCard.spec === 'chara_card_v3' && originalCard.data) {
 } else if (originalCard.spec === 'chara_card_v2' && originalCard.data) {
     const data = originalCard.data;
     const v2Extensions = data.extensions || {};
+
+    const rawDp = v2Extensions.depth_prompt || data.depth_prompt || originalCard.depth_prompt || null;
+    const depthPrompt = rawDp ? {
+        prompt: rawDp.prompt || '',
+        depth: rawDp.depth !== undefined && rawDp.depth !== null ? Number(rawDp.depth) : 4,
+        role: rawDp.role || 'system'
+    } : { prompt: '', depth: 4, role: 'system' };
+
+    const rawEntries = data.character_book && Array.isArray(data.character_book.entries) ? data.character_book.entries : [];
+    const internalBookEntries = rawEntries.map((entry, idx) => normalizeTavernWorldbookEntry(entry, idx)).filter(Boolean);
+
     charDataForDb = {
     name: data.name || '',
     gender: data.gender || '',
@@ -2279,8 +2283,10 @@ if (originalCard.spec === 'chara_card_v3' && originalCard.data) {
     post_history_instructions: data.post_history_instructions || '',
     creator_notes: data.creatorcomment || '',
     character_version: '', // v2 doesn't have this field
-    worldbook:
-        data.character_book && Array.isArray(data.character_book.entries) ? data.character_book.entries : [],
+    worldbook: internalBookEntries,
+    isFavorite: v2Extensions.fav || false,
+    depth_prompt: depthPrompt,
+    rawExtensions: { ...v2Extensions },
     // 新增：备用问候语和正则脚本（v2也可能有这些字段）
     alternate_greetings: data.alternate_greetings || [],
     regex_scripts: v2Extensions.regex_scripts || [],
@@ -2290,22 +2296,28 @@ if (originalCard.spec === 'chara_card_v3' && originalCard.data) {
     mylog('Detected SillyTavern Lorebook format. Converting...');
     const internalBookEntries = convertTavernLorebookToInternal(originalCard);
 
-    charDataForDb = {
-    name: originalCard.name || t('imported-lorebook'),
-    description: originalCard.description || t('lorebook-description'),
-    gender: '',
+    // 提取纯文件名（去除扩展名）作为世界书名称，若无则使用原书自带名称或默认'世界书'
+    const cleanFileName = fileName ? fileName.replace(/\.[^/.]+$/, '').trim() : '';
+    const bookName = cleanFileName || (originalCard.name && originalCard.name !== t('imported-lorebook') ? originalCard.name : '世界书');
 
-    personality: '',
-    tags: [t('lorebook-tag')],
-    system_prompt: '',
-    scenario: '',
-    first_mes: '',
-    mes_example: '',
-    post_history_instructions: '',
-    creator_notes: '',
-    character_version: '',
-    worldbook: internalBookEntries,
-    isFavorite: false,
+    charDataForDb = {
+      name: bookName,
+      description: '', // 纯世界书是纯entry，不存在desc，设为空
+      gender: '',
+
+      personality: '',
+      tags: [t('lorebook-tag')],
+      system_prompt: '',
+      scenario: '',
+      first_mes: '',
+      mes_example: '',
+      post_history_instructions: '',
+      creator_notes: '',
+      character_version: '',
+      worldbook: internalBookEntries,
+      isFavorite: false,
+      depth_prompt: { prompt: '', depth: 4, role: 'system' },
+      rawExtensions: {},
     };
     mylog('Conversion complete. Processed entries:', internalBookEntries.length);
 } else {
@@ -2321,7 +2333,19 @@ if (originalCard.spec === 'chara_card_v3' && originalCard.data) {
     charDataForDb.personality = charDataForDb.personality || '';
     charDataForDb.creator_notes = charDataForDb.creator_notes || '';
     charDataForDb.character_version = charDataForDb.character_version || '';
-    charDataForDb.worldbook = charDataForDb.worldbook || [];
+    
+    // 兼容通用格式里的 entries / worldbook 规范化
+    const rawEntries = charDataForDb.worldbook || (charDataForDb.character_book && charDataForDb.character_book.entries) || [];
+    charDataForDb.worldbook = rawEntries.map((entry, idx) => normalizeTavernWorldbookEntry(entry, idx)).filter(Boolean);
+
+    const rawDp = charDataForDb.depth_prompt || (charDataForDb.extensions && charDataForDb.extensions.depth_prompt) || (charDataForDb.data && charDataForDb.data.extensions && charDataForDb.data.extensions.depth_prompt) || null;
+    charDataForDb.depth_prompt = rawDp ? {
+        prompt: rawDp.prompt || '',
+        depth: rawDp.depth !== undefined && rawDp.depth !== null ? Number(rawDp.depth) : 4,
+        role: rawDp.role || 'system'
+    } : { prompt: '', depth: 4, role: 'system' };
+
+    charDataForDb.rawExtensions = charDataForDb.extensions || (charDataForDb.data && charDataForDb.data.extensions) || {};
 }
 
 charDataForDb.avatar = avatarBase64 || originalCard.avatar || null;
@@ -2383,6 +2407,7 @@ let filename = v3Card.data.name || 'character';
 if (v3Card.data.character_version && v3Card.data.character_version.trim() !== '') {
     filename += ' ' + v3Card.data.character_version.trim();
 }
+filename = filename.replace(/\.png$/i, '');
 a.download = filename + '.png';
 a.click();
 URL.revokeObjectURL(a.href);
@@ -2395,9 +2420,17 @@ const blob = new Blob([JSON.stringify(lorebookData, null, 2)], { type: 'applicat
 const a = document.createElement('a');
 a.href = URL.createObjectURL(blob);
 let filename = 'lorebook';
-if (lorebookData.originalData && lorebookData.originalData.name) {
+if (lorebookData.name) {
+    filename = lorebookData.name.replace(`(${t('world-knowledge-book')}) `, '');
+} else if (lorebookData.originalData && lorebookData.originalData.name) {
     filename = lorebookData.originalData.name.replace(`(${t('world-knowledge-book')}) `, '');
+} else {
+    const cardData = buildCardObject();
+    if (cardData && cardData.name) {
+        filename = cardData.name.replace(`(${t('world-knowledge-book')}) `, '');
+    }
 }
+filename = filename.replace(/\.json$/i, '');
 a.download = filename + '.json';
 a.click();
 URL.revokeObjectURL(a.href);
@@ -2658,68 +2691,144 @@ return true;
 }
 
 function buildWorldbookExportObjectFromData(cardData) {
-const v3Card = buildV3Card(cardData);
+    const rawEntries = cardData.worldbook || (cardData.character_book && cardData.character_book.entries) || (cardData.data && cardData.data.character_book && cardData.data.character_book.entries) || [];
 
-// 递归函数：将V3条目转换为Tavern格式（包括子词条）
-function convertV3EntryToTavern(entry, index) {
-    const tavernEntry = {
-        uid: entry.id,
-        key: entry.keys,
-        keysecondary: entry.secondary_keys,
-        comment: entry.comment,
-        content: entry.content,
-        constant: entry.constant,
-        selective: entry.selective,
-        selectiveLogic: 0,
-        addMemo: true,
-        order: entry.insertion_order,
-        position: entry.extensions.position !== undefined ? entry.extensions.position : 0,
-        disable: !entry.enabled,
-        excludeRecursion: entry.extensions.prevent_recursion,
-        preventRecursion: entry.extensions.prevent_recursion,
-        probability: entry.extensions.probability,
-        useProbability: true,
-        depth: entry.extensions.depth,
-        role: entry.extensions.role !== undefined ? entry.extensions.role : 0,
-        displayIndex: index,
-        extensions: {
-            position: entry.extensions.position !== undefined ? entry.extensions.position : 0,
-            exclude_recursion: entry.extensions.prevent_recursion || false,
-            probability: entry.extensions.probability,
-            useProbability: true,
-            depth: entry.extensions.depth,
-            selectiveLogic: 0,
-            group: entry.extensions.group || '',
-            role: entry.extensions.role !== undefined ? entry.extensions.role : 0,
-        },
-    };
-    
-    // 递归处理子词条
-    if (entry.children && Array.isArray(entry.children) && entry.children.length > 0) {
-        tavernEntry.children = entry.children.map((child, childIndex) => 
-            convertV3EntryToTavern(child, childIndex)
-        );
+    // 递归函数：转换为标准 SillyTavern 独立世界书条目格式
+    function convertEntryToTavern(entry, index) {
+        // 如果有原生的酒馆条目数据，以此为基础底座，保证23个高级字段不丢失
+        const base = entry.rawTavernData ? { ...entry.rawTavernData } : (entry.rawExtensions ? { ...entry.rawExtensions } : {});
+
+        // 优先读取数值 position（0~7）
+        let position = 0;
+        if (entry.position !== undefined) {
+            if (typeof entry.position === 'number') {
+                position = entry.position;
+            } else if (typeof entry.position === 'string') {
+                const positionMap = {
+                    'before_char': 0,
+                    'after_char': 1,
+                    'top_an': 2,
+                    'bottom_an': 3,
+                    'at_depth': 4,
+                    'em_top': 5,
+                    'em_bottom': 6,
+                    'outlet': 7
+                };
+                position = positionMap[entry.position] !== undefined ? positionMap[entry.position] : 0;
+            }
+        } else if (base.position !== undefined) {
+            position = Number(base.position) || 0;
+        }
+
+        const role = (entry.role !== undefined && entry.role !== null)
+            ? Number(entry.role)
+            : (base.role !== undefined ? base.role : null);
+
+        const depth = (entry.depth !== undefined && entry.depth !== null)
+            ? Number(entry.depth)
+            : (base.depth !== undefined && base.depth !== null ? Number(base.depth) : 4);
+
+        const order = entry.priority !== undefined
+            ? Number(entry.priority)
+            : (entry.insertion_order !== undefined ? Number(entry.insertion_order) : (base.order !== undefined ? Number(base.order) : 100));
+
+        const displayIndex = entry.display_index !== undefined
+            ? entry.display_index
+            : (base.displayIndex !== undefined ? base.displayIndex : (base.display_index !== undefined ? base.display_index : index));
+
+        const tavernEntry = {
+            uid: entry.id !== undefined ? entry.id : (base.uid !== undefined ? base.uid : index),
+            key: Array.isArray(entry.keys) ? entry.keys : (Array.isArray(entry.key) ? entry.key : (Array.isArray(base.key) ? base.key : [])),
+            keysecondary: Array.isArray(entry.secondary_keys) ? entry.secondary_keys : (Array.isArray(entry.keysecondary) ? entry.keysecondary : (Array.isArray(base.keysecondary) ? base.keysecondary : [])),
+            comment: entry.comment !== undefined ? entry.comment : (base.comment || ''),
+            content: entry.content !== undefined ? entry.content : (base.content || ''),
+            constant: entry.constant !== undefined ? Boolean(entry.constant) : (base.constant !== undefined ? Boolean(base.constant) : false),
+            selective: entry.selective !== undefined ? Boolean(entry.selective) : (base.selective !== undefined ? Boolean(base.selective) : true),
+            order: order,
+            position: position,
+            disable: entry.enabled !== undefined ? !entry.enabled : (base.disable !== undefined ? base.disable : false),
+            displayIndex: displayIndex,
+            addMemo: base.addMemo !== undefined ? base.addMemo : true,
+            group: entry.group !== undefined ? entry.group : (base.group || ''),
+            groupOverride: base.groupOverride !== undefined ? base.groupOverride : false,
+            groupWeight: base.groupWeight !== undefined ? base.groupWeight : 100,
+            sticky: base.sticky !== undefined ? base.sticky : 0,
+            cooldown: base.cooldown !== undefined ? base.cooldown : 0,
+            delay: base.delay !== undefined ? base.delay : 0,
+            probability: entry.probability !== undefined ? entry.probability : (base.probability !== undefined ? base.probability : 100),
+            depth: depth,
+            useProbability: base.useProbability !== undefined ? base.useProbability : true,
+            role: role,
+            vectorized: base.vectorized !== undefined ? base.vectorized : false,
+            excludeRecursion: entry.exclude_recursion !== undefined ? entry.exclude_recursion : (base.excludeRecursion !== undefined ? base.excludeRecursion : false),
+            preventRecursion: entry.prevent_recursion !== undefined ? entry.prevent_recursion : (base.preventRecursion !== undefined ? base.preventRecursion : false),
+            delayUntilRecursion: base.delayUntilRecursion !== undefined ? base.delayUntilRecursion : false,
+            scanDepth: entry.scan_depth !== undefined ? entry.scan_depth : (base.scanDepth !== undefined ? base.scanDepth : null),
+            caseSensitive: entry.case_sensitive !== undefined ? entry.case_sensitive : (base.caseSensitive !== undefined ? base.caseSensitive : null),
+            matchWholeWords: entry.match_whole_words !== undefined ? entry.match_whole_words : (base.matchWholeWords !== undefined ? base.matchWholeWords : null),
+            useGroupScoring: entry.use_group_scoring !== undefined ? entry.use_group_scoring : (base.useGroupScoring !== undefined ? base.useGroupScoring : null),
+            automationId: base.automationId !== undefined ? base.automationId : '',
+            selectiveLogic: base.selectiveLogic !== undefined ? base.selectiveLogic : 0,
+            ignoreBudget: base.ignoreBudget !== undefined ? base.ignoreBudget : false,
+            matchPersonaDescription: entry.match_persona_description !== undefined ? entry.match_persona_description : (base.matchPersonaDescription !== undefined ? base.matchPersonaDescription : false),
+            matchCharacterDescription: entry.match_character_description !== undefined ? entry.match_character_description : (base.matchCharacterDescription !== undefined ? base.matchCharacterDescription : false),
+            matchCharacterPersonality: entry.match_character_personality !== undefined ? entry.match_character_personality : (base.matchCharacterPersonality !== undefined ? base.matchCharacterPersonality : false),
+            matchCharacterDepthPrompt: entry.match_character_depth_prompt !== undefined ? entry.match_character_depth_prompt : (base.matchCharacterDepthPrompt !== undefined ? base.matchCharacterDepthPrompt : false),
+            matchScenario: entry.match_scenario !== undefined ? entry.match_scenario : (base.matchScenario !== undefined ? base.matchScenario : false),
+            matchCreatorNotes: base.matchCreatorNotes !== undefined ? base.matchCreatorNotes : false,
+            outletName: base.outletName !== undefined ? base.outletName : '',
+            triggers: Array.isArray(base.triggers) ? base.triggers : [],
+            characterFilter: base.characterFilter || { isExclude: false, names: [], tags: [] },
+            ...base, // 保留 base 中可能存在的其他额外酒馆属性
+        };
+
+        // 显式确保用户编辑的字段优先级
+        tavernEntry.uid = entry.id !== undefined ? entry.id : (base.uid !== undefined ? base.uid : index);
+        tavernEntry.key = Array.isArray(entry.keys) ? entry.keys : (Array.isArray(entry.key) ? entry.key : (Array.isArray(base.key) ? base.key : []));
+        tavernEntry.keysecondary = Array.isArray(entry.secondary_keys) ? entry.secondary_keys : (Array.isArray(entry.keysecondary) ? entry.keysecondary : (Array.isArray(base.keysecondary) ? base.keysecondary : []));
+        tavernEntry.comment = entry.comment !== undefined ? entry.comment : (base.comment || '');
+        tavernEntry.content = entry.content !== undefined ? entry.content : (base.content || '');
+        tavernEntry.constant = entry.constant !== undefined ? Boolean(entry.constant) : (base.constant !== undefined ? Boolean(base.constant) : false);
+        tavernEntry.selective = entry.selective !== undefined ? Boolean(entry.selective) : (base.selective !== undefined ? Boolean(base.selective) : true);
+        tavernEntry.order = order;
+        tavernEntry.position = position;
+        tavernEntry.disable = entry.enabled !== undefined ? !entry.enabled : (base.disable !== undefined ? base.disable : false);
+        tavernEntry.depth = depth;
+        tavernEntry.role = role;
+        tavernEntry.displayIndex = displayIndex;
+
+        // 如果原 base 没有 extensions，独立世界书条目不需要 extensions 冗余嵌套
+        if (base.extensions) {
+            tavernEntry.extensions = { ...base.extensions };
+        } else {
+            delete tavernEntry.extensions;
+        }
+
+        // 递归处理子词条
+        if (entry.children && Array.isArray(entry.children) && entry.children.length > 0) {
+            tavernEntry.children = entry.children.map((child, childIndex) => convertEntryToTavern(child, childIndex));
+        }
+
+        return tavernEntry;
     }
-    
-    return tavernEntry;
-}
 
-// This is the format SillyTavern uses for its lorebooks.
-const lorebookEntries = {};
-if (v3Card.data.character_book && v3Card.data.character_book.entries) {
-    v3Card.data.character_book.entries.forEach((entry, index) => {
-        lorebookEntries[index] = convertV3EntryToTavern(entry, index);
+    const lorebookEntries = {};
+    rawEntries.forEach((entry, index) => {
+        lorebookEntries[index] = convertEntryToTavern(entry, index);
     });
-}
 
-return {
-    entries: lorebookEntries,
-    originalData: v3Card.data.character_book || {
-    // 回退结构同样对齐ST标准，只保留 entries 和 name
-    entries: [],
-    name: cardData.name || 'Character Book',
-    },
-};
+    const exportObj = {
+        entries: lorebookEntries
+    };
+
+    if (cardData.worldbook_name) {
+        exportObj.name = cardData.worldbook_name;
+    }
+    if (cardData.worldbook_description) {
+        exportObj.description = cardData.worldbook_description;
+    }
+
+    return exportObj;
 }
 
 async function exportCharacter(id) {
@@ -2740,7 +2849,8 @@ request.onsuccess = async e => {
     const blob = new Blob([JSON.stringify(lorebookData, null, 2)], { type: 'application/json' });
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
-    a.download = (charData.name || 'lorebook') + '.json';
+    let exportFileName = (charData.name || 'lorebook').replace(/\.json$/i, '');
+    a.download = exportFileName + '.json';
     a.click();
     URL.revokeObjectURL(a.href);
     } else {
@@ -3282,11 +3392,14 @@ const fields = [
     'post_history_instructions',
     'creator_notes',
     'character_version',
+    'depth_prompt_prompt',
 ];
 fields.forEach(id => {
     const el = document.getElementById(id);
     if (el) el.value = '';
 });
+if (document.getElementById('depth_prompt_depth')) document.getElementById('depth_prompt_depth').value = '4';
+if (document.getElementById('depth_prompt_role')) document.getElementById('depth_prompt_role').value = 'system';
 document.querySelectorAll('.ai-undo-button').forEach(btn => (btn.style.display = 'none'));
 document.getElementById('worldbook-entries-container').innerHTML = '';
 document.getElementById('avatar-input').value = '';
@@ -3324,6 +3437,23 @@ document.getElementById('creator_notes').value = charData.creator_notes || '';
 document.getElementById('character_version').value = charData.character_version || '';
 document.getElementById('internalTags').value = JSON.stringify(charData.internalTags || []);
 document.getElementById('isFavorite').value = charData.isFavorite || false;
+
+// 保存原始扩展信息供导出使用
+if (document.getElementById('originalCardData')) {
+    document.getElementById('originalCardData').value = JSON.stringify(charData.rawExtensions || {});
+}
+
+// 恢复 Character's Note (depth_prompt)
+const dp = charData.depth_prompt || (charData.rawExtensions && charData.rawExtensions.depth_prompt) || {};
+if (document.getElementById('depth_prompt_prompt')) {
+    document.getElementById('depth_prompt_prompt').value = dp.prompt || '';
+}
+if (document.getElementById('depth_prompt_depth')) {
+    document.getElementById('depth_prompt_depth').value = (dp.depth !== undefined && dp.depth !== null) ? dp.depth : 4;
+}
+if (document.getElementById('depth_prompt_role')) {
+    document.getElementById('depth_prompt_role').value = dp.role || 'system';
+}
 
 // 恢复角色卡关联的指令数据
 if (charData.instructionsData && Array.isArray(charData.instructionsData)) {
@@ -3503,6 +3633,22 @@ return entries.map(entry => {
 function buildCardObject() {
 const worldbookData = buildWorldbookDataFromDOM();
 
+const dpPromptEl = document.getElementById('depth_prompt_prompt');
+const dpDepthEl = document.getElementById('depth_prompt_depth');
+const dpRoleEl = document.getElementById('depth_prompt_role');
+
+const depthPromptData = {
+    prompt: dpPromptEl ? dpPromptEl.value : '',
+    depth: dpDepthEl && dpDepthEl.value !== '' ? parseInt(dpDepthEl.value, 10) : 4,
+    role: dpRoleEl ? dpRoleEl.value : 'system'
+};
+
+let rawExtensions = {};
+try {
+    const rawVal = document.getElementById('originalCardData')?.value;
+    if (rawVal) rawExtensions = JSON.parse(rawVal);
+} catch (e) {}
+
 const card = {
     name: document.getElementById('name').value.trim(),
     gender: document.getElementById('gender').value.trim(),
@@ -3527,6 +3673,8 @@ const card = {
     avatar: avatarImageBase64,
     worldbook: worldbookData,
     instructionsData: instructionsData || [],
+    depth_prompt: depthPromptData,
+    rawExtensions: rawExtensions,
     // 新增：备用问候语和正则脚本
     alternate_greetings: alternateGreetingsData || [],
     regex_scripts: regexScriptsData || [],
@@ -3544,94 +3692,133 @@ return buildV3Card(currentCardState);
 }
 
 function hasWorldbookContent(entries) {
-if (!entries || entries.length === 0) {
-    return false;
-}
-for (const entry of entries) {
-    if (entry.content && entry.content.trim() !== '') {
-    return true;
+    if (!entries || entries.length === 0) {
+        return false;
     }
-    if (entry.children && entry.children.length > 0) {
-    if (hasWorldbookContent(entry.children)) {
-        return true;
+    for (const entry of entries) {
+        const txt = (entry.content !== undefined ? entry.content : (entry['内容'] || '')).trim();
+        if (txt !== '') {
+            return true;
+        }
+        if ((entry.comment && String(entry.comment).trim() !== '') || (entry.keys && entry.keys.length > 0)) {
+            return true;
+        }
+        if (entry.children && entry.children.length > 0) {
+            if (hasWorldbookContent(entry.children)) {
+                return true;
+            }
+        }
     }
-    }
-}
-return false;
+    return entries.length > 0;
 }
 
 function buildV3Card(cardData) {
-// 转换内部数值格式的position到V3字符串格式
+// 转换内部数值格式的position到V3字符串格式：严格遵循SillyTavern规范（0为before_char，非0均为after_char）
 function convertPositionToV3(position) {
-    const positionMap = {
-    0: 'before_char',
-    1: 'after_char', 
-    2: 'top_an',
-    3: 'bottom_an',
-    4: 'at_depth',
-    5: 'em_top',
-    6: 'em_bottom'
-    };
-    return positionMap[position] || 'before_char';
+    return Number(position) === 0 ? 'before_char' : 'after_char';
 }
 
 // 递归函数：将条目及其子条目转换为V3格式
-function convertEntryToV3(entry) {
+function convertEntryToV3(entry, fallbackIndex = 0) {
+    const rawExt = entry.rawExtensions || {};
+    const posNum = entry.position !== undefined ? Number(entry.position) : 0;
+    const depthNum = (entry.depth !== undefined && entry.depth !== null) ? Number(entry.depth) : 4;
+    const roleNum = entry.role !== undefined && entry.role !== null ? Number(entry.role) : 0;
+    const displayIndex = entry.display_index !== undefined ? entry.display_index : (rawExt.display_index !== undefined ? rawExt.display_index : fallbackIndex);
+
+    // 以原有的 rawExtensions 为底座进行合并，覆写编辑属性
+    const mergedExtensions = {
+        ...rawExt,
+        position: posNum,
+        exclude_recursion: entry.exclude_recursion !== undefined ? entry.exclude_recursion : (rawExt.exclude_recursion !== undefined ? rawExt.exclude_recursion : true),
+        display_index: displayIndex,
+        probability: entry.probability !== undefined ? entry.probability : (rawExt.probability !== undefined ? rawExt.probability : 100),
+        useProbability: rawExt.useProbability !== undefined ? rawExt.useProbability : true,
+        depth: depthNum,
+        selectiveLogic: rawExt.selectiveLogic !== undefined ? rawExt.selectiveLogic : (rawExt.selectivelogic !== undefined ? rawExt.selectivelogic : 0),
+        group: entry.group !== undefined ? entry.group : (rawExt.group || ''),
+        group_override: entry.group_override !== undefined ? entry.group_override : (rawExt.group_override || false),
+        group_weight: entry.group_weight !== undefined ? entry.group_weight : (rawExt.group_weight || 100),
+        prevent_recursion: entry.prevent_recursion !== undefined ? entry.prevent_recursion : (rawExt.prevent_recursion !== undefined ? rawExt.prevent_recursion : true),
+        delay_until_recursion: rawExt.delay_until_recursion || false,
+        scan_depth: entry.scan_depth !== undefined ? entry.scan_depth : (rawExt.scan_depth !== undefined ? rawExt.scan_depth : null),
+        match_whole_words: entry.match_whole_words !== undefined ? entry.match_whole_words : (rawExt.match_whole_words !== undefined ? rawExt.match_whole_words : null),
+        use_group_scoring: entry.use_group_scoring !== undefined ? entry.use_group_scoring : (rawExt.use_group_scoring || false),
+        case_sensitive: entry.case_sensitive !== undefined ? entry.case_sensitive : (rawExt.case_sensitive !== undefined ? rawExt.case_sensitive : null),
+        automation_id: rawExt.automation_id || '',
+        role: roleNum,
+        vectorized: rawExt.vectorized || false,
+        sticky: rawExt.sticky !== undefined ? rawExt.sticky : 0,
+        cooldown: rawExt.cooldown !== undefined ? rawExt.cooldown : 0,
+        delay: rawExt.delay !== undefined ? rawExt.delay : 0,
+    };
+
+    // 只有当 rawExtensions 中原本存在，或条目显式设置时才输出额外匹配源，避免老卡被注入多余的false属性
+    if (rawExt.match_persona_description !== undefined || entry.match_persona_description !== undefined) {
+        mergedExtensions.match_persona_description = entry.match_persona_description !== undefined ? entry.match_persona_description : rawExt.match_persona_description;
+    }
+    if (rawExt.match_character_description !== undefined || entry.match_character_description !== undefined) {
+        mergedExtensions.match_character_description = entry.match_character_description !== undefined ? entry.match_character_description : rawExt.match_character_description;
+    }
+    if (rawExt.match_character_personality !== undefined || entry.match_character_personality !== undefined) {
+        mergedExtensions.match_character_personality = entry.match_character_personality !== undefined ? entry.match_character_personality : rawExt.match_character_personality;
+    }
+    if (rawExt.match_character_depth_prompt !== undefined || entry.match_character_depth_prompt !== undefined) {
+        mergedExtensions.match_character_depth_prompt = entry.match_character_depth_prompt !== undefined ? entry.match_character_depth_prompt : rawExt.match_character_depth_prompt;
+    }
+    if (rawExt.match_scenario !== undefined || entry.match_scenario !== undefined) {
+        mergedExtensions.match_scenario = entry.match_scenario !== undefined ? entry.match_scenario : rawExt.match_scenario;
+    }
+    if (rawExt.secondary_keys_logic !== undefined || entry.secondary_keys_logic !== undefined) {
+        mergedExtensions.secondary_keys_logic = entry.secondary_keys_logic || rawExt.secondary_keys_logic || 'any';
+    }
+
     const v3Entry = {
-    id: entry.id,
-    keys: entry.keys || [],
-    secondary_keys: entry.secondary_keys || [],
-    comment: entry.comment || '',
-    content: entry.content || '',
-    constant: entry.constant || false,
-    selective: entry.selective === undefined ? true : entry.selective,
-    insertion_order: entry.priority || 100,
-    enabled: entry.enabled === undefined ? true : entry.enabled,
-    position: convertPositionToV3(entry.position),
-    use_regex: entry.use_regex || false,
-    extensions: {
-        position: entry.position !== undefined ? entry.position : 0,
-        exclude_recursion: entry.exclude_recursion !== undefined ? entry.exclude_recursion : true,
-        display_index: entry.display_index || 0,
-        probability: entry.probability === undefined ? 100 : entry.probability,
-        useProbability: true,
-        depth: (entry.depth !== undefined && entry.depth !== null) ? Number(entry.depth) : 4,
-        selectiveLogic: 0,
-        group: entry.group || '',
-        group_override: entry.group_override || false,
-        group_weight: entry.group_weight || 100,
-        prevent_recursion: entry.prevent_recursion !== undefined ? entry.prevent_recursion : true,
-        delay_until_recursion: false,
-        scan_depth: entry.scan_depth || null,
-        match_whole_words: entry.match_whole_words || null,
-        use_group_scoring: entry.use_group_scoring || false,
-        case_sensitive: entry.case_sensitive || null,
-        automation_id: '',
-        role: entry.position === 4 ? (entry.role !== undefined ? entry.role : 0) : 0,
-        vectorized: false,
-        sticky: 0,
-        cooldown: 0,
-        delay: 0,
-        // 额外匹配源 - 默认开启
-        match_persona_description: entry.match_persona_description !== undefined ? entry.match_persona_description : true,
-        match_character_description: entry.match_character_description !== undefined ? entry.match_character_description : true,
-        match_character_personality: entry.match_character_personality !== undefined ? entry.match_character_personality : true,
-        match_character_depth_prompt: entry.match_character_depth_prompt !== undefined ? entry.match_character_depth_prompt : true,
-        match_scenario: entry.match_scenario !== undefined ? entry.match_scenario : true,
-        secondary_keys_logic: entry.secondary_keys_logic || 'any',
-    },
+        id: entry.id,
+        keys: Array.isArray(entry.keys) ? entry.keys : (Array.isArray(entry.key) ? entry.key : (Array.isArray(entry['关键词']) ? entry['关键词'] : [])),
+        secondary_keys: Array.isArray(entry.secondary_keys) ? entry.secondary_keys : (Array.isArray(entry.keysecondary) ? entry.keysecondary : []),
+        comment: entry.comment || entry['注释'] || entry['备注'] || entry.name || '',
+        content: entry.content !== undefined ? entry.content : (entry['内容'] !== undefined ? entry['内容'] : ''),
+        constant: entry.constant || false,
+        selective: entry.selective === undefined ? true : entry.selective,
+        insertion_order: entry.priority || entry.insertion_order || 100,
+        enabled: entry.enabled === undefined ? true : entry.enabled,
+        position: convertPositionToV3(posNum),
+        use_regex: entry.use_regex !== undefined ? entry.use_regex : true,
+        extensions: mergedExtensions,
     };
 
     // 递归处理子条目
     if (entry.children && entry.children.length > 0) {
-    v3Entry.children = entry.children.map(child => convertEntryToV3(child));
+        v3Entry.children = entry.children.map((child, cIdx) => convertEntryToV3(child, cIdx));
     }
 
     return v3Entry;
 }
 
-const v3BookEntries = (cardData.worldbook || []).map(entry => convertEntryToV3(entry));
+const v3BookEntries = (cardData.worldbook || []).map((entry, idx) => convertEntryToV3(entry, idx));
 const worldbookHasContent = hasWorldbookContent(cardData.worldbook);
+
+const rawCardExt = cardData.rawExtensions || {};
+const dp = cardData.depth_prompt || rawCardExt.depth_prompt || { prompt: '', depth: 4, role: 'system' };
+const finalDepthPrompt = {
+    prompt: dp.prompt !== undefined ? dp.prompt : '',
+    depth: dp.depth !== undefined && dp.depth !== null ? Number(dp.depth) : 4,
+    role: dp.role || 'system'
+};
+
+const extensionsObj = {
+    ...rawCardExt,
+    talkativeness: rawCardExt.talkativeness !== undefined ? rawCardExt.talkativeness : '0.5',
+    fav: cardData.isFavorite !== undefined ? cardData.isFavorite : (rawCardExt.fav || false),
+    depth_prompt: finalDepthPrompt,
+    regex_scripts: cardData.regex_scripts || rawCardExt.regex_scripts || [],
+    'xiaobaix-tasks': {
+        tasks: cardData.xiaobaix_tasks || (rawCardExt['xiaobaix-tasks'] && rawCardExt['xiaobaix-tasks'].tasks) || [],
+    },
+    // SillyTavern弹出"导入内嵌世界书"对话框所需的关键字段
+    world: rawCardExt.world !== undefined ? rawCardExt.world : (worldbookHasContent ? (cardData.name || '') : undefined),
+};
 
 const dataObject = {
     name: cardData.name || '',
@@ -3648,23 +3835,10 @@ const dataObject = {
     character_version: cardData.character_version || '1.0',
     alternate_greetings: cardData.alternate_greetings || [],
     group_only_greetings: [],
-    extensions: {
-    talkativeness: '0.5',
-    fav: cardData.isFavorite || false,
-    depth_prompt: { prompt: '', depth: 4, role: 'system' },
-    regex_scripts: cardData.regex_scripts || [],
-    'xiaobaix-tasks': {
-        tasks: cardData.xiaobaix_tasks || [],
-    },
-    // SillyTavern弹出"导入内嵌世界书"对话框所需的关键字段
-    // ST会读取此字段来判断角色是否已关联世界书，若未关联则弹出导入提示
-    world: worldbookHasContent ? (cardData.name || '') : undefined,
-    },
+    extensions: extensionsObj,
     character_book: worldbookHasContent
     ? {
         // 严格对齐ST的convertWorldInfoToCharacterBook输出格式
-        // ST只使用 entries 和 name，其余字段（description/scan_depth/token_budget/recursive_scanning）均为冗余
-        // 字段顺序：entries在前，name在后（与ST一致）
         entries: v3BookEntries,
         name: cardData.name || 'Character Book',
         }
@@ -3685,8 +3859,8 @@ return {
     tags: dataObject.tags,
     create_date: new Date().toISOString(),
     avatar: 'none',
-    talkativeness: '0.5',
-    fav: dataObject.extensions.fav,
+    talkativeness: extensionsObj.talkativeness,
+    fav: extensionsObj.fav,
     data: dataObject,
 };
 }
@@ -3774,6 +3948,8 @@ let failedMemoryQueue = []; // 失败的记忆队列，用于一键修复
 let isRepairingMemories = false; // 是否正在修复记忆
 let currentProcessingIndex = -1; // 当前正在处理的记忆块索引
 let __lastApiUsage = null; // 上次API响应的usage数据，供token统计使用
+let currentEpubChapters = []; // 当前解析出的 EPUB 章节列表 [{ name, content, checked }]
+let isCurrentEpub = false; // 当前导入的文件是否为 EPUB
 
 // IndexedDB 辅助类
 const IndexedDBHelper = {
@@ -4235,7 +4411,7 @@ dropZone.addEventListener('drop', (e) => {
 const encodingSelect = document.getElementById('file-encoding');
 if (encodingSelect) {
     encodingSelect.addEventListener('change', () => {
-    if (currentFile && encodingSelect.value !== 'auto') {
+    if (currentFile && !isCurrentEpub && encodingSelect.value !== 'auto') {
         // 重新加载文件
         reloadFileWithEncoding(currentFile, encodingSelect.value);
     }
@@ -4276,6 +4452,270 @@ try {
 }
 }
 
+/* ==================== EPUB 章节解析与处理 ==================== */
+
+// 以 baseDir 为基准解析相对路径，处理 ../ 和 ./
+function resolveEpubPath(baseDir, rel) {
+  const stack = [];
+  (baseDir ? baseDir.split('/') : []).concat(rel.split('/')).forEach(p => {
+    if (p === '' || p === '.') return;
+    if (p === '..') stack.pop();
+    else stack.push(p);
+  });
+  return stack.join('/');
+}
+
+function parseEpubXml(text) {
+  return new DOMParser().parseFromString(text, 'text/xml');
+}
+
+// 从 zip 内的 OPF 解析出 manifest/spine 及 toc 标题映射
+async function parseEpubOpf(zip, opfPath) {
+  const baseDir = opfPath.includes('/') ? opfPath.replace(/\/[^/]*$/, '') : '';
+  const opfDoc = parseEpubXml(await zip.file(opfPath).async('string'));
+
+  // manifest：id -> {href 完整路径, mediaType, properties}
+  const manifest = {};
+  opfDoc.querySelectorAll('manifest > item').forEach(it => {
+    const id = it.getAttribute('id');
+    manifest[id] = {
+      href: resolveEpubPath(baseDir, it.getAttribute('href')),
+      mediaType: it.getAttribute('media-type') || '',
+      properties: it.getAttribute('properties') || ''
+    };
+  });
+
+  // spine：按阅读顺序的 manifest id 列表
+  const spine = [];
+  opfDoc.querySelectorAll('spine > itemref').forEach(ir => {
+    spine.push(ir.getAttribute('idref'));
+  });
+
+  // toc.ncx（EPUB2）：href -> 标题
+  const tocMap = {};
+  const ncxId = opfDoc.querySelector('spine') && opfDoc.querySelector('spine').getAttribute('toc');
+  const ncxPath = (manifest[ncxId] && manifest[ncxId].mediaType === 'application/x-dtbncx+xml')
+    ? manifest[ncxId].href
+    : (Object.values(manifest).find(m => m.mediaType === 'application/x-dtbncx+xml') || {}).href;
+  if (ncxPath && zip.file(ncxPath)) {
+    const ncxDoc = parseEpubXml(await zip.file(ncxPath).async('string'));
+    ncxDoc.querySelectorAll('navPoint').forEach(np => {
+      const label = np.querySelector('navLabel > text');
+      const src = np.querySelector('content');
+      if (label && src) {
+        const file = resolveEpubPath(baseDir, src.getAttribute('src').split('#')[0]);
+        tocMap[file] = tocMap[file] || label.textContent.trim();
+      }
+    });
+  }
+
+  // EPUB3 nav 文档：href -> 标题（补充 toc.ncx 缺失的部分）
+  const navItem = Object.values(manifest).find(m => (m.properties || '').split(/\s+/).includes('nav'));
+  if (navItem && zip.file(navItem.href)) {
+    const navDoc = new DOMParser().parseFromString(await zip.file(navItem.href).async('string'), 'text/html');
+    navDoc.querySelectorAll('nav a[href]').forEach(a => {
+      const file = resolveEpubPath(baseDir, a.getAttribute('href').split('#')[0]);
+      const title = a.textContent.trim();
+      if (title && (!tocMap[file] || /^（|^part\d/i.test(tocMap[file]))) tocMap[file] = title;
+    });
+  }
+
+  return { manifest, spine, tocMap, baseDir };
+}
+
+// 提取章节正文：取块级叶子元素的文本，段落间空一行
+function extractEpubText(bodyEl) {
+  bodyEl.querySelectorAll('script,style,link,img,svg,video,audio,iframe').forEach(e => e.remove());
+  const blocks = Array.from(bodyEl.querySelectorAll('p,h1,h2,h3,h4,h5,h6,blockquote,li,dd,dt,pre,td'));
+  const hasDeeper = new Set();
+  blocks.forEach(outer => blocks.forEach(inner => {
+    if (outer !== inner && outer.contains(inner)) hasDeeper.add(outer);
+  }));
+  const parts = [];
+  blocks.forEach(el => {
+    if (hasDeeper.has(el)) return;
+    const t = (el.textContent || '').replace(/\s+/g, ' ').trim();
+    if (t) parts.push(t);
+  });
+  if (parts.length) return parts.join('\n\n');
+  return (bodyEl.textContent || '').replace(/\s+/g, ' ').trim();
+}
+
+// 解析 EPUB 文件
+async function parseEpubFile(file) {
+  if (!window.JSZip) {
+    throw new Error('JSZip 库未加载完成，请检查网络连接或刷新页面后重试');
+  }
+  const zip = await JSZip.loadAsync(await file.arrayBuffer());
+
+  // 1. container.xml -> OPF 路径
+  const containerDoc = parseEpubXml(await zip.file('META-INF/container.xml').async('string'));
+  const rootfileEl = containerDoc.querySelector('rootfile');
+  if (!rootfileEl) throw new Error('META-INF/container.xml 未找到 rootfile 节点');
+  const opfPath = rootfileEl.getAttribute('full-path');
+  if (!zip.file(opfPath)) throw new Error('container.xml 指向的 OPF 不存在：' + opfPath);
+
+  // 2. OPF -> manifest/spine/toc
+  const { manifest, spine, tocMap } = await parseEpubOpf(zip, opfPath);
+
+  // 3. 按 spine 顺序提取每章文本
+  const chapters = [];
+  for (const idref of spine) {
+    const item = manifest[idref];
+    if (!item) continue;
+    if (!/application\/xhtml\+xml|text\/html/.test(item.mediaType)) continue;
+    const f = zip.file(item.href);
+    if (!f) continue;
+    const doc = new DOMParser().parseFromString(await f.async('string'), 'text/html');
+    const body = doc.body;
+    if (!body) continue;
+    // 标题优先级：toc.ncx / nav 映射 > <title> > <h1>/<h2> > 文件名
+    const h1 = body.querySelector('h1,h2');
+    const name = tocMap[item.href]
+      || (doc.querySelector('title') || {}).textContent?.trim()
+      || (h1 ? h1.textContent.trim() : '')
+      || item.href.split('/').pop();
+    const content = extractEpubText(body);
+    chapters.push({ name: (name || '').trim(), content: content || '', checked: true });
+  }
+  return chapters;
+}
+
+// 渲染 EPUB 章节列表
+function renderEpubChaptersList() {
+  const container = document.getElementById('epub-chapter-list');
+  if (!container) return;
+  container.innerHTML = '';
+
+  currentEpubChapters.forEach((ch, i) => {
+    const item = document.createElement('div');
+    item.className = 'epub-chapter-item' + (ch.checked ? '' : ' unchecked');
+
+    const cb = document.createElement('input');
+    cb.type = 'checkbox';
+    cb.checked = !!ch.checked;
+    cb.addEventListener('change', () => {
+      ch.checked = cb.checked;
+      item.classList.toggle('unchecked', !ch.checked);
+      updateEpubChapterStats();
+    });
+
+    item.onclick = (e) => {
+      if (e.target === cb) return;
+      cb.checked = !cb.checked;
+      ch.checked = cb.checked;
+      item.classList.toggle('unchecked', !ch.checked);
+      updateEpubChapterStats();
+    };
+
+    const num = document.createElement('span');
+    num.className = 'epub-chapter-num';
+    num.textContent = (i + 1) + '.';
+
+    const name = document.createElement('span');
+    name.className = 'epub-chapter-name';
+    name.textContent = ch.name || '（未命名章节）';
+    name.title = ch.name || '';
+
+    const cnt = document.createElement('span');
+    cnt.className = 'epub-chapter-cnt';
+    cnt.textContent = (ch.content ? ch.content.length.toLocaleString() : '0') + ' 字';
+
+    item.appendChild(cb);
+    item.appendChild(num);
+    item.appendChild(name);
+    item.appendChild(cnt);
+    container.appendChild(item);
+  });
+
+  updateEpubChapterStats();
+}
+
+// 更新 EPUB 章节统计和按钮显示
+function updateEpubChapterStats() {
+  const total = currentEpubChapters.length;
+  const picked = currentEpubChapters.filter(c => c.checked);
+  const pickedCount = picked.length;
+  const pickedChars = picked.reduce((sum, c) => sum + (c.content ? c.content.length : 0), 0);
+
+  const statsEl = document.getElementById('epub-chapter-stats');
+  if (statsEl) {
+    statsEl.textContent = `共 ${total} 章，已勾选 ${pickedCount} 章 (${pickedChars.toLocaleString()} 字)`;
+  }
+
+  const btnCountEl = document.getElementById('epub-btn-count');
+  if (btnCountEl) {
+    btnCountEl.textContent = pickedCount;
+  }
+}
+
+// 全选/全不选
+function toggleAllEpubChapters(checked) {
+  currentEpubChapters.forEach(c => { c.checked = checked; });
+  renderEpubChaptersList();
+}
+
+// 反选
+function invertEpubChapters() {
+  currentEpubChapters.forEach(c => { c.checked = !c.checked; });
+  renderEpubChaptersList();
+}
+
+// 导出勾选的章节为 JSON 文件（备用）
+function exportEpubChaptersJson() {
+  const picked = currentEpubChapters.filter(c => c.checked);
+  if (!picked.length) {
+    alert('当前没有勾选任何章节！');
+    return;
+  }
+  const out = picked.map((c, i) => ({ chapter: i + 1, name: c.name, content: c.content }));
+  const blob = new Blob([JSON.stringify(out, null, 2)], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = (currentFile ? currentFile.name.replace(/\.[^/.]+$/, '') : 'chapters') + '_chapters.json';
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+
+// 生成 EPUB 章节世界书分块并开始 AI 处理
+async function generateEpubWorldbook() {
+  const picked = currentEpubChapters.filter(c => c.checked);
+  if (!picked.length) {
+    alert('请至少勾选一个包含实质内容的章节！');
+    return;
+  }
+
+  // 将 chapter 的 “name” 和 “content” 字段组合为一个章节分块
+  memoryQueue = picked.map((ch, index) => {
+    const title = ch.name ? ch.name.trim() : `第${index + 1}章`;
+    const combinedContent = ch.name ? `${ch.name.trim()}\n\n${ch.content || ''}` : (ch.content || '');
+    return {
+      id: `chapter_${index + 1}`,
+      title: title,
+      content: combinedContent,
+      processed: false
+    };
+  });
+
+  // 拼接勾选章节内容到 currentNovelContent（便于 hash 检测、Token 统计与持久化状态）
+  currentNovelContent = memoryQueue.map(m => m.content).join('\n\n====================\n\n');
+
+  // 文件 hash 变更检测
+  await checkAndClearHistoryOnFileChange(currentNovelContent);
+
+  // 更新记忆队列 UI
+  updateMemoryQueueUI();
+
+  // 滚动至进度展示区域
+  const progressSec = document.getElementById('progress-section');
+  if (progressSec) {
+    progressSec.scrollIntoView({ behavior: 'smooth' });
+  }
+
+  // 启动长文本世界书 AI 处理
+  startAIProcessing();
+}
+
 // 处理文件导入
 async function handleNovelFile(event) {
 const file = event.target.files[0];
@@ -4284,42 +4724,99 @@ if (!file) return;
 // 存储文件引用以便后续重新加载
 currentFile = file;
 
+const fileName = file.name.toLowerCase();
+const chapterReadingSec = document.getElementById('chapter-reading-section');
+const continuousReadingSec = document.getElementById('continuous-reading-section');
+const epubChapterSec = document.getElementById('epub-chapter-section');
+const fileEncodingContainer = document.getElementById('file-encoding-container');
+
 try {
-    const fileName = file.name.toLowerCase();
-    let content = '';
-    
-    if (fileName.endsWith('.txt')) {
-    content = await readTextFile(file);
+    if (fileName.endsWith('.epub')) {
+      isCurrentEpub = true;
+
+      // 如果导入的是 epub，就隐藏 📆 自动化章回阅读 ⚙️ 自动化连续阅读 这两个栏目
+      if (chapterReadingSec) chapterReadingSec.style.display = 'none';
+      if (continuousReadingSec) continuousReadingSec.style.display = 'none';
+      if (fileEncodingContainer) fileEncodingContainer.style.display = 'none';
+
+      // 显示 EPUB 章节管理面板
+      if (epubChapterSec) epubChapterSec.style.display = 'block';
+
+      // 显示正在解析状态
+      document.getElementById('novel-drop-zone').innerHTML = `
+        <div style="font-size: 48px; margin-bottom: 15px;">⏳</div>
+        <p>正在解析 EPUB 章节结构：${file.name} ...</p>
+        <p style="color: #aaa; font-size: 14px; margin-top: 5px;">请稍候...</p>
+      `;
+
+      currentEpubChapters = await parseEpubFile(file);
+
+      if (!currentEpubChapters || currentEpubChapters.length === 0) {
+        alert('未能从该 EPUB 文件中解析出有效章节！');
+        document.getElementById('novel-drop-zone').innerHTML = `
+          <div style="font-size: 48px; margin-bottom: 15px;">⚠️</div>
+          <p>EPUB 解析失败或无章节内容：${file.name}</p>
+        `;
+        return;
+      }
+
+      const totalChars = currentEpubChapters.reduce((sum, c) => sum + (c.content ? c.content.length : 0), 0);
+
+      // 更新 DropZone 提示
+      document.getElementById('novel-drop-zone').innerHTML = `
+        <div style="font-size: 48px; margin-bottom: 15px;">📚</div>
+        <p>EPUB 已加载：${file.name}</p>
+        <p style="color: #aaa; font-size: 14px; margin-top: 5px;">共解析出 ${currentEpubChapters.length} 个章节，总计约 ${totalChars.toLocaleString()} 字</p>
+        <p style="color: #27ae60; font-size: 12px; margin-top: 5px;">✓ 请在下方章节列表中取消非实质正文章节的勾选后点击生成</p>
+      `;
+
+      // 导入后立马列出所有章节供用户取消非实质含有主要内容的章节复选框
+      renderEpubChaptersList();
+
+    } else if (fileName.endsWith('.txt')) {
+      isCurrentEpub = false;
+
+      // 恢复显示 📆 自动化章回阅读 和 ⚙️ 自动化连续阅读 这两个栏目
+      if (chapterReadingSec) chapterReadingSec.style.display = 'block';
+      if (continuousReadingSec) continuousReadingSec.style.display = 'block';
+      if (fileEncodingContainer) fileEncodingContainer.style.display = 'flex';
+
+      // 隐藏 EPUB 章节管理面板
+      if (epubChapterSec) epubChapterSec.style.display = 'none';
+
+      const content = await readTextFile(file);
+      
+      // 检测文件是否变化，如果变化则清理历史记录
+      await checkAndClearHistoryOnFileChange(content);
+      
+      currentNovelContent = content;
+      
+      // 显示文本预览（前200字符）
+      const preview = content.substring(0, 200).replace(/\n/g, ' ');
+      const detectedEncoding = document.getElementById('file-encoding').value;
+      
+      // 更新UI
+      document.getElementById('novel-drop-zone').innerHTML = `
+      <div style="font-size: 48px; margin-bottom: 15px;">📖</div>
+      <p>文件已加载：${file.name}</p>
+      <p style="color: #aaa; font-size: 14px; margin-top: 5px;">字数：${content.length.toLocaleString()} | 编码：${detectedEncoding}</p>
+      <p style="color: #aaa; font-size: 12px; margin-top: 5px;">预览：${preview}${content.length > 200 ? '...' : ''}</p>
+      `;
+      
+      // 导入成功后重置编码选择为自动检测（为下次使用准备）
+      setTimeout(() => {
+        const encSel = document.getElementById('file-encoding');
+        if (encSel) encSel.value = 'auto';
+      }, 100);
+
     } else {
-    alert('不支持的文件格式，请使用 txt 文件');
-    return;
+      alert('不支持的文件格式，请使用 txt 或 epub 文件');
+      return;
     }
     
-    // 检测文件是否变化，如果变化则清理历史记录
-    await checkAndClearHistoryOnFileChange(content);
-    
-    currentNovelContent = content;
-    
-    // 显示文本预览（前200字符）
-    const preview = content.substring(0, 200).replace(/\n/g, ' ');
-    const detectedEncoding = document.getElementById('file-encoding').value;
-    
-    // 更新UI
-    document.getElementById('novel-drop-zone').innerHTML = `
-    <div style="font-size: 48px; margin-bottom: 15px;">📖</div>
-    <p>文件已加载：${file.name}</p>
-    <p style="color: #aaa; font-size: 14px; margin-top: 5px;">字数：${content.length.toLocaleString()} | 编码：${detectedEncoding}</p>
-    <p style="color: #aaa; font-size: 12px; margin-top: 5px;">预览：${preview}${content.length > 200 ? '...' : ''}</p>
-    `;
-    
-    // 导入成功后重置编码选择为自动检测（为下次使用准备）
-    setTimeout(() => {
-    document.getElementById('file-encoding').value = 'auto';
-    }, 100);
-    
 } catch (error) {
-    console.error('文件读取失败:', error);
-    alert('文件读取失败，请检查文件格式');
+    console.error('文件读取/解析失败:', error);
+    alert('文件读取/解析失败: ' + error.message);
 }
 }
 

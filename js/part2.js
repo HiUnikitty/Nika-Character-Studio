@@ -1,7 +1,5 @@
-// 生成动态破限提示词
+// 生成破限提示词（保持静态稳定以最大化 Prompt Caching 命中率，大幅节省 Token 费用）
 async function generateLimitlessPrompt(type = 'system') {
-    const dynamicSuffix = Date.now().toString(36).slice(-4);
-    
     // 尝试从IndexedDB加载自定义破限提示词
     let customPrompt = null;
     try {
@@ -9,18 +7,25 @@ async function generateLimitlessPrompt(type = 'system') {
     } catch (error) {
         console.error('加载自定义破限提示词失败:', error);
     }
-    
+
     // 使用自定义提示词或默认提示词（DEFAULT_LIMITLESS_PROMPT在part1.js中定义）
     const basePrompt = customPrompt || DEFAULT_LIMITLESS_PROMPT;
-    
-    return `${dynamicSuffix}
-${basePrompt}
 
-${type === 'prefix' ? '\n---\n以下是用户的具体要求：\n' : ''}`;
+    return `${basePrompt}${type === 'prefix' ? '\n\n---\n以下是用户的具体要求：\n' : ''}`;
 }
 
+// 智能 Agent 增量编辑模式开关状态（默认启用）
+let agentIncrementalMode = true;
 // 增量输出模式开关状态（默认启用）
 let incrementalOutputMode = true;
+// 严格按自定义分类提取开关状态（默认 false：自由发挥类别；true：严格限定分类）
+let strictCustomCategoriesMode = false;
+try {
+    const savedStrict = localStorage.getItem('strict_custom_categories_mode');
+    if (savedStrict !== null) {
+        strictCustomCategoriesMode = savedStrict === 'true';
+    }
+} catch (e) { }
 
 // ========== 自定义JSON模板系统 ==========
 // 默认的世界书分类模板配置
@@ -80,6 +85,14 @@ const DEFAULT_WORLDBOOK_CATEGORIES = [
         entryExample: "角色名-内心世界",
         keywordsExample: ["角色名", "内心", "心理"],
         contentGuide: "角色的内心想法和心理活动，包含但不限于**（角色名）的（某个时期）的内心世界**：、****原文内容**:、**内心独白**:、**情感变化**:、**动机分析**:、**心理矛盾**:等"
+    },
+    {
+        name: "知识书",
+        enabled: true,
+        isBuiltin: true,
+        entryExample: "概念/法则/世界观设定",
+        keywordsExample: ["设定名", "概念词", "历史事件", "专有名词"],
+        contentGuide: "基于原文的世界观、法则与设定描述，包含但不限于**名称**:（必须要）、**概念定义**:、**运作法则/原理**:、**历史起源**:、**对世界的影响**:等（实际嵌套或者排列方式按合理的逻辑）"
     }
 ];
 
@@ -102,6 +115,14 @@ async function loadCustomCategories() {
         const saved = await MemoryHistoryDB.getCustomCategories();
         if (saved && Array.isArray(saved) && saved.length > 0) {
             customWorldbookCategories = saved;
+            // 自愈检查：确保内置的“知识书”分类存在于列表中
+            if (!customWorldbookCategories.some(c => c.name === '知识书')) {
+                const defaultKnowledge = DEFAULT_WORLDBOOK_CATEGORIES.find(c => c.name === '知识书');
+                if (defaultKnowledge) {
+                    customWorldbookCategories.push(JSON.parse(JSON.stringify(defaultKnowledge)));
+                    await saveCustomCategories();
+                }
+            }
         } else {
             // 尝试从localStorage迁移（兼容旧版本）
             const localStorageData = localStorage.getItem('customWorldbookCategories');
@@ -110,6 +131,10 @@ async function loadCustomCategories() {
                     const parsed = JSON.parse(localStorageData);
                     if (Array.isArray(parsed) && parsed.length > 0) {
                         customWorldbookCategories = parsed;
+                        if (!customWorldbookCategories.some(c => c.name === '知识书')) {
+                            const defaultKnowledge = DEFAULT_WORLDBOOK_CATEGORIES.find(c => c.name === '知识书');
+                            if (defaultKnowledge) customWorldbookCategories.push(JSON.parse(JSON.stringify(defaultKnowledge)));
+                        }
                         await saveCustomCategories(); // 迁移到IndexedDB
                         localStorage.removeItem('customWorldbookCategories'); // 清理localStorage
                         mylog('已从localStorage迁移到IndexedDB');
@@ -146,10 +171,14 @@ function generateMainPromptJsonTemplate() {
     const parts = [];
 
     for (const cat of enabledCategories) {
+        const exampleName = cat.entryExample || `具体${cat.name}真实名称`;
+        const kwExample = (cat.keywordsExample && cat.keywordsExample.length > 0)
+            ? cat.keywordsExample
+            : [`${cat.name}全称`, `${cat.name}别名`, `${cat.name}简称`];
         parts.push(`"${cat.name}": {
-"${cat.entryExample}": {
-"关键词": ${JSON.stringify(cat.keywordsExample)},
-"内容": "${cat.contentGuide}"
+"${exampleName}": {
+"关键词": ${JSON.stringify(kwExample)},
+"内容": "${cat.contentGuide || `基于原文的${cat.name}描述`}"
 }
 }`);
     }
@@ -193,7 +222,8 @@ function generateSimpleJsonTemplate() {
     const parts = [];
 
     for (const cat of enabledCategories) {
-        parts.push(`"${cat.name}": { "${cat.entryExample}": { "关键词": ["..."], "内容": "..." } }`);
+        const exampleName = cat.entryExample || `具体${cat.name}真实名称`;
+        parts.push(`"${cat.name}": { "${exampleName}": { "关键词": ["..."], "内容": "..." } }`);
     }
 
     if (enablePlotOutline) {
@@ -210,20 +240,23 @@ function generateSimpleJsonTemplate() {
 // 生成格式修复提示词的JSON结构说明
 function generateFixPromptJsonStructure() {
     const enabledCategories = getEnabledCategories();
+    const enablePlotOutline = document.getElementById('enable-plot-outline')?.checked ?? true;
     const enableLiteraryStyle = document.getElementById('enable-literary-style')?.checked ?? false;
 
     let structure = '{\n';
     const parts = [];
 
     for (const cat of enabledCategories) {
-        parts.push(`  "${cat.name}": {\n    "条目名": { "关键词": ["..."], "内容": "..." }\n  }`);
+        const exampleName = cat.entryExample || '条目名';
+        parts.push(`  "${cat.name}": {\n    "${exampleName}": { "关键词": ["..."], "内容": "..." }\n  }`);
     }
 
-    // 剧情大纲和知识书始终包含在格式修复中
-    parts.push(`  "剧情大纲": {\n    "主线剧情": { "关键词": ["..."], "内容": "..." },\n    "支线剧情": { "关键词": ["..."], "内容": "..." }\n  }`);
-    parts.push(`  "知识书": {\n    "条目名": { "关键词": ["..."], "内容": "..." }\n  }`);
+    // 只有在启用了剧情大纲且分类列表中没有时才补充
+    if (enablePlotOutline && !enabledCategories.some(c => c.name === '剧情大纲')) {
+        parts.push(`  "剧情大纲": {\n    "主线剧情": { "关键词": ["..."], "内容": "..." },\n    "支线剧情": { "关键词": ["..."], "内容": "..." }\n  }`);
+    }
 
-    if (enableLiteraryStyle) {
+    if (enableLiteraryStyle && !enabledCategories.some(c => c.name === '文风配置')) {
         parts.push(`  "文风配置": {\n    "作品文风": { "关键词": ["文风", "写作风格", "叙事特点"], "内容": "..." }\n  }`);
     }
 
@@ -236,11 +269,14 @@ function generateFixPromptJsonStructure() {
 // 获取分类名称列表（用于提示词中的说明）
 function getCategoryNamesList() {
     const enabledCategories = getEnabledCategories();
+    const enablePlotOutline = document.getElementById('enable-plot-outline')?.checked ?? true;
     const enableLiteraryStyle = document.getElementById('enable-literary-style')?.checked ?? false;
 
     const names = enabledCategories.map(cat => cat.name);
-    names.push('剧情大纲', '知识书');
-    if (enableLiteraryStyle) {
+    if (enablePlotOutline && !names.includes('剧情大纲')) {
+        names.push('剧情大纲');
+    }
+    if (enableLiteraryStyle && !names.includes('文风配置')) {
         names.push('文风配置');
     }
 
@@ -250,24 +286,43 @@ function getCategoryNamesList() {
 // 获取启用分类的提取说明
 function getEnabledCategoriesDescription() {
     const enabledCategories = getEnabledCategories();
-    return enabledCategories.map(cat => cat.name).join('、');
+    const enablePlotOutline = document.getElementById('enable-plot-outline')?.checked ?? true;
+    const names = enabledCategories.map(cat => cat.name);
+    if (enablePlotOutline && !names.includes('剧情大纲')) {
+        names.push('剧情大纲');
+    }
+    return names.join('、');
 }
 
-// 初始化增量输出模式开关（在高级设置中动态添加）
+// 初始化 Agent 增量模式与增量输出模式开关（在高级设置中动态添加）
 function initIncrementalOutputModeToggle() {
     const advancedSettings = document.getElementById('advanced-novel-settings');
     if (!advancedSettings) return;
 
     // 检查是否已存在
-    if (document.getElementById('incremental-output-mode-container')) return;
+    if (document.getElementById('agent-incremental-mode-container')) return;
 
-    // 创建增量输出模式开关容器
+    // 1. 创建智能 Agent 增量编辑模式开关容器
+    const agentContainer = document.createElement('div');
+    agentContainer.id = 'agent-incremental-mode-container';
+    agentContainer.style.cssText = 'padding: 10px; background: rgba(0,0,0,0.2); border-radius: 5px; border: 1px solid RGB(52,52,52); margin-bottom: 10px;';
+    agentContainer.innerHTML = `
+        <label style="display: flex; align-items: center; gap: 10px; cursor: pointer;">
+            <input type="checkbox" id="agent-incremental-mode" style="width: 18px; height: 18px;" checked>
+            <span style="color: var(--label-color); font-weight: bold;">🤖 智能 Agent 增量编辑模式</span>
+        </label>
+        <p style="margin: 5px 0 0 28px; font-size: 12px; color: var(--text-secondary-color);">
+            以打补丁（Patch Commit）方式对条目内部属性字段进行局部追加与精确替换（append/replace），避免覆写遗忘历史记忆；启用时自动锁定增量输出
+        </p>
+    `;
+
+    // 2. 创建普通增量输出模式开关容器
     const container = document.createElement('div');
     container.id = 'incremental-output-mode-container';
     container.style.cssText = 'padding: 10px; background: rgba(0,0,0,0.2); border-radius: 5px; border: 1px solid RGB(52,52,52); margin-bottom: 10px;';
     container.innerHTML = `
         <label style="display: flex; align-items: center; gap: 10px; cursor: pointer;">
-            <input type="checkbox" id="incremental-output-mode" style="width: 18px; height: 18px;" checked>
+            <input type="checkbox" id="incremental-output-mode" style="width: 18px; height: 18px;" checked disabled>
             <span style="color: var(--label-color); font-weight: bold;">📝 增量输出模式</span>
         </label>
         <p style="margin: 5px 0 0 28px; font-size: 12px; color: var(--text-secondary-color);">每次只输出变更的条目，避免上下文字数限制，降低消耗并提升生成速度</p>
@@ -275,12 +330,36 @@ function initIncrementalOutputModeToggle() {
 
     // 插入到高级设置的最前面
     advancedSettings.insertBefore(container, advancedSettings.firstChild);
+    advancedSettings.insertBefore(agentContainer, container);
 
-    // 绑定事件
-    document.getElementById('incremental-output-mode').addEventListener('change', function () {
-        incrementalOutputMode = this.checked;
-        mylog('增量输出模式:', incrementalOutputMode ? '开启' : '关闭');
+    const agentCheckbox = document.getElementById('agent-incremental-mode');
+    const incCheckbox = document.getElementById('incremental-output-mode');
+
+    // 联动函数
+    function syncIncrementalState() {
+        if (agentCheckbox.checked) {
+            agentIncrementalMode = true;
+            incCheckbox.checked = true;
+            incCheckbox.disabled = true;
+            incrementalOutputMode = true;
+        } else {
+            agentIncrementalMode = false;
+            incCheckbox.disabled = false;
+            incrementalOutputMode = incCheckbox.checked;
+        }
+        mylog(`模式切换: Agent模式=${agentIncrementalMode ? '开启' : '关闭'}, 增量模式=${incrementalOutputMode ? '开启' : '关闭'}`);
+    }
+
+    agentCheckbox.addEventListener('change', syncIncrementalState);
+    incCheckbox.addEventListener('change', function () {
+        if (!agentIncrementalMode) {
+            incrementalOutputMode = this.checked;
+            mylog('增量输出模式:', incrementalOutputMode ? '开启' : '关闭');
+        }
     });
+
+    // 初始化联动状态
+    syncIncrementalState();
 }
 
 // 初始化自定义分类模板UI（在高级设置中动态添加）
@@ -297,15 +376,18 @@ function initCustomCategoriesUI() {
     container.style.cssText = 'padding: 10px; background: rgba(0,0,0,0.2); border-radius: 5px; border: 1px solid RGB(52,52,52); margin-bottom: 10px;';
 
     container.innerHTML = `
-        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px;">
-            <span style="color: var(--label-color); font-weight: bold;">🏷️ 自定义提取分类</span>
-            <div>
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                <input type="checkbox" id="strict-custom-categories-mode" style="width: 18px; height: 18px;" ${strictCustomCategoriesMode ? 'checked' : ''}>
+                <span style="color: var(--label-color); font-weight: bold; font-size: 14px;">🏷️ 严格按自定义分类提取</span>
+            </label>
+            <div id="custom-categories-actions" style="transition: opacity 0.2s;">
                 <button id="add-custom-category-btn" style="background: #e67e22; color: white; padding: 4px 10px; border: none; border-radius: 3px; cursor: pointer; font-size: 12px; margin-right: 5px;">➕ 添加分类</button>
                 <button id="reset-categories-btn" style="background: #6c757d; color: white; padding: 4px 10px; border: none; border-radius: 3px; cursor: pointer; font-size: 12px;">🔄 重置默认</button>
             </div>
         </div>
-        <p style="margin: 0 0 10px 0; font-size: 12px; color: var(--text-secondary-color);">勾选要提取的分类，可自定义添加道具、玩法、章节剧情等</p>
-        <div id="categories-list" style="max-height: 300px; overflow-y: auto;"></div>
+        <p id="strict-categories-hint" style="margin: 0 0 10px 0; font-size: 12px; line-height: 1.4;"></p>
+        <div id="categories-list" style="max-height: 300px; overflow-y: auto; transition: opacity 0.2s;"></div>
     `;
 
     // 插入到高级设置中（在增量输出模式之后）
@@ -318,6 +400,34 @@ function initCustomCategoriesUI() {
 
     // 渲染分类列表
     renderCategoriesList();
+
+    const strictCheckbox = document.getElementById('strict-custom-categories-mode');
+    const hintElem = document.getElementById('strict-categories-hint');
+    const listElem = document.getElementById('categories-list');
+    const actionsElem = document.getElementById('custom-categories-actions');
+
+    function syncStrictUI() {
+        strictCustomCategoriesMode = strictCheckbox.checked;
+        try {
+            localStorage.setItem('strict_custom_categories_mode', strictCustomCategoriesMode);
+        } catch (e) { }
+
+        if (strictCustomCategoriesMode) {
+            hintElem.innerHTML = '🔒 <strong style="color: #e67e22;">严格模式生效中</strong>：AI 将严格仅提取下方启用的分类，严禁生成未经指定的分类。';
+            hintElem.style.color = '#e67e22';
+            listElem.style.opacity = '1';
+            actionsElem.style.opacity = '1';
+        } else {
+            hintElem.innerHTML = '🌐 <strong style="color: #3498db;">自由发挥模式（推荐）</strong>：未勾选时，AI 将根据小说题材自由提炼合适的类别（如功法、势力、神兵、心境等）。';
+            hintElem.style.color = 'var(--text-secondary-color)';
+            listElem.style.opacity = '0.6';
+            actionsElem.style.opacity = '0.8';
+        }
+        mylog('自定义提取分类模式切换:', strictCustomCategoriesMode ? '严格约束' : '自由发挥');
+    }
+
+    strictCheckbox.addEventListener('change', syncStrictUI);
+    syncStrictUI();
 
     // 绑定添加分类按钮事件
     document.getElementById('add-custom-category-btn').addEventListener('click', showAddCategoryModal);
@@ -399,7 +509,86 @@ function showEditCategoryModal(index) {
     showCategoryModal(index, '编辑分类');
 }
 
-// 通用的分类编辑弹窗
+// 常用分类预设模板定义（帮助新手秒懂并一键套用）
+const CATEGORY_PRESETS = {
+    'role_detailed': {
+        name: '角色',
+        entryExample: '角色真实姓名',
+        keywordsExample: ['真实姓名', '常用称呼', '绰号', '别名'],
+        fields: ['名称', '性别', 'MBTI', '貌龄', '年龄', '身份', '背景', '性格', '外貌', '技能', '重要事件', '话语示例', '弱点', '背景故事'],
+        contentGuide: '基于原文的角色描述，包含但不限于**名称**:（必须要）、**性别**:、**MBTI(必须要，如变化请说明背景)**:、**貌龄**:、**年龄**:、**身份**:、**背景**:、**性格**:、**外貌**:、**技能**:、**重要事件**:、**话语示例**:、**弱点**:、**背景故事**:等（实际嵌套或者排列方式按合理的逻辑）'
+    },
+    'role_rpg': {
+        name: '角色 (战斗/RPG)',
+        entryExample: '角色真实姓名',
+        keywordsExample: ['真实姓名', '职业', '称号', '阵营'],
+        fields: ['名称', '性别', '所属阵营', '职阶/门派', '核心能力/功法', '随身装备', '战斗风格', '致命弱点', '当前状态'],
+        contentGuide: '基于原文的战斗角色设定，包含但不限于**名称**:（必须要）、**性别**:、**所属阵营**:、**职阶/门派**:、**核心能力/功法**:、**随身装备**:、**战斗风格**:、**致命弱点**:、**当前状态**:等'
+    },
+    'location': {
+        name: '地点',
+        entryExample: '地点真实名称',
+        keywordsExample: ['地点名', '别称', '俗称', '所属区域'],
+        fields: ['名称', '地理位置', '风貌特征', '盘踞势力', '危险生物/特殊资源', '重要事件'],
+        contentGuide: '基于原文的地点描述，包含但不限于**名称**:（必须要）、**地理位置**:、**风貌特征**:、**盘踞势力**:、**危险生物/特殊资源**:、**重要事件**:等（实际嵌套或者排列方式按合理的逻辑）'
+    },
+    'organization': {
+        name: '组织',
+        entryExample: '组织真实名称',
+        keywordsExample: ['组织名', '简称', '代号', '阵营'],
+        fields: ['名称', '势力性质', '领袖与核心成员', '宗旨目标', '总部驻地', '敌友关系', '势力规模'],
+        contentGuide: '基于原文的组织描述，包含但不限于**名称**:（必须要）、**势力性质**:、**领袖与核心成员**:、**宗旨目标**:、**总部驻地**:、**敌友关系**:、**势力规模**:等（实际嵌套或者排列方式按合理的逻辑）'
+    },
+    'item': {
+        name: '道具',
+        entryExample: '道具真实名称',
+        keywordsExample: ['道具名', '别名', '品阶'],
+        fields: ['名称', '类型/品阶', '外观形态', '功能效果', '出处来源', '持有者', '使用限制'],
+        contentGuide: '基于原文的道具描述，包含但不限于**名称**:（必须要）、**类型/品阶**:、**外观形态**:、**功能效果**:、**出处来源**:、**持有者**:、**使用限制**:等'
+    },
+    'knowledge': {
+        name: '知识书',
+        entryExample: '概念/法则/世界观设定',
+        keywordsExample: ['设定名', '概念词', '历史事件', '专有名词'],
+        fields: ['名称', '概念定义', '运作法则/原理', '历史起源', '对世界的影响', '相关限制'],
+        contentGuide: '基于原文的世界观、法则与设定描述，包含但不限于**名称**:（必须要）、**概念定义**:、**运作法则/原理**:、**历史起源**:、**对世界的影响**:、**相关限制**:等（实际嵌套或者排列方式按合理的逻辑）'
+    },
+    'chapter_plot': {
+        name: '章节剧情',
+        entryExample: '第X章',
+        keywordsExample: ['章节名', '章节号', '关键转折'],
+        fields: ['章节标题', '主要事件', '出场角色', '关键转折', '伏笔线索', '本章成果'],
+        contentGuide: '该章节的剧情概要，包含但不限于**章节标题**:（必须要）、**主要事件**:、**出场角色**:、**关键转折**:、**伏笔线索**:、**本章成果**:等'
+    }
+};
+
+// 推荐备选细分字段库
+const RECOMMENDED_FIELDS = [
+    '名称', '性别', '年龄', '貌龄', 'MBTI', '身份', '阵营', '外貌', '性格',
+    '能力技能', '随身装备', '生活习惯', '弱点缺陷', '重要事件', '话语示例',
+    '背景故事', '人际关系', '地理位置', '风貌特征', '核心成员', '宗旨目标',
+    '品质等阶', '功能效果', '概念定义', '运作法则', '历史起源'
+];
+
+// 辅助：从提取指南解析双星号字段
+function parseFieldsFromGuide(guide) {
+    if (!guide) return [];
+    const matches = guide.match(/\*\*([^*]+?)\*\*[:：]?/g);
+    if (!matches) return [];
+    return [...new Set(matches.map(m => m.replace(/[*:\s：]/g, '').trim()).filter(Boolean))];
+}
+
+// 辅助：将字段数组组装为规范提取指南
+function buildGuideFromFields(catName, fields) {
+    if (!fields || fields.length === 0) return `基于原文的${catName || '条目'}描述`;
+    const fieldParts = fields.map(f => {
+        if (f === '名称') return '**名称**:（必须要）';
+        return `**${f}**:`;
+    });
+    return `基于原文的${catName || '条目'}描述，包含但不限于${fieldParts.join('、')}等（实际嵌套或者排列方式按合理的逻辑）`;
+}
+
+// 通用的分类编辑弹窗（现代化双栏、可视化标签设计器与实时拟真卡片预览）
 function showCategoryModal(editIndex, title) {
     const isEdit = editIndex !== null;
     const cat = isEdit ? customWorldbookCategories[editIndex] : {
@@ -415,77 +604,378 @@ function showCategoryModal(editIndex, title) {
     const existingModal = document.getElementById('category-edit-modal');
     if (existingModal) existingModal.remove();
 
+    // 解析当前已有的细分字段
+    let currentFields = parseFieldsFromGuide(cat.contentGuide);
+    if (currentFields.length === 0 && cat.name === '角色') {
+        currentFields = ['名称', '性别', '年龄', '身份', '性格', '外貌', '技能', '背景故事'];
+    }
+
     const modal = document.createElement('div');
     modal.id = 'category-edit-modal';
-    modal.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 10001; display: flex; justify-content: center; align-items: center;';
+    modal.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 10001; display: flex; justify-content: center; align-items: center; padding: 15px; box-sizing: border-box;';
 
     modal.innerHTML = `
-        <div style="background: #2d2d2d; border-radius: 10px; padding: 20px; width: 90%; max-width: 500px; max-height: 80vh; overflow-y: auto;">
-            <h3 style="color: #e67e22; margin: 0 0 15px 0;">${title}</h3>
+        <div style="background: #252525; border: 1px solid #444; border-radius: 12px; width: 100%; max-width: 880px; max-height: 90vh; display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 15px 50px rgba(0,0,0,0.8);">
             
-            <div style="margin-bottom: 12px;">
-                <label style="display: block; color: var(--label-color); margin-bottom: 5px; font-size: 13px;">分类名称 *</label>
-                <input type="text" id="cat-name" value="${cat.name}" placeholder="如：道具、玩法、章节剧情" 
-                    style="width: 100%; padding: 8px; border: 1px solid #555; border-radius: 4px; background: #1c1c1c; color: white; box-sizing: border-box;">
+            <!-- 头部 -->
+            <div style="padding: 16px 20px; background: #2c2c2c; border-bottom: 1px solid #3d3d3d; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+                <div>
+                    <h3 style="color: #e67e22; margin: 0; font-size: 17px; display: inline-flex; align-items: center; gap: 6px;">🏷️ ${title}</h3>
+                    <span style="font-size: 12px; color: #888; margin-left: 8px;">可视化定制条目结构与生成规则</span>
+                </div>
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <span style="color: #aaa; font-size: 12px;">🎨 套用预设模板:</span>
+                    <select id="cat-preset-select" style="background: #1c1c1c; color: #f0f0f0; border: 1px solid #555; padding: 5px 10px; border-radius: 4px; font-size: 12px; cursor: pointer;">
+                        <option value="">-- 选择常用分类快速填充 --</option>
+                        <option value="role_detailed">🎭 角色 (深度设定版 - 含MBTI/技能/弱点)</option>
+                        <option value="role_rpg">⚔️ 角色 (战斗/RPG版 - 职业/装备/战力)</option>
+                        <option value="location">🏰 地点 (地理风貌/所属势力/危险物产)</option>
+                        <option value="organization">🛡️ 组织 (势力宗旨/领袖成员/驻地)</option>
+                        <option value="item">💎 道具 (神兵装备/品质/外观功能)</option>
+                        <option value="knowledge">📜 知识书 (世界观设定/法则概念)</option>
+                        <option value="chapter_plot">📖 章节剧情 (主要事件/转折伏笔)</option>
+                    </select>
+                </div>
             </div>
-            
-            <div style="margin-bottom: 12px;">
-                <label style="display: block; color: var(--label-color); margin-bottom: 5px; font-size: 13px;">条目名称示例</label>
-                <input type="text" id="cat-entry-example" value="${cat.entryExample}" placeholder="如：道具名称、第X章" 
-                    style="width: 100%; padding: 8px; border: 1px solid #555; border-radius: 4px; background: #1c1c1c; color: white; box-sizing: border-box;">
+
+            <!-- 主体内容：双栏响应式布局 -->
+            <div style="flex: 1; overflow-y: auto; padding: 20px; display: flex; gap: 20px; flex-wrap: wrap;">
+                
+                <!-- 左栏：直观配置与细分字段设计器 -->
+                <div style="flex: 1.2; min-width: 320px;">
+                    
+                    <div style="margin-bottom: 12px;">
+                        <label style="display: block; color: #ddd; margin-bottom: 6px; font-size: 13px; font-weight: bold;">
+                            分类名称 <span style="color: #e74c3c;">*</span>
+                        </label>
+                        <input type="text" id="cat-name" value="${cat.name}" placeholder="如：角色、地点、组织、道具、知识书、功法" 
+                            style="width: 100%; padding: 9px 12px; border: 1px solid #555; border-radius: 6px; background: #1c1c1c; color: white; box-sizing: border-box; font-size: 14px;">
+                    </div>
+
+                    <!-- 智能免思考说明卡片 -->
+                    <div style="background: rgba(46, 204, 113, 0.08); border: 1px solid rgba(46, 204, 113, 0.25); border-radius: 6px; padding: 9px 12px; margin-bottom: 14px; font-size: 12px; color: #2ecc71; display: flex; align-items: center; gap: 8px; line-height: 1.4;">
+                        <span>💡 <strong>条目名与关键词免思考</strong>：条目名称由 AI 根据小说实际登场的实体真实命名；触发关键词由 AI 自动提炼全称/简称/别名，无需您手动构思！</span>
+                    </div>
+
+                    <!-- 细分字段设计器 -->
+                    <div style="background: #1e1e1e; border: 1px solid #383838; border-radius: 8px; padding: 14px; margin-bottom: 14px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                            <span style="color: #f39c12; font-size: 13px; font-weight: bold; display: flex; align-items: center; gap: 5px;">
+                                🧩 细分内容字段（AI 将生成以下加粗段落）
+                            </span>
+                            <span style="font-size: 11px; color: #888;">点击 ✕ 可移除</span>
+                        </div>
+
+                        <!-- 已选字段展示区（药丸标签） -->
+                        <div id="cat-selected-fields" style="display: flex; flex-wrap: wrap; gap: 6px; min-height: 40px; padding: 6px; background: #141414; border-radius: 6px; border: 1px dashed #444; margin-bottom: 10px;">
+                            <!-- 动态渲染 -->
+                        </div>
+
+                        <!-- 快速输入自定义字段 -->
+                        <div style="display: flex; gap: 6px; margin-bottom: 12px;">
+                            <input type="text" id="cat-custom-field-input" placeholder="输入自定义字段名（如：血型、战力等级）" 
+                                style="flex: 1; padding: 6px 10px; border: 1px solid #555; border-radius: 4px; background: #1c1c1c; color: white; font-size: 12px;">
+                            <button type="button" id="cat-add-field-btn" style="background: #27ae60; color: white; border: none; padding: 6px 14px; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: bold;">
+                                + 添加字段
+                            </button>
+                        </div>
+
+                        <!-- 常用字段快捷标签池 -->
+                        <div>
+                            <div style="font-size: 11px; color: #aaa; margin-bottom: 6px;">💡 快捷常用字段（点击直接加入）：</div>
+                            <div id="cat-field-pool" style="display: flex; flex-wrap: wrap; gap: 5px;">
+                                <!-- 动态渲染可点选标签 -->
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 高级选项（折叠收纳，普通用户完全无需操心） -->
+                    <div style="margin-bottom: 10px;">
+                        <div id="cat-toggle-advanced-opts" style="color: #3498db; font-size: 12px; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; padding: 4px 0;">
+                            <span>▶ 展开高级微调选项（可由 AI 自动推导，非必填）</span>
+                        </div>
+                        <div id="cat-advanced-opts-container" style="display: none; margin-top: 8px; background: #1b1b1b; border: 1px dashed #444; border-radius: 6px; padding: 12px;">
+                            <div style="color: #888; font-size: 11px; margin-bottom: 8px;">
+                                💡 提示：以下设置通常交由 AI 根据小说文本自动提炼即可。仅在有特殊固定要求（如章节名必须叫“第X章”）时才需覆盖：
+                            </div>
+                            <div style="display: flex; gap: 10px; margin-bottom: 10px;">
+                                <div style="flex: 1;">
+                                    <label style="display: block; color: #bbb; margin-bottom: 4px; font-size: 11px;">自定义条目命名示例（可选）</label>
+                                    <input type="text" id="cat-entry-example" value="${cat.entryExample || ''}" placeholder="默认由 AI 提取实体真实全称" 
+                                        style="width: 100%; padding: 6px 8px; border: 1px solid #444; border-radius: 4px; background: #141414; color: white; box-sizing: border-box; font-size: 12px;">
+                                </div>
+                                <div style="flex: 1;">
+                                    <label style="display: block; color: #bbb; margin-bottom: 4px; font-size: 11px;">固定触发关键词（可选）</label>
+                                    <input type="text" id="cat-keywords" value="${(cat.keywordsExample || []).join(', ')}" placeholder="默认由 AI 提炼全称、简称、别名" 
+                                        style="width: 100%; padding: 6px 8px; border: 1px solid #444; border-radius: 4px; background: #141414; color: white; box-sizing: border-box; font-size: 12px;">
+                                </div>
+                            </div>
+                            <div>
+                                <label style="display: block; color: #bbb; margin-bottom: 4px; font-size: 11px;">手写高级 Prompt 提取指南（可选）</label>
+                                <textarea id="cat-content-guide" 
+                                    style="width: 100%; height: 75px; padding: 6px 8px; border: 1px solid #444; border-radius: 4px; background: #141414; color: #f0f0f0; resize: vertical; box-sizing: border-box; font-size: 11px; line-height: 1.4;">${cat.contentGuide || buildGuideFromFields(cat.name, currentFields)}</textarea>
+                                <div style="color: #666; font-size: 10px; margin-top: 3px;">修改上方细分字段会自动同步更新此处。</div>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+
+                <!-- 右栏：👀 所见即所得实时条目拟真卡片预览 -->
+                <div style="flex: 0.9; min-width: 280px; background: #1a1a1a; border: 1px solid #3a3a3a; border-radius: 8px; padding: 14px; display: flex; flex-direction: column;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; border-bottom: 1px solid #333; padding-bottom: 8px;">
+                        <span style="color: #2ecc71; font-size: 13px; font-weight: bold; display: flex; align-items: center; gap: 5px;">
+                            👀 AI 最终生成条目效果预览
+                        </span>
+                        <span style="font-size: 10px; background: #27ae60; color: white; padding: 2px 6px; border-radius: 10px;">所见即所得</span>
+                    </div>
+
+                    <!-- 拟真世界书卡片 -->
+                    <div id="cat-live-preview-card" style="background: #242424; border: 1px solid #4a4a4a; border-radius: 6px; overflow: hidden; flex: 1; display: flex; flex-direction: column;">
+                        <div style="background: linear-gradient(135deg, #e67e22 0%, #d35400 100%); padding: 8px 12px; font-weight: bold; font-size: 13px; color: white; display: flex; justify-content: space-between;">
+                            <span id="preview-cat-header">📁 [${cat.name || '分类'}]</span>
+                            <span id="preview-entry-name" style="opacity: 0.9;">📄 条目名称</span>
+                        </div>
+                        <div style="padding: 12px; flex: 1; overflow-y: auto; font-size: 12px; line-height: 1.6;">
+                            <!-- 关键词 -->
+                            <div style="margin-bottom: 8px; padding: 6px 8px; background: #1c1c1c; border-left: 3px solid #9b59b6; border-radius: 3px;">
+                                <div style="color: #9b59b6; font-size: 11px; font-weight: bold;">🔑 触发关键词:</div>
+                                <div id="preview-keywords" style="color: #ddd;">自动抓取全称、简称、常用别名</div>
+                            </div>
+                            <!-- 内容细分预览 -->
+                            <div style="padding: 8px; background: #1c1c1c; border-left: 3px solid #27ae60; border-radius: 3px;">
+                                <div style="color: #27ae60; font-size: 11px; font-weight: bold; margin-bottom: 6px;">📝 条目分段内容:</div>
+                                <div id="preview-content-sections" style="color: #eee;">
+                                    <!-- 动态字段列表 -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div style="color: #777; font-size: 11px; margin-top: 10px; line-height: 1.4;">
+                        ✨ <strong>免思考保障</strong>：条目名称与关键词将由 AI 结合小说上下文自动识别提炼，您只需选定所需加粗字段即可！
+                    </div>
+                </div>
+
             </div>
-            
-            <div style="margin-bottom: 12px;">
-                <label style="display: block; color: var(--label-color); margin-bottom: 5px; font-size: 13px;">关键词示例（逗号分隔）</label>
-                <input type="text" id="cat-keywords" value="${cat.keywordsExample.join(', ')}" placeholder="如：道具名, 别名, 俗称" 
-                    style="width: 100%; padding: 8px; border: 1px solid #555; border-radius: 4px; background: #1c1c1c; color: white; box-sizing: border-box;">
-            </div>
-            
-            <div style="margin-bottom: 15px;">
-                <label style="display: block; color: var(--label-color); margin-bottom: 5px; font-size: 13px;">内容提取指南</label>
-                <textarea id="cat-content-guide" placeholder="描述AI应该提取哪些信息，如：包含**名称**:、**类型**:、**功能**:等" 
-                    style="width: 100%; height: 100px; padding: 8px; border: 1px solid #555; border-radius: 4px; background: #1c1c1c; color: white; resize: vertical; box-sizing: border-box;">${cat.contentGuide}</textarea>
-            </div>
-            
-            <div style="display: flex; gap: 10px; justify-content: flex-end;">
-                <button id="cat-cancel-btn" style="background: #6c757d; color: white; padding: 8px 20px; border: none; border-radius: 5px; cursor: pointer;">取消</button>
-                <button id="cat-save-btn" style="background: #e67e22; color: white; padding: 8px 20px; border: none; border-radius: 5px; cursor: pointer;">保存</button>
+
+            <!-- 底部操作按钮 -->
+            <div style="padding: 12px 20px; background: #2c2c2c; border-top: 1px solid #3d3d3d; display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                    ${cat.isBuiltin ? `<button id="cat-reset-builtin-btn" type="button" style="background: transparent; color: #e74c3c; border: 1px solid #e74c3c; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 12px;">恢复默认字段</button>` : ''}
+                </div>
+                <div style="display: flex; gap: 10px;">
+                    <button id="cat-cancel-btn" type="button" style="background: #555; color: white; padding: 8px 18px; border: none; border-radius: 5px; cursor: pointer; font-size: 13px;">取消</button>
+                    <button id="cat-save-btn" type="button" style="background: #e67e22; color: white; padding: 8px 24px; border: none; border-radius: 5px; cursor: pointer; font-size: 13px; font-weight: bold;">保存分类配置</button>
+                </div>
             </div>
         </div>
     `;
 
     document.body.appendChild(modal);
 
-    // 绑定事件
-    document.getElementById('cat-cancel-btn').addEventListener('click', () => modal.remove());
-    modal.addEventListener('click', (e) => { if (e.target === modal) modal.remove(); });
+    // DOM 元素引用
+    const nameInput = document.getElementById('cat-name');
+    const entryExampleInput = document.getElementById('cat-entry-example');
+    const keywordsInput = document.getElementById('cat-keywords');
+    const contentGuideTextarea = document.getElementById('cat-content-guide');
+    const selectedFieldsContainer = document.getElementById('cat-selected-fields');
+    const fieldPoolContainer = document.getElementById('cat-field-pool');
+    const customFieldInput = document.getElementById('cat-custom-field-input');
+    const addFieldBtn = document.getElementById('cat-add-field-btn');
+    const presetSelect = document.getElementById('cat-preset-select');
+    const previewCatHeader = document.getElementById('preview-cat-header');
+    const previewEntryName = document.getElementById('preview-entry-name');
+    const previewKeywords = document.getElementById('preview-keywords');
+    const previewContentSections = document.getElementById('preview-content-sections');
 
-    document.getElementById('cat-save-btn').addEventListener('click', () => {
-        const name = document.getElementById('cat-name').value.trim();
-        const entryExample = document.getElementById('cat-entry-example').value.trim();
-        const keywordsStr = document.getElementById('cat-keywords').value.trim();
-        const contentGuide = document.getElementById('cat-content-guide').value.trim();
+    // 折叠切换高级微调选项
+    const toggleAdvancedBtn = document.getElementById('cat-toggle-advanced-opts');
+    const advancedOptsContainer = document.getElementById('cat-advanced-opts-container');
+    if (toggleAdvancedBtn && advancedOptsContainer) {
+        toggleAdvancedBtn.onclick = () => {
+            const isHidden = advancedOptsContainer.style.display === 'none';
+            advancedOptsContainer.style.display = isHidden ? 'block' : 'none';
+            toggleAdvancedBtn.querySelector('span').textContent = isHidden
+                ? '▼ 收起高级微调选项'
+                : '▶ 展开高级微调选项（可由 AI 自动推导，非必填）';
+        };
+    }
+
+    // 核心渲染函数：更新已选字段标签、推荐池以及右侧实时预览
+    function updateUI() {
+        const catName = nameInput.value.trim() || '分类';
+        const customEntry = entryExampleInput ? entryExampleInput.value.trim() : '';
+        const customKw = keywordsInput ? keywordsInput.value.trim() : '';
+
+        // 智能推导条目名称与关键词预览
+        const entryNameDisplay = customEntry || `具体真实【${catName}】名称（AI自动识别命名）`;
+        const kwDisplay = customKw || `小说中该【${catName}】的真实全称、简称、常用别名、绰号（AI自动提炼）`;
+
+        // 1. 渲染已选字段
+        selectedFieldsContainer.innerHTML = '';
+        if (currentFields.length === 0) {
+            selectedFieldsContainer.innerHTML = '<span style="color: #666; font-size: 12px; padding: 4px;">暂未添加字段，点击下方标签或手动输入添加</span>';
+        } else {
+            currentFields.forEach((f, idx) => {
+                const chip = document.createElement('span');
+                chip.style.cssText = 'background: #2c3e50; color: #ecf0f1; padding: 4px 8px; border-radius: 12px; display: inline-flex; align-items: center; gap: 5px; font-size: 12px; border: 1px solid #34495e;';
+                chip.innerHTML = `<strong style="color: #3498db;">**${f}**</strong><span style="cursor: pointer; color: #e74c3c; font-weight: bold; margin-left: 2px;">✕</span>`;
+                chip.querySelector('span').onclick = () => {
+                    currentFields.splice(idx, 1);
+                    syncGuideFromFields();
+                    updateUI();
+                };
+                selectedFieldsContainer.appendChild(chip);
+            });
+        }
+
+        // 2. 渲染快捷标签池（排除已选字段）
+        fieldPoolContainer.innerHTML = '';
+        RECOMMENDED_FIELDS.forEach(f => {
+            if (!currentFields.includes(f)) {
+                const tag = document.createElement('button');
+                tag.type = 'button';
+                tag.textContent = `+ ${f}`;
+                tag.style.cssText = 'background: #2a2a2a; color: #bdc3c7; border: 1px solid #444; border-radius: 12px; padding: 2px 8px; font-size: 11px; cursor: pointer; transition: all 0.2s;';
+                tag.onmouseover = () => { tag.style.background = '#3498db'; tag.style.color = '#fff'; };
+                tag.onmouseout = () => { tag.style.background = '#2a2a2a'; tag.style.color = '#bdc3c7'; };
+                tag.onclick = () => {
+                    currentFields.push(f);
+                    syncGuideFromFields();
+                    updateUI();
+                };
+                fieldPoolContainer.appendChild(tag);
+            }
+        });
+
+        // 3. 更新右侧拟真条目预览
+        previewCatHeader.textContent = `📁 [${catName}]`;
+        previewEntryName.textContent = `📄 ${entryNameDisplay}`;
+        previewKeywords.textContent = kwDisplay;
+
+        previewContentSections.innerHTML = '';
+        if (currentFields.length === 0) {
+            previewContentSections.innerHTML = '<div style="color: #666;">（请在左侧添加细分字段）</div>';
+        } else {
+            currentFields.forEach(f => {
+                const item = document.createElement('div');
+                item.style.cssText = 'margin-bottom: 5px; display: flex; gap: 6px;';
+                item.innerHTML = `<strong style="color: #3498db; white-space: nowrap;">**${f}**:</strong><span style="color: #95a5a6; font-size: 11px;">(AI分析提取原文真实事实填充...)</span>`;
+                previewContentSections.appendChild(item);
+            });
+        }
+    }
+
+    // 字段变动时同步到原始 guide 文本框
+    function syncGuideFromFields() {
+        const catName = nameInput.value.trim();
+        if (contentGuideTextarea) {
+            contentGuideTextarea.value = buildGuideFromFields(catName, currentFields);
+        }
+    }
+
+    // 添加自定义字段
+    function addCustomField() {
+        const val = customFieldInput.value.replace(/[*:\s：]/g, '').trim();
+        if (val && !currentFields.includes(val)) {
+            currentFields.push(val);
+            customFieldInput.value = '';
+            syncGuideFromFields();
+            updateUI();
+        }
+    }
+
+    addFieldBtn.onclick = addCustomField;
+    customFieldInput.onkeydown = (e) => { if (e.key === 'Enter') { e.preventDefault(); addCustomField(); } };
+
+    // 监听输入实时刷新预览
+    nameInput.addEventListener('input', () => {
+        syncGuideFromFields();
+        updateUI();
+    });
+    if (entryExampleInput) entryExampleInput.addEventListener('input', updateUI);
+    if (keywordsInput) keywordsInput.addEventListener('input', updateUI);
+
+    // 文本框手动编辑时反向同步字段
+    if (contentGuideTextarea) {
+        contentGuideTextarea.addEventListener('input', () => {
+            const parsed = parseFieldsFromGuide(contentGuideTextarea.value);
+            if (parsed.length > 0) {
+                currentFields = parsed;
+            }
+            updateUI();
+        });
+    }
+
+    // 模版一键套用
+    presetSelect.addEventListener('change', () => {
+        const key = presetSelect.value;
+        if (key && CATEGORY_PRESETS[key]) {
+            const p = CATEGORY_PRESETS[key];
+            nameInput.value = p.name;
+            if (entryExampleInput) entryExampleInput.value = p.entryExample || '';
+            if (keywordsInput) keywordsInput.value = (p.keywordsExample || []).join(', ');
+            currentFields = [...p.fields];
+            if (contentGuideTextarea) contentGuideTextarea.value = p.contentGuide;
+            updateUI();
+        }
+    });
+
+    // 恢复默认按钮
+    const resetBtn = document.getElementById('cat-reset-builtin-btn');
+    if (resetBtn) {
+        resetBtn.onclick = () => {
+            const def = DEFAULT_WORLDBOOK_CATEGORIES.find(c => c.name === cat.name);
+            if (def && confirm(`确定要将"${cat.name}"分类恢复为系统默认配置吗？`)) {
+                nameInput.value = def.name;
+                if (entryExampleInput) entryExampleInput.value = def.entryExample || '';
+                if (keywordsInput) keywordsInput.value = (def.keywordsExample || []).join(', ');
+                if (contentGuideTextarea) contentGuideTextarea.value = def.contentGuide;
+                currentFields = parseFieldsFromGuide(def.contentGuide);
+                updateUI();
+            }
+        };
+    }
+
+    // 初始化渲染
+    updateUI();
+
+    // 弹窗关闭与取消
+    document.getElementById('cat-cancel-btn').onclick = () => modal.remove();
+    modal.onclick = (e) => { if (e.target === modal) modal.remove(); };
+
+    // 保存逻辑
+    document.getElementById('cat-save-btn').onclick = () => {
+        const name = nameInput.value.trim();
+        const customEntry = entryExampleInput ? entryExampleInput.value.trim() : '';
+        const customKw = keywordsInput ? keywordsInput.value.trim() : '';
+        let contentGuide = contentGuideTextarea ? contentGuideTextarea.value.trim() : '';
 
         if (!name) {
             alert('请输入分类名称');
             return;
         }
 
-        // 检查名称是否重复
+        // 查重
         const duplicateIndex = customWorldbookCategories.findIndex((c, i) => c.name === name && i !== editIndex);
         if (duplicateIndex !== -1) {
             alert('该分类名称已存在');
             return;
         }
 
-        const keywordsExample = keywordsStr ? keywordsStr.split(/[,，]/).map(k => k.trim()).filter(k => k) : [];
+        if (!contentGuide && currentFields.length > 0) {
+            contentGuide = buildGuideFromFields(name, currentFields);
+        }
+
+        const keywordsExample = customKw ? customKw.split(/[,，]/).map(k => k.trim()).filter(Boolean) : [];
 
         const newCat = {
             name,
             enabled: isEdit ? cat.enabled : true,
             isBuiltin: isEdit ? cat.isBuiltin : false,
-            entryExample: entryExample || name + '名称',
-            keywordsExample: keywordsExample.length > 0 ? keywordsExample : [name + '名'],
+            entryExample: customEntry, // 用户未填则为空，由 AI 自动根据小说实体命名
+            keywordsExample: keywordsExample, // 用户未填则为空，由 AI 自动抓取全称/简称/别名
             contentGuide: contentGuide || `基于原文的${name}描述`
         };
 
@@ -498,7 +988,7 @@ function showCategoryModal(editIndex, title) {
         saveCustomCategories();
         renderCategoriesList();
         modal.remove();
-    });
+    };
 }
 
 // 页面加载后初始化
@@ -765,6 +1255,9 @@ const MemoryHistoryDB = {
 
         // 恢复世界书状态
         generatedWorldbook = JSON.parse(JSON.stringify(history.previousWorldbook));
+        if (typeof normalizeWorldbookData === 'function') {
+            normalizeWorldbookData(generatedWorldbook);
+        }
 
         // 删除该记录之后的所有历史
         const db = await this.openDB();
@@ -901,17 +1394,478 @@ function findChangedEntries(oldWorldbook, newWorldbook) {
     return changes;
 }
 
+// ========== 智能 Agent 增量编辑引擎 (局部/全局增删改替换) ==========
+
+// 字符串转义辅助函数
+function escapeRegex(str) {
+    return String(str).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+/**
+ * 在条目内容中针对指定 Markdown 加粗字段追加内容（避免整块覆写）
+ * @param {string} content 原始 Markdown 内容
+ * @param {string} fieldName 字段名（如 "装备与物品更新"、"性格与背景更新" 等）
+ * @param {string} newText 要追加的新文本
+ * @returns {string} 更新后的 Markdown 内容
+ */
+function appendFieldToContent(content, fieldName, newText) {
+    if (!content) content = '';
+    if (!newText || !newText.trim()) return content;
+
+    const cleanFieldName = String(fieldName || '').replace(/[*:\s：]/g, '').trim();
+    if (!cleanFieldName) {
+        return content.trim() ? `${content.trim()}\n\n${newText.trim()}` : newText.trim();
+    }
+
+    // 匹配 **字段名**[:：]? 字段标题
+    const fieldRegex = new RegExp(`(\\*\\*${escapeRegex(cleanFieldName)}[^*]*?\\*\\*[:：]?)`, 'i');
+    const match = fieldRegex.exec(content);
+
+    if (match) {
+        const fieldHeader = match[0];
+        const fieldStart = match.index;
+        const afterHeader = fieldStart + fieldHeader.length;
+
+        // 寻找下一个双星号加粗字段的起始位置（即当前字段的结束边界）
+        const remaining = content.slice(afterHeader);
+        const nextFieldMatch = /\n\s*(?=\*\*[^*]+?\*\*)/.exec(remaining);
+
+        let fieldEnd;
+        if (nextFieldMatch) {
+            fieldEnd = afterHeader + nextFieldMatch.index;
+        } else {
+            fieldEnd = content.length;
+        }
+
+        const beforeFieldContent = content.slice(0, fieldEnd);
+        const afterFieldContent = content.slice(fieldEnd);
+
+        // 在已有字段内容的末尾追加新文本
+        const trimmedBefore = beforeFieldContent.trimEnd();
+        const appendText = `\n${newText.trim()}`;
+
+        return `${trimmedBefore}${appendText}\n${afterFieldContent.trimStart()}`.trim();
+    } else {
+        // 如果该字段尚未在条目中出现，直接在条目末尾新建该字段
+        const prefix = content.trim() ? `${content.trim()}\n\n` : '';
+        return `${prefix}**${cleanFieldName}**: ${newText.trim()}`;
+    }
+}
+
+/**
+ * 在条目内容或指定字段中进行局部精准替换
+ * @param {string} content 原始 Markdown 内容
+ * @param {string|null} fieldName 可选字段名
+ * @param {string} searchText 待搜索替换的旧文本
+ * @param {string} replaceText 替换后的新文本
+ * @returns {string} 替换后的 Markdown 内容
+ */
+function replaceInContent(content, fieldName, searchText, replaceText) {
+    if (!content) return '';
+    if (!searchText) return content;
+
+    const trimmedSearch = String(searchText).trim();
+    if (!trimmedSearch) return content;
+    const cleanReplace = String(replaceText || '').trim();
+
+    // 1. 尝试直接完全匹配替换
+    if (content.includes(trimmedSearch)) {
+        return content.replaceAll(trimmedSearch, cleanReplace);
+    }
+
+    // 2. 空白/标点容错替换（将多个空白字符视为空格模糊匹配）
+    try {
+        const searchRegexStr = escapeRegex(trimmedSearch).replace(/\\\s+/g, '\\s+');
+        const fuzzyRegex = new RegExp(searchRegexStr, 'g');
+        if (fuzzyRegex.test(content)) {
+            return content.replace(fuzzyRegex, cleanReplace);
+        }
+    } catch (e) {
+        // ignore regex error
+    }
+
+    // 3. 若未完全匹配上但指定了 fieldName，降级为在对应字段后追加更新说明
+    if (fieldName) {
+        return appendFieldToContent(content, fieldName, cleanReplace);
+    }
+
+    // 4. 若未指定字段且没匹配上，追加在末尾
+    return `${content.trim()}\n\n${cleanReplace}`;
+}
+
+/**
+ * 从条目内容中移除指定字段
+ */
+function deleteFieldFromContent(content, fieldName) {
+    if (!content) return '';
+    const cleanFieldName = String(fieldName || '').replace(/[*:\s：]/g, '').trim();
+    if (!cleanFieldName) return content;
+
+    const fieldRegex = new RegExp(`\n*\\*\\*${escapeRegex(cleanFieldName)}[^*]*?\\*\\*[:：]?[\\s\\S]*?(?=\n\\s*\\*\\*|$)`, 'gi');
+    return content.replace(fieldRegex, '').trim();
+}
+
+/**
+ * 获取当前允许的有效分类列表（包含用户启用的分类及系统配置项）
+ */
+function getAllowedCategoryNames() {
+    const enabledCats = typeof getEnabledCategories === 'function' ? getEnabledCategories() : [];
+    const names = enabledCats.map(c => c.name);
+    const enablePlotOutline = typeof document !== 'undefined' ? (document.getElementById('enable-plot-outline')?.checked ?? true) : true;
+    const enableLiteraryStyle = typeof document !== 'undefined' ? (document.getElementById('enable-literary-style')?.checked ?? false) : false;
+    if (enablePlotOutline && !names.includes('剧情大纲')) names.push('剧情大纲');
+    if (enableLiteraryStyle && !names.includes('文风配置')) names.push('文风配置');
+    return names;
+}
+
+/**
+ * 判断当前是否处于严格分类模式
+ */
+function isStrictCategoryModeEnabled() {
+    if (typeof document !== 'undefined') {
+        const chk = document.getElementById('strict-custom-categories-mode');
+        if (chk) return chk.checked;
+    }
+    return typeof strictCustomCategoriesMode !== 'undefined' ? strictCustomCategoriesMode : false;
+}
+
+/**
+ * 辅助函数：解析并规范化分类名（容错大模型输出的近义词，严格对齐用户启用的分类）
+ */
+function resolveCategory(target, categoryName) {
+    const allowedNames = getAllowedCategoryNames();
+    const fallbackCategory = allowedNames[0] || '角色';
+
+    if (!categoryName) return fallbackCategory;
+
+    const trimmed = String(categoryName).trim();
+    if (target && target[trimmed]) return trimmed;
+    if (allowedNames.includes(trimmed)) return trimmed;
+
+    // 智能别名映射表（向用户常用标准分类对齐）
+    const aliasMap = {
+        '人物': '角色',
+        '人物介绍': '角色',
+        '主角': '角色',
+        '配角': '角色',
+        'NPC': '角色',
+        '人物角色': '角色',
+
+        '地点': '地点',
+        '地理': '地点',
+        '场景': '地点',
+        '环境': '地点',
+        '地理环境': '地点',
+        '地图': '地点',
+        '地图环境': '地点',
+
+        '势力': '组织',
+        '门派': '组织',
+        '帮派': '组织',
+        '阵营': '组织',
+        '公会': '组织',
+        '组织机构': '组织',
+
+        '道具': '道具',
+        '物品': '道具',
+        '装备': '道具',
+        '法宝': '道具',
+        '神兵': '道具',
+        '武器': '道具',
+
+        '设定': '知识书',
+        '世界观': '知识书',
+        '世界观设定': '知识书',
+        '知识': '知识书',
+        '法则': '知识书',
+        '概念': '知识书',
+        '背景设定': '知识书',
+
+        '剧情': '剧情大纲',
+        '大纲': '剧情大纲',
+        '主线': '剧情大纲',
+        '支线': '剧情大纲',
+        '故事大纲': '剧情大纲',
+        '剧情节点': '剧情大纲',
+        '章节剧情': '章节剧情',
+        '章节': '章节剧情'
+    };
+
+    const mapped = aliasMap[trimmed];
+    if (mapped) {
+        if (target && target[mapped]) return mapped;
+        if (allowedNames.includes(mapped)) return mapped;
+    }
+
+    if (target) {
+        const lower = trimmed.toLowerCase();
+        for (const cat of Object.keys(target)) {
+            if (cat.trim().toLowerCase() === lower) return cat;
+        }
+    }
+
+    const lower = trimmed.toLowerCase();
+    for (const name of allowedNames) {
+        if (name.trim().toLowerCase() === lower) return name;
+    }
+
+    return trimmed;
+}
+
+/**
+ * 辅助函数：解析并定位条目名（支持中英文括号别名容错，避免"卡尔"和"卡尔 (Carl)"重复创建）
+ */
+function resolveEntryKey(categoryObj, entryName) {
+    if (!categoryObj || !entryName) return entryName;
+    if (categoryObj[entryName]) return entryName;
+
+    const stripBrackets = s => s.replace(/[\(（].*?[\)）]/g, '').trim().toLowerCase();
+    const cleanEntryName = stripBrackets(entryName);
+
+    for (const key of Object.keys(categoryObj)) {
+        if (key.trim().toLowerCase() === entryName.trim().toLowerCase()) {
+            return key;
+        }
+        const cleanKey = stripBrackets(key);
+        if (cleanEntryName && cleanKey && (cleanKey === cleanEntryName || cleanKey.includes(cleanEntryName) || cleanEntryName.includes(cleanKey))) {
+            return key;
+        }
+    }
+    return entryName;
+}
+
+/**
+ * 执行一组智能 Agent Actions 指令
+ * @param {object} target 目标世界书对象（generatedWorldbook）
+ * @param {Array} actions 指令数组
+ * @returns {object} 变更统计
+ */
+function applyAgentActions(target, actions) {
+    if (!Array.isArray(actions)) return { actionsCount: 0 };
+
+    const stats = {
+        addedEntries: [],
+        updatedFields: [],
+        replacedTexts: [],
+        addedKeywords: [],
+        deleted: []
+    };
+
+    for (const act of actions) {
+        if (!act || typeof act !== 'object') continue;
+        const op = String(act.op || act.type || act.action || '').toLowerCase();
+        let rawCategory = act.category || '';
+        const category = resolveCategory(target, rawCategory);
+        let rawName = act.name || act.entryName || act.title || '';
+
+        if (!rawName && op !== 'delete_entry') continue;
+
+        // 严格分类模式拦截：如果开启了严格指定分类，且分类不在白名单中，拒绝入库并记录
+        if (isStrictCategoryModeEnabled()) {
+            const allowedNames = getAllowedCategoryNames();
+            if (!allowedNames.includes(category)) {
+                mylog(`⚠️ [严格分类拦截] 忽略了未在白名单中的分类: [${rawCategory} -> ${category}], 条目: ${rawName}`);
+                continue;
+            }
+        }
+
+        // 确保分类对象存在
+        if (!target[category]) {
+            target[category] = {};
+        }
+
+        const name = resolveEntryKey(target[category], rawName);
+        const entry = target[category][name];
+
+        switch (op) {
+            case 'add_entry':
+            case 'create_entry':
+            case 'create':
+                // 创建全新条目
+                if (!entry) {
+                    target[category][name] = {
+                        '关键词': Array.isArray(act.keywords) ? act.keywords : (act.keywords ? [act.keywords] : [rawName]),
+                        '内容': act.content || act.text || ''
+                    };
+                    stats.addedEntries.push(`[${category}] ${name}`);
+                } else {
+                    // 已存在条目：防止模型意外覆盖，按字段安全合并
+                    const content = act.content || act.text || '';
+                    if (content) {
+                        const fieldRegex = /\*\*([^*]+?)\*\*[:：]?([\s\S]*?)(?=\n\s*\*\*[^*]+?\*\*[:：]?|$)/g;
+                        let match;
+                        let found = false;
+                        while ((match = fieldRegex.exec(content)) !== null) {
+                            found = true;
+                            entry['内容'] = appendFieldToContent(entry['内容'], match[1].trim(), match[2].trim());
+                        }
+                        if (!found) {
+                            entry['内容'] = `${entry['内容'] || ''}\n\n${content}`.trim();
+                        }
+                    }
+                    if (act.keywords) {
+                        const newKeys = Array.isArray(act.keywords) ? act.keywords : [act.keywords];
+                        entry['关键词'] = [...new Set([...(entry['关键词'] || []), ...newKeys])];
+                    }
+                    stats.updatedFields.push(`[${category}] ${name} (无损补充)`);
+                }
+                break;
+
+            case 'append_field':
+            case 'append':
+            case 'add_field':
+                // 字段级追加（核心指令）
+                const fieldName = act.fieldName || act.field || act.section || '';
+                const appendText = act.text || act.content || act.value || '';
+                if (!entry) {
+                    // 如果条目不存在，新建条目
+                    target[category][name] = {
+                        '关键词': Array.isArray(act.keywords) ? act.keywords : [rawName],
+                        '内容': fieldName ? `**${fieldName}**: ${appendText}` : appendText
+                    };
+                    stats.addedEntries.push(`[${category}] ${name}`);
+                } else {
+                    entry['内容'] = appendFieldToContent(entry['内容'], fieldName, appendText);
+                    stats.updatedFields.push(`[${category}] ${name} -> ${fieldName || '正文'}`);
+                }
+                // 同步补充关键词
+                if (act.keywords) {
+                    const newKeys = Array.isArray(act.keywords) ? act.keywords : [act.keywords];
+                    target[category][name]['关键词'] = [...new Set([...(target[category][name]['关键词'] || []), ...newKeys])];
+                }
+                break;
+
+            case 'replace':
+            case 'edit':
+            case 'update':
+                // 局部/全局替换（核心指令）
+                const search = act.searchText || act.search || act.target || act.oldText || act.old || '';
+                const replace = act.replaceText || act.replace || act.replacement || act.newText || act.new || '';
+                const replaceField = act.fieldName || act.field || act.section || '';
+                if (entry && search) {
+                    entry['内容'] = replaceInContent(entry['内容'], replaceField, search, replace);
+                    stats.replacedTexts.push(`[${category}] ${name} ("${search.slice(0, 15)}..." -> "${replace.slice(0, 15)}...")`);
+                }
+                break;
+
+            case 'add_keywords':
+            case 'append_keywords':
+                // 仅增加关键词
+                if (entry && act.keywords) {
+                    const newKeys = Array.isArray(act.keywords) ? act.keywords : [act.keywords];
+                    entry['关键词'] = [...new Set([...(entry['关键词'] || []), ...newKeys])];
+                    stats.addedKeywords.push(`[${category}] ${name} (+${newKeys.length}词)`);
+                }
+                break;
+
+            case 'delete_field':
+                // 删除某个字段
+                const deleteField = act.fieldName || act.field || act.section || '';
+                if (entry && deleteField) {
+                    entry['内容'] = deleteFieldFromContent(entry['内容'], deleteField);
+                    stats.deleted.push(`[${category}] ${name} - 字段: ${deleteField}`);
+                }
+                break;
+
+            case 'delete_entry':
+            case 'delete':
+                // 删除条目
+                if (target[category] && target[category][name]) {
+                    delete target[category][name];
+                    stats.deleted.push(`[${category}] ${name} (已删除)`);
+                }
+                break;
+
+            default:
+                mylog('⚠️ 未知的 Agent Action 操作类型:', op, act);
+                break;
+        }
+    }
+
+    mylog('🤖 Agent 指令执行完毕: 新建 ' + stats.addedEntries.length + '，追加字段 ' + stats.updatedFields.length + '，替换文本 ' + stats.replacedTexts.length);
+    return stats;
+}
+
+/**
+ * Agent 模式下的容错回退合并：当模型输出传统对象结构时，按字段拆解合并，避免覆写旧字段
+ */
+function mergeWorldbookDataAgentFallback(target, source) {
+    if (typeof normalizeWorldbookData === 'function') {
+        normalizeWorldbookData(source);
+    }
+
+    for (const rawCategory in source) {
+        if (typeof source[rawCategory] !== 'object' || source[rawCategory] === null) continue;
+        const category = resolveCategory(target, rawCategory);
+        if (isStrictCategoryModeEnabled()) {
+            const allowedNames = getAllowedCategoryNames();
+            if (!allowedNames.includes(category)) {
+                mylog(`⚠️ [严格分类拦截] 回退合并忽略了非白名单分类: [${rawCategory} -> ${category}]`);
+                continue;
+            }
+        }
+        if (!target[category]) target[category] = {};
+
+        for (const rawEntryName in source[rawCategory]) {
+            const sourceEntry = source[rawCategory][rawEntryName];
+            if (typeof sourceEntry !== 'object' || sourceEntry === null) continue;
+
+            const entryName = resolveEntryKey(target[category], rawEntryName);
+            const targetEntry = target[category][entryName];
+            if (!targetEntry) {
+                target[category][entryName] = sourceEntry;
+            } else {
+                // 合并关键词
+                if (Array.isArray(sourceEntry['关键词'])) {
+                    targetEntry['关键词'] = [...new Set([...(targetEntry['关键词'] || []), ...sourceEntry['关键词']])];
+                }
+
+                // 按 Markdown 字段拆解新内容，逐个追加而不是整块替换
+                const newContent = sourceEntry['内容'] || '';
+                if (newContent) {
+                    const fieldRegex = /\*\*([^*]+?)\*\*[:：]?([\s\S]*?)(?=\n\s*\*\*[^*]+?\*\*[:：]?|$)/g;
+                    let match;
+                    let foundAnyField = false;
+
+                    while ((match = fieldRegex.exec(newContent)) !== null) {
+                        foundAnyField = true;
+                        const fieldName = match[1].trim();
+                        const fieldValue = match[2].trim();
+                        if (fieldValue) {
+                            targetEntry['内容'] = appendFieldToContent(targetEntry['内容'], fieldName, fieldValue);
+                        }
+                    }
+
+                    if (!foundAnyField) {
+                        // 如果没有加粗字段结构，智能追加在末尾
+                        targetEntry['内容'] = targetEntry['内容'].trim()
+                            ? `${targetEntry['内容'].trim()}\n\n${newContent.trim()}`
+                            : newContent.trim();
+                    }
+                }
+            }
+        }
+    }
+}
+
 // 带历史记录的世界书合并函数
 async function mergeWorldbookDataWithHistory(target, source, memoryIndex, memoryTitle) {
     // 保存合并前的状态
     const previousWorldbook = JSON.parse(JSON.stringify(target));
 
-    // 根据增量输出模式选择不同的合并策略
-    if (incrementalOutputMode) {
-        // 增量模式：点对点覆盖合并
+    // 根据模式选择合并策略
+    if (source && (Array.isArray(source.actions) || Array.isArray(source.operations) || Array.isArray(source))) {
+        // 核心 Agent 指令集模式
+        const actions = Array.isArray(source.actions) ? source.actions : (Array.isArray(source.operations) ? source.operations : source);
+        applyAgentActions(target, actions);
+    } else if (agentIncrementalMode) {
+        // 开启了 Agent 模式但返回了传统对象时，走字段保护合并
+        mergeWorldbookDataAgentFallback(target, source);
+    } else if (incrementalOutputMode) {
+        // 普通增量模式：点对点覆盖合并
         mergeWorldbookDataIncremental(target, source);
     } else {
-        // 普通模式：递归合并
+        // 普通全量累积模式：递归合并
         mergeWorldbookData(target, source);
     }
 
@@ -942,8 +1896,16 @@ function mergeWorldbookDataIncremental(target, source) {
     // 统计变更
     const stats = { updated: [], added: [] };
 
-    for (const category in source) {
-        if (typeof source[category] !== 'object' || source[category] === null) continue;
+    for (const rawCategory in source) {
+        if (typeof source[rawCategory] !== 'object' || source[rawCategory] === null) continue;
+        const category = resolveCategory(target, rawCategory);
+        if (isStrictCategoryModeEnabled()) {
+            const allowedNames = getAllowedCategoryNames();
+            if (!allowedNames.includes(category)) {
+                mylog(`⚠️ [严格分类拦截] 增量合并忽略了非白名单分类: [${rawCategory} -> ${category}]`);
+                continue;
+            }
+        }
 
         // 确保目标分类存在
         if (!target[category]) {
@@ -951,10 +1913,10 @@ function mergeWorldbookDataIncremental(target, source) {
         }
 
         // 遍历分类下的条目
-        for (const entryName in source[category]) {
-            const sourceEntry = source[category][entryName];
-
+        for (const rawEntryName in source[rawCategory]) {
+            const sourceEntry = source[rawCategory][rawEntryName];
             if (typeof sourceEntry !== 'object' || sourceEntry === null) continue;
+            const entryName = resolveEntryKey(target[category], rawEntryName);
 
             // 检查目标是否已有此条目
             if (target[category][entryName]) {
@@ -998,8 +1960,8 @@ function extractWorldbookDataByRegex(jsonString) {
     mylog('🔧 开始正则提取世界书数据...');
     const result = {};
 
-    // 定义要提取的分类
-    const categories = ['角色', '地点', '组织', '剧情大纲', '知识书', '文风配置'];
+    // 定义要提取的分类（严格基于用户启用的分类列表）
+    const categories = getAllowedCategoryNames();
 
     for (const category of categories) {
         // 匹配分类块: "分类名": { ... }
@@ -1231,12 +2193,14 @@ async function startAIProcessing() {
     // 立即刷新推荐阈值（恢复进度后也能看到）
     updateRecommendedThresholdDisplay(initSettings[initProvider]?.context_window || 1000000);
 
-    generatedWorldbook = {
-        地图环境: {},
-        剧情节点: {},
-        角色: {},
-        知识书: {}
-    };
+    // 动态初始化世界书对象（严格基于用户启用的分类，绝不硬编码未启用分类）
+    generatedWorldbook = {};
+    const initCats = typeof getEnabledCategories === 'function' ? getEnabledCategories() : [];
+    if (initCats && initCats.length > 0) {
+        initCats.forEach(c => { generatedWorldbook[c.name] = {}; });
+    } else {
+        generatedWorldbook = { 角色: {}, 地点: {} };
+    }
 
     // 添加停止按钮
     addStopButton();
@@ -1421,60 +2385,235 @@ function stopProcessing() {
 }
 
 // 处理单个记忆块（带重试机制）
-async function processMemoryChunk(index, retryCount = 0) {
-    const memory = memoryQueue[index];
-    const progress = ((index + 1) / memoryQueue.length) * 100;
-    const maxRetries = 5; // 最大重试次数
+// ==========================================
+// 世界书生成提示词构建器模块（清晰、模块化、高可读性）
+// ==========================================
 
-    // 更新进度，显示重试信息
-    document.getElementById('progress-fill').style.width = progress + '%';
-    const retryText = retryCount > 0 ? ` (重试 ${retryCount}/${maxRetries})` : '';
-    document.getElementById('progress-text').textContent = `正在处理: ${memory.title} (${index + 1}/${memoryQueue.length})${retryText}`;
+/**
+ * 动态根据用户在“编辑分类”中配置的指南，生成极其详尽的内容提取细分规范与加粗字段指南
+ */
+function generateCategoryPromptSpecs(enabledCategories, isStrictCategories) {
+    if (!enabledCategories || enabledCategories.length === 0) {
+        return '';
+    }
 
-    // 检查是否启用文风配置和剧情大纲
-    const enableLiteraryStyle = document.getElementById('enable-literary-style')?.checked ?? false;
-    const enablePlotOutline = document.getElementById('enable-plot-outline')?.checked ?? true;
+    let section = `### 📋【各分类条目提取与细分字段规范】（至关重要，必须严格遵循）：\n`;
+    section += `为了确保条目具有高度专业、统一、精准且支持局部无损编辑的结构，每个分类必须严格按照以下【条目命名】、【关键词触发词】与【内容提取指南（细分字段要求）】进行提取：\n\n`;
 
-    // 使用动态生成的JSON模板
+    enabledCategories.forEach((cat, index) => {
+        section += `#### ${index + 1}. 【${cat.name}】分类规范\n`;
+        if (cat.entryExample && cat.entryExample.trim()) {
+            section += `- **条目命名规范**: 如“${cat.entryExample.trim()}”（必须提取小说中实际登场的真实具体名称，严禁泛泛而谈）\n`;
+        } else {
+            section += `- **条目命名规范**: 必须提取小说中实际登场的具体【${cat.name}】真实完整名称（例如具体的角色姓名、门派势力名、道具真名、功法全名等，严禁使用代称或泛称）\n`;
+        }
+        if (cat.keywordsExample && (Array.isArray(cat.keywordsExample) ? cat.keywordsExample.length > 0 : String(cat.keywordsExample).trim())) {
+            const kwList = Array.isArray(cat.keywordsExample) ? cat.keywordsExample.join(', ') : cat.keywordsExample;
+            section += `- **关键词/触发词建议**: [${kwList}]（提取文中实际出现的别名、全称、缩写作为触发词）\n`;
+        } else {
+            section += `- **关键词/触发词规范**: 由你（AI）结合小说原文，自动提取该【${cat.name}】在文中出现的所有真实全称、常用简称、别名、绰号作为触发词数组（用于酒馆 Lorebook 命中触发）\n`;
+        }
+        if (cat.contentGuide && cat.contentGuide.trim()) {
+            section += `- **内容提取指南与细分字段要求**:
+  ${cat.contentGuide.trim()}
+  ⚠️ **格式硬性规定**：条目内容必须严格使用 Markdown 双星号标题（如 \`**字段名**:\`）将上述细分要素分段描述！严禁输出无加粗标题的大段混杂文本。\n\n`;
+        } else {
+            section += `- **内容提取指南**: 基于小说原文的真实客观事实进行提炼，必须严格使用 Markdown 双星号加粗标题（如 \`**名称**: ...\\n**特征**: ...\`）分段描述。\n\n`;
+        }
+    });
+
+    return section;
+}
+
+/**
+ * 场景1：智能 Agent 增量编辑模式 - 后续章节专属指令集提示词
+ */
+function buildAgentIncrementalPrompt({ langPrefix, index, memory, lastEnding, worldbook, isStrictCategories, enabledCategories }) {
+    const allowedCats = enabledCategories.map(c => c.name);
+    const categoryRule = isStrictCategories
+        ? `\n⚠️ 【严格分类约束（必须遵守）】：你必须且仅能使用以下指定的分类名：[${allowedCats.join('、')}]。严禁创建任何未在此列表中的分类！任何未在此列表中的分类均会被系统直接丢弃拦截！`
+        : `\n🏷️ 【分类规则】：你可以沿用现有分类，也可以根据小说具体内容灵活提炼更贴切的分类（如角色、势力组织、场景地点、神兵道具、功法技能等）。`;
+
+    const categorySpecs = generateCategoryPromptSpecs(enabledCategories, isStrictCategories);
+
+    return `${langPrefix}你现在是小说世界书智能维护 Agent。请仔细分析本次阅读的最新内容，对当前记忆库中的世界书条目发出**精准、非覆盖式的增量编辑指令集（Actions）**。
+
+========================================
+【核心原则：严禁覆写失忆】
+========================================
+1. 已有条目是作品前文积累的历史全貌，绝对禁止使用当前章节的局部描写重写整个条目！
+2. 凡是当前章节未提及的信息（如角色过往经历、童年背景、固有习惯等），必须完整保留。
+3. 条目内容由 Markdown 双星号标题（**字段名**:）分段管理。
+   - 【追加新信息】：使用 append_field 在对应字段后追加新心路、遭遇或行动；若条目尚无该字段，系统会自动在尾部新建该字段。
+   - 【状态变迁替换】：若具体某个事实或状态发生改变（如换了装备、地点转移、认知改变），使用 replace 将对应字段内的旧描述精准替换为新描述。
+4. 【新增实体】：仅当当前章节登场了前文完全未记录的新角色/新势力/新地点时，使用 add_entry 添加全新条目。
+5. 【补充关键词】：使用 add_keywords 为已有条目追加新出现的别名、绰号或称谓。
+6. 【严禁全量覆盖】：若条目在本章无实质变化，不要对其做任何操作。严禁输出覆盖式的整篇重写。${categoryRule}
+
+========================================
+【输出指令集 JSON 格式规范】
+========================================
+你必须输出标准 JSON 对象，顶层必须且仅包含 "actions" 数组，严禁任何 Markdown 代码块标记（如 \`\`\`json）或前后闲聊：
+{
+  "actions": [
+    {
+      "type": "append_field",
+      "category": "角色",
+      "entryName": "卡尔",
+      "fieldName": "性格与背景更新",
+      "text": "面对同为人类的爬行者自相残杀感到极度愤怒。丽贝卡的死触发了他对父亲的痛苦回忆——他的父亲是一个傲慢的霸凌者，导致了母亲的离开，虽未动手打过卡尔，但通过嘲笑和精神施压强迫卡尔服从。卡尔决定在清理完当前街区并看完首播集后动身猎杀弗兰克·Q。"
+    },
+    {
+      "type": "replace",
+      "category": "角色",
+      "entryName": "卡尔",
+      "fieldName": "装备与状态",
+      "searchText": "手持普通砍刀",
+      "replaceText": "换成了附魔的锯齿重刃，并套上了轻型防弹背心"
+    },
+    {
+      "type": "add_entry",
+      "category": "角色",
+      "entryName": "弗兰克·Q",
+      "keywords": ["弗兰克", "连环杀手"],
+      "content": "**名称**: 弗兰克·Q\\n**身份**: 潜逃的危险凶犯\\n**当前状态**: 盘踞在西区废弃街区，成为卡尔当前首要的猎杀目标。"
+    },
+    {
+      "type": "append_field",
+      "category": "剧情大纲",
+      "entryName": "主线剧情",
+      "fieldName": "本章进展",
+      "text": "卡尔清理了当前街区的怪物，锁定了杀手弗兰克·Q的下落，复仇行动正式提上日程。"
+    }
+  ]
+}
+
+支持的指令类型（type）：
+- append_field：向指定加粗字段末尾追加新文本（字段名由 Markdown 双星号标题定义）
+- replace：在指定字段内精准替换旧文本（使用 searchText 与 replaceText）
+- add_entry：新增独立条目（使用 keywords 与 content）
+- add_keywords：为已有条目追加别名或关键词（使用 keywords 数组）
+- delete_field：删除某个过期字段（使用 fieldName）
+
+========================================
+【各分类细分字段提取标准】
+========================================
+${categorySpecs}
+========================================
+【上下文信息】
+========================================
+【1. 上次阅读结尾片段（供上下文衔接）】：
+---
+${lastEnding || '（无上文结尾）'}
+---
+
+【2. 当前作品已有的世界书记忆（绝对历史事实，严禁覆盖抹除）】：
+${JSON.stringify(worldbook, null, 2)}
+
+【3. 本次阅读的新章节内容】：
+---
+${memory.content}
+---
+
+========================================
+【执行指令：直接输出 actions JSON】
+========================================
+请仔细分析上方【3. 本次阅读的新章节内容】，严格遵照前文已定义的【输出指令集 JSON 格式规范】，直接输出标准的 actions JSON 对象：`;
+}
+
+/**
+ * 场景2：智能 Agent 模式 - 第 1 章开篇初始化提示词（强制 Markdown 双星号半结构化分段）
+ */
+function buildAgentInitialPrompt({ langPrefix, memory, isStrictCategories, enabledCategories, enablePlotOutline, enableLiteraryStyle }) {
+    const allowedCats = enabledCategories.map(c => c.name);
+    if (enablePlotOutline && !allowedCats.includes('剧情大纲')) allowedCats.push('剧情大纲');
+    if (enableLiteraryStyle && !allowedCats.includes('文风配置')) allowedCats.push('文风配置');
+
+    let categoryRule = '';
+    if (isStrictCategories) {
+        categoryRule = `\n## ⚠️ 【严格分类约束（必须绝对遵守）】\n你必须且仅能从以下指定的分类中提取条目：[${allowedCats.join('、')}]。\n严禁生成任何未在此列表中的分类！系统已开启白名单硬拦截，任何未在此列表中的分类将被系统直接丢弃拦截！`;
+    } else {
+        categoryRule = `\n## 🏷️ 【自由分类提取】\n你可以根据小说原文的题材与具体内容，自由、灵活地划分设定分类（例如：${allowedCats.join('、')}等）。`;
+    }
+
+    const categorySpecs = generateCategoryPromptSpecs(enabledCategories, isStrictCategories);
+
+    // 动态取第一个分类作为示例
+    const firstCat = enabledCategories[0] || { name: '角色', entryExample: '主角名' };
+    const exampleEntryName = firstCat.entryExample || '主角名';
+
+    return `${langPrefix}你是专业的小说世界书生成专家，当前正在处理小说的【第1章/开篇部分】。
+本次生成将作为整部作品的基础记忆，需要为后续章节的智能 Agent 增量维护奠定优良的结构化基础。
+
+## 🌟 核心规范：Markdown 双星号字段分段标准（至关重要）
+为了支持后续章节通过智能 Agent 进行精准的局部追加（如追加经历、替换装备等），**每个条目的“内容”字段必须严格使用 Markdown 双星号标题（\`**字段名**:\`）进行分段描述**！严禁输出没有加粗标题的大段混杂文本！
+
+${categorySpecs}
+${categoryRule}
+
+## 重要要求
+1. **只提取文中实际出现的信息**，严禁凭空编造
+2. **关键词必须是文中实际出现的词语**，以字符串数组形式提供
+3. **内容必须严格采用 \`**字段名**:\` 加粗结构分段**
+4. 直接输出标准的 JSON 对象，格式示例：
+{
+  "${firstCat.name}": {
+    "${exampleEntryName}": {
+      "关键词": ["${exampleEntryName}", "别名"],
+      "内容": "**名称**: ${exampleEntryName}\\n**身份与背景**: 真实身份背景\\n**性格特征**: 具体性格描述"
+    }
+  }
+}
+严禁添加任何 Markdown 代码块标记（如 \`\`\`json）或多余的解释文字。
+
+【本次阅读的小说开篇内容】：
+---
+${memory.content}
+---
+
+请直接输出符合上述加粗字段规范的初始世界书 JSON：`;
+}
+
+/**
+ * 场景3：传统模式（未开启 Agent 模式时的普通增量覆盖或累积）
+ */
+function buildLegacyPrompt({ langPrefix, index, memory, lastEnding, worldbook, isIncMode, isStrictCategories, enabledCategories, enablePlotOutline, enableLiteraryStyle }) {
     const jsonTemplate = generateMainPromptJsonTemplate();
     const enabledCategoriesDesc = getEnabledCategoriesDescription();
 
-    // 精简版提示词 - 不再在这里添加破限内容，由 callSimpleAPI 通过 system 角色处理
-    let prompt = getLanguagePrefix();
+    let categoryGuide = '';
+    if (isStrictCategories) {
+        categoryGuide = `\n- **分类约束**：必须严格仅提取[${enabledCategoriesDesc}]分类，禁止自行创建未指定的分类。`;
+    } else {
+        categoryGuide = `\n- **分类规则**：可根据小说内容自由提炼合适的分类。`;
+    }
 
-    prompt += `你是专业的小说世界书生成专家。请仔细阅读提供的小说内容，提取其中的关键信息，生成高质量的世界书条目。
+    const categorySpecs = generateCategoryPromptSpecs(enabledCategories, isStrictCategories);
+
+    let prompt = `${langPrefix}你是专业的小说世界书生成专家。请仔细阅读提供的小说内容，提取其中的关键信息，生成高质量的世界书条目。
 
 ## 重要要求
 1. **必须基于提供的具体小说内容**，不要生成通用模板
-2. **只提取文中明确出现的${enabledCategoriesDesc}等信息**
-3. **关键词必须是文中实际出现的名称**，用逗号分隔
-4. **内容必须基于原文描述**，不要添加原文没有的信息
-5. **内容使用markdown格式**，可以层层嵌套或使用序号标题
+2. **关键词必须是文中实际出现的名称**，用逗号分隔
+3. **内容必须基于原文描述**，不要添加原文没有的信息
+4. **内容使用markdown格式**，可以层层嵌套或使用序号标题${categoryGuide}${enablePlotOutline ? '\n- 剧情大纲是必需项，必须生成' : ''}${enableLiteraryStyle ? '\n- 文风配置字段为可选项，如果能够分析出明确的文风特征则生成，否则可以省略' : ''}
 
-## 📤 输出格式
-请生成标准JSON格式，确保能被JavaScript正确解析：
-
+${categorySpecs}
+## 📤 输出格式参考模板：
 \`\`\`json
 ${jsonTemplate}
 \`\`\`
-
-## 重要提醒
-- 直接输出JSON，不要包含代码块标记
-- 所有信息必须来源于原文，不要编造
-- 关键词必须是文中实际出现的词语
-- 内容描述要完整但简洁${enablePlotOutline ? '\n- 剧情大纲是必需项，必须生成' : ''}${enableLiteraryStyle ? '\n- 文风配置字段为可选项，如果能够分析出明确的文风特征则生成，否则可以省略' : ''}
 
 `;
 
     if (index > 0) {
         prompt += `这是你上一次阅读的结尾部分：
 ---
-${memoryQueue[index - 1].content.slice(-500)}
+${lastEnding}
 ---
 
-`;
-        prompt += `这是当前你对该作品的记忆：
-${JSON.stringify(generatedWorldbook, null, 2)}
+这是当前你对该作品的记忆：
+${JSON.stringify(worldbook, null, 2)}
 
 `;
     }
@@ -1487,13 +2626,9 @@ ${memory.content}
 `;
 
     if (index === 0) {
-        prompt += `现在开始分析小说内容，请专注于提取文中实际出现的信息：
-
-`;
-    } else {
-        // 根据增量输出模式选择不同的提示词
-        if (incrementalOutputMode) {
-            prompt += `请基于新内容**增量更新**世界书，采用**点对点覆盖**模式：
+        prompt += `现在开始分析小说内容，请专注于提取文中实际出现的信息：\n\n`;
+    } else if (isIncMode) {
+        prompt += `请基于新内容**增量更新**世界书，采用**点对点覆盖**模式：
 
 **增量输出规则**：
 1. **只输出本次需要变更的条目**，不要输出完整的世界书
@@ -1506,8 +2641,8 @@ ${memory.content}
 {"角色": {"张三": {"关键词": ["新称呼"], "内容": "更新后的完整描述..."}}}
 
 `;
-        } else {
-            prompt += `请基于新内容**累积补充**世界书，注意以下要点：
+    } else {
+        prompt += `请基于新内容**累积补充**世界书，注意以下要点：
 
 **重要规则**：
 1. **已有角色**：如果角色已存在，请在原有内容基础上**追加新信息**，不要删除或覆盖已有描述
@@ -1517,15 +2652,113 @@ ${memory.content}
 5. **保持完整性**：确保之前章节提取的重要信息不会丢失
 
 `;
-        }
     }
 
     prompt += `请直接输出JSON格式的结果，不要添加任何代码块标记或解释文字。`;
+    return prompt;
+}
 
-    // 添加prompt查看功能
-    mylog(`=== 第${index + 1}步 Prompt ===`);
-    mylog(prompt);
-    mylog('=====================');
+/**
+ * 构建长文本转世界书提示词总调度器
+ */
+function buildWorldbookPrompt(params) {
+    const {
+        index,
+        memory,
+        memoryQueue,
+        generatedWorldbook,
+        isAgentMode,
+        isIncMode,
+        isStrictCategories,
+        enabledCategories,
+        enablePlotOutline,
+        enableLiteraryStyle
+    } = params;
+
+    const langPrefix = getLanguagePrefix();
+    const lastEnding = (index > 0 && memoryQueue[index - 1]) ? memoryQueue[index - 1].content.slice(-500) : '';
+
+    // 分支 1：智能 Agent 增量编辑模式 - 后续章节（index > 0）
+    if (isAgentMode && index > 0) {
+        return buildAgentIncrementalPrompt({
+            langPrefix,
+            index,
+            memory,
+            lastEnding,
+            worldbook: generatedWorldbook,
+            isStrictCategories,
+            enabledCategories
+        });
+    }
+
+    // 分支 2：智能 Agent 模式 - 第 1 章开篇初始化（index === 0）
+    if (isAgentMode && index === 0) {
+        return buildAgentInitialPrompt({
+            langPrefix,
+            memory,
+            isStrictCategories,
+            enabledCategories,
+            enablePlotOutline,
+            enableLiteraryStyle
+        });
+    }
+
+    // 分支 3：传统模式（未开启 Agent 模式时的普通增量覆盖或累积）
+    return buildLegacyPrompt({
+        langPrefix,
+        index,
+        memory,
+        lastEnding,
+        worldbook: generatedWorldbook,
+        isIncMode,
+        isStrictCategories,
+        enabledCategories,
+        enablePlotOutline,
+        enableLiteraryStyle
+    });
+}
+
+// 处理单个记忆块（带重试机制）
+async function processMemoryChunk(index, retryCount = 0) {
+    const memory = memoryQueue[index];
+    const progress = ((index + 1) / memoryQueue.length) * 100;
+    const maxRetries = 5; // 最大重试次数
+
+    // 更新进度，显示重试信息
+    document.getElementById('progress-fill').style.width = progress + '%';
+    const retryText = retryCount > 0 ? ` (重试 ${retryCount}/${maxRetries})` : '';
+    document.getElementById('progress-text').textContent = `正在处理: ${memory.title} (${index + 1}/${memoryQueue.length})${retryText}`;
+
+    // 实时读取 DOM 复选框状态，确保与用户界面交互严格同步
+    const isAgentMode = (document.getElementById('agent-incremental-mode')?.checked ?? agentIncrementalMode);
+    const isIncMode = (document.getElementById('incremental-output-mode')?.checked ?? incrementalOutputMode);
+    const isStrictCategories = (document.getElementById('strict-custom-categories-mode')?.checked ?? strictCustomCategoriesMode);
+    const enableLiteraryStyle = document.getElementById('enable-literary-style')?.checked ?? false;
+    const enablePlotOutline = document.getElementById('enable-plot-outline')?.checked ?? true;
+
+    // 构建结构化的高质量世界书提示词
+    const prompt = buildWorldbookPrompt({
+        index,
+        memory,
+        memoryQueue,
+        generatedWorldbook,
+        isAgentMode,
+        isIncMode,
+        isStrictCategories,
+        enabledCategories: getEnabledCategories(),
+        enablePlotOutline,
+        enableLiteraryStyle
+    });
+
+    // 重点：在控制台始终输出清晰显眼的提示词日志（按 F12 立即看得到，彻底修补 F12 调试看不到提示词的瑕疵）
+    console.group(`%c🚀 [Prompt] 记忆块 ${index + 1}/${memoryQueue.length}: ${memory.title}`, 'color: #00d2d3; font-weight: bold; font-size: 13px;');
+    console.log(`模式: ${isAgentMode ? '🤖 智能 Agent 增量模式' : (isIncMode ? '📝 普通增量覆盖模式' : '📚 普通全量累积模式')}`);
+    console.log(`分类策略: ${isStrictCategories ? '🔒 严格指定分类' : '🌐 自由发挥分类'}`);
+    console.log('完整提示词内容:\n' + prompt);
+    console.groupEnd();
+
+    // 同时输出 mylog
+    mylog(`=== 第${index + 1}步 Prompt ===\n${prompt}\n=====================`);
 
     // ===== 预分裂检查：基于当前 prompt 的 token 数 =====
     if (typeof window.countTokens === 'function') {
@@ -1586,17 +2819,35 @@ ${memory.content}
             let cleanResponse = response.trim();
 
             // 移除可能的代码块标记
-            cleanResponse = cleanResponse.replace(/```json\s*/gi, '').replace(/```\s*/g, '');
+            cleanResponse = cleanResponse.replace(/```json\s*/gi, '').replace(/```\s*/g, '').trim();
 
-            // 移除可能的前导解释文字
-            if (cleanResponse.startsWith('{')) {
+            // 移除可能的前导解释文字（同时支持对象 { 和数组 [）
+            if (cleanResponse.startsWith('{') || cleanResponse.startsWith('[')) {
                 // 已经是JSON开头，不需要处理
             } else {
-                // 尝试找到第一个 { 到最后一个 } 的内容
                 const firstBrace = cleanResponse.indexOf('{');
-                const lastBrace = cleanResponse.lastIndexOf('}');
-                if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
-                    cleanResponse = cleanResponse.substring(firstBrace, lastBrace + 1);
+                const firstBracket = cleanResponse.indexOf('[');
+                let startPos = -1;
+                let endPos = -1;
+
+                if (firstBrace !== -1 && firstBracket !== -1) {
+                    if (firstBrace < firstBracket) {
+                        startPos = firstBrace;
+                        endPos = cleanResponse.lastIndexOf('}');
+                    } else {
+                        startPos = firstBracket;
+                        endPos = cleanResponse.lastIndexOf(']');
+                    }
+                } else if (firstBrace !== -1) {
+                    startPos = firstBrace;
+                    endPos = cleanResponse.lastIndexOf('}');
+                } else if (firstBracket !== -1) {
+                    startPos = firstBracket;
+                    endPos = cleanResponse.lastIndexOf(']');
+                }
+
+                if (startPos !== -1 && endPos !== -1 && endPos > startPos) {
+                    cleanResponse = cleanResponse.substring(startPos, endPos + 1);
                     mylog('提取JSON部分，新长度:', cleanResponse.length);
                 }
             }
@@ -1607,6 +2858,9 @@ ${memory.content}
 
             try {
                 memoryUpdate = JSON.parse(cleanResponse);
+                if (Array.isArray(memoryUpdate)) {
+                    memoryUpdate = { actions: memoryUpdate };
+                }
                 mylog('✅ JSON清理后解析成功');
             } catch (secondError) {
                 console.error('❌ JSON解析仍然失败');
@@ -1642,6 +2896,9 @@ ${memory.content}
                     mylog(`🔧 尝试自动添加${missingBraces}个闭合括号...`);
                     try {
                         memoryUpdate = JSON.parse(cleanResponse + '}'.repeat(missingBraces));
+                        if (Array.isArray(memoryUpdate)) {
+                            memoryUpdate = { actions: memoryUpdate };
+                        }
                         mylog(`✅ 自动添加${missingBraces}个闭合括号后解析成功`);
                         // 成功解析，不需要继续后续处理
                     } catch (autoFixError) {
@@ -1667,6 +2924,35 @@ ${memory.content}
                         document.getElementById('progress-text').textContent = `JSON格式错误，正在调用AI纠正: ${memory.title} (${index + 1}/${memoryQueue.length})`;
 
                         try {
+                            const isAgentActionResponse = agentIncrementalMode && (cleanResponse.includes('"actions"') || cleanResponse.includes('"type"') || cleanResponse.includes('append_field'));
+
+                            const structureSpec = isAgentActionResponse ? `
+## 🧩 目标JSON结构（Agent 指令集模式）
+原文是包含 actions 数组的 Agent 指令集，修复后的 JSON 必须保持以下顶层结构：
+{
+  "actions": [
+    {
+      "type": "append_field / replace / add_entry / add_keywords",
+      "category": "...",
+      "entryName": "...",
+      "fieldName": "...",
+      "text": "..."
+    }
+  ]
+}
+要求：
+- 严禁将 actions 数组降级或改造成世界书分类字典，必须严格保持顶层 actions 结构！
+- 修复所有的引号未闭合、尾随逗号、字符串换行未转义等语法错误。` : `
+## 🧩 世界书JSON基本嵌套结构（必须遵循）
+修复后的JSON应尽量保持/恢复为以下结构（允许只包含其中一部分分类，但结构层级必须一致）：
+
+${generateFixPromptJsonStructure()}
+
+要求：
+- 顶层的每个分类（例如"${getCategoryNamesList()}"）的值必须是对象。
+- 分类下每个条目的值必须是对象，且包含 "关键词"(数组) 与 "内容"(字符串) 两个字段。
+- 如果原文中某条目值不是对象（比如直接是字符串），请在不改变语义的前提下包装成 {"关键词":[], "内容":"原内容"}。`;
+
                             // 构建纠正提示词（严格输出控制，参考世界书输出格式风格）
                             const fixPrompt = getLanguagePrefix() + `你是专业的JSON修复专家。请将下面“格式错误的JSON文本”修复为严格有效、可被 JavaScript 的 JSON.parse() 直接解析的JSON。
 
@@ -1681,15 +2967,7 @@ ${memory.content}
    - 不允许注释
 5. **字符串换行与特殊字符必须正确转义**：字符串中的换行必须使用 \\n，反斜杠与引号必须正确转义。
 
-## 🧩 世界书JSON基本嵌套结构（必须遵循）
-修复后的JSON应尽量保持/恢复为以下结构（允许只包含其中一部分分类，但结构层级必须一致）：
-
-${generateFixPromptJsonStructure()}
-
-要求：
-- 顶层的每个分类（例如"${getCategoryNamesList()}"）的值必须是对象。
-- 分类下每个条目的值必须是对象，且包含 "关键词"(数组) 与 "内容"(字符串) 两个字段。
-- 如果原文中某条目值不是对象（比如直接是字符串），请在不改变语义的前提下包装成 {"关键词":[], "内容":"原内容"}。
+${structureSpec}
 
 ## 📤 输出格式
 直接输出修复后的JSON（不要包含任何其他字符）。
@@ -1709,17 +2987,38 @@ ${cleanResponse}
 
                             // 清理纠正后的响应
                             let cleanedFixedResponse = fixedResponse.trim();
-                            cleanedFixedResponse = cleanedFixedResponse.replace(/```json\s*/gi, '').replace(/```\s*/g, '');
+                            cleanedFixedResponse = cleanedFixedResponse.replace(/```json\s*/gi, '').replace(/```\s*/g, '').trim();
 
-                            // 提取JSON主体（避免模型输出前后夹带内容）
-                            const firstBrace = cleanedFixedResponse.indexOf('{');
-                            const lastBrace = cleanedFixedResponse.lastIndexOf('}');
-                            if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
-                                cleanedFixedResponse = cleanedFixedResponse.substring(firstBrace, lastBrace + 1);
+                            // 提取JSON主体（避免模型输出前后夹带内容，支持 { 与 [）
+                            const fixFirstBrace = cleanedFixedResponse.indexOf('{');
+                            const fixFirstBracket = cleanedFixedResponse.indexOf('[');
+                            let fStart = -1;
+                            let fEnd = -1;
+                            if (fixFirstBrace !== -1 && fixFirstBracket !== -1) {
+                                if (fixFirstBrace < fixFirstBracket) {
+                                    fStart = fixFirstBrace;
+                                    fEnd = cleanedFixedResponse.lastIndexOf('}');
+                                } else {
+                                    fStart = fixFirstBracket;
+                                    fEnd = cleanedFixedResponse.lastIndexOf(']');
+                                }
+                            } else if (fixFirstBrace !== -1) {
+                                fStart = fixFirstBrace;
+                                fEnd = cleanedFixedResponse.lastIndexOf('}');
+                            } else if (fixFirstBracket !== -1) {
+                                fStart = fixFirstBracket;
+                                fEnd = cleanedFixedResponse.lastIndexOf(']');
+                            }
+
+                            if (fStart !== -1 && fEnd !== -1 && fEnd > fStart) {
+                                cleanedFixedResponse = cleanedFixedResponse.substring(fStart, fEnd + 1);
                             }
 
                             // 解析纠正后的JSON
                             memoryUpdate = JSON.parse(cleanedFixedResponse);
+                            if (Array.isArray(memoryUpdate)) {
+                                memoryUpdate = { actions: memoryUpdate };
+                            }
                             mylog('✅ JSON格式纠正成功！');
                             document.getElementById('progress-text').textContent = `JSON格式已纠正: ${memory.title} (${index + 1}/${memoryQueue.length})`;
 
@@ -1728,8 +3027,9 @@ ${cleanResponse}
 
                             // 如果纠正也失败，创建一个简单的默认结构
                             mylog('⚠️ 无法解析JSON，使用默认结构保存原始响应');
+                            const fallbackCat = getAllowedCategoryNames()[0] || '角色';
                             memoryUpdate = {
-                                '知识书': {
+                                [fallbackCat]: {
                                     [`第${index + 1}个记忆块_解析失败`]: {
                                         '关键词': ['解析失败', '格式错误'],
                                         '内容': `**解析失败原因**: ${secondError.message}\n\n**纠正尝试失败**: ${fixError.message}\n\n**原始响应预览**:\n${cleanResponse.substring(0, 2000)}${cleanResponse.length > 2000 ? '...[' + (cleanResponse.length - 2000) + ' bytes truncated]' : ''}`
@@ -2175,7 +3475,7 @@ function initContextThresholdUI() {
     }
 
     // 保存到localStorage
-    document.getElementById('context-threshold-input').addEventListener('change', function() {
+    document.getElementById('context-threshold-input').addEventListener('change', function () {
         const val = parseInt(this.value, 10);
         if (!isNaN(val) && val >= 1 && val <= 100) {
             localStorage.setItem('contextSplitThreshold', val.toString());
@@ -2265,7 +3565,7 @@ function normalizeWorldbookEntry(entry) {
         if (Array.isArray(entry['关键词'])) {
             entry['关键词'] = entry['关键词'].map(k => typeof k === 'object' ? convertWorldbookValueToString(k) : String(k));
         } else if (typeof entry['关键词'] === 'string') {
-            entry['关键词'] = entry['关键词'].split(/[,，、\s]+/).map(k => k.trim()).filter(Boolean);
+            entry['关键词'] = entry['关键词'].split(/[,，、\n\r]+/).map(k => k.trim()).filter(Boolean);
         } else {
             entry['关键词'] = [convertWorldbookValueToString(entry['关键词'])];
         }
@@ -2660,8 +3960,13 @@ function exportWorldbook() {
     URL.revokeObjectURL(url);
 }
 
-// 导入到SillyTavern
-async function importToSillyTavern() {
+// 使用主页标准世界书导出模块导出 SillyTavern 兼容格式
+function exportSillyTavernWorldbookFromGenerated(customName = null) {
+    if (!generatedWorldbook || Object.keys(generatedWorldbook).length === 0) {
+        alert('没有世界书数据可以导出！');
+        return false;
+    }
+
     // 生成文件名安全的日期时间后缀
     const timeString = new Date().toLocaleString('zh-CN', {
         year: 'numeric',
@@ -2671,32 +3976,98 @@ async function importToSillyTavern() {
         minute: '2-digit'
     }).replace(/[:/\s]/g, '').replace(/,/g, '-');
 
-    try {
-        // 转换为SillyTavern世界书格式
-        const sillyTavernWorldbook = convertToSillyTavernFormat(generatedWorldbook);
-
-        // 使用原txt文件名生成下载文件名
-        let fileName = '酒馆书';
+    let worldbookName = customName;
+    if (!worldbookName) {
         if (currentFile && currentFile.name) {
             const baseName = currentFile.name.replace(/\.[^/.]+$/, '');
-            fileName = `${baseName}-世界书参考-${timeString}`;
+            worldbookName = `${baseName}-世界书-${timeString}`;
         } else {
-            fileName = `酒馆书-${timeString}`;
+            worldbookName = `世界书-${timeString}`;
+        }
+    }
+
+    try {
+        // 1. 将生成的世界书转换为标准格式条目数组
+        const standardWorldbook = convertGeneratedWorldbookToStandard(generatedWorldbook);
+
+        // 2. 构造主页 cardData 规范对象
+        const cardData = {
+            name: worldbookName,
+            worldbook: standardWorldbook
+        };
+
+        // 3. 调用主页标准的 buildWorldbookExportObjectFromData 导出模块
+        let lorebookData;
+        if (typeof buildWorldbookExportObjectFromData === 'function') {
+            lorebookData = buildWorldbookExportObjectFromData(cardData);
+        } else {
+            // fallback: 严格对齐酒馆 Lorebook 规范
+            const lorebookEntries = {};
+            standardWorldbook.forEach((entry, index) => {
+                lorebookEntries[index] = {
+                    uid: entry.id,
+                    key: entry.keys,
+                    keysecondary: entry.secondary_keys || [],
+                    comment: entry.comment,
+                    content: entry.content,
+                    constant: entry.constant,
+                    selective: entry.selective,
+                    selectiveLogic: 0,
+                    addMemo: true,
+                    order: entry.priority || 100,
+                    position: 0,
+                    disable: !entry.enabled,
+                    excludeRecursion: true,
+                    preventRecursion: true,
+                    probability: entry.probability || 100,
+                    useProbability: true,
+                    depth: entry.wb_depth || 4,
+                    role: 0,
+                    displayIndex: index,
+                    extensions: {
+                        position: 0,
+                        exclude_recursion: true,
+                        prevent_recursion: true,
+                        probability: entry.probability || 100,
+                        useProbability: true,
+                        depth: entry.wb_depth || 4,
+                        selectiveLogic: 0,
+                        group: entry.group || '',
+                        role: 0
+                    }
+                };
+            });
+            lorebookData = {
+                entries: lorebookEntries
+            };
         }
 
-        // 创建下载文件
-        const blob = new Blob([JSON.stringify(sillyTavernWorldbook, null, 2)], { type: 'application/json' });
+        // 4. 创建并触发下载
+        const blob = new Blob([JSON.stringify(lorebookData, null, 2)], { type: 'application/json' });
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = fileName + '.json';
+        const safeName = worldbookName.replace(/[/\\?%*:|"<>]/g, '_');
+        a.download = safeName + '.json';
+        document.body.appendChild(a);
         a.click();
+        document.body.removeChild(a);
         URL.revokeObjectURL(url);
 
-        alert('世界书已转换为SillyTavern格式并下载，请在SillyTavern中手动导入该文件。');
+        mylog('已通过主页导出模块成功导出酒馆世界书:', safeName);
+        return true;
     } catch (error) {
-        console.error('转换为SillyTavern格式失败:', error);
-        alert('转换失败：' + error.message);
+        console.error('导出酒馆世界书失败:', error);
+        alert('导出失败：' + error.message);
+        return false;
+    }
+}
+
+// 导入/导出到SillyTavern（使用主页标准导出模块）
+async function importToSillyTavern() {
+    const success = exportSillyTavernWorldbookFromGenerated();
+    if (success) {
+        alert('世界书已转换为SillyTavern酒馆标准格式并下载，请在SillyTavern中手动导入该文件。');
     }
 }
 
@@ -2794,12 +4165,31 @@ function convertGeneratedWorldbookToStandard(generatedWb) {
 
                 if (typeof itemData === 'object' && itemData.关键词 && itemData.内容) {
                     // 创建标准世界书条目（数组格式）
+                    let entryContent = itemData.内容;
+                    if (typeof entryContent === 'object' && entryContent !== null) {
+                        entryContent = convertWorldbookValueToString(entryContent);
+                    } else {
+                        entryContent = String(entryContent || '');
+                    }
+
+                    let entryKeys = [];
+                    if (Array.isArray(itemData.关键词)) {
+                        entryKeys = itemData.关键词.map(k => typeof k === 'object' ? convertWorldbookValueToString(k) : String(k));
+                    } else if (typeof itemData.关键词 === 'string') {
+                        entryKeys = itemData.关键词.split(/[,，、\n\r]+/).map(k => k.trim()).filter(Boolean);
+                    } else if (itemData.关键词) {
+                        entryKeys = [convertWorldbookValueToString(itemData.关键词)];
+                    } else {
+                        entryKeys = [itemName];
+                    }
+                    if (entryKeys.length === 0) entryKeys = [itemName];
+
                     standardWorldbook.push({
                         id: entryId++,
-                        keys: Array.isArray(itemData.关键词) ? itemData.关键词 : [itemName],
+                        keys: entryKeys,
                         secondary_keys: [],
                         comment: `[${category}] ${itemName}`,
-                        content: itemData.内容,
+                        content: entryContent,
                         priority: 100,
                         enabled: true,
                         position: 'before_char',
@@ -4020,23 +5410,23 @@ async function callAiForRegex(index, button) {
 
 // AI 帮测正则 - 自动生成测试输入
 async function aiTestRegex(index, button) {
-	const input = document.getElementById('regex-test-input-' + index);
-	if (!input) return;
+    const input = document.getElementById('regex-test-input-' + index);
+    if (!input) return;
 
-	const script = regexScriptsData[index];
-	if (!script) return;
+    const script = regexScriptsData[index];
+    if (!script) return;
 
-	if (!script.findRegex) {
-		alert('请先填写"查找正则"字段');
-		return;
-	}
+    if (!script.findRegex) {
+        alert('请先填写"查找正则"字段');
+        return;
+    }
 
-	const originalText = button.textContent;
-	button.disabled = true;
-	button.textContent = t('generating');
+    const originalText = button.textContent;
+    button.disabled = true;
+    button.textContent = t('generating');
 
-	try {
-		let prompt = getLanguagePrefix() + `你是一个正则表达式测试助手。请根据以下正则脚本，生成一段合适的测试文本。
+    try {
+        let prompt = getLanguagePrefix() + `你是一个正则表达式测试助手。请根据以下正则脚本，生成一段合适的测试文本。
 
 查找正则: ${script.findRegex}
 替换为: ${script.replaceString || '(空)'}
@@ -4047,57 +5437,57 @@ async function aiTestRegex(index, button) {
 3. 文本要自然、通顺，像是真实的对话或文章片段
 4. 直接返回测试文本本身，不要包含任何额外解释或Markdown标记`;
 
-		const result = await callApi(prompt, button);
-		if (result) {
-			input.value = result.trim();
-			// 自动运行测试
-			runRegexLiveTest(index);
-		}
-	} finally {
-		button.disabled = false;
-		button.textContent = originalText;
-	}
+        const result = await callApi(prompt, button);
+        if (result) {
+            input.value = result.trim();
+            // 自动运行测试
+            runRegexLiveTest(index);
+        }
+    } finally {
+        button.disabled = false;
+        button.textContent = originalText;
+    }
 }
 
 // AI 帮我填并一直验证到对
 async function callAiForRegexAndVerify(index, button) {
-	const regexCard = document.querySelector('#regex-scripts-container .regex-card:nth-child(' + (index + 1) + ')');
-	if (!regexCard) return;
-	const targetFind = regexCard.querySelector('.regex-field:nth-child(2) input');
-	const targetReplace = regexCard.querySelector('.regex-field:nth-child(3) textarea');
-	if (!targetFind || !targetReplace) return;
+    const regexCard = document.querySelector('#regex-scripts-container .regex-card:nth-child(' + (index + 1) + ')');
+    if (!regexCard) return;
+    const targetFind = regexCard.querySelector('.regex-field:nth-child(2) input');
+    const targetReplace = regexCard.querySelector('.regex-field:nth-child(3) textarea');
+    if (!targetFind || !targetReplace) return;
 
-	getAiGuidance(t('regex-ai-guidance-title'), async userGuidance => {
-		if (!userGuidance) {
-			alert('请输入你想要实现的效果描述');
-			return;
-		}
+    getAiGuidance(t('regex-ai-guidance-title'), async userGuidance => {
+        if (!userGuidance) {
+            alert('请输入你想要实现的效果描述');
+            return;
+        }
 
-		const originalText = button.textContent;
-		button.disabled = true;
-		button.textContent = t('generating');
+        const originalText = button.textContent;
+        button.disabled = true;
+        button.textContent = t('generating');
 
-		try {
-			// 先展开测试区域
-			const testSection = document.getElementById('regex-test-section-' + index);
-			if (testSection && !testSection.classList.contains('expanded')) {
-				toggleRegexTest(index);
-			}
+        try {
+            // 先展开测试区域
+            const testSection = document.getElementById('regex-test-section-' + index);
+            if (testSection && !testSection.classList.contains('expanded')) {
+                toggleRegexTest(index);
+            }
 
-			let findRegex = '';
-			let replaceString = '';
-			let affectsPrompt = false;
-			let testPassed = false;
-			const maxAttempts = 5;
-			let attempt = 0;
+            let findRegex = '';
+            let replaceString = '';
+            let affectsPrompt = false;
+            let testPassed = false;
+            const maxAttempts = 5;
+            let attempt = 0;
 
-			while (!testPassed && attempt < maxAttempts) {
-				attempt++;
-				const statusEl = document.getElementById('regex-test-status-' + index);
+            while (!testPassed && attempt < maxAttempts) {
+                attempt++;
+                const statusEl = document.getElementById('regex-test-status-' + index);
 
-				let prompt;
-				if (attempt === 1) {
-					prompt = getLanguagePrefix() + `你是一个正则表达式生成助手。根据用户的描述，生成对应的正则表达式脚本。
+                let prompt;
+                if (attempt === 1) {
+                    prompt = getLanguagePrefix() + `你是一个正则表达式生成助手。根据用户的描述，生成对应的正则表达式脚本。
 
 用户描述：${userGuidance}
 
@@ -4120,8 +5510,8 @@ async function callAiForRegexAndVerify(index, button) {
 3. 使用适当的捕获组
 4. replaceString 正确引用捕获组
 5. testInput 是能验证该正则的测试文本`;
-				} else {
-					prompt = getLanguagePrefix() + `我正在尝试生成一个正则表达式，但之前的版本没有通过验证。
+                } else {
+                    prompt = getLanguagePrefix() + `我正在尝试生成一个正则表达式，但之前的版本没有通过验证。
 
 用户需求：${userGuidance}
 
@@ -4141,119 +5531,119 @@ async function callAiForRegexAndVerify(index, button) {
 }
 
 请确保正则表达式能正确处理testInput中的内容，满足用户的需求。`;
-				}
+                }
 
-				if (statusEl) {
-					if (attempt > 1) {
-						statusEl.textContent = t('regex-ai-verify-failed', { n: attempt });
-						statusEl.className = 'regex-test-status error';
-					} else {
-						statusEl.textContent = '⏳ 正在生成...';
-						statusEl.className = 'regex-test-status';
-					}
-					statusEl.style.display = 'inline-block';
-				}
+                if (statusEl) {
+                    if (attempt > 1) {
+                        statusEl.textContent = t('regex-ai-verify-failed', { n: attempt });
+                        statusEl.className = 'regex-test-status error';
+                    } else {
+                        statusEl.textContent = '⏳ 正在生成...';
+                        statusEl.className = 'regex-test-status';
+                    }
+                    statusEl.style.display = 'inline-block';
+                }
 
-				const result = await callApi(prompt, button);
-				if (!result) break;
+                const result = await callApi(prompt, button);
+                if (!result) break;
 
-				try {
-					const jsonMatch = result.match(/\{[\s\S]*\}/);
-					if (!jsonMatch) throw new Error('未找到JSON');
-					const parsed = JSON.parse(jsonMatch[0]);
+                try {
+                    const jsonMatch = result.match(/\{[\s\S]*\}/);
+                    if (!jsonMatch) throw new Error('未找到JSON');
+                    const parsed = JSON.parse(jsonMatch[0]);
 
-					findRegex = parsed.findRegex || '';
-					replaceString = parsed.replaceString !== undefined ? parsed.replaceString : '';
-					affectsPrompt = parsed.affectsPrompt === true;
+                    findRegex = parsed.findRegex || '';
+                    replaceString = parsed.replaceString !== undefined ? parsed.replaceString : '';
+                    affectsPrompt = parsed.affectsPrompt === true;
 
-					// 填入脚本名称
-					if (parsed.scriptName) {
-						const nameInput = regexCard.querySelector('.regex-field:first-child input');
-						if (nameInput) {
-							nameInput.value = parsed.scriptName;
-							nameInput.dispatchEvent(new Event('change'));
-							if (typeof updateRegexScript === 'function') {
-								updateRegexScript(index, 'scriptName', parsed.scriptName);
-							}
-							if (typeof updateRegexHeader === 'function') {
-								updateRegexHeader(nameInput, index);
-							}
-						}
-					}
+                    // 填入脚本名称
+                    if (parsed.scriptName) {
+                        const nameInput = regexCard.querySelector('.regex-field:first-child input');
+                        if (nameInput) {
+                            nameInput.value = parsed.scriptName;
+                            nameInput.dispatchEvent(new Event('change'));
+                            if (typeof updateRegexScript === 'function') {
+                                updateRegexScript(index, 'scriptName', parsed.scriptName);
+                            }
+                            if (typeof updateRegexHeader === 'function') {
+                                updateRegexHeader(nameInput, index);
+                            }
+                        }
+                    }
 
-					// 填入正则字段
-					if (findRegex) {
-						targetFind.value = findRegex;
-						targetFind.dispatchEvent(new Event('change'));
-						if (typeof updateRegexScript === 'function') {
-							updateRegexScript(index, 'findRegex', findRegex);
-						}
-					}
+                    // 填入正则字段
+                    if (findRegex) {
+                        targetFind.value = findRegex;
+                        targetFind.dispatchEvent(new Event('change'));
+                        if (typeof updateRegexScript === 'function') {
+                            updateRegexScript(index, 'findRegex', findRegex);
+                        }
+                    }
 
-					if (replaceString !== undefined) {
-						targetReplace.value = replaceString;
-						targetReplace.dispatchEvent(new Event('change'));
-						if (typeof updateRegexScript === 'function') {
-							updateRegexScript(index, 'replaceString', replaceString);
-						}
-						if (typeof autoResizeTextarea === 'function') {
-							autoResizeTextarea(targetReplace);
-						}
-					}
+                    if (replaceString !== undefined) {
+                        targetReplace.value = replaceString;
+                        targetReplace.dispatchEvent(new Event('change'));
+                        if (typeof updateRegexScript === 'function') {
+                            updateRegexScript(index, 'replaceString', replaceString);
+                        }
+                        if (typeof autoResizeTextarea === 'function') {
+                            autoResizeTextarea(targetReplace);
+                        }
+                    }
 
-					// 填入测试输入并验证
-					const testInput = document.getElementById('regex-test-input-' + index);
-					if (testInput && parsed.testInput) {
-						testInput.value = parsed.testInput;
-						runRegexLiveTest(index);
-					}
+                    // 填入测试输入并验证
+                    const testInput = document.getElementById('regex-test-input-' + index);
+                    if (testInput && parsed.testInput) {
+                        testInput.value = parsed.testInput;
+                        runRegexLiveTest(index);
+                    }
 
-					// 检查验证结果
-					const output = document.getElementById('regex-test-output-' + index);
-					if (output && output.value && !output.value.startsWith('[')) {
-						// 如果输出和输入不同，说明正则有匹配，验证通过
-						if (output.value !== testInput.value && testInput.value) {
-							testPassed = true;
-							if (statusEl) {
-								statusEl.textContent = t('regex-ai-verify-success');
-								statusEl.className = 'regex-test-status success';
-								statusEl.style.display = 'inline-block';
-							}
+                    // 检查验证结果
+                    const output = document.getElementById('regex-test-output-' + index);
+                    if (output && output.value && !output.value.startsWith('[')) {
+                        // 如果输出和输入不同，说明正则有匹配，验证通过
+                        if (output.value !== testInput.value && testInput.value) {
+                            testPassed = true;
+                            if (statusEl) {
+                                statusEl.textContent = t('regex-ai-verify-success');
+                                statusEl.className = 'regex-test-status success';
+                                statusEl.style.display = 'inline-block';
+                            }
 
-							// 显示影响判断
-							const resultEl = document.getElementById('regex-ai-result-' + index);
-							if (resultEl) {
-								resultEl.textContent = affectsPrompt ? t('regex-ai-affects-prompt') : t('regex-ai-no-affects-prompt');
-								resultEl.className = 'regex-ai-result ' + (affectsPrompt ? 'affects-prompt' : 'no-affect');
-								resultEl.style.display = 'inline-block';
-							}
+                            // 显示影响判断
+                            const resultEl = document.getElementById('regex-ai-result-' + index);
+                            if (resultEl) {
+                                resultEl.textContent = affectsPrompt ? t('regex-ai-affects-prompt') : t('regex-ai-no-affects-prompt');
+                                resultEl.className = 'regex-ai-result ' + (affectsPrompt ? 'affects-prompt' : 'no-affect');
+                                resultEl.style.display = 'inline-block';
+                            }
 
-							// 设置 promptOnly 和 markdownOnly
-							if (typeof updateRegexScript === 'function') {
-								updateRegexScript(index, 'markdownOnly', !affectsPrompt);
-								updateRegexScript(index, 'promptOnly', affectsPrompt);
-								const checkboxes = regexCard.querySelectorAll('.regex-options input[type="checkbox"]');
-								if (checkboxes.length >= 5) {
-									checkboxes[3].checked = !affectsPrompt;
-									checkboxes[4].checked = affectsPrompt;
-								}
-							}
-							break;
-						}
-					}
-				} catch (e) {
-					console.error('解析AI返回结果失败:', e);
-				}
-			}
+                            // 设置 promptOnly 和 markdownOnly
+                            if (typeof updateRegexScript === 'function') {
+                                updateRegexScript(index, 'markdownOnly', !affectsPrompt);
+                                updateRegexScript(index, 'promptOnly', affectsPrompt);
+                                const checkboxes = regexCard.querySelectorAll('.regex-options input[type="checkbox"]');
+                                if (checkboxes.length >= 5) {
+                                    checkboxes[3].checked = !affectsPrompt;
+                                    checkboxes[4].checked = affectsPrompt;
+                                }
+                            }
+                            break;
+                        }
+                    }
+                } catch (e) {
+                    console.error('解析AI返回结果失败:', e);
+                }
+            }
 
-			if (!testPassed) {
-				alert('已达到最大尝试次数(' + maxAttempts + '次)，请调整描述后重试。');
-			}
-		} finally {
-			button.disabled = false;
-			button.textContent = originalText;
-		}
-	}, t('regex-ai-prompt'));
+            if (!testPassed) {
+                alert('已达到最大尝试次数(' + maxAttempts + '次)，请调整描述后重试。');
+            }
+        } finally {
+            button.disabled = false;
+            button.textContent = originalText;
+        }
+    }, t('regex-ai-prompt'));
 }
 
 async function callWorldbookDeepSeek(button) {
@@ -4621,7 +6011,7 @@ async function batchGenerateGreetings(button) {
             if (_useWB) {
                 const _flat = [];
                 (function _collect(arr) { arr.forEach(e => { _flat.push(e); if (e.children?.length) _collect(e.children); }); })(_allWBEntries);
-                worldbookContext = _flat.map(e => `- ${e.comment}: ${(e.content||'').substring(0,150)}...`).join('\n') || '无';
+                worldbookContext = _flat.map(e => `- ${e.comment}: ${(e.content || '').substring(0, 150)}...`).join('\n') || '无';
             }
 
             // 构建提示词
@@ -4908,7 +6298,7 @@ function initializeWorldbookAiModal() {
             if (container) container.innerHTML = '';
             if (injectBtn) injectBtn.style.display = 'none';
             if (regenerateBtn) regenerateBtn.style.display = 'none';
-            
+
             // 更新描述文本
             const typeName = t(`wb-ai-type-${genType}`);
             if (desc) desc.textContent = t('wb-ai-modal-desc');
@@ -5880,11 +7270,11 @@ function parseEntryFromElement(element) {
         id: parseInt(element.querySelector('.wb-sort-id').value, 10) || 0,
         keys: element
             .querySelector('.wb-keys')
-            .value.split(/[,、，\s]+/)
+            .value.split(/[,，、\n\r]+/)
             .map(k => k.trim())
             .filter(Boolean),
         secondary_keys: element.querySelector('.wb-secondary-keys')
-            ? element.querySelector('.wb-secondary-keys').value.split(/[,、，\s]+/)
+            ? element.querySelector('.wb-secondary-keys').value.split(/[,，、\n\r]+/)
                 .map(k => k.trim())
                 .filter(Boolean)
             : [],
@@ -5896,19 +7286,46 @@ function parseEntryFromElement(element) {
         prevent_recursion: element.querySelector('.wb-prevent-recursion') ? element.querySelector('.wb-prevent-recursion').checked : false,
         exclude_recursion: element.querySelector('.wb-exclude-recursion') ? element.querySelector('.wb-exclude-recursion').checked : false,
         group: element.querySelector('.wb-group') ? element.querySelector('.wb-group').value.trim() : '',
-        position: parseInt(element.querySelector('.wb-position').value) || 0,
-        role: parseInt(element.querySelector('.wb-position').selectedOptions[0].dataset.role) || 0,
+        position: parseInt(element.querySelector('.wb-position').value, 10) || 0,
+        role: element.querySelector('.wb-position').selectedOptions[0]?.dataset?.role !== undefined ? parseInt(element.querySelector('.wb-position').selectedOptions[0].dataset.role, 10) : (element._rawTavernData && element._rawTavernData.role !== undefined ? element._rawTavernData.role : null),
         constant: element.querySelector('.wb-constant').checked,
         selective: element.querySelector('.wb-selective').checked,
         use_regex: element.querySelector('.wb-use-regex') ? element.querySelector('.wb-use-regex').checked : false,
-        match_whole_words: element.querySelector('.wb-match-whole-words') ? element.querySelector('.wb-match-whole-words').checked : true,
-        case_sensitive: element.querySelector('.wb-case-sensitive') ? element.querySelector('.wb-case-sensitive').checked : false,
+        match_whole_words: (() => {
+            const el = element.querySelector('.wb-match-whole-words');
+            if (element.dataset.origMatchWholeWords === 'null' && el && !el.dataset.userModified) {
+                return null;
+            }
+            return el ? el.checked : true;
+        })(),
+        case_sensitive: (() => {
+            const el = element.querySelector('.wb-case-sensitive');
+            if (element.dataset.origCaseSensitive === 'null' && el && !el.dataset.userModified) {
+                return null;
+            }
+            return el ? el.checked : false;
+        })(),
         probability: parseInt(element.querySelector('.wb-probability').value, 10),
         depth: element.querySelector('.wb-depth') ? (element.querySelector('.wb-depth').value !== '' ? parseInt(element.querySelector('.wb-depth').value, 10) : null) : null,
         scan_depth: element.querySelector('.wb-scan-depth').value ? parseInt(element.querySelector('.wb-scan-depth').value, 10) : null,
         group_override: element.querySelector('.wb-group-override') ? element.querySelector('.wb-group-override').checked : false,
         group_weight: element.querySelector('.wb-group-weight') ? parseInt(element.querySelector('.wb-group-weight').value, 10) || 100 : 100,
         use_group_scoring: element.querySelector('.wb-use-group-scoring') ? (element.querySelector('.wb-use-group-scoring').checked ? true : null) : null,
+        display_index: element.dataset.displayIndex !== undefined && element.dataset.displayIndex !== '' ? Number(element.dataset.displayIndex) : undefined,
+        rawExtensions: (() => {
+            if (element._rawExtensions) return element._rawExtensions;
+            if (element.dataset.rawExtensions) {
+                try { return JSON.parse(element.dataset.rawExtensions); } catch (e) {}
+            }
+            return {};
+        })(),
+        rawTavernData: (() => {
+            if (element._rawTavernData) return element._rawTavernData;
+            if (element.dataset.rawTavernData) {
+                try { return JSON.parse(element.dataset.rawTavernData); } catch (e) {}
+            }
+            return null;
+        })(),
         // 额外匹配源 - 支持隐藏字段，默认关闭
         match_persona_description: element.querySelector('.wb-match-persona-description') ? (element.querySelector('.wb-match-persona-description').value === 'true' || element.querySelector('.wb-match-persona-description').checked) : false,
         match_character_description: element.querySelector('.wb-match-character-description') ? (element.querySelector('.wb-match-character-description').value === 'true' || element.querySelector('.wb-match-character-description').checked) : false,
@@ -6314,21 +7731,28 @@ function processImportedWorldbook(importedData, fileName) {
 
 // 转换导入的条目格式
 function convertImportedEntry(entry, newId) {
-    // 转换V3格式的position到内部格式
-    function convertPositionToInternal(position) {
-        const positionMap = {
-            'before_char': 0,
-            'after_char': 1,
-            'top_an': 2,
-            'bottom_an': 3,
-            'at_depth': 4,
-            'em_top': 5,
-            'em_bottom': 6
-        };
-        if (typeof position === 'string') {
-            return positionMap[position] !== undefined ? positionMap[position] : 0;
+    // 转换V3格式的position到内部格式（优先读取 extensions.position）
+    function getEntryPosition(e) {
+        if (e.extensions?.position !== undefined && e.extensions?.position !== null) {
+            return Number(e.extensions.position);
         }
-        return position || 0;
+        if (typeof e.position === 'number') {
+            return e.position;
+        }
+        if (typeof e.position === 'string') {
+            const positionMap = {
+                'before_char': 0,
+                'after_char': 1,
+                'top_an': 2,
+                'bottom_an': 3,
+                'at_depth': 4,
+                'em_top': 5,
+                'em_bottom': 6,
+                'outlet': 7
+            };
+            return positionMap[e.position] !== undefined ? positionMap[e.position] : 0;
+        }
+        return 0;
     }
 
     // 递归转换子条目
@@ -6336,35 +7760,43 @@ function convertImportedEntry(entry, newId) {
         if (!children || !Array.isArray(children) || children.length === 0) {
             return [];
         }
-        return children.map(child => ({
-            id: child.id || child.uid || 0,
+        return children.map((child, cIdx) => ({
+            id: child.id || child.uid || cIdx,
             comment: child.comment || '',
             keys: Array.isArray(child.keys) ? child.keys : (Array.isArray(child.key) ? child.key : []),
+            secondary_keys: Array.isArray(child.secondary_keys) ? child.secondary_keys : (Array.isArray(child.keysecondary) ? child.keysecondary : []),
             content: child.content || '',
-            priority: child.priority !== undefined ? child.priority : (child.order !== undefined ? child.order : 100),
+            priority: child.priority !== undefined ? child.priority : (child.insertion_order !== undefined ? child.insertion_order : (child.order !== undefined ? child.order : 100)),
             constant: child.constant !== undefined ? child.constant : false,
             enabled: child.enabled !== undefined ? child.enabled : !child.disable,
             selective: child.selective !== undefined ? child.selective : true,
-            position: convertPositionToInternal(child.position || child.extensions?.position),
-            role: child.role !== undefined ? child.role : (child.extensions?.role !== undefined ? child.extensions.role : 0),
-            depth: child.depth !== undefined ? child.depth : (child.extensions?.depth !== undefined ? child.extensions.depth : 4),
+            position: getEntryPosition(child),
+            role: child.role !== undefined ? child.role : (child.extensions?.role !== undefined ? Number(child.extensions.role) : 0),
+            depth: child.depth !== undefined ? child.depth : (child.extensions?.depth !== undefined ? Number(child.extensions.depth) : 4),
+            display_index: child.extensions?.display_index !== undefined ? child.extensions.display_index : (child.displayIndex !== undefined ? child.displayIndex : cIdx),
+            rawExtensions: { ...(child.extensions || {}) },
             children: convertChildren(child.children)
         }));
     }
 
     try {
+        const rawExt = entry.extensions || {};
         return {
             id: newId,
             comment: entry.comment || '',
             keys: Array.isArray(entry.keys) ? entry.keys : (Array.isArray(entry.key) ? entry.key : []),
+            secondary_keys: Array.isArray(entry.secondary_keys) ? entry.secondary_keys : (Array.isArray(entry.keysecondary) ? entry.keysecondary : []),
             content: entry.content || '',
-            priority: entry.priority !== undefined ? entry.priority : (entry.order !== undefined ? entry.order : 100),
+            priority: entry.priority !== undefined ? entry.priority : (entry.insertion_order !== undefined ? entry.insertion_order : (entry.order !== undefined ? entry.order : 100)),
             constant: entry.constant !== undefined ? entry.constant : false,
             enabled: entry.enabled !== undefined ? entry.enabled : !entry.disable,
             selective: entry.selective !== undefined ? entry.selective : true,
-            position: convertPositionToInternal(entry.position || entry.extensions?.position),
-            role: entry.role !== undefined ? entry.role : (entry.extensions?.role !== undefined ? entry.extensions.role : 0),
-            depth: entry.depth !== undefined ? entry.depth : (entry.extensions?.depth !== undefined ? entry.extensions.depth : 4),
+            position: getEntryPosition(entry),
+            role: entry.role !== undefined ? entry.role : (rawExt.role !== undefined ? Number(rawExt.role) : null),
+            depth: entry.depth !== undefined ? entry.depth : (rawExt.depth !== undefined ? Number(rawExt.depth) : 4),
+            display_index: rawExt.display_index !== undefined ? rawExt.display_index : (entry.displayIndex !== undefined ? entry.displayIndex : newId),
+            rawExtensions: { ...rawExt },
+            rawTavernData: entry.rawTavernData ? { ...entry.rawTavernData } : { ...entry },
             children: convertChildren(entry.children)
         };
     } catch (err) {
@@ -6461,6 +7893,42 @@ function createWorldbookEntryElement(entryData = {}) {
         match_scenario: false,
         ...entryData,
     };
+
+    // 规范化位置与数值类型
+    let normPos = defaultEntry.position;
+    if (typeof normPos === 'string') {
+        const pMap = {
+            'before_char': 0,
+            'after_char': 1,
+            'top_an': 2,
+            'bottom_an': 3,
+            'at_depth': 4,
+            'em_top': 5,
+            'em_bottom': 6,
+            'outlet': 7
+        };
+        normPos = pMap[normPos] !== undefined ? pMap[normPos] : 0;
+    }
+    defaultEntry.position = Number(normPos) || 0;
+    defaultEntry.role = Number(defaultEntry.role) || 0;
+    defaultEntry.depth = (defaultEntry.depth !== undefined && defaultEntry.depth !== null) ? Number(defaultEntry.depth) : 4;
+
+    const rawExt = defaultEntry.rawExtensions || entryData.extensions || {};
+    entryLi._rawExtensions = rawExt;
+    try {
+        entryLi.dataset.rawExtensions = JSON.stringify(rawExt);
+    } catch (e) {}
+
+    let rawTavern = defaultEntry.rawTavernData || null;
+    if (rawTavern) {
+        const { element: _, ...safeTavern } = rawTavern;
+        rawTavern = safeTavern;
+    }
+    entryLi._rawTavernData = rawTavern;
+
+    entryLi.dataset.displayIndex = defaultEntry.display_index !== undefined ? defaultEntry.display_index : (rawExt.display_index !== undefined ? rawExt.display_index : '');
+    entryLi.dataset.origMatchWholeWords = String(defaultEntry.match_whole_words);
+    entryLi.dataset.origCaseSensitive = String(defaultEntry.case_sensitive);
 
     entryLi.innerHTML = `
 <div class="entry-content-wrapper">
@@ -6585,7 +8053,7 @@ function createWorldbookEntryElement(entryData = {}) {
                                 ${t('position-smart-ai')}
                             </option>
 
-                            <!-- 高级选项（默认隐藏）
+                            <!-- 高级选项 -->
                             <option value="2" ${defaultEntry.position === 2 ? 'selected' : ''}>
                                 📝 作者注释前 - 低注意力
                             </option>
@@ -6598,7 +8066,9 @@ function createWorldbookEntryElement(entryData = {}) {
                             <option value="6" ${defaultEntry.position === 6 ? 'selected' : ''}>
                                 📧 对话结束后 - 中等注意力
                             </option>
-                            -->             
+                            <option value="7" ${defaultEntry.position === 7 ? 'selected' : ''}>
+                                🔌 Outlet 导出插槽
+                            </option>
                         </select>
                     </div>
                     <div class="field-group" style="display: flex; flex-direction: column; align-items: flex-start;">
@@ -6663,12 +8133,10 @@ function createWorldbookEntryElement(entryData = {}) {
         }>${t(
             'use-regex',
         )} <span class="help-icon" onclick="event.preventDefault(); event.stopPropagation(); showHelp(t('help-use-regex'))">?</span></label>
-                        <label><input type="checkbox" class="wb-match-whole-words" ${defaultEntry.match_whole_words ? 'checked' : ''
-        }>${t(
+                        <label><input type="checkbox" class="wb-match-whole-words" ${defaultEntry.match_whole_words ? 'checked' : ''} onchange="this.dataset.userModified='true'">${t(
             'match-whole-words',
         )} <span class="help-icon" onclick="event.preventDefault(); event.stopPropagation(); showHelp(t('help-match-whole-words'))">?</span></label>
-                        <label><input type="checkbox" class="wb-case-sensitive" ${defaultEntry.case_sensitive ? 'checked' : ''
-        }>${t(
+                        <label><input type="checkbox" class="wb-case-sensitive" ${defaultEntry.case_sensitive ? 'checked' : ''} onchange="this.dataset.userModified='true'">${t(
             'case-sensitive',
         )} <span class="help-icon" onclick="event.preventDefault(); event.stopPropagation(); showHelp(t('help-case-sensitive'))">?</span></label>
                         
@@ -9021,6 +10489,10 @@ function showViewWorldbookModal() {
     previewContainer.id = 'worldbook-modal-preview';
     previewContainer.style.cssText = 'flex: 1; overflow-y: auto; background: #1c1c1c; padding: 15px; border-radius: 8px; color: #f0f0f0;';
 
+    if (typeof normalizeWorldbookData === 'function') {
+        normalizeWorldbookData(generatedWorldbook);
+    }
+
     // 生成嵌套卡片结构
     previewContainer.innerHTML = formatWorldbookAsCards(generatedWorldbook);
 
@@ -9032,7 +10504,7 @@ function showViewWorldbookModal() {
     // 绑定事件
     document.getElementById('close-worldbook-modal').onclick = () => modal.remove();
     document.getElementById('export-current-worldbook').onclick = () => {
-        exportWorldbook();
+        exportSillyTavernWorldbookFromGenerated();
         modal.remove();
     };
     document.getElementById('view-history-btn').onclick = () => {
@@ -9095,7 +10567,16 @@ function showViewWorldbookModal() {
 function renderMarkdown(text) {
     if (!text) return '';
 
-    let html = String(text);
+    let html = '';
+    if (typeof text === 'object') {
+        if (typeof convertWorldbookValueToString === 'function') {
+            html = convertWorldbookValueToString(text);
+        } else {
+            try { html = JSON.stringify(text, null, 2); } catch (e) { html = String(text); }
+        }
+    } else {
+        html = String(text);
+    }
 
     // 转义 HTML 特殊字符（除了已经是 HTML 的部分）
     html = html.replace(/&/g, '&amp;')
@@ -9182,7 +10663,14 @@ function formatWorldbookAsCards(worldbook) {
 
                 if (entry && typeof entry === 'object') {
                     if (entry['关键词']) {
-                        const keywords = Array.isArray(entry['关键词']) ? entry['关键词'].join(', ') : entry['关键词'];
+                        let keywords = '';
+                        if (Array.isArray(entry['关键词'])) {
+                            keywords = entry['关键词'].map(k => typeof k === 'object' ? convertWorldbookValueToString(k) : String(k)).join(', ');
+                        } else if (typeof entry['关键词'] === 'object') {
+                            keywords = convertWorldbookValueToString(entry['关键词']);
+                        } else {
+                            keywords = String(entry['关键词']);
+                        }
                         html += `
                         <div style="margin-bottom: 10px; padding: 8px; background: #252525; border-left: 3px solid #9b59b6; border-radius: 4px;">
                             <div style="color: #9b59b6; font-size: 12px; font-weight: bold; margin-bottom: 4px;">🔑 关键词</div>
@@ -9473,15 +10961,49 @@ function formatEntryForDisplay(entry) {
     if (typeof entry === 'string') return entry.replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/\n/g, '<br>');
 
     let html = '';
-    if (entry['关键词']) {
-        const keywords = Array.isArray(entry['关键词']) ? entry['关键词'].join(', ') : entry['关键词'];
-        html += `<div style="color: #9b59b6; margin-bottom: 4px;"><strong>关键词:</strong> ${keywords}</div>`;
+    const rawKeywords = entry['关键词'] !== undefined ? entry['关键词'] : entry.keywords;
+    if (rawKeywords) {
+        let keywordsStr = '';
+        if (Array.isArray(rawKeywords)) {
+            keywordsStr = rawKeywords.map(k => typeof k === 'object' ? convertWorldbookValueToString(k) : String(k)).join(', ');
+        } else if (typeof rawKeywords === 'object') {
+            keywordsStr = convertWorldbookValueToString(rawKeywords);
+        } else {
+            keywordsStr = String(rawKeywords);
+        }
+        html += `<div style="color: #9b59b6; margin-bottom: 4px;"><strong>关键词:</strong> ${keywordsStr.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</div>`;
     }
-    if (entry['内容']) {
-        const content = String(entry['内容']).replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/\n/g, '<br>');
+
+    let rawContent = entry['内容'] !== undefined ? entry['内容'] : entry.content;
+    if (rawContent !== undefined && rawContent !== null) {
+        let contentStr = '';
+        if (typeof rawContent === 'object') {
+            contentStr = convertWorldbookValueToString(rawContent);
+        } else {
+            contentStr = String(rawContent);
+        }
+        // 如果内容是历史遗留的字面量 "[object Object]"，尝试从 entry 其他字段自愈恢复
+        if (contentStr === '[object Object]') {
+            const extraKeys = Object.keys(entry).filter(k => !['关键词', 'keywords', '内容', 'content', 'comment', 'id'].includes(k));
+            if (extraKeys.length > 0) {
+                const fallbackObj = {};
+                extraKeys.forEach(k => fallbackObj[k] = entry[k]);
+                contentStr = convertWorldbookValueToString(fallbackObj);
+            }
+        }
+        const content = contentStr.replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/\n/g, '<br>');
         html += `<div><strong>内容:</strong> ${content}</div>`;
+    } else {
+        // 如果没有内容字段，但 entry 是个对象且含有属性，转为加粗属性
+        const extraKeys = Object.keys(entry).filter(k => !['关键词', 'keywords', 'comment', 'id'].includes(k));
+        if (extraKeys.length > 0) {
+            const fallbackObj = {};
+            extraKeys.forEach(k => fallbackObj[k] = entry[k]);
+            const contentStr = convertWorldbookValueToString(fallbackObj).replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/\n/g, '<br>');
+            html += `<div><strong>内容:</strong> ${contentStr}</div>`;
+        }
     }
-    return html || JSON.stringify(entry);
+    return html || (typeof entry === 'object' ? convertWorldbookValueToString(entry).replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/\n/g, '<br>') : String(entry));
 }
 
 // 回退到指定历史并刷新页面
@@ -10572,10 +12094,36 @@ async function applyBatchOptimizationResult(response, batch, previousWorldbook) 
             // 记录旧值
             const oldValue = previousWorldbook[category]?.[entryName] || null;
 
-            // 更新条目
+            // 更新条目（防止大模型把“内容”返回为嵌套对象或直接平铺字段导致丢失或[object Object]）
+            let optContent = optimized['内容'] !== undefined ? optimized['内容'] : (optimized.content !== undefined ? optimized.content : null);
+            if (optContent !== null && typeof optContent === 'object') {
+                optContent = convertWorldbookValueToString(optContent);
+            } else if (optContent === null || String(optContent).trim() === '' || String(optContent).trim() === '[object Object]') {
+                // 如果没有内容字段或为空/脏数据，检查是否大模型直接平铺输出了属性字段（如 name, gender, appearance 等）
+                const extraKeys = Object.keys(optimized).filter(k => !['关键词', 'keywords', '内容', 'content', 'comment', 'id'].includes(k));
+                if (extraKeys.length > 0) {
+                    const fallbackObj = {};
+                    extraKeys.forEach(k => fallbackObj[k] = optimized[k]);
+                    optContent = convertWorldbookValueToString(fallbackObj);
+                } else {
+                    optContent = String(optContent || '');
+                }
+            } else {
+                optContent = String(optContent);
+            }
+
+            let optKeywords = optimized['关键词'] || optimized.keywords || data.changes[data.changes.length - 1]?.newValue?.['关键词'] || [entryName];
+            if (typeof optKeywords === 'string') {
+                optKeywords = optKeywords.split(/[,，、\n\r]+/).map(k => k.trim()).filter(Boolean);
+            } else if (Array.isArray(optKeywords)) {
+                optKeywords = optKeywords.map(k => typeof k === 'object' ? convertWorldbookValueToString(k) : String(k));
+            } else if (typeof optKeywords === 'object' && optKeywords !== null) {
+                optKeywords = [convertWorldbookValueToString(optKeywords)];
+            }
+
             const newValue = {
-                '关键词': optimized['关键词'] || data.changes[data.changes.length - 1]?.newValue?.['关键词'] || [],
-                '内容': optimized['内容'] || ''
+                '关键词': optKeywords,
+                '内容': optContent
             };
             generatedWorldbook[category][entryName] = newValue;
 
@@ -10590,6 +12138,10 @@ async function applyBatchOptimizationResult(response, batch, previousWorldbook) 
 
             mylog(`✅ 已优化条目: [${category}] ${entryName}`);
         }
+    }
+
+    if (typeof normalizeWorldbookData === 'function') {
+        normalizeWorldbookData(generatedWorldbook);
     }
 
     return changedEntries;
