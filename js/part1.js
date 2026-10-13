@@ -815,7 +815,29 @@ async function translateAllFields(button) {
     ];
 
     let textObject = {};
-    originalFieldsData = { fields: {}, worldbook: [] };
+
+    // 同步 DOM 中备用问候语的当前值到 alternateGreetingsData
+    const agContainer = document.getElementById('alternate-greetings-container');
+    if (agContainer && typeof alternateGreetingsData !== 'undefined' && Array.isArray(alternateGreetingsData)) {
+        const agTextareas = agContainer.querySelectorAll('.greeting-content textarea');
+        agTextareas.forEach((ta, idx) => {
+            if (idx < alternateGreetingsData.length) {
+                alternateGreetingsData[idx] = ta.value;
+            }
+        });
+    }
+
+    const currentAltGreetings = (typeof alternateGreetingsData !== 'undefined' && Array.isArray(alternateGreetingsData))
+        ? alternateGreetingsData
+        : [];
+
+    const hasAlternateGreetings = currentAltGreetings.some(g => typeof g === 'string' && g.trim());
+
+    originalFieldsData = {
+        fields: {},
+        alternate_greetings: JSON.parse(JSON.stringify(currentAltGreetings)),
+        worldbook: []
+    };
 
     fieldsToTranslate.forEach(id => {
         const el = document.getElementById(id);
@@ -840,18 +862,29 @@ async function translateAllFields(button) {
         }
     });
 
-    if (Object.keys(textObject).length === 0 && wbTextObject.length === 0) {
+    if (Object.keys(textObject).length === 0 && wbTextObject.length === 0 && !hasAlternateGreetings) {
         alert(t('no-content-to-translate'));
         return;
     }
 
     // 2. 构建Prompt
+    const dataToTranslate = {
+        fields: textObject
+    };
+    if (hasAlternateGreetings) {
+        dataToTranslate.alternate_greetings = currentAltGreetings;
+    }
+    if (wbTextObject.length > 0) {
+        dataToTranslate.worldbook = wbTextObject;
+    }
+
     let prompt = getLanguagePrefix() + `You are an expert translator. Translate the following JSON object's string values from ${fromLang} to ${toLang}.
 Maintain the original JSON structure and keys. For keys like "tags" or "keys", translate each item in the comma-separated string individually.
+For array fields like "alternate_greetings", translate each greeting string and maintain the exact array length and order.
 Do not translate special placeholders like {{user}} or {{char}} or "<START>".
 
 Translate this data:
-${JSON.stringify({ fields: textObject, worldbook: wbTextObject }, null, 2)}
+${JSON.stringify(dataToTranslate, null, 2)}
 `;
 
     // 3. 调用API
@@ -893,6 +926,74 @@ ${JSON.stringify({ fields: textObject, worldbook: wbTextObject }, null, 2)}
                     const el = document.getElementById(id);
                     if (el) {
                         el.value = translatedData.fields[id];
+                    }
+                }
+            }
+
+            if (translatedData.alternate_greetings) {
+                const agResult = translatedData.alternate_greetings;
+                if (typeof alternateGreetingsData === 'undefined' || !Array.isArray(alternateGreetingsData)) {
+                    alternateGreetingsData = [];
+                }
+
+                // 记录当前展开的卡片索引，重新渲染后恢复展开状态
+                const currentAgContainer = document.getElementById('alternate-greetings-container');
+                const expandedIndices = [];
+                if (currentAgContainer) {
+                    currentAgContainer.querySelectorAll('.greeting-card').forEach((card, idx) => {
+                        if (!card.classList.contains('collapsed')) {
+                            expandedIndices.push(idx);
+                        }
+                    });
+                }
+
+                if (Array.isArray(agResult)) {
+                    agResult.forEach((item, idx) => {
+                        let text = '';
+                        let targetIdx = idx;
+                        if (typeof item === 'string') {
+                            text = item;
+                        } else if (item && typeof item === 'object') {
+                            if (typeof item.index === 'number') {
+                                targetIdx = item.index;
+                            }
+                            text = item.content || item.text || item.value || item.greeting || '';
+                        }
+                        if (targetIdx < alternateGreetingsData.length) {
+                            alternateGreetingsData[targetIdx] = text;
+                        } else {
+                            alternateGreetingsData.push(text);
+                        }
+                    });
+                } else if (typeof agResult === 'object') {
+                    for (const key in agResult) {
+                        const idx = parseInt(key, 10);
+                        const val = agResult[key];
+                        const text = typeof val === 'string' ? val : (val?.content || val?.text || '');
+                        if (!isNaN(idx) && idx < alternateGreetingsData.length) {
+                            alternateGreetingsData[idx] = text;
+                        } else {
+                            alternateGreetingsData.push(text);
+                        }
+                    }
+                } else if (typeof agResult === 'string' && alternateGreetingsData.length > 0) {
+                    alternateGreetingsData[0] = agResult;
+                }
+
+                if (typeof window !== 'undefined') {
+                    window.alternateGreetingsData = alternateGreetingsData;
+                }
+
+                renderAlternateGreetings();
+
+                // 恢复之前的展开状态
+                if (expandedIndices.length > 0) {
+                    const refreshedContainer = document.getElementById('alternate-greetings-container');
+                    if (refreshedContainer) {
+                        const cards = refreshedContainer.querySelectorAll('.greeting-card');
+                        expandedIndices.forEach(idx => {
+                            if (cards[idx]) cards[idx].classList.remove('collapsed');
+                        });
                     }
                 }
             }
@@ -941,6 +1042,15 @@ function undoTranslateAllFields(button) {
         if (el) {
             el.value = originalFieldsData.fields[id];
         }
+    }
+
+    // 恢复备用问候语
+    if (originalFieldsData.alternate_greetings && Array.isArray(originalFieldsData.alternate_greetings)) {
+        alternateGreetingsData = JSON.parse(JSON.stringify(originalFieldsData.alternate_greetings));
+        if (typeof window !== 'undefined') {
+            window.alternateGreetingsData = alternateGreetingsData;
+        }
+        renderAlternateGreetings();
     }
 
     // 恢复世界书
@@ -2413,6 +2523,9 @@ function updateSystemPromptWithInstructions() {
 // 渲染备用问候语列表
 function renderAlternateGreetings() {
     const container = document.getElementById('alternate-greetings-container');
+    if (typeof window !== 'undefined') {
+        window.alternateGreetingsData = alternateGreetingsData;
+    }
     if (!container) return;
 
     container.innerHTML = '';
