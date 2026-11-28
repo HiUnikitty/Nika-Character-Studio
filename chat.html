@@ -5,9 +5,53 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Nika-Chat</title>
+    <script type="importmap">
+    {
+        "imports": {
+            "/script.js": "./scripts/st-runtime/host.js",
+            "/lib.js": "./scripts/st-runtime/host.js",
+            "/scripts/events.js": "./scripts/st-runtime/host.js",
+            "/scripts/extensions.js": "./scripts/st-runtime/host.js",
+            "/scripts/st-context.js": "./scripts/st-runtime/host.js",
+            "/scripts/world-info.js": "./scripts/st-runtime/host.js",
+            "/scripts/extensions/regex/engine.js": "./scripts/st-runtime/host.js",
+            "/scripts/openai.js": "./scripts/st-runtime/host.js",
+            "/scripts/custom-request.js": "./scripts/st-runtime/host.js",
+            "/scripts/PromptManager.js": "./scripts/st-runtime/host.js",
+            "/scripts/preset-manager.js": "./scripts/st-runtime/host.js",
+            "/scripts/power-user.js": "./scripts/st-runtime/host.js",
+            "/scripts/popup.js": "./scripts/st-runtime/host.js",
+            "/scripts/utils.js": "./scripts/st-runtime/host.js",
+            "/scripts/variables.js": "./scripts/st-runtime/host.js",
+            "/scripts/i18n.js": "./scripts/st-runtime/host.js",
+            "/scripts/user.js": "./scripts/st-runtime/host.js",
+            "/scripts/personas.js": "./scripts/st-runtime/host.js",
+            "/scripts/authors-note.js": "./scripts/st-runtime/host.js",
+            "/scripts/reasoning.js": "./scripts/st-runtime/host.js",
+            "/scripts/sse-stream.js": "./scripts/st-runtime/host.js",
+            "/scripts/tokenizers.js": "./scripts/st-runtime/host.js",
+            "/scripts/RossAscends-mods.js": "./scripts/st-runtime/host.js",
+            "/scripts/group-chats.js": "./scripts/st-runtime/host.js",
+            "/scripts/char-data.js": "./scripts/st-runtime/host.js",
+            "/scripts/util/AccountStorage.js": "./scripts/st-runtime/host.js",
+            "/scripts/macros.js": "./scripts/st-runtime/slash.js",
+            "/scripts/slash-commands.js": "./scripts/st-runtime/slash.js",
+            "/scripts/slash-commands/SlashCommand.js": "./scripts/st-runtime/slash.js",
+            "/scripts/slash-commands/SlashCommandArgument.js": "./scripts/st-runtime/slash.js",
+            "/scripts/slash-commands/SlashCommandParser.js": "./scripts/st-runtime/slash.js",
+            "/scripts/slash-commands/SlashCommandEnumValue.js": "./scripts/st-runtime/slash.js",
+            "/scripts/slash-commands/SlashCommandCommonEnumsProvider.js": "./scripts/st-runtime/slash.js",
+            "/scripts/slash-commands/SlashCommandAbortController.js": "./scripts/st-runtime/slash.js",
+            "/scripts/extensions/third-party/ST-Prompt-Template/libs/faker.mjs": "./scripts/st-runtime/host.js",
+            "/scripts/extensions/third-party/JS-Slash-Runner/lib/jsoneditor.js": "./scripts/st-runtime/host.js"
+        }
+    }
+    </script>
+    <script src="./scripts/st-runtime/vendor.js"></script>
+    <script type="module" src="./scripts/st-runtime/loader.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
+    <link href="./scripts/fontawesome/all.min.css" rel="stylesheet">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -67,6 +111,8 @@
             top: 0;
             left: 0;
             height: 100vh;
+            height: 100dvh;
+            max-height: 100dvh;
             width: 250px;
             background-color: var(--card-bg-color);
             box-shadow: 2px 0 12px rgba(0, 0, 0, 0.3);
@@ -74,8 +120,19 @@
             z-index: 100;
             display: flex;
             flex-direction: column;
+            overflow: hidden;
             border-right: 1px solid var(--border-color);
             transform: translateX(0);
+        }
+
+        .sidebar #main-nav {
+            flex: 1 1 0%;
+            min-height: 0;
+            overflow-y: auto;
+            overflow-x: hidden;
+            -webkit-overflow-scrolling: touch;
+            overscroll-behavior: contain;
+            padding-bottom: calc(84px + env(safe-area-inset-bottom, 0px));
         }
 
         .sidebar.collapsed {
@@ -1473,6 +1530,11 @@
                 data-i18n-title="sidebar.sdGeneration" title="生图设置"><i
                     class="fas fa-image text-xl w-6 text-center"></i><span class="font-medium"
                     data-i18n="sidebar.sdGeneration">生图</span></button>
+            <button data-modal="st-plugins-modal"
+                class="nav-link w-full flex items-center gap-4 p-3 rounded-lg text-left"
+                data-i18n-title="sidebar.stPlugins" title="ST 内置插件"><i
+                    class="fas fa-puzzle-piece text-xl w-6 text-center"></i><span class="font-medium"
+                    data-i18n="sidebar.stPlugins">ST 插件</span></button>
         </nav>
     </aside>
 
@@ -1494,7 +1556,7 @@
                         <i class="fas fa-redo mr-1"></i><span data-i18n="chat.reselectGreeting">重选开场白</span>
                     </button>
                 </header>
-                <div id="chat-messages" class="flex-1 p-4 overflow-y-auto space-y-4">
+                <div id="chat" data-nika-id="chat-messages" class="flex-1 p-4 overflow-y-auto space-y-4">
                 </div>
                 <footer class="p-4 border-t theme-border flex-shrink-0">
                     <div id="reply-status-container"></div>
@@ -1777,11 +1839,13 @@
                     <div class="flex gap-2">
                         <input id="api-url" type="text" class="flex-1 light-input rounded-md p-2"
                             data-i18n-placeholder="api.placeholder.url">
-                        <button id="pick-provider-btn-chat" class="py-2 px-3 btn-primary rounded-lg text-sm whitespace-nowrap flex-shrink-0">
-                            <i class="fas fa-database mr-1"></i><span>模型库</span>
+                        <button id="pick-provider-btn-chat"
+                            class="py-2 px-3 btn-primary rounded-lg text-sm whitespace-nowrap flex-shrink-0">
+                            <i class="fas fa-database mr-1"></i><span data-i18n="api.providerLibrary">模型库</span>
                         </button>
-                        <button id="sync-providers-btn-chat" class="py-2 px-3 btn-secondary rounded-lg text-sm whitespace-nowrap flex-shrink-0">
-                            <i class="fas fa-cloud-download-alt mr-1"></i><span>同步云端</span>
+                        <button id="sync-providers-btn-chat"
+                            class="py-2 px-3 btn-secondary rounded-lg text-sm whitespace-nowrap flex-shrink-0">
+                            <i class="fas fa-cloud-download-alt mr-1"></i><span data-i18n="api.syncCloud">同步云端</span>
                         </button>
                     </div>
                     <div class="text-xs text-gray-500 mt-1 space-y-1">
@@ -1831,7 +1895,8 @@
                         <div class="flex gap-2">
                             <input id="vision-api-url" type="text" class="flex-1 light-input rounded-md p-2"
                                 data-i18n-placeholder="api.placeholder.url">
-                            <button id="pick-vision-provider-btn" class="py-2 px-3 btn-primary rounded-lg text-sm whitespace-nowrap flex-shrink-0">
+                            <button id="pick-vision-provider-btn"
+                                class="py-2 px-3 btn-primary rounded-lg text-sm whitespace-nowrap flex-shrink-0">
                                 <i class="fas fa-database mr-1"></i><span>从模型库选择</span>
                             </button>
                         </div>
@@ -1897,7 +1962,8 @@
                     </div>
 
                     <!-- 预设列表：限制最大高度200px，避免列表太长占满屏幕，但它是页面流的一部分 -->
-                    <label class="block text-sm font-medium mb-2 text-gray-500">选择预设</label>
+                    <label class="block text-sm font-medium mb-2 text-gray-500"
+                        data-i18n="presets.selectPreset">选择预设</label>
                     <div id="preset-list" class="overflow-y-auto space-y-2 pr-2 border theme-border rounded-lg p-2"
                         style="max-height: 200px; min-height: 100px;"></div>
 
@@ -1965,7 +2031,8 @@
                         <input type="number" id="param-context-size" min="1" max="1000000" step="1"
                             class="light-input rounded-md p-1 col-span-3">
                     </div>
-                    <p id="model-limit-hint" class="text-xs mb-1" style="display:none;color:var(--primary-color,#5E5B9D);"></p>
+                    <p id="model-limit-hint" class="text-xs mb-1"
+                        style="display:none;color:var(--primary-color,#5E5B9D);"></p>
                     <div class="p-3 theme-info-bg rounded-lg text-xs theme-text-secondary">
                         <div class="flex justify-between mb-1">
                             <span data-i18n="presets.remainingContext">剩余上下文：</span>
@@ -2045,7 +2112,7 @@
                                 class="fas fa-upload"></i> <span data-i18n="char.import">导入角色</span></button>
                         <input type="file" id="char-import-file" class="hidden" accept=".json,.png">
                         <button id="char-sync-from-index-btn" class="flex-1 py-2 text-sm btn-secondary rounded-lg"
-                            title="从主页复制所有角色"><i class="fas fa-sync"></i> <span
+                            data-i18n-title="char.syncFromIndexTip" title="从主页复制所有角色"><i class="fas fa-sync"></i> <span
                                 data-i18n="char.syncFromIndex">从主页同步</span></button>
                     </div>
                 </div>
@@ -2254,20 +2321,20 @@
                         <div class="card p-4 grid grid-cols-1 gap-4 text-sm flex-shrink-0">
                             <div><label class="block font-medium mb-1" data-i18n="worldInfo.position">插入位置</label>
                                 <select id="wi-entry-position" class="w-full light-input rounded-md p-1.5">
-                                    <option value="0">角色定义之前</option>
-                                    <option value="1">角色定义之后</option>
-                                    <option value="2">示例消息前 (↑EM)</option>
-                                    <option value="3">示例消息后 (↓EM)</option>
-                                    <option value="4">@D 🟢[系统]在深度</option>
-                                    <option value="5">@D 🟣[用户]在深度</option>
-                                    <option value="6">@D 🧠[AI]在深度</option>
+                                    <option value="0" data-i18n="worldInfo.pos.0">角色定义之前</option>
+                                    <option value="1" data-i18n="worldInfo.pos.1">角色定义之后</option>
+                                    <option value="2" data-i18n="worldInfo.pos.2">示例消息前 (↑EM)</option>
+                                    <option value="3" data-i18n="worldInfo.pos.3">示例消息后 (↓EM)</option>
+                                    <option value="4" data-i18n="worldInfo.pos.4">@D 🟢[系统]在深度</option>
+                                    <option value="5" data-i18n="worldInfo.pos.5">@D 🟣[用户]在深度</option>
+                                    <option value="6" data-i18n="worldInfo.pos.6">@D 🧠[AI]在深度</option>
                                 </select>
                             </div>
                             <div><label class="block font-medium mb-1" data-i18n="worldInfo.role">角色</label>
                                 <select id="wi-entry-role" class="w-full light-input rounded-md p-1.5">
-                                    <option value="0">系统</option>
-                                    <option value="1">用户</option>
-                                    <option value="2">AI</option>
+                                    <option value="0" data-i18n="worldInfo.role.0">系统</option>
+                                    <option value="1" data-i18n="worldInfo.role.1">用户</option>
+                                    <option value="2" data-i18n="worldInfo.role.2">AI</option>
                                 </select>
                             </div>
                             <div><label class="block font-medium mb-1" data-i18n="worldInfo.depth">深度</label><input
@@ -2310,6 +2377,36 @@
                             </div>
                         </div>
                     </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div id="st-plugins-modal" class="modal-overlay">
+        <div class="modal-content w-full max-w-4xl max-h-[88vh] card p-0 flex flex-col overflow-hidden">
+            <header class="flex justify-between items-center px-5 py-3.5 border-b theme-border-b flex-shrink-0">
+                <div class="flex items-center gap-3">
+                    <div class="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
+                        style="background:color-mix(in srgb, var(--primary-color) 16%, transparent);color:var(--primary-color);">
+                        <i class="fas fa-puzzle-piece text-base"></i>
+                    </div>
+                    <div>
+                        <h2 class="text-lg font-bold leading-tight" style="color:var(--text-color);"
+                            data-i18n="stPlugins.title">SillyTavern 内置插件</h2>
+                        <p class="text-xs leading-tight mt-0.5" style="color:var(--text-secondary-color);"
+                            data-i18n="stPlugins.subtitle">纯前端角色卡核心运行时 · 点击下方卡片切换设置</p>
+                    </div>
+                </div>
+                <button class="close-modal-btn w-8 h-8 rounded-lg flex items-center justify-center hover-bg"
+                    style="color:var(--text-secondary-color);"><i class="fas fa-times text-lg"></i></button>
+            </header>
+            <div class="px-4 sm:px-5 py-3 border-b theme-border-b flex-shrink-0"
+                style="background:color-mix(in srgb, var(--bg-color) 45%, transparent);">
+                <div id="st-plugins-status-list" class="grid grid-cols-2 sm:grid-cols-4 gap-2"></div>
+            </div>
+            <div class="flex-1 overflow-y-auto px-4 sm:px-5 py-3.5" id="st-plugins-scroll-body">
+                <div id="st-plugins-settings-mount">
+                    <div id="extensions_settings" class="st-extensions-settings-column"></div>
+                    <div id="extensions_settings2" class="st-extensions-settings-column"></div>
                 </div>
             </div>
         </div>
@@ -2377,7 +2474,8 @@
                     <label class="flex items-center justify-between cursor-pointer mb-4">
                         <div>
                             <h3 class="font-medium mb-1" data-i18n="sd.enable">启用生图</h3>
-                            <p class="text-sm text-gray-500" data-i18n="sd.enableHint">启用后，聊天时会自动添加CG生成提示，可复制提示词至其他软件生图</p>
+                            <p class="text-sm text-gray-500" data-i18n="sd.enableHint">启用后，聊天时会自动添加CG生成提示，可复制提示词至其他软件生图
+                            </p>
                         </div>
                         <input type="checkbox" id="sd-enabled" class="w-5 h-5 accent-primary-color">
                     </label>
@@ -2395,7 +2493,8 @@
                 <!-- SD WebUI API配置 -->
                 <div class="card p-4">
                     <h3 class="font-medium mb-1" data-i18n="sd.apiConfig">SD WebUI API配置</h3>
-                    <p class="text-xs text-gray-500 mb-3" data-i18n="sd.apiConfigHint">以下配置仅用于SD WebUI生图，需要本地运行Stable Diffusion WebUI</p>
+                    <p class="text-xs text-gray-500 mb-3" data-i18n="sd.apiConfigHint">以下配置仅用于SD WebUI生图，需要本地运行Stable
+                        Diffusion WebUI</p>
                     <div class="space-y-3">
                         <div>
                             <label class="block text-sm font-medium mb-1" data-i18n="sd.apiUrl">API地址</label>
@@ -3261,11 +3360,13 @@ body {
                     <h3 class="font-medium mb-3" data-i18n="preferences.streamingMode">流式渲染模式</h3>
                     <div class="space-y-2">
                         <label class="flex items-center gap-2 cursor-pointer">
-                            <input type="radio" name="streaming-mode" id="streaming-mode-direct" value="direct" class="accent-primary-color">
+                            <input type="radio" name="streaming-mode" id="streaming-mode-direct" value="direct"
+                                class="accent-primary-color">
                             <span class="text-sm" data-i18n="preferences.streamingDirect">直接渲染（接受到文本就渲染）</span>
                         </label>
                         <label class="flex items-center gap-2 cursor-pointer">
-                            <input type="radio" name="streaming-mode" id="streaming-mode-slow" value="slow" class="accent-primary-color">
+                            <input type="radio" name="streaming-mode" id="streaming-mode-slow" value="slow"
+                                class="accent-primary-color">
                             <span class="text-sm" data-i18n="preferences.streamingSlow">阅读模式（逐字显示）</span>
                         </label>
                     </div>
@@ -3623,12 +3724,19 @@ body {
                     'sidebar.preferences': '偏好设置',
                     'sidebar.user': '用户/UI设置',
                     'sidebar.sdGeneration': '生图',
+                    'sidebar.stPlugins': 'ST 插件',
                     'sidebar.newChat': '新对话',
                     'sidebar.summarize': '总结聊天',
                     'sidebar.promptPreview': 'Prompt预览',
 
+                    // ST 内置插件弹窗
+                    'stPlugins.title': 'SillyTavern 内置插件',
+                    'stPlugins.subtitle': '纯前端角色卡核心运行时 · 点击下方卡片切换设置',
+
                     // API设置
                     'api.title': 'API 设置',
+                    'api.providerLibrary': '模型库',
+                    'api.syncCloud': '同步云端',
                     'api.configManage': 'API 配置管理',
                     'api.configName': '配置名称',
                     'api.configNamePlaceholder': '为此配置命名',
@@ -3671,6 +3779,18 @@ body {
                     'char.switch': '切换角色',
                     'char.import': '导入角色',
                     'char.syncFromIndex': '从主页同步',
+                    'char.syncFromIndexTip': '从主页复制所有角色',
+                    'presets.selectPreset': '选择预设',
+                    'worldInfo.pos.0': '角色定义之前',
+                    'worldInfo.pos.1': '角色定义之后',
+                    'worldInfo.pos.2': '示例消息前 (↑EM)',
+                    'worldInfo.pos.3': '示例消息后 (↓EM)',
+                    'worldInfo.pos.4': '@D 🟢[系统]在深度',
+                    'worldInfo.pos.5': '@D 🟣[用户]在深度',
+                    'worldInfo.pos.6': '@D 🧠[AI]在深度',
+                    'worldInfo.role.0': '系统',
+                    'worldInfo.role.1': '用户',
+                    'worldInfo.role.2': 'AI',
                     'char.export': '导出角色',
                     'char.selectTip': '选择一个角色进行编辑，或导入/新建一个角色。',
                     'char.name': '角色名称',
@@ -4056,12 +4176,19 @@ body {
                     'sidebar.preferences': 'Preferences',
                     'sidebar.user': 'User/UI',
                     'sidebar.sdGeneration': 'Image Gen',
+                    'sidebar.stPlugins': 'ST Plugins',
                     'sidebar.newChat': 'New Chat',
                     'sidebar.summarize': 'Summarize',
                     'sidebar.promptPreview': 'Prompt Preview',
 
+                    // ST Built-in Plugins Modal
+                    'stPlugins.title': 'SillyTavern Built-in Plugins',
+                    'stPlugins.subtitle': 'Frontend character card runtime · Click a card below to switch settings',
+
                     // API Settings
                     'api.title': 'API Settings',
+                    'api.providerLibrary': 'Models',
+                    'api.syncCloud': 'Cloud Sync',
                     'api.configManage': 'API Configuration Management',
                     'api.configName': 'Configuration Name',
                     'api.configNamePlaceholder': 'Name this configuration',
@@ -4104,6 +4231,18 @@ body {
                     'char.switch': 'Switch Character',
                     'char.import': 'Import Character',
                     'char.syncFromIndex': 'Sync from Index',
+                    'char.syncFromIndexTip': 'Copy all characters from Studio home page',
+                    'presets.selectPreset': 'Select Preset',
+                    'worldInfo.pos.0': 'Before Char Defs',
+                    'worldInfo.pos.1': 'After Char Defs',
+                    'worldInfo.pos.2': 'Before Examples (↑EM)',
+                    'worldInfo.pos.3': 'After Examples (↓EM)',
+                    'worldInfo.pos.4': '@D 🟢[System] at Depth',
+                    'worldInfo.pos.5': '@D 🟣[User] at Depth',
+                    'worldInfo.pos.6': '@D 🧠[AI] at Depth',
+                    'worldInfo.role.0': 'System',
+                    'worldInfo.role.1': 'User',
+                    'worldInfo.role.2': 'AI',
                     'char.export': 'Export Character',
                     'char.selectTip': 'Select a character to edit, or import/create a new one.',
                     'char.name': 'Character Name',
@@ -4490,7 +4629,10 @@ body {
             // 更新页面所有文本
             updatePageTexts() {
                 document.querySelectorAll('[data-i18n]').forEach(el => {
+                    // 跳过 ST 插件挂载区域，避免 SillyTavern 的 [title] 语法覆盖 label 内部复选框
+                    if (el.closest('#st-plugins-settings-mount')) return;
                     const key = el.getAttribute('data-i18n');
+                    if (!key || key.startsWith('[title]')) return;
                     const attr = el.getAttribute('data-i18n-attr');
                     if (attr) {
                         el.setAttribute(attr, this.t(key));
@@ -4501,15 +4643,22 @@ body {
 
                 // 更新 placeholder
                 document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+                    if (el.closest('#st-plugins-settings-mount')) return;
                     const key = el.getAttribute('data-i18n-placeholder');
                     el.placeholder = this.t(key);
                 });
 
                 // 更新 title
                 document.querySelectorAll('[data-i18n-title]').forEach(el => {
+                    if (el.closest('#st-plugins-settings-mount')) return;
                     const key = el.getAttribute('data-i18n-title');
                     el.title = this.t(key);
                 });
+
+                // 通知 ST 内置插件运行时同步语言切换
+                try {
+                    window.__NIKA_ST_RUNTIME__?.onLanguageChanged?.(this.currentLang);
+                } catch (e) { }
             },
 
             // 初始化
@@ -5603,7 +5752,7 @@ body {
             const _chatProvidersCache = { data: null };
 
             // 提供商数据提取配置（与 part1.js 保持同步）
-            const _CHAT_PROVIDER_MANUAL_URLS = { openai:'https://api.openai.com/v1', mistral:'https://api.mistral.ai/v1', groq:'https://api.groq.com/openai/v1', xai:'https://api.x.ai/v1', togetherai:'https://api.together.xyz/v1', deepinfra:'https://api.deepinfra.com/v1/openai', perplexity:'https://api.perplexity.ai' };
+            const _CHAT_PROVIDER_MANUAL_URLS = { openai: 'https://api.openai.com/v1', mistral: 'https://api.mistral.ai/v1', groq: 'https://api.groq.com/openai/v1', xai: 'https://api.x.ai/v1', togetherai: 'https://api.together.xyz/v1', deepinfra: 'https://api.deepinfra.com/v1/openai', perplexity: 'https://api.perplexity.ai' };
             const _CHAT_NON_OPENAI_NPM = ['@ai-sdk/anthropic', '@ai-sdk/google', '@ai-sdk/google-vertex'];
 
             function chatExtractSlimProviders(rawData) {
@@ -5639,7 +5788,7 @@ body {
                             return _chatProvidersCache.data;
                         }
                     }
-                } catch {}
+                } catch { }
                 try {
                     const resp = await fetch('models-providers.json');
                     if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
@@ -5647,7 +5796,7 @@ body {
                     if (Array.isArray(data) && data.length > 0) {
                         const filtered = filterComments(data);
                         _chatProvidersCache.data = filtered;
-                        idbStorage.setItem('providers_data', JSON.stringify(filtered)).catch(() => {});
+                        idbStorage.setItem('providers_data', JSON.stringify(filtered)).catch(() => { });
                         return filtered;
                     }
                 } catch (e) {
@@ -6707,6 +6856,14 @@ body {
 
                 // 尝试加载该角色的聊天记录
                 await loadChatHistory(id);
+                if (window.__NIKA_ST_BRIDGE__?.loadChatMetadataFor) {
+                    await window.__NIKA_ST_BRIDGE__.loadChatMetadataFor(id);
+                }
+                if (chatHistory.length > 0) {
+                    window.__NIKA_ST_RUNTIME__?.notifyChatChanged?.();
+                } else {
+                    window.__NIKA_ST_RUNTIME__?.sync?.();
+                }
             }
 
             function showCharacterEditor(character) {
@@ -8388,7 +8545,7 @@ body {
             });
 
             // --- Chat Logic ---
-            const chatMessages = document.getElementById('chat-messages');
+            const chatMessages = document.getElementById('chat');
 
             // 添加卡片点击事件处理
             chatMessages.addEventListener('click', (e) => {
@@ -8524,9 +8681,11 @@ body {
 
                 const activeChar = char.data[char.activeCharacterId];
 
-                // 如果指定了开场白内容,直接使用
+                // 如果指定了开场白内容,直接使用并在写入后通知 ST/MVU 初始化变量
                 if (greetingContent) {
-                    addMessageToHistory({ role: 'assistant', content: greetingContent, type: 'text' });
+                    Promise.resolve(addMessageToHistory({ role: 'assistant', content: greetingContent, type: 'text' })).then(() => {
+                        window.__NIKA_ST_RUNTIME__?.notifyChatChanged?.();
+                    });
                     return;
                 }
 
@@ -8541,9 +8700,11 @@ body {
                     greetings.push(...activeChar.data.alternate_greetings.filter(g => g && g.trim()));
                 }
 
-                // 如果只有一条开场白,直接使用
+                // 如果只有一条开场白,直接使用并在写入后通知 ST/MVU 初始化变量
                 if (greetings.length === 1) {
-                    addMessageToHistory({ role: 'assistant', content: greetings[0], type: 'text' });
+                    Promise.resolve(addMessageToHistory({ role: 'assistant', content: greetings[0], type: 'text' })).then(() => {
+                        window.__NIKA_ST_RUNTIME__?.notifyChatChanged?.();
+                    });
                 } else {
                     // 如果有多条开场白,显示选择弹窗
                     showGreetingSelector(greetings);
@@ -8731,15 +8892,29 @@ body {
             async function addMessageToHistory(messageData) {
                 // 生成UUID作为消息的唯一标识
                 const messageId = messageData.id || `msg_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-                const message = { id: messageId, ...messageData };
+                const message = {
+                    id: messageId,
+                    swipes: messageData.swipes || [messageData.content || ''],
+                    swipe_id: messageData.swipe_id ?? 0,
+                    ...messageData
+                };
                 chatHistory.push(message);
-                renderMessage(message);
+                const msgIndex = chatHistory.length - 1;
+                renderMessage(message, { silent: true });
                 chatMessages.scrollTop = chatMessages.scrollHeight;
 
                 // 自动保存聊天记录
                 if (char.activeCharacterId) {
                     await idbStorage.setItem(`chat_history_${char.activeCharacterId}`, JSON.stringify(chatHistory));
                     triggerAutoSave();
+                }
+
+                if (message.role === 'user') {
+                    await window.__NIKA_ST_RUNTIME__?.notifyMessageSent?.(msgIndex);
+                    await window.__NIKA_ST_RUNTIME__?.notifyMessageRendered?.(msgIndex, true);
+                } else if (message.role === 'assistant') {
+                    await window.__NIKA_ST_RUNTIME__?.notifyMessageReceived?.(msgIndex);
+                    await window.__NIKA_ST_RUNTIME__?.notifyMessageRendered?.(msgIndex, false);
                 }
             }
 
@@ -8909,7 +9084,7 @@ body {
                 return `<div class="stat-bar-container">${highlightedContent}</div>`;
             }
 
-            function applyRegex(text) {
+            function applyRegex(text, { mode = 'display', placement = 2, depth = null } = {}) {
                 let processedText = text;
                 const allScripts = [
                     ...(regex.data.global || []),
@@ -8918,34 +9093,36 @@ body {
 
                 for (const script of allScripts) {
                     if (script.disabled || !script.findRegex) continue;
+                    if (mode === 'display' && script.promptOnly) continue;
+                    if (mode === 'prompt' && script.markdownOnly) continue;
+                    if (Array.isArray(script.placement) && script.placement.length > 0 && placement !== undefined && !script.placement.includes(placement)) continue;
+                    if (depth !== null && depth !== undefined) {
+                        if (script.minDepth !== null && script.minDepth !== undefined && script.minDepth !== '' && depth < Number(script.minDepth)) continue;
+                        if (script.maxDepth !== null && script.maxDepth !== undefined && script.maxDepth !== '' && depth > Number(script.maxDepth)) continue;
+                    }
                     try {
-                        let pattern = script.findRegex;
-                        let flags = 'g'; // Default global flag
+                        let pattern = String(script.findRegex).trim();
+                        let flags = 'g';
 
-                        // Check if findRegex is in /pattern/flags format
                         if (pattern.startsWith('/')) {
                             const lastSlashIndex = pattern.lastIndexOf('/');
                             if (lastSlashIndex > 0) {
-                                // Extract flags (everything after last slash)
-                                const extractedFlags = pattern.substring(lastSlashIndex + 1);
-                                // Extract pattern (between first and last slash)
+                                const extractedFlags = pattern.substring(lastSlashIndex + 1).replace(/[^gimsuyd]/g, '');
                                 pattern = pattern.substring(1, lastSlashIndex);
-                                // Combine extracted flags with default 'g' flag
                                 flags = extractedFlags.includes('g') ? extractedFlags : extractedFlags + 'g';
                             }
                         }
 
                         const re = new RegExp(pattern, flags);
-                        // 使用函数形式的replace来正确处理捕获组
-                        processedText = processedText.replace(re, function (match, ...groups) {
-                            let result = script.replaceString;
-                            // 替换 $1, $2, $3 等捕获组
-                            groups.forEach((group, index) => {
-                                if (group !== undefined) {
-                                    // 使用正则替换所有出现的 $1, $2 等
-                                    const placeholder = new RegExp('\\$' + (index + 1), 'g');
-                                    result = result.replace(placeholder, group);
-                                }
+                        processedText = processedText.replace(re, function (...args) {
+                            const match = args[0];
+                            const hasGroupsObj = typeof args[args.length - 1] === 'object' && args[args.length - 1] !== null;
+                            const captures = args.slice(1, hasGroupsObj ? -3 : -2);
+                            let result = String(script.replaceString ?? '');
+                            result = result.replace(/\{\{match\}\}/gi, () => match);
+                            result = result.replace(/\$(\d+)/g, (m, numStr) => {
+                                const idx = parseInt(numStr, 10) - 1;
+                                return idx >= 0 && idx < captures.length && captures[idx] !== undefined ? captures[idx] : m;
                             });
                             return result;
                         });
@@ -8991,7 +9168,23 @@ body {
                 }
 
                 // 第二步:应用自定义正则表达式
-                processedText = applyRegex(processedText);
+                processedText = applyRegex(processedText, { mode: 'display', placement: 2, depth: 0 });
+
+                // 第二步半:流式期间保护前端HTML代码块，防止直接把未样式化的原始HTML和```html吐进DOM
+                const streamingHtmlPlaceholders = [];
+                processedText = processedText.replace(
+                    /```[a-zA-Z0-9_-]*[ \t]*\r?\n?([\s\S]*?)(?:```|$)/g,
+                    function (match, inner) {
+                        if (/<!DOCTYPE\s+html|<html\b|<head\b|<body\b|<script\b|<style\b/i.test(inner || '')) {
+                            const ph = `__STREAM_HTML_PLACEHOLDER_${streamingHtmlPlaceholders.length}__`;
+                            streamingHtmlPlaceholders.push(
+                                '<div style="margin:8px 0;padding:12px 16px;border-radius:10px;border:1px dashed var(--border-color);background:color-mix(in srgb, var(--input-bg-color) 65%, transparent);color:var(--text-secondary-color);font-size:13px;"><i class="fas fa-sparkles" style="margin-right:6px;color:var(--primary-color);"></i>正在生成前端界面，生成完成后将自动渲染…</div>'
+                            );
+                            return ph;
+                        }
+                        return match;
+                    }
+                );
 
                 // 第三步:应用Markdown渲染(加粗、斜体、引号颜色等) - 在自定义正则之后执行，避免破坏HTML标签
                 // 双星号加粗 **text**
@@ -9047,10 +9240,13 @@ body {
                     return htmlContent;
                 });
 
-                // 第五步:恢复并渲染状态栏
+                // 第五步:恢复并渲染状态栏与流式前端界面占位符
                 processedText = processedText.replace(/__STATBAR_PLACEHOLDER_(\d+)__/g, function (match, index) {
                     const statContent = statBarPlaceholders[parseInt(index)];
                     return renderStatBar(statContent);
+                });
+                processedText = processedText.replace(/__STREAM_HTML_PLACEHOLDER_(\d+)__/g, function (match, index) {
+                    return streamingHtmlPlaceholders[parseInt(index)] || '';
                 });
 
                 // 第六步:如果启用了SD生图，替换CG格式为卡片占位符（流式生成中也实时替换）
@@ -9061,14 +9257,20 @@ body {
                 return processedText;
             }
 
-            function renderMessage(message) {
+            function renderMessage(message, opts = {}) {
+                const { replaceElement = null, silent = false } = opts || {};
                 const { id, role, content, type = 'text', replyTo, imageUrl, description } = message;
 
                 const isUser = role === 'user';
 
                 const group = document.createElement('div');
+                const msgIndex = chatHistory.indexOf(message);
+                const msgDepth = msgIndex >= 0 ? Math.max(0, chatHistory.length - 1 - msgIndex) : 0;
                 group.id = id;
-                group.className = `chat-message-group flex flex-col items-center gap-1 mb-3`;
+                group.className = `chat-message-group mes flex flex-col items-center gap-1 mb-3`;
+                group.setAttribute('mesid', String(msgIndex >= 0 ? msgIndex : chatMessages.children.length));
+                group.setAttribute('is_user', String(isUser));
+                group.setAttribute('is_system', String(!!message.hidden));
                 group.style.position = 'relative';
 
                 // 获取用户头像
@@ -9179,7 +9381,7 @@ body {
 
                     // 第四步：对AI消息应用正则表达式
                     if (!isUser) {
-                        finalContent = applyRegex(finalContent);
+                        finalContent = applyRegex(finalContent, { mode: 'display', placement: 2, depth: msgDepth });
                     }
 
                     // 处理^^^包裹的HTML内容（对所有消息都应用）
@@ -9194,10 +9396,64 @@ body {
                     });
 
                     const contentDiv = document.createElement('div');
-                    contentDiv.className = 'message-content text-left whitespace-pre-wrap';
+                    contentDiv.className = 'message-content mes_text text-left whitespace-pre-wrap';
 
-                    // 检查是否是HTML代码块或完整的HTML文档
-                    if (finalContent.trim().startsWith('```html') || finalContent.trim().startsWith('<!DOCTYPE html>') || finalContent.trim().startsWith('```\n<!DOCTYPE html>')) {
+                    const FRONTEND_TAG_RE = /<!DOCTYPE\s+html|<html\b|<head\b|<body\b|<script\b|<style\b/i;
+                    const FENCED_BLOCK_RE = /```([a-zA-Z0-9_-]*)[ \t]*\r?\n?([\s\S]*?)```/g;
+                    const trimmedFinal = finalContent.trim();
+                    const fencedMatches = [...finalContent.matchAll(FENCED_BLOCK_RE)].filter(m => FRONTEND_TAG_RE.test(m[2] || ''));
+                    const isRawFrontendDoc = fencedMatches.length === 0 && (
+                        trimmedFinal.startsWith('<!DOCTYPE html>') ||
+                        /^<html\b[\s\S]*<\/html>\s*$/i.test(trimmedFinal) ||
+                        (/^<body\b[\s\S]*<\/body>\s*$/i.test(trimmedFinal) && /<script\b/i.test(trimmedFinal))
+                    );
+
+                    if (fencedMatches.length > 0 || isRawFrontendDoc) {
+                        const appendTextFragment = (rawSeg) => {
+                            const seg = rawSeg.trim();
+                            if (!seg) return;
+                            const fragDiv = document.createElement('div');
+                            let segProcessed = seg.replace(
+                                /(<[^>]+>)|(\*\*([^*]+)\*\*)|(\*([^*]+)\*)/g,
+                                (match, htmlTag, doubleAsterisk, doubleContent, singleAsterisk, singleContent) => {
+                                    if (htmlTag) return htmlTag;
+                                    if (doubleAsterisk) return `<strong>${doubleContent}</strong>`;
+                                    if (singleAsterisk) return `<em>${singleContent}</em>`;
+                                    return match;
+                                }
+                            );
+                            if (segProcessed.includes('stat-bar-container') || segProcessed.includes('<')) {
+                                fragDiv.innerHTML = segProcessed.replace(/\r\n|\r|\n/g, '<br>');
+                            } else {
+                                fragDiv.textContent = segProcessed;
+                            }
+                            contentDiv.appendChild(fragDiv);
+                        };
+
+                        if (fencedMatches.length > 0) {
+                            let cursor = 0;
+                            for (const m of fencedMatches) {
+                                appendTextFragment(finalContent.slice(cursor, m.index));
+                                const lang = (m[1] || 'html').trim() || 'html';
+                                const pre = document.createElement('pre');
+                                const code = document.createElement('code');
+                                code.className = `language-${lang}`;
+                                code.textContent = (m[2] || '').trim();
+                                pre.appendChild(code);
+                                contentDiv.appendChild(pre);
+                                cursor = m.index + m[0].length;
+                            }
+                            appendTextFragment(finalContent.slice(cursor));
+                        } else {
+                            const pre = document.createElement('pre');
+                            const code = document.createElement('code');
+                            code.className = 'language-html';
+                            code.textContent = trimmedFinal;
+                            pre.appendChild(code);
+                            contentDiv.appendChild(pre);
+                        }
+                        messageBubble.appendChild(contentDiv);
+                    } else if (false) {
                         // 移除markdown代码块标记
                         let htmlContent = finalContent.trim();
                         // 移除开头的 ```html 或 ```
@@ -9920,7 +10176,19 @@ body {
 
                 // 组装完整消息组（头像容器已在前面添加到group）
                 group.appendChild(messageContentContainer);
-                chatMessages.appendChild(group);
+                if (replaceElement && replaceElement.parentNode) {
+                    replaceElement.replaceWith(group);
+                } else {
+                    chatMessages.appendChild(group);
+                }
+
+                if (!silent && window.__NIKA_ST_RUNTIME__?.notifyMessageRendered) {
+                    const renderedMesId = Number(group.getAttribute('mesid'));
+                    setTimeout(() => {
+                        window.__NIKA_ST_RUNTIME__.notifyMessageRendered(renderedMesId, isUser);
+                    }, 0);
+                }
+                return group;
             }
 
             // 保存默认的renderMessage函数
@@ -10116,6 +10384,8 @@ body {
                     if (char.activeCharacterId) {
                         await idbStorage.setItem(`chat_history_${char.activeCharacterId}`, JSON.stringify(chatHistory));
                     }
+                    Array.from(chatMessages.querySelectorAll('.mes')).forEach((el, i) => el.setAttribute('mesid', String(i)));
+                    window.__NIKA_ST_RUNTIME__?.notifyMessageDeleted?.(chatHistory.length);
                 }
             }
 
@@ -10149,71 +10419,28 @@ body {
                 // 更新历史记录
                 message.content = trimmedContent;
 
-                // 重新渲染消息
+                // 重新渲染消息（走完整renderMessage管线，确保前端代码块正确生成<pre><code>并触发iframe渲染）
                 const messageElement = document.getElementById(messageId);
                 if (messageElement) {
-                    const bubble = messageElement.querySelector('.chat-bubble');
-                    const contentDiv = bubble.querySelector('.message-content');
+                    renderMessage(message, { replaceElement: messageElement, silent: true });
+                }
 
-                    if (contentDiv) {
-                        let processedContent = trimmedContent;
-                        const isUser = message.role === 'user';
-
-                        // 第一步：替换{{user}}为当前用户名（最先执行）
-                        if (!isUser) {
-                            const currentUserName = userManagement.getCurrentUser()?.name || '用户';
-                            processedContent = processedContent.replace(/\{\{user\}\}/gi, currentUserName);
-                        }
-
-                        // 第二步：提取并保护状态栏内容（在正则处理之前）
-                        const statBarPlaceholders = [];
-                        const statBarRegex = /```([^`]*)```/gs;
-
-                        processedContent = processedContent.replace(statBarRegex, (match, statContent) => {
-                            const statTrimmed = statContent.trim();
-                            // 只保护不包含HTML标签的纯文本状态栏
-                            if (statTrimmed && !/<[^>]+>/.test(statTrimmed)) {
-                                const placeholder = `__STATBAR_PLACEHOLDER_${statBarPlaceholders.length}__`;
-                                statBarPlaceholders.push(statTrimmed);
-                                return placeholder;
-                            }
-                            return match; // 保留原样（可能是代码块）
-                        });
-
-                        // 第三步：对AI消息应用正则表达式
-                        if (!isUser) {
-                            processedContent = applyRegex(processedContent);
-                        }
-
-                        // 第四步：处理^^^包裹的HTML内容
-                        processedContent = processedContent.replace(/\^\^\^([\s\S]*?)\^\^\^/g, function (match, htmlContent) {
-                            return htmlContent;
-                        });
-
-                        // 第五步：恢复并渲染状态栏
-                        processedContent = processedContent.replace(/__STATBAR_PLACEHOLDER_(\d+)__/g, (match, index) => {
-                            const statContent = statBarPlaceholders[parseInt(index)];
-                            return renderStatBar(statContent);
-                        });
-
-                        // 如果包含HTML,使用innerHTML;否则使用textContent
-                        if (containsHTML(processedContent)) {
-                            // 转换所有类型的换行符为<br>标签
-                            const contentWithBreaks = processedContent
-                                .replace(/\r\n/g, '<br>')
-                                .replace(/\r/g, '<br>')
-                                .replace(/\n/g, '<br>');
-                            contentDiv.innerHTML = contentWithBreaks;
-                        } else {
-                            contentDiv.textContent = processedContent;
-                        }
-                        contentDiv.className = 'message-content text-left whitespace-pre-wrap';
-                    }
+                // 保存更新后的聊天记录
+                if (char.activeCharacterId) {
+                    idbStorage.setItem(`chat_history_${char.activeCharacterId}`, JSON.stringify(chatHistory)).catch(() => { });
+                    triggerAutoSave();
                 }
 
                 // 关闭弹窗
                 document.getElementById('message-edit-modal').classList.remove('active');
                 currentEditingMessageId = null;
+                const editedIdx = chatHistory.findIndex(m => m.id === messageId);
+                if (editedIdx >= 0) {
+                    if (Array.isArray(message.swipes)) message.swipes[message.swipe_id || 0] = message.content;
+                    Promise.resolve(window.__NIKA_ST_RUNTIME__?.notifyMessageEdited?.(editedIdx)).then(() => {
+                        window.__NIKA_ST_RUNTIME__?.notifyMessageRendered?.(editedIdx, message.role === 'user');
+                    });
+                }
 
                 // 如果编辑的是用户消息，提示是否重新生成AI回复
                 if (message.role === 'user') {
@@ -10411,7 +10638,7 @@ body {
                     const exampleBlocks = rawDialogueExamples.split(/<START>/i)
                         .map(s => s.trim())
                         .filter(s => s);
-                    
+
                     if (exampleBlocks.length > 0) {
                         exampleBlocks.forEach(block => {
                             processedDialogueExamplesArray.push('[Example Chat]\n\n' + replaceMacros(block));
@@ -10622,9 +10849,14 @@ body {
                                     processedContent = msg.description || '[图片内容]';
                                 } else {
                                     processedContent = msg.content;
-                                    // 只有原始消息才需要正则替换，深度注入的消息通常已经是处理好的或者不需要
-                                    if (msg.role === 'user' && !msg.is_depth_injection) {
-                                        processedContent = applyRegex(processedContent);
+                                    // 只有原始消息才需要正则替换（prompt模式：执行promptOnly脚本，跳过markdownOnly脚本）
+                                    if (!msg.is_depth_injection && (msg.role === 'user' || msg.role === 'assistant')) {
+                                        const histDepth = Math.max(0, processedChatHistory.length - 1 - i);
+                                        processedContent = applyRegex(processedContent, {
+                                            mode: 'prompt',
+                                            placement: msg.role === 'user' ? 1 : 2,
+                                            depth: histDepth
+                                        });
                                     }
                                     processedContent = replaceMacros(processedContent);
                                 }
@@ -11047,8 +11279,8 @@ body {
                     });
                 }
 
-                // 收集角色世界书
-                let characterBook = character?.character_book || character?.data?.character_book;
+                // 收集角色世界书（优先读取 data.character_book 以与酒馆助手/章节管理器实时同步）
+                let characterBook = character?.data?.character_book || character?.character_book;
 
                 // 如果仍然找不到，尝试从extensions查找
                 if (!characterBook && character?.data?.extensions?.world_info) {
@@ -11057,14 +11289,20 @@ body {
 
                 if (characterBook?.entries) {
                     console.log('📚 发现角色世界书 entries');
-                    const entries = Array.isArray(characterBook.entries)
+                    const rawEntries = Array.isArray(characterBook.entries)
                         ? characterBook.entries
                         : Object.values(characterBook.entries || {});
+                    // 按 SillyTavern insertion_order / order / priority 升序排列，保证如 <剧情大纲> 与动态章节条目的先后包裹顺序正确
+                    const entries = [...rawEntries].sort((a, b) => {
+                        const oa = Number(a.insertion_order ?? a.order ?? a.priority ?? 100);
+                        const ob = Number(b.insertion_order ?? b.order ?? b.priority ?? 100);
+                        return oa - ob;
+                    });
 
                     console.log(`📚 角色世界书包含 ${entries.length} 个条目`);
 
                     entries.forEach((entry) => {
-                        if (entry.enabled !== false) {
+                        if (entry.enabled !== false && entry.disable !== true) {
                             const keys = Array.isArray(entry.keys) ? entry.keys : (entry.keys || '').split(',').map(k => k.trim());
                             let shouldInclude = entry.constant || false;
 
@@ -11125,7 +11363,7 @@ body {
                                         content: entry.content,
                                         depth: depth,
                                         role: role, // 0=system, 1=user, 2=assistant
-                                        priority: entry.priority !== undefined ? Number(entry.priority) : 100
+                                        priority: Number(entry.insertion_order ?? entry.order ?? entry.priority ?? 100)
                                     });
                                 } else {
                                     // 其他position默认放到before
@@ -11154,8 +11392,20 @@ body {
                     return;
                 }
 
-                const messages = await constructFinalPrompt();
+                let messages = await constructFinalPrompt();
                 if (messages.length === 0) return;
+
+                if (window.__NIKA_ST_RUNTIME__?.runPromptPipeline) {
+                    try {
+                        const piped = await window.__NIKA_ST_RUNTIME__.runPromptPipeline(messages, { dryRun: false, type: 'normal' });
+                        if (piped?.aborted) return;
+                        if (Array.isArray(piped?.messages) && piped.messages.length > 0) {
+                            messages = piped.messages;
+                        }
+                    } catch (e) {
+                        console.warn('[Nika-ST] runPromptPipeline error:', e);
+                    }
+                }
 
                 // 显示完整提示词到控制台（如果开启）
                 if (devLogs.showPrompts) {
@@ -11301,15 +11551,18 @@ body {
 
                         // 创建AI消息并获取其ID
                         const messageId = `msg_${Date.now()}`;
-                        const aiMessage = { id: messageId, role: 'assistant', content: '', type: 'text' };
+                        const aiMessage = { id: messageId, role: 'assistant', content: '', type: 'text', swipes: [''], swipe_id: 0 };
+                        window.__nikaActiveStreamMsgId = messageId;
                         chatHistory.push(aiMessage);
+                        // 立即同步到 ST 运行时，防止流式期间后台插件调用 saveChat 时用旧长度覆盖掉正在生成的楼层
+                        window.__NIKA_ST_RUNTIME__?.sync?.();
 
-                        // 渲染初始的空消息
-                        renderMessage(aiMessage);
+                        // 渲染初始的空消息（silent避免空内容过早触发插件渲染）
+                        renderMessage(aiMessage, { silent: true });
                         const messageElement = document.getElementById(messageId);
                         const contentDiv = messageElement.querySelector('.chat-bubble .message-content');
                         if (contentDiv) {
-                            contentDiv.className = 'message-content text-left whitespace-pre-wrap';
+                            contentDiv.className = 'message-content mes_text text-left whitespace-pre-wrap';
                         }
 
                         // 处理流式数据
@@ -11425,24 +11678,38 @@ body {
                             cancelAnimationFrame(animationFrameId);
                         }
 
-                        // 流式完成后,最后更新一次确保显示完整内容
-                        // 传入 false 表示非流式模式(内容已完整),使用更严格的正则
-                        const finalProcessedContent = processStreamingContent(fullContent, false);
+                        window.__nikaActiveStreamMsgId = null;
+                        // 按稳定的 messageId 定位当前楼层（防止流式期间插件调用 syncChatFromST 导致对象引用分离或丢失）
+                        let aiIdx = chatHistory.findIndex(m => m && m.id === messageId);
+                        if (aiIdx < 0) {
+                            chatHistory.push(aiMessage);
+                            aiIdx = chatHistory.length - 1;
+                        }
+                        const liveAiMessage = chatHistory[aiIdx];
+                        liveAiMessage.content = fullContent;
+                        if (!Array.isArray(liveAiMessage.swipes) || liveAiMessage.swipes.length === 0) {
+                            liveAiMessage.swipes = [fullContent];
+                            liveAiMessage.swipe_id = 0;
+                        } else {
+                            liveAiMessage.swipes[liveAiMessage.swipe_id || 0] = fullContent;
+                        }
 
-                        // 直接使用处理后的内容（CG卡片替换已在processStreamingContent中完成）
-                        contentDiv.innerHTML = finalProcessedContent;
+                        // 流式完成后，走完整 renderMessage 管线原地替换DOM（保留 .mes_text 与 <pre><code> 供酒馆助手/小白X立即渲染iframe）
+                        const currentMsgEl = document.getElementById(messageId) || messageElement;
+                        renderMessage(liveAiMessage, { replaceElement: currentMsgEl, silent: true });
                         if (autoScrollEnabled) {
                             chatMessages.scrollTop = chatMessages.scrollHeight;
                         }
-
-                        // 更新历史记录中的内容
-                        aiMessage.content = fullContent;
 
                         // 保存聊天记录
                         if (char.activeCharacterId) {
                             await idbStorage.setItem(`chat_history_${char.activeCharacterId}`, JSON.stringify(chatHistory));
                             triggerAutoSave();
                         }
+
+                        await window.__NIKA_ST_RUNTIME__?.notifyMessageReceived?.(aiIdx);
+                        await window.__NIKA_ST_RUNTIME__?.notifyMessageRendered?.(aiIdx, false);
+                        await window.__NIKA_ST_RUNTIME__?.notifyGenerationEnded?.(chatHistory.length);
 
                     } else {
                         // 非流式响应
@@ -11465,15 +11732,17 @@ body {
                         } else if (data.candidates) { // Gemini format
                             aiContent = data.candidates[0].content.parts[0].text;
                         }
-                        addMessageToHistory({ role: 'assistant', content: aiContent, type: 'text' });
+                        await addMessageToHistory({ role: 'assistant', content: aiContent, type: 'text' });
+                        await window.__NIKA_ST_RUNTIME__?.notifyGenerationEnded?.(chatHistory.length);
                     }
 
                 } catch (error) {
                     if (error.name !== 'AbortError') {
-                        addMessageToHistory({ role: 'assistant', content: `API Error: ${error.message}`, type: 'text' });
+                        await addMessageToHistory({ role: 'assistant', content: `API Error: ${error.message}`, type: 'text' });
                         console.error("API Error:", error);
                     }
                 } finally {
+                    window.__nikaActiveStreamMsgId = null;
                     sendButton.disabled = false;
                     sendButton.innerHTML = '<i class="fas fa-paper-plane"></i>';
                     sendButton.onclick = null;
@@ -11490,7 +11759,14 @@ body {
                     return;
                 }
 
-                addMessageToHistory({ role: 'user', content: userInput, type: 'text', replyTo: currentReply });
+                if (userInput.startsWith('/') && window.__NIKA_ST_RUNTIME__?.executeSlash) {
+                    chatInput.value = '';
+                    chatInput.style.height = 'auto';
+                    await window.__NIKA_ST_RUNTIME__.executeSlash(userInput);
+                    return;
+                }
+
+                await addMessageToHistory({ role: 'user', content: userInput, type: 'text', replyTo: currentReply });
                 currentReply = null;
                 document.getElementById('reply-status-container').innerHTML = '';
 
@@ -13506,6 +13782,623 @@ You must structure your entire output strictly in the following format, without 
                 console.log('从 index.html 跳转，启用 IndexedDB 角色模式');
             }
 
+
+            // =========================================================================
+            // SillyTavern 插件低耦合桥接层 (window.__NIKA_ST_BRIDGE__)
+            // =========================================================================
+            const stChatMetadataCache = {};
+            let stPresetsMirror = {};
+
+            function _nikaPresetToST(p) {
+                const src = p || {};
+                const rawPrompts = Array.isArray(src.prompts) ? src.prompts : [];
+                const stPrompts = rawPrompts.map(pr => ({
+                    identifier: pr.identifier || ('p_' + Math.random().toString(36).slice(2, 8)),
+                    name: pr.name || pr.identifier || '',
+                    enabled: pr.enabled !== false,
+                    role: pr.role || 'system',
+                    content: pr.content ?? '',
+                    system_prompt: !!pr.system_prompt,
+                    marker: !!pr.marker,
+                    injection_position: pr.injection_position ?? 0,
+                    injection_depth: pr.injection_depth ?? 4,
+                    injection_order: pr.injection_order ?? 100,
+                    forbid_overrides: !!pr.forbid_overrides,
+                }));
+                const orderList = Array.isArray(src.prompt_order?.[0]?.order) && src.prompt_order[0].order.length
+                    ? src.prompt_order[0].order
+                    : stPrompts.map(pr => ({ identifier: pr.identifier, enabled: pr.enabled !== false }));
+                const temp = src.temp ?? src.temperature ?? 1.0;
+                const topP = src.top_p ?? 1.0;
+                const topK = src.top_k ?? 0;
+                const freqPen = src.freq_pen ?? src.frequency_penalty ?? 0;
+                const presPen = src.pres_pen ?? src.presence_penalty ?? 0;
+                const repPen = src.rep_pen ?? src.repetition_penalty ?? 1;
+                const maxTokens = src.max_tokens ?? src.openai_max_tokens ?? 4096;
+                const maxCtx = src.context_size ?? src.openai_max_context ?? 128000;
+                return {
+                    max_context_unlocked: true,
+                    openai_max_context: maxCtx,
+                    openai_max_tokens: maxTokens,
+                    n: src.n ?? 1,
+                    stream_openai: src.stream_openai ?? true,
+                    temp_openai: temp,
+                    temperature: temp,
+                    freq_pen_openai: freqPen,
+                    frequency_penalty: freqPen,
+                    pres_pen_openai: presPen,
+                    presence_penalty: presPen,
+                    repetition_penalty_openai: repPen,
+                    repetition_penalty: repPen,
+                    top_p_openai: topP,
+                    top_p: topP,
+                    min_p_openai: src.min_p ?? 0,
+                    min_p: src.min_p ?? 0,
+                    top_k_openai: topK,
+                    top_k: topK,
+                    top_a_openai: src.top_a ?? 0,
+                    top_a: src.top_a ?? 0,
+                    seed: src.seed ?? -1,
+                    squash_system_messages: !!src.squash_system_messages,
+                    reasoning_effort: src.reasoning_effort || 'auto',
+                    show_thoughts: src.show_thoughts ?? false,
+                    request_images: !!src.request_images,
+                    function_calling: !!src.function_calling,
+                    enable_web_search: !!src.enable_web_search,
+                    image_inlining: !!src.image_inlining,
+                    inline_image_quality: src.inline_image_quality || 'auto',
+                    video_inlining: !!src.video_inlining,
+                    names_behavior: src.names_behavior ?? 0,
+                    wrap_in_quotes: !!src.wrap_in_quotes,
+                    prompts: stPrompts,
+                    prompt_order: [{ character_id: 100001, order: orderList }],
+                    extensions: {
+                        tavern_helper: { scripts: [], variables: {} },
+                        ...(src.extensions || {}),
+                    },
+                };
+            }
+
+            function _stPresetToNika(stP, existing = {}) {
+                const st = stP || {};
+                const rawPrompts = Array.isArray(st.prompts) ? st.prompts : [];
+                const orderArr = Array.isArray(st.prompt_order?.[0]?.order) ? st.prompt_order[0].order : null;
+                let orderedPrompts = rawPrompts;
+                if (orderArr && orderArr.length > 0) {
+                    const byId = new Map(rawPrompts.map(p => [p.identifier, p]));
+                    const seen = new Set();
+                    const sorted = [];
+                    for (const ord of orderArr) {
+                        const found = byId.get(ord.identifier);
+                        if (found) {
+                            sorted.push({ ...found, enabled: ord.enabled !== false });
+                            seen.add(ord.identifier);
+                        }
+                    }
+                    for (const p of rawPrompts) {
+                        if (!seen.has(p.identifier)) sorted.push({ ...p, enabled: false });
+                    }
+                    orderedPrompts = sorted;
+                }
+                return {
+                    ...existing,
+                    temp: st.temp_openai ?? st.temperature ?? existing.temp ?? 1.0,
+                    top_p: st.top_p_openai ?? st.top_p ?? existing.top_p ?? 1.0,
+                    top_k: st.top_k_openai ?? st.top_k ?? existing.top_k ?? 64,
+                    freq_pen: st.freq_pen_openai ?? st.frequency_penalty ?? existing.freq_pen ?? 0,
+                    pres_pen: st.pres_pen_openai ?? st.presence_penalty ?? existing.pres_pen ?? 0,
+                    rep_pen: st.repetition_penalty_openai ?? st.repetition_penalty ?? existing.rep_pen ?? 1,
+                    max_tokens: st.openai_max_tokens ?? existing.max_tokens ?? 4096,
+                    context_size: st.openai_max_context ?? existing.context_size ?? 128000,
+                    prompts: orderedPrompts,
+                    prompt_order: st.prompt_order || [{ character_id: 100001, order: orderedPrompts.map(p => ({ identifier: p.identifier, enabled: p.enabled !== false })) }],
+                    extensions: st.extensions || existing.extensions || { tavern_helper: { scripts: [], variables: {} } },
+                };
+            }
+
+            async function _refreshPresetsMirror() {
+                try {
+                    const all = await getPresets();
+                    const next = {};
+                    for (const [name, p] of Object.entries(all || {})) {
+                        next[name] = _nikaPresetToST(p);
+                    }
+                    stPresetsMirror = next;
+                } catch (e) {
+                    console.warn('[ST-Bridge] _refreshPresetsMirror failed:', e);
+                }
+            }
+
+            function _getActiveCharOrder() {
+                return Object.keys(char.data || {});
+            }
+
+            function _toStCharacter(c) {
+                const d = c.data || {};
+                return {
+                    name: c.name || d.name || 'Character',
+                    avatar: `${c.id}.png`,
+                    _nikaId: c.id,
+                    _nikaAvatar: c.avatar || 'none',
+                    description: c.description || d.description || '',
+                    personality: d.personality || '',
+                    scenario: d.scenario || '',
+                    first_mes: c.first_mes || d.first_mes || '',
+                    mes_example: d.mes_example || '',
+                    creatorcomment: c.creatorcomment || d.creator_notes || '',
+                    tags: c.tags || d.tags || [],
+                    fav: !!c.fav,
+                    data: {
+                        ...d,
+                        name: c.name || d.name || 'Character',
+                        description: c.description || d.description || '',
+                        personality: d.personality || '',
+                        scenario: d.scenario || '',
+                        first_mes: c.first_mes || d.first_mes || '',
+                        mes_example: d.mes_example || '',
+                        alternate_greetings: d.alternate_greetings || [],
+                        character_book: d.character_book || null,
+                        extensions: {
+                            ...(d.extensions || {}),
+                            regex_scripts: d.extensions?.regex_scripts || d.regex || [],
+                            world: d.extensions?.world || d.character_book?.name || (d.character_book ? `${c.name}_worldbook` : ''),
+                        },
+                    },
+                };
+            }
+
+            function _toStMessage(m, idx, activeCharName, activeUserName, activeChar = null) {
+                const isUser = m.role === 'user';
+                let swipes = Array.isArray(m.swipes) && m.swipes.length ? m.swipes : [m.content || ''];
+                let swipeId = typeof m.swipe_id === 'number' ? m.swipe_id : 0;
+
+                // SillyTavern 标准：0 号楼层（开场白）始终在 swipes 中包含 [first_mes, ...alternate_greetings]，
+                // 确保卡片封面调用 getChatMessages("0", { include_swipe: true }) / switchToOpening(n) 能找到全部开场白！
+                if (idx === 0 && !isUser && activeChar) {
+                    const firstMes = activeChar.first_mes || activeChar.data?.first_mes || '';
+                    const alts = Array.isArray(activeChar.data?.alternate_greetings) ? activeChar.data.alternate_greetings : [];
+                    const allGreetings = [firstMes, ...alts];
+                    if (allGreetings.length > 1 && swipes.length < allGreetings.length) {
+                        const matchedIdx = allGreetings.findIndex(g => g === m.content);
+                        if (matchedIdx >= 0) swipeId = matchedIdx;
+                        else if (swipeId < 0 || swipeId >= allGreetings.length) swipeId = 0;
+                        swipes = [...allGreetings];
+                        if (m.content) swipes[swipeId] = m.content;
+                        m.swipes = swipes;
+                        m.swipe_id = swipeId;
+                    }
+                }
+
+                return {
+                    name: m.name || (isUser ? activeUserName : activeCharName),
+                    is_user: isUser,
+                    is_system: !!m.hidden,
+                    send_date: m.send_date || Date.now(),
+                    mes: m.content ?? '',
+                    swipes,
+                    swipe_id: swipeId,
+                    swipe_info: m.swipe_info || [],
+                    variables: m.variables || [],
+                    extra: m.extra || {},
+                    ...(m.is_ejs_processed ? { is_ejs_processed: m.is_ejs_processed } : {}),
+                    ...(m.variables_initialized ? { variables_initialized: m.variables_initialized } : {}),
+                    _nikaId: m.id,
+                };
+            }
+
+            window.__NIKA_ST_BRIDGE__ = {
+                async loadChatMetadataFor(charId) {
+                    if (!charId) return { variables: {} };
+                    try {
+                        const raw = await idbStorage.getItem(`chat_metadata_${charId}`);
+                        stChatMetadataCache[charId] = raw ? JSON.parse(raw) : { variables: {} };
+                    } catch {
+                        stChatMetadataCache[charId] = { variables: {} };
+                    }
+                    stChatMetadataCache[charId].variables ||= {};
+                    return stChatMetadataCache[charId];
+                },
+                async saveChatMetadata(meta) {
+                    const charId = char.activeCharacterId || '__default__';
+                    stChatMetadataCache[charId] = meta || { variables: {} };
+                    stChatMetadataCache[charId].variables ||= {};
+                    if (char.activeCharacterId) {
+                        try {
+                            await idbStorage.setItem(`chat_metadata_${char.activeCharacterId}`, JSON.stringify(stChatMetadataCache[charId]));
+                        } catch (e) {
+                            console.warn('[ST-Bridge] saveChatMetadata failed:', e);
+                        }
+                    }
+                },
+                getCurrentChatId() {
+                    return char.activeCharacterId ? `nika_chat_${char.activeCharacterId}` : 'nika_chat_none';
+                },
+                getSnapshot() {
+                    const currentUser = userManagement.getCurrentUser();
+                    const userName = currentUser?.name || 'User';
+                    const ids = _getActiveCharOrder();
+                    const stChars = ids.map(id => _toStCharacter(char.data[id]));
+                    const activeIdx = char.activeCharacterId ? ids.indexOf(char.activeCharacterId) : -1;
+                    const activeChar = char.activeCharacterId ? char.data[char.activeCharacterId] : null;
+                    const charName = activeChar?.name || 'Character';
+                    const stChat = (chatHistory || []).map((m, idx) => _toStMessage(m, idx, charName, userName, activeChar));
+                    const metaKey = char.activeCharacterId || '__default__';
+                    stChatMetadataCache[metaKey] ||= { variables: {} };
+                    stChatMetadataCache[metaKey].variables ||= {};
+                    const meta = stChatMetadataCache[metaKey];
+
+                    const worldNamesSet = new Set(Object.keys(wi.data || {}));
+                    if (activeChar?.data?.character_book) {
+                        worldNamesSet.add(activeChar.data.extensions?.world || activeChar.data.character_book.name || `${charName}_worldbook`);
+                    }
+                    const apiCfg = getCurrentApiConfig?.() || {};
+                    const activePresetName = document.querySelector('.preset-item.active')?.dataset.name || 'Default';
+                    const activePresetObj = stPresetsMirror[activePresetName] || Object.values(stPresetsMirror)[0] || null;
+                    return {
+                        name1: userName,
+                        name2: charName,
+                        userAvatar: currentUser?.avatar || 'default-user.png',
+                        personaDescription: currentUser?.description || '',
+                        characters: stChars,
+                        thisChid: activeIdx,
+                        chat: stChat,
+                        chatMetadata: meta,
+                        worldNames: [...worldNamesSet],
+                        model: apiCfg.model || 'default',
+                        activePreset: activePresetObj,
+                        isGenerating: sendButton?.disabled || false,
+                    };
+                },
+                async syncChatFromST(stChat, stMeta) {
+                    // 原地同步更新内存中的 chatHistory（保留已有对象引用，并在流式生成期间绝不丢弃末尾正在生成的AI楼层）
+                    if (Array.isArray(stChat)) {
+                        const streamingId = window.__nikaActiveStreamMsgId || null;
+                        const existingById = new Map();
+                        for (const item of chatHistory) {
+                            if (item && item.id) existingById.set(item.id, item);
+                        }
+                        const next = stChat.map((sm, idx) => {
+                            const existing = (sm._nikaId && existingById.get(sm._nikaId)) || chatHistory[idx] || {};
+                            const target = existing && typeof existing === 'object' ? existing : {};
+                            target.id = sm._nikaId || target.id || `msg_${Date.now()}_${idx}`;
+                            target.role = sm.is_user ? 'user' : 'assistant';
+                            // 若该楼层正在流式生成中且 stChat 中还是空串，保留已有的流式内容
+                            if (!(streamingId && target.id === streamingId && !sm.mes && target.content)) {
+                                target.content = sm.mes ?? '';
+                            }
+                            target.hidden = !!sm.is_system;
+                            target.type = target.type || 'text';
+                            target.swipes = Array.isArray(sm.swipes) ? sm.swipes : [target.content ?? ''];
+                            target.swipe_id = sm.swipe_id ?? 0;
+                            target.swipe_info = sm.swipe_info || target.swipe_info || [];
+                            target.variables = sm.variables || target.variables || [];
+                            target.extra = sm.extra || target.extra || {};
+                            if (sm.is_ejs_processed) target.is_ejs_processed = sm.is_ejs_processed;
+                            if (sm.variables_initialized) target.variables_initialized = sm.variables_initialized;
+                            return target;
+                        });
+                        // 若流式生成刚 push 了新 AI 楼层但插件拿着旧 stChat 调用 saveChat，把正在生成的楼层保住！
+                        if (streamingId && !next.some(m => m && m.id === streamingId)) {
+                            const activeStreamMsg = existingById.get(streamingId);
+                            if (activeStreamMsg) next.push(activeStreamMsg);
+                        }
+                        chatHistory.splice(0, chatHistory.length, ...next);
+                    }
+                    if (stMeta) await this.saveChatMetadata(stMeta);
+                    if (Array.isArray(stChat)) await saveChat();
+                },
+                async syncCharactersFromST(stChars) {
+                    if (!Array.isArray(stChars)) return;
+                    const ids = _getActiveCharOrder();
+                    stChars.forEach((sc, idx) => {
+                        const id = sc._nikaId || ids[idx];
+                        if (id && char.data[id]) {
+                            char.data[id].data = { ...(char.data[id].data || {}), ...(sc.data || {}) };
+                            if (sc.data?.extensions) {
+                                char.data[id].data.extensions = { ...(char.data[id].data.extensions || {}), ...sc.data.extensions };
+                            }
+                        }
+                    });
+                    await saveCharacters();
+                },
+                async writeCharacterExtensionField(characterIdx, key, value) {
+                    const ids = _getActiveCharOrder();
+                    const id = ids[characterIdx];
+                    if (!id || !char.data[id]) return;
+                    char.data[id].data ||= {};
+                    char.data[id].data.extensions ||= {};
+                    char.data[id].data.extensions[key] = value;
+                    await saveCharacters();
+                },
+                async selectCharacterByIndex(idx) {
+                    const ids = _getActiveCharOrder();
+                    if (ids[idx]) await selectCharacter(ids[idx]);
+                },
+                async loadWorldInfo(name) {
+                    const activeChar = char.activeCharacterId ? char.data[char.activeCharacterId] : null;
+                    const charBook = activeChar?.data?.character_book;
+                    const charBookName = activeChar?.data?.extensions?.world || charBook?.name || (activeChar ? `${activeChar.name}_worldbook` : '');
+                    const toStBook = (entriesArr) => {
+                        const entries = {};
+                        const arr = Array.isArray(entriesArr) ? entriesArr : Object.values(entriesArr || {});
+                        arr.forEach((e, idx) => {
+                            const uid = e.uid ?? e.id ?? idx;
+                            const ext = e.extensions || {};
+                            entries[String(uid)] = {
+                                uid,
+                                key: Array.isArray(e.keys) ? e.keys : (Array.isArray(e.key) ? e.key : []),
+                                keysecondary: Array.isArray(e.secondary_keys) ? e.secondary_keys : (Array.isArray(e.keysecondary) ? e.keysecondary : []),
+                                comment: e.comment || e.name || '',
+                                content: e.content || '',
+                                constant: !!e.constant,
+                                selective: e.selective !== false,
+                                selectiveLogic: ext.selectiveLogic ?? e.selectiveLogic ?? 0,
+                                order: e.insertion_order ?? e.order ?? 100,
+                                position: typeof ext.position === 'number' ? ext.position : (e.position === 'after_char' ? 1 : (typeof e.position === 'number' ? e.position : 0)),
+                                disable: e.disable !== undefined ? !!e.disable : (e.enabled === false),
+                                depth: ext.depth ?? e.depth ?? 4,
+                                role: ext.role ?? e.role ?? 0,
+                                excludeRecursion: !!(ext.exclude_recursion ?? e.excludeRecursion),
+                                preventRecursion: !!(ext.prevent_recursion ?? e.preventRecursion),
+                                probability: ext.probability ?? e.probability ?? 100,
+                                useProbability: (ext.useProbability ?? e.useProbability) !== false,
+                                extensions: ext,
+                            };
+                        });
+                        return { entries };
+                    };
+                    if (charBook && (!name || name === charBookName || name === charBook.name || name === activeChar.name)) {
+                        return toStBook(charBook.entries);
+                    }
+                    if (wi.data && wi.data[name]) {
+                        return toStBook(wi.data[name]);
+                    }
+                    return { entries: {} };
+                },
+                async saveWorldInfo(name, data) {
+                    const entriesArr = Object.values(data?.entries || {});
+                    const activeChar = char.activeCharacterId ? char.data[char.activeCharacterId] : null;
+                    const charBook = activeChar?.data?.character_book || activeChar?.character_book;
+                    const charBookName = activeChar?.data?.extensions?.world || charBook?.name || (activeChar ? `${activeChar.name}_worldbook` : '');
+                    if (charBook && (!name || name === charBookName || name === charBook.name || name === activeChar?.name)) {
+                        const mapped = entriesArr.map((e, i) => ({
+                            id: e.uid ?? i,
+                            uid: e.uid ?? i,
+                            name: e.comment || e.name || '',
+                            keys: e.key || [],
+                            secondary_keys: e.keysecondary || [],
+                            comment: e.comment || e.name || '',
+                            content: e.content || '',
+                            constant: !!e.constant,
+                            selective: e.selective !== false,
+                            insertion_order: e.order ?? 100,
+                            priority: e.order ?? 100,
+                            enabled: !e.disable,
+                            disable: !!e.disable,
+                            position: e.position === 1 ? 'after_char' : 'before_char',
+                            extensions: { ...(e.extensions || {}), position: e.position ?? 0, depth: e.depth ?? 4, role: e.role ?? 0 },
+                        }));
+                        charBook.entries = mapped;
+                        if (activeChar?.data?.character_book && activeChar.data.character_book !== charBook) {
+                            activeChar.data.character_book.entries = mapped;
+                        }
+                        if (activeChar?.character_book && activeChar.character_book !== charBook) {
+                            activeChar.character_book.entries = mapped;
+                        }
+                        if (wi?.charBook) {
+                            wi.charBook.entries = mapped;
+                        }
+                        // 内存已同步更新，IndexedDB 持久化防抖 200ms，避免章节管理器循环调用 90 次 saveWorldInfo 时阻塞十几秒
+                        clearTimeout(window.__nikaStSaveCharsTimer);
+                        window.__nikaStSaveCharsTimer = setTimeout(() => { saveCharacters(); }, 200);
+                    } else if (name) {
+                        wi.data[name] = entriesArr;
+                        clearTimeout(window.__nikaStSaveWiTimer);
+                        window.__nikaStSaveWiTimer = setTimeout(() => { saveWiData(wi.data); }, 200);
+                    }
+                },
+                async createWorldInfo(name) {
+                    if (!name) return false;
+                    wi.data[name] = wi.data[name] || [];
+                    await saveWiData(wi.data);
+                    return true;
+                },
+                async deleteWorldInfo(name) {
+                    if (wi.data && name in wi.data) {
+                        delete wi.data[name];
+                        await saveWiData(wi.data);
+                        return true;
+                    }
+                    return false;
+                },
+                applyRegexST(rawString, placement, { isMarkdown = false, isPrompt = false } = {}) {
+                    if (typeof rawString !== 'string') return rawString;
+                    const allScripts = [
+                        ...(regex.data?.global || []),
+                        ...((regex.localEnableToggle?.checked !== false) ? (regex.data?.local || []) : []),
+                    ];
+                    let out = rawString;
+                    for (const s of allScripts) {
+                        if (!s || s.disabled || !s.findRegex) continue;
+                        if (Array.isArray(s.placement) && s.placement.length > 0 && !s.placement.includes(placement)) continue;
+                        if (s.markdownOnly && !isMarkdown) continue;
+                        if (s.promptOnly && !isPrompt) continue;
+                        try {
+                            let pattern = String(s.findRegex).trim();
+                            let flags = 'g';
+                            const m = pattern.match(/^\/([\s\S]+)\/([gimsuyd\s]*)$/);
+                            if (m) { pattern = m[1]; flags = (m[2] || 'g').replace(/[^gimsuyd]/g, '') || 'g'; }
+                            const re = new RegExp(pattern, flags);
+                            out = out.replace(re, function (...args) {
+                                const match = args[0];
+                                const hasGroupsObj = typeof args[args.length - 1] === 'object' && args[args.length - 1] !== null;
+                                const captures = args.slice(1, hasGroupsObj ? -3 : -2);
+                                let res = String(s.replaceString ?? '');
+                                res = res.replace(/\{\{match\}\}/gi, () => match);
+                                res = res.replace(/\$(\d+)/g, (m, numStr) => {
+                                    const idx = parseInt(numStr, 10) - 1;
+                                    return idx >= 0 && idx < captures.length && captures[idx] !== undefined ? captures[idx] : m;
+                                });
+                                return res;
+                            });
+                        } catch { }
+                    }
+                    return out;
+                },
+                addOneMessageFromST(stMsg) {
+                    addMessageToHistory({
+                        role: stMsg.is_user ? 'user' : 'assistant',
+                        content: stMsg.mes ?? '',
+                        hidden: !!stMsg.is_system,
+                        type: 'text',
+                        swipes: stMsg.swipes || [stMsg.mes ?? ''],
+                        swipe_id: stMsg.swipe_id ?? 0,
+                        variables: stMsg.variables || [],
+                    });
+                },
+                updateMessageFromST(mesId, stMsg, { rerenderMessage = true } = {}) {
+                    if (mesId < 0 || mesId >= chatHistory.length) return;
+                    const target = chatHistory[mesId];
+                    const prevContent = target.content;
+                    const prevSwipeId = target.swipe_id ?? 0;
+                    if (stMsg) {
+                        if (typeof stMsg.mes === 'string') target.content = stMsg.mes;
+                        if (Array.isArray(stMsg.swipes)) target.swipes = stMsg.swipes;
+                        if (typeof stMsg.swipe_id === 'number') target.swipe_id = stMsg.swipe_id;
+                        if (stMsg.variables) target.variables = stMsg.variables;
+                        if (stMsg.extra) target.extra = stMsg.extra;
+                        if (stMsg.is_ejs_processed) target.is_ejs_processed = stMsg.is_ejs_processed;
+                        if (stMsg.variables_initialized) target.variables_initialized = stMsg.variables_initialized;
+                    }
+                    const contentChanged = target.content !== prevContent;
+                    const swipeChanged = (target.swipe_id ?? 0) !== prevSwipeId;
+                    saveChat();
+                    if (rerenderMessage && (contentChanged || swipeChanged)) {
+                        const existingEl = document.getElementById(target.id);
+                        if (existingEl && existingEl.parentNode) {
+                            renderMessage(target, { replaceElement: existingEl, silent: true });
+                            const isUser = target.role === 'user';
+                            setTimeout(() => {
+                                if (swipeChanged) window.__NIKA_ST_RUNTIME__?.notifyMessageSwiped?.(mesId);
+                                window.__NIKA_ST_RUNTIME__?.notifyMessageRendered?.(mesId, isUser);
+                            }, 0);
+                        } else {
+                            renderMessages();
+                        }
+                    }
+                },
+                rerenderAllMessages() { renderMessages(); },
+                async reloadCurrentChat() {
+                    if (char.activeCharacterId) {
+                        await loadChatHistory(char.activeCharacterId);
+                        window.__NIKA_ST_RUNTIME__?.notifyChatChanged?.();
+                    }
+                },
+                async clearChat() {
+                    chatHistory = [];
+                    chatMessages.innerHTML = '';
+                    await saveChat();
+                },
+                async startNewChat() {
+                    if (typeof startNewChat === 'function') {
+                        await startNewChat();
+                    } else {
+                        await this.clearChat();
+                    }
+                },
+                async addMessage(msgData) { await addMessageToHistory(msgData); },
+                async setMessageHidden(idx, hidden) {
+                    if (chatHistory[idx]) {
+                        chatHistory[idx].hidden = !!hidden;
+                        await saveChat();
+                        renderMessages();
+                    }
+                },
+                async triggerGenerate() { await sendApiRequest(); },
+                stopGeneration() { },
+                async callLLM(messages, options = {}) {
+                    const apiConfig = getCurrentApiConfig();
+                    if (!apiConfig?.url || !apiConfig?.key || !apiConfig?.model) {
+                        throw new Error('请先在 API 设置中配置 URL、Key 和模型');
+                    }
+                    const urlObj = new URL(apiConfig.url);
+                    let endpoint = `${apiConfig.url.replace(/\/$/, '')}/chat/completions`;
+                    const headers = { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiConfig.key}` };
+                    let body = {
+                        model: apiConfig.model,
+                        messages,
+                        stream: false,
+                        temperature: options.temperature ?? 0.7,
+                        max_tokens: options.max_tokens || 4096,
+                    };
+                    if (urlObj.hostname.includes('google')) {
+                        endpoint = `${urlObj.origin}/v1beta/models/${apiConfig.model}:generateContent?key=${apiConfig.key}`;
+                        delete headers.Authorization;
+                        const sys = messages.filter(m => m.role === 'system').map(m => m.content).join('\n\n');
+                        const nonSys = messages.filter(m => m.role !== 'system');
+                        body = {
+                            contents: nonSys.map(m => ({ role: m.role === 'assistant' ? 'model' : 'user', parts: [{ text: String(m.content || '') }] })),
+                            ...(sys ? { systemInstruction: { parts: [{ text: sys }] } } : {}),
+                        };
+                    }
+                    const res = await fetch(endpoint, { method: 'POST', headers, body: JSON.stringify(body), signal: options.signal });
+                    if (!res.ok) throw new Error(`LLM HTTP ${res.status}`);
+                    const data = await res.json();
+                    if (data.choices) return data.choices[0]?.message?.content || '';
+                    if (data.candidates) return data.candidates[0]?.content?.parts?.[0]?.text || '';
+                    return '';
+                },
+                getActivePresetName() {
+                    return document.querySelector('.preset-item.active')?.dataset.name || 'Default';
+                },
+                getPresetNames() {
+                    const keys = Object.keys(stPresetsMirror);
+                    if (keys.length) return keys;
+                    return Array.from(document.querySelectorAll('.preset-item')).map(el => el.dataset.name).filter(Boolean);
+                },
+                getAllPresetsMap() {
+                    return stPresetsMirror;
+                },
+                getPresetByName(name) {
+                    if (!name) return null;
+                    return stPresetsMirror[name] || null;
+                },
+                async savePresetByName(name, stPresetObj) {
+                    const targetName = name || this.getActivePresetName();
+                    const all = await getPresets();
+                    const converted = _stPresetToNika(stPresetObj, all[targetName] || {});
+                    all[targetName] = converted;
+                    stPresetsMirror[targetName] = _nikaPresetToST(converted);
+                    await idbStorage.setItem('presets_v4', JSON.stringify(all));
+                    if (targetName === this.getActivePresetName()) {
+                        await loadPresetsList();
+                        await selectPreset(targetName);
+                    }
+                    triggerAutoSave();
+                },
+                async syncInUsePresetFromST(stOaiObj) {
+                    const activeName = this.getActivePresetName();
+                    await this.savePresetByName(activeName, stOaiObj);
+                },
+                async selectPresetByName(name) {
+                    if (name && typeof selectPreset === 'function') {
+                        await selectPreset(name);
+                    }
+                },
+                async deletePresetByName(name) {
+                    if (!name || name === 'Default') return false;
+                    const all = await getPresets();
+                    if (name in all) {
+                        delete all[name];
+                        delete stPresetsMirror[name];
+                        await idbStorage.setItem('presets_v4', JSON.stringify(all));
+                        await loadPresetsList();
+                        return true;
+                    }
+                    return false;
+                },
+            };
+
             // 异步初始化函数
             async function initializeApp() {
                 // 先初始化主题和偏好设置（需要等待IndexedDB加载）
@@ -13514,8 +14407,15 @@ You must structure your entire output strictly in the following format, without 
 
                 await userManagement.init();
                 loadApiConfigs();
-                loadPresetsList();
+                await loadPresetsList();
+                await _refreshPresetsMirror();
                 await loadCharacters(); // This now handles loading character data and then triggers WI/Regex loads.
+                if (char.activeCharacterId) {
+                    await window.__NIKA_ST_BRIDGE__.loadChatMetadataFor(char.activeCharacterId);
+                }
+                if (window.__NIKA_ST_RUNTIME__?.init) {
+                    await window.__NIKA_ST_RUNTIME__.init();
+                }
             }
 
             // 执行初始化
@@ -13936,7 +14836,7 @@ You must structure your entire output strictly in the following format, without 
                         msgsToSummarize.forEach(m => m.hidden = true);
                         await saveChat();
                         // 刷新界面
-                        document.getElementById('chat-messages').innerHTML = '';
+                        document.getElementById('chat').innerHTML = '';
                         loadChatHistory(char.activeCharacterId);
                     }
 
@@ -14815,13 +15715,13 @@ CG信息：
                         });
                     }
 
-                    document.getElementById('spm-copy-positive').onclick = function() {
+                    document.getElementById('spm-copy-positive').onclick = function () {
                         copyText(positivePrompt, this);
                     };
-                    document.getElementById('spm-copy-negative').onclick = function() {
+                    document.getElementById('spm-copy-negative').onclick = function () {
                         copyText(negativePrompt, this);
                     };
-                    document.getElementById('spm-copy-all').onclick = function() {
+                    document.getElementById('spm-copy-all').onclick = function () {
                         copyText(`正面提示词：\n${positivePrompt}\n\n负面提示词：\n${negativePrompt}`, this);
                     };
                 },
@@ -15449,7 +16349,7 @@ ${messageText}`;
 
             // 监听消息渲染，自动解析并渲染CG卡片
             document.addEventListener('DOMContentLoaded', () => {
-                const chatMessages = document.getElementById('chat-messages');
+                const chatMessages = document.getElementById('chat');
                 if (chatMessages) {
                     console.log('🎬 CG卡片监听器已启动');
 

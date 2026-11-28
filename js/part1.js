@@ -233,6 +233,22 @@ async function updatePageContent() {
         }
     });
 
+    // 更新所有带有 data-i18n-title 属性的元素的 title
+    document.querySelectorAll('[data-i18n-title]').forEach(element => {
+        const key = element.getAttribute('data-i18n-title');
+        if (key) {
+            element.title = t(key);
+        }
+    });
+
+    // 更新所有带有 data-i18n-html 属性的元素的 innerHTML（仅限静态翻译文案）
+    document.querySelectorAll('[data-i18n-html]').forEach(element => {
+        const key = element.getAttribute('data-i18n-html');
+        if (key) {
+            element.innerHTML = t(key);
+        }
+    });
+
     // 更新标题
     document.title = t('app-title');
 
@@ -259,21 +275,26 @@ async function updatePageContent() {
 `;
     }
 
-    const createBtn = document.querySelector('#library-view .header-buttons button:first-child');
+    const createBtn = document.querySelector('#library-view .header-buttons button[onclick*="showEditorView"]');
     if (createBtn) createBtn.textContent = '+ ' + t('create-new-character');
 
-    const novelToWorldbookBtn = document.querySelector('#library-view .header-buttons button:nth-child(2)');
-    if (novelToWorldbookBtn && novelToWorldbookBtn.onclick.toString().includes('showNovelToWorldbookView')) {
+    const novelToWorldbookBtn = document.querySelector('#library-view .header-buttons button[onclick*="showNovelToWorldbookView"]');
+    if (novelToWorldbookBtn) {
         novelToWorldbookBtn.textContent = t('txt-to-worldbook');
     }
 
-    const importBtn = document.querySelector('#library-view .header-buttons button:nth-child(3)');
-    if (importBtn && importBtn.onclick.toString().includes('file-importer')) {
+    const novelToCardBtn = document.querySelector('#library-view .header-buttons button[onclick*="showNovelToCardView"]');
+    if (novelToCardBtn) {
+        novelToCardBtn.textContent = t('novel-to-card');
+    }
+
+    const importBtn = document.querySelector('#library-view .header-buttons button[onclick*="file-importer"]');
+    if (importBtn) {
         importBtn.textContent = t('import-character');
     }
 
-    const continueChatBtn = document.querySelector('#library-view .header-buttons button:nth-child(4)');
-    if (continueChatBtn && continueChatBtn.onclick.toString().includes('continueChatting')) {
+    const continueChatBtn = document.querySelector('#library-view .header-buttons button[onclick*="continueChatting"]');
+    if (continueChatBtn) {
         continueChatBtn.textContent = t('continue-chatting');
     }
 
@@ -392,9 +413,18 @@ async function updatePageContent() {
     const wbAiRequestInput = document.getElementById('wb-ai-request-input');
     if (wbAiRequestInput) wbAiRequestInput.placeholder = t('wb-ai-request-placeholder');
 
-    // 更新长文本转世界书页面
+    // 更新小说转世界书与小说转剧情卡页面标题及副标题
     const novelToWorldbookTitle = document.getElementById('novel-to-worldbook-title');
     if (novelToWorldbookTitle) novelToWorldbookTitle.textContent = t('novel-to-worldbook');
+
+    const novelToWorldbookSubtitle = document.getElementById('novel-to-worldbook-subtitle');
+    if (novelToWorldbookSubtitle) novelToWorldbookSubtitle.textContent = t('novel-to-worldbook-subtitle');
+
+    const novelToCardTitle = document.getElementById('novel-to-card-title');
+    if (novelToCardTitle) novelToCardTitle.textContent = t('novel-to-card');
+
+    const novelToCardSubtitle = document.getElementById('novel-to-card-subtitle');
+    if (novelToCardSubtitle) novelToCardSubtitle.textContent = t('novel-to-card-subtitle');
 
     const novelReturnBtn = document.getElementById('novel-return-btn');
     if (novelReturnBtn) novelReturnBtn.textContent = t('return');
@@ -600,6 +630,12 @@ async function updatePageContent() {
         const worldbookData = buildWorldbookDataFromDOM();
         renderWorldbookFromData(worldbookData);
     }
+
+    // 同步通知各独立模块刷新动态界面文案
+    try { if (typeof renderCategoriesList === 'function') renderCategoriesList(); } catch (e) {}
+    try { window.NTC?.onLanguageChanged?.(); } catch (e) {}
+    try { window.PromptManager?.onLanguageChanged?.(); } catch (e) {}
+    try { window.DualPane?.onLanguageChanged?.(); } catch (e) {}
 }
 
 // 更新表单标签
@@ -878,14 +914,16 @@ async function translateAllFields(button) {
         dataToTranslate.worldbook = wbTextObject;
     }
 
-    let prompt = getLanguagePrefix() + `You are an expert translator. Translate the following JSON object's string values from ${fromLang} to ${toLang}.
+    let prompt = getLanguagePrefix() + (typeof PromptManager !== 'undefined'
+        ? PromptManager.render('translate_card', { fromLang, toLang, jsonData: JSON.stringify(dataToTranslate, null, 2) })
+        : `You are an expert translator. Translate the following JSON object's string values from ${fromLang} to ${toLang}.
 Maintain the original JSON structure and keys. For keys like "tags" or "keys", translate each item in the comma-separated string individually.
 For array fields like "alternate_greetings", translate each greeting string and maintain the exact array length and order.
 Do not translate special placeholders like {{user}} or {{char}} or "<START>".
 
 Translate this data:
 ${JSON.stringify(dataToTranslate, null, 2)}
-`;
+`);
 
     // 3. 调用API
     const originalText = button.textContent;
@@ -1220,7 +1258,403 @@ function initializeOtherSettingsModal() {
             modal.style.display = 'none';
         }
     });
+
+    // 全站数据（index + chat）一键备份与恢复
+    const fullExportBtn = document.getElementById('full-backup-export-btn');
+    const fullImportBtn = document.getElementById('full-backup-import-btn');
+    const fullImportFile = document.getElementById('full-backup-import-file');
+    if (fullExportBtn) {
+        fullExportBtn.onclick = () => window.NikaFullBackup.exportAll();
+    }
+    if (fullImportBtn && fullImportFile) {
+        fullImportBtn.onclick = () => fullImportFile.click();
+        fullImportFile.onchange = async () => {
+            const file = fullImportFile.files && fullImportFile.files[0];
+            fullImportFile.value = '';
+            if (file) await window.NikaFullBackup.importFromFile(file);
+        };
+    }
 }
+
+// ============================================================
+// 全站数据（index + chat）一键备份与恢复引擎
+// ============================================================
+window.NikaFullBackup = (() => {
+    const KNOWN_DBS = [
+        'NikaChatDB',
+        'CharacterDB',
+        'ModelListDB',
+        'TavernConfigDB',
+        'ProvidersDB',
+        'MemoryHistoryDB',
+        'FoldStateDB',
+        'CustomTemplateDB',
+        'NovelWorldbookDB',
+        'NikaAgentDB',
+        'NikaNovelToCardDB',
+    ];
+
+    function setStatus(msg, isError = false) {
+        const el = document.getElementById('full-backup-status');
+        if (el) {
+            el.textContent = msg;
+            el.style.display = msg ? 'block' : 'none';
+            el.style.color = isError ? '#f87171' : '#ffd099';
+        }
+    }
+
+    function bytesToBase64(uint8) {
+        let binary = '';
+        const chunk = 0x8000;
+        for (let i = 0; i < uint8.length; i += chunk) {
+            binary += String.fromCharCode.apply(null, uint8.subarray(i, i + chunk));
+        }
+        return btoa(binary);
+    }
+
+    function base64ToUint8(b64) {
+        const bin = atob(b64);
+        const out = new Uint8Array(bin.length);
+        for (let i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
+        return out;
+    }
+
+    async function serializeValue(val) {
+        if (val === null || val === undefined) return val;
+        const t = typeof val;
+        if (t === 'string' || t === 'number' || t === 'boolean') return val;
+        if (val instanceof Date) return { __nikaType: 'date', iso: val.toISOString() };
+        if (typeof Blob !== 'undefined' && val instanceof Blob) {
+            const buf = await val.arrayBuffer();
+            return {
+                __nikaType: 'blob',
+                mime: val.type || '',
+                name: typeof File !== 'undefined' && val instanceof File ? val.name : undefined,
+                base64: bytesToBase64(new Uint8Array(buf)),
+            };
+        }
+        if (val instanceof ArrayBuffer) {
+            return { __nikaType: 'arraybuffer', base64: bytesToBase64(new Uint8Array(val)) };
+        }
+        if (ArrayBuffer.isView(val)) {
+            const u8 = new Uint8Array(val.buffer, val.byteOffset, val.byteLength);
+            return { __nikaType: 'typedarray', ctor: val.constructor?.name || 'Uint8Array', base64: bytesToBase64(u8) };
+        }
+        if (val instanceof Map) {
+            const entries = [];
+            for (const [k, v] of val.entries()) entries.push([await serializeValue(k), await serializeValue(v)]);
+            return { __nikaType: 'map', entries };
+        }
+        if (val instanceof Set) {
+            const items = [];
+            for (const v of val.values()) items.push(await serializeValue(v));
+            return { __nikaType: 'set', items };
+        }
+        if (Array.isArray(val)) {
+            const out = new Array(val.length);
+            for (let i = 0; i < val.length; i++) out[i] = await serializeValue(val[i]);
+            return out;
+        }
+        if (t === 'object') {
+            const out = {};
+            for (const key of Object.keys(val)) {
+                out[key] = await serializeValue(val[key]);
+            }
+            return out;
+        }
+        return val;
+    }
+
+    function deserializeValue(val) {
+        if (val === null || val === undefined || typeof val !== 'object') return val;
+        if (Array.isArray(val)) return val.map(deserializeValue);
+        if (val.__nikaType) {
+            switch (val.__nikaType) {
+                case 'date': return new Date(val.iso);
+                case 'blob': {
+                    const bytes = base64ToUint8(val.base64);
+                    if (val.name && typeof File !== 'undefined') return new File([bytes], val.name, { type: val.mime || '' });
+                    return new Blob([bytes], { type: val.mime || '' });
+                }
+                case 'arraybuffer': return base64ToUint8(val.base64).buffer;
+                case 'typedarray': {
+                    const bytes = base64ToUint8(val.base64);
+                    const Ctor = (typeof window !== 'undefined' && window[val.ctor]) || Uint8Array;
+                    return new Ctor(bytes.buffer);
+                }
+                case 'map': return new Map((val.entries || []).map(([k, v]) => [deserializeValue(k), deserializeValue(v)]));
+                case 'set': return new Set((val.items || []).map(deserializeValue));
+            }
+        }
+        const out = {};
+        for (const key of Object.keys(val)) {
+            out[key] = deserializeValue(val[key]);
+        }
+        return out;
+    }
+
+    function openDbExisting(name) {
+        return new Promise((resolve, reject) => {
+            const req = indexedDB.open(name);
+            req.onsuccess = () => resolve(req.result);
+            req.onerror = () => reject(req.error);
+        });
+    }
+
+    async function dumpDatabase(name) {
+        const db = await openDbExisting(name);
+        try {
+            const storeNames = Array.from(db.objectStoreNames || []);
+            if (storeNames.length === 0) return null;
+            const stores = {};
+            for (const storeName of storeNames) {
+                const tx = db.transaction([storeName], 'readonly');
+                const store = tx.objectStore(storeName);
+                const indexes = Array.from(store.indexNames || []).map(idxName => {
+                    const idx = store.index(idxName);
+                    return {
+                        name: idx.name,
+                        keyPath: idx.keyPath,
+                        unique: idx.unique,
+                        multiEntry: idx.multiEntry,
+                    };
+                });
+                const rawRecords = await new Promise((resolve, reject) => {
+                    const items = [];
+                    const cursorReq = store.openCursor();
+                    cursorReq.onsuccess = (e) => {
+                        const cursor = e.target.result;
+                        if (cursor) {
+                            items.push({ key: cursor.key, value: cursor.value });
+                            cursor.continue();
+                        } else {
+                            resolve(items);
+                        }
+                    };
+                    cursorReq.onerror = () => reject(cursorReq.error);
+                });
+                const records = [];
+                for (const rec of rawRecords) {
+                    records.push({
+                        key: await serializeValue(rec.key),
+                        value: await serializeValue(rec.value),
+                    });
+                }
+                stores[storeName] = {
+                    keyPath: store.keyPath,
+                    autoIncrement: store.autoIncrement,
+                    indexes,
+                    records,
+                };
+            }
+            return { version: db.version, stores };
+        } finally {
+            db.close();
+        }
+    }
+
+    async function restoreDatabase(name, dbData) {
+        if (!dbData || !dbData.stores) return 0;
+        const targetStoreNames = Object.keys(dbData.stores);
+        if (targetStoreNames.length === 0) return 0;
+
+        let db = await openDbExisting(name);
+        const missing = targetStoreNames.filter(sn => !db.objectStoreNames.contains(sn));
+
+        if (missing.length > 0) {
+            const nextVer = Math.max((db.version || 1) + 1, dbData.version || 1);
+            db.close();
+            db = await new Promise((resolve, reject) => {
+                const req = indexedDB.open(name, nextVer);
+                req.onupgradeneeded = (e) => {
+                    const udb = e.target.result;
+                    for (const sn of missing) {
+                        const meta = dbData.stores[sn];
+                        const opts = {};
+                        if (meta.keyPath !== null && meta.keyPath !== undefined) opts.keyPath = meta.keyPath;
+                        if (meta.autoIncrement) opts.autoIncrement = true;
+                        const st = udb.createObjectStore(sn, opts);
+                        for (const idx of (meta.indexes || [])) {
+                            try {
+                                st.createIndex(idx.name, idx.keyPath, { unique: !!idx.unique, multiEntry: !!idx.multiEntry });
+                            } catch {}
+                        }
+                    }
+                };
+                req.onsuccess = () => resolve(req.result);
+                req.onerror = () => reject(req.error);
+            });
+        }
+
+        let totalRestored = 0;
+        try {
+            const tx = db.transaction(targetStoreNames, 'readwrite');
+            for (const sn of targetStoreNames) {
+                const meta = dbData.stores[sn];
+                const st = tx.objectStore(sn);
+                st.clear();
+                for (const rec of (meta.records || [])) {
+                    const val = deserializeValue(rec.value);
+                    const key = deserializeValue(rec.key);
+                    if (st.keyPath !== null && st.keyPath !== undefined) {
+                        st.put(val);
+                    } else {
+                        st.put(val, key);
+                    }
+                    totalRestored++;
+                }
+            }
+            await new Promise((resolve, reject) => {
+                tx.oncomplete = () => resolve();
+                tx.onerror = () => reject(tx.error);
+                tx.onabort = () => reject(tx.error || new Error('IndexedDB transaction aborted'));
+            });
+        } finally {
+            db.close();
+        }
+        return totalRestored;
+    }
+
+    async function discoverDatabases() {
+        if (typeof indexedDB.databases === 'function') {
+            try {
+                const dbs = await indexedDB.databases();
+                const names = dbs.map(d => d && d.name).filter(Boolean);
+                if (names.length > 0) return Array.from(new Set(names));
+            } catch {}
+        }
+        return KNOWN_DBS;
+    }
+
+    const isEn = () => (typeof currentLanguage !== 'undefined' ? currentLanguage : localStorage.getItem('language')) === 'en';
+
+    async function exportAll({ download = true } = {}) {
+        try {
+            setStatus(isEn() ? '⏳ Scanning & packaging all Studio and Chat data...' : '⏳ 正在扫描并打包 index 与 chat 全部数据...');
+            const lsData = {};
+            for (let i = 0; i < localStorage.length; i++) {
+                const k = localStorage.key(i);
+                if (k !== null) lsData[k] = localStorage.getItem(k);
+            }
+
+            const dbNames = await discoverDatabases();
+            const idbData = {};
+            let totalRecords = 0;
+            let dbCount = 0;
+            for (const name of dbNames) {
+                try {
+                    const dumped = await dumpDatabase(name);
+                    if (dumped && Object.keys(dumped.stores).length > 0) {
+                        idbData[name] = dumped;
+                        dbCount++;
+                        for (const st of Object.values(dumped.stores)) {
+                            totalRecords += (st.records || []).length;
+                        }
+                    }
+                } catch (e) {
+                    console.warn('[FullBackup] Skip DB', name, e);
+                }
+            }
+
+            const payload = {
+                format: 'nika-studio-full-backup',
+                version: 1,
+                exportedAt: new Date().toISOString(),
+                origin: window.location.origin,
+                localStorage: lsData,
+                indexedDB: idbData,
+            };
+
+            const jsonStr = JSON.stringify(payload);
+            const sizeKB = (new Blob([jsonStr]).size / 1024).toFixed(1);
+            const now = new Date();
+            const stamp = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}-${String(now.getHours()).padStart(2, '0')}${String(now.getMinutes()).padStart(2, '0')}${String(now.getSeconds()).padStart(2, '0')}`;
+
+            if (download) {
+                const blob = new Blob([jsonStr], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `nika-studio-full-backup-${stamp}.json`;
+                document.body.appendChild(a);
+                a.click();
+                a.remove();
+                setTimeout(() => URL.revokeObjectURL(url), 1500);
+            }
+
+            const summary = isEn()
+                ? `✅ Backup complete: ${dbCount} databases (${totalRecords} records) + ${Object.keys(lsData).length} local settings, ${sizeKB} KB`
+                : `✅ 备份完成：${dbCount} 个数据库（共 ${totalRecords} 条记录）+ ${Object.keys(lsData).length} 项本地配置，大小 ${sizeKB} KB`;
+            setStatus(summary);
+            return payload;
+        } catch (err) {
+            console.error('[FullBackup] Export failed:', err);
+            setStatus((isEn() ? '❌ Backup failed: ' : '❌ 备份失败：') + (err.message || err), true);
+            alert((isEn() ? 'Backup failed: ' : '备份失败: ') + (err.message || err));
+            throw err;
+        }
+    }
+
+    async function importData(payload, { skipConfirm = false, autoReload = true } = {}) {
+        if (!payload || payload.format !== 'nika-studio-full-backup' || !payload.indexedDB || !payload.localStorage) {
+            throw new Error(isEn()
+                ? 'Invalid Nika Studio full backup file (missing format/indexedDB/localStorage)'
+                : '无效的妮卡工作室全量备份文件（缺少 format/indexedDB/localStorage）');
+        }
+        const dbNames = Object.keys(payload.indexedDB);
+        const lsKeys = Object.keys(payload.localStorage);
+        let recCount = 0;
+        for (const db of Object.values(payload.indexedDB)) {
+            for (const st of Object.values(db.stores || {})) recCount += (st.records || []).length;
+        }
+
+        if (!skipConfirm) {
+            const ok = confirm(
+                isEn()
+                    ? `Restore full backup?\n\nExported at: ${payload.exportedAt || 'Unknown'}\nIncludes: ${dbNames.length} databases (${recCount} records) + ${lsKeys.length} local settings\n\n⚠️ This will overwrite ALL current Studio and Chat data in this browser. Continue?`
+                    : `确认恢复全量备份？\n\n导出时间：${payload.exportedAt || '未知'}\n包含数据：${dbNames.length} 个数据库（${recCount} 条记录）+ ${lsKeys.length} 项本地配置\n\n⚠️ 此操作将覆盖当前浏览器中 index 工作室与 chat 聊天页的所有数据，确定继续吗？`
+            );
+            if (!ok) return false;
+        }
+
+        setStatus(isEn() ? '⏳ Restoring localStorage and all IndexedDB databases...' : '⏳ 正在恢复 localStorage 与全部 IndexedDB 数据库...');
+        localStorage.clear();
+        for (const [k, v] of Object.entries(payload.localStorage)) {
+            if (typeof v === 'string') localStorage.setItem(k, v);
+        }
+
+        let restoredTotal = 0;
+        for (const [dbName, dbData] of Object.entries(payload.indexedDB)) {
+            restoredTotal += await restoreDatabase(dbName, dbData);
+        }
+
+        const doneMsg = isEn()
+            ? `✅ Restore complete: ${dbNames.length} databases (${restoredTotal} records) + ${lsKeys.length} local settings`
+            : `✅ 恢复完成：已还原 ${dbNames.length} 个数据库（${restoredTotal} 条记录）+ ${lsKeys.length} 项本地配置`;
+        setStatus(doneMsg);
+        if (autoReload) {
+            alert(doneMsg + (isEn() ? '\n\nClick OK to reload and apply the restored data.' : '\n\n点击确定刷新页面以加载恢复后的数据。'));
+            window.location.reload();
+        }
+        return { dbCount: dbNames.length, restoredTotal, lsCount: lsKeys.length };
+    }
+
+    async function importFromFile(file) {
+        try {
+            setStatus(isEn() ? '⏳ Reading backup file...' : '⏳ 正在读取备份文件...');
+            const text = await file.text();
+            const payload = JSON.parse(text);
+            return await importData(payload);
+        } catch (err) {
+            console.error('[FullBackup] Import failed:', err);
+            setStatus((isEn() ? '❌ Restore failed: ' : '❌ 恢复失败：') + (err.message || err), true);
+            alert((isEn() ? 'Restore failed: ' : '恢复备份失败: ') + (err.message || err));
+            return false;
+        }
+    }
+
+    return { exportAll, importData, importFromFile };
+})();
 
 // 全局存储事件处理函数，避免重复绑定
 let apiProviderChangeHandler = null;
@@ -1270,6 +1704,14 @@ function initializeApiSettingsModal() {
         };
     }
 
+    // Handle refresh DeepSeek models button
+    const refreshDeepSeekModelsBtn = document.getElementById('refresh-deepseek-models-btn');
+    if (refreshDeepSeekModelsBtn) {
+        refreshDeepSeekModelsBtn.onclick = async () => {
+            await refreshDeepSeekModels();
+        };
+    }
+
     // Handle refresh Ollama models button
     const refreshOllamaModelsBtn = document.getElementById('refresh-ollama-models-btn');
     if (refreshOllamaModelsBtn) {
@@ -1301,16 +1743,9 @@ function initializeApiSettingsModal() {
                 apiKey: document.getElementById('deepseek-api-key').value.trim(),
                 model: document.getElementById('deepseek-model').value,
             },
+            // 保留全局破限字段以兼容“其他设置”中的全局破限开关
             gemini: {
-                apiKey: document.getElementById('gemini-api-key').value.trim(),
-                model: document.getElementById('gemini-model').value,
-                useSystemPrompt: useSystemPrompt, // 使用全局破限开关
-            },
-            'gemini-proxy': {
-                endpoint: document.getElementById('gemini-proxy-endpoint').value.trim(),
-                apiKey: document.getElementById('gemini-proxy-api-key').value.trim(),
-                model: document.getElementById('gemini-proxy-model').value,
-                useSystemPrompt: useSystemPrompt, // 使用全局破限开关（保持兼容性）
+                useSystemPrompt: useSystemPrompt,
             },
             ollama: {
                 endpoint: document.getElementById('ollama-api-endpoint').value.trim() || 'http://localhost:11434',
@@ -1332,7 +1767,7 @@ function initializeApiSettingsModal() {
         };
 
         // 读取每个服务商的最大上下文设置
-        const providersWithContext = ['deepseek', 'gemini', 'gemini-proxy', 'ollama', 'tavern', 'local'];
+        const providersWithContext = ['deepseek', 'ollama', 'tavern', 'local'];
         for (const p of providersWithContext) {
             const input = document.getElementById(p + '-context-window');
             if (input) {
@@ -1471,21 +1906,34 @@ function loadApiSettings() {
             localStorage.setItem('apiSettings', JSON.stringify(settings));
         }
 
+        // 废弃的 gemini / gemini-proxy 自动平滑回退到 deepseek，其余服务商保持原样不动
+        const validProviders = ['deepseek', 'ollama', 'local', 'tavern'];
+        if (!validProviders.includes(settings.provider)) {
+            settings.provider = 'deepseek';
+        }
+
         document.getElementById('api-provider-selector').value = settings.provider;
         document.getElementById('deepseek-api-key').value = settings.deepseek?.apiKey || '';
-        document.getElementById('deepseek-model').value = settings.deepseek?.model || 'deepseek-v4-flash';
-        document.getElementById('gemini-api-key').value = settings.gemini?.apiKey || '';
-        document.getElementById('gemini-model').value = settings.gemini?.model || 'gemini-2.5-flash';
+        const savedDeepSeekModel = settings.deepseek?.model || 'deepseek-chat';
+        const deepseekSelect = document.getElementById('deepseek-model');
+        if (deepseekSelect) {
+            if (savedDeepSeekModel && !Array.from(deepseekSelect.options).some(o => o.value === savedDeepSeekModel)) {
+                const opt = document.createElement('option');
+                opt.value = savedDeepSeekModel;
+                opt.textContent = savedDeepSeekModel;
+                deepseekSelect.appendChild(opt);
+            }
+            deepseekSelect.value = savedDeepSeekModel;
+        }
+        // 从 IndexedDB 加载 DeepSeek 已拉取的最新模型列表（保留老用户已有选中）
+        loadModelListFromDB('deepseek', 'deepseek-model', savedDeepSeekModel);
+
         // 全局破限开关已移至"其他设置"，使用相同的ID gemini-use-system-prompt
         const globalJailbreakSwitch = document.getElementById('gemini-use-system-prompt');
         if (globalJailbreakSwitch) {
             // 默认为true，只有明确设为false时才是false
             globalJailbreakSwitch.checked = settings.gemini?.useSystemPrompt !== false;
         }
-        document.getElementById('gemini-proxy-endpoint').value = settings['gemini-proxy']?.endpoint || '';
-        document.getElementById('gemini-proxy-api-key').value = settings['gemini-proxy']?.apiKey || '';
-        document.getElementById('gemini-proxy-model').value = settings['gemini-proxy']?.model || 'gemini-2.5-flash';
-        // gemini-proxy-use-system-prompt 已删除，使用全局开关
 
         // Load Ollama settings
         document.getElementById('ollama-api-endpoint').value = settings.ollama?.endpoint || 'http://localhost:11434';
@@ -1529,7 +1977,7 @@ function loadApiSettings() {
         }
 
         // 加载每个服务商的最大上下文设置
-        const providersWithContext = ['deepseek', 'gemini', 'gemini-proxy', 'ollama', 'tavern', 'local'];
+        const providersWithContext = ['deepseek', 'ollama', 'tavern', 'local'];
         for (const p of providersWithContext) {
             const input = document.getElementById(p + '-context-window');
             if (input) {
@@ -1572,13 +2020,97 @@ async function loadModelListFromDB(provider, selectElementId, currentValue) {
                 selectElement.appendChild(option);
             });
 
-            // 恢复之前选中的模型
+            // 恢复之前选中的模型（若不在缓存列表中则补充保留，确保已有用户数据不丢失）
             if (currentValue) {
+                if (!models.some(m => m.id === currentValue)) {
+                    const opt = document.createElement('option');
+                    opt.value = currentValue;
+                    opt.textContent = currentValue;
+                    selectElement.appendChild(opt);
+                }
                 selectElement.value = currentValue;
             }
         }
     } catch (error) {
         console.error(`❌ 加载 ${provider} 模型列表失败:`, error);
+    }
+}
+
+// --- Refresh DeepSeek Models Function ---
+async function refreshDeepSeekModels() {
+    const refreshBtn = document.getElementById('refresh-deepseek-models-btn');
+    const modelSelect = document.getElementById('deepseek-model');
+    const apiKey = document.getElementById('deepseek-api-key')?.value.trim();
+
+    if (!apiKey) {
+        alert(currentLanguage === 'en' ? 'Please enter your DeepSeek API Key first.' : '请先输入 DeepSeek API Key');
+        return;
+    }
+
+    const originalText = refreshBtn.textContent;
+    refreshBtn.disabled = true;
+    refreshBtn.textContent = currentLanguage === 'en' ? 'Fetching...' : '获取中...';
+
+    try {
+        const response = await fetch('https://api.deepseek.com/models', {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${apiKey}`,
+                'Content-Type': 'application/json'
+            }
+        });
+
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+
+        const data = await response.json();
+        mylog('DeepSeek models response:', data);
+
+        let models = [];
+        if (data.data && Array.isArray(data.data)) {
+            models = data.data
+                .filter(m => m && m.id)
+                .map(m => ({ id: m.id, name: m.id }));
+        } else if (Array.isArray(data)) {
+            models = data.map(m => ({
+                id: typeof m === 'string' ? m : m.id,
+                name: typeof m === 'string' ? m : (m.name || m.id)
+            })).filter(m => m.id);
+        } else {
+            throw new Error('无法解析模型列表格式');
+        }
+
+        if (models.length === 0) {
+            throw new Error('未找到可用模型');
+        }
+
+        const currentValue = modelSelect.value;
+
+        modelSelect.innerHTML = `<option value="">${t('select-model-placeholder') || '请选择模型...'}</option>`;
+        models.forEach(model => {
+            const option = document.createElement('option');
+            option.value = model.id;
+            option.textContent = model.name;
+            modelSelect.appendChild(option);
+        });
+
+        if (currentValue && models.some(m => m.id === currentValue)) {
+            modelSelect.value = currentValue;
+        } else {
+            modelSelect.value = models[0].id;
+        }
+
+        // 持久化模型列表到 IndexedDB
+        await ModelListDB.saveModelList('deepseek', models);
+
+        alert(t('models-fetched', { count: models.length }));
+    } catch (error) {
+        console.error('获取 DeepSeek 模型列表失败:', error);
+        alert(t('models-fetch-failed', { error: error.message }));
+    } finally {
+        refreshBtn.disabled = false;
+        refreshBtn.textContent = originalText;
     }
 }
 
@@ -3488,7 +4020,7 @@ async function generateLiteraryStyle(reference) {
     const existingEntries = buildWorldbookDataFromDOM();
 
     const existingEntriesText = existingEntries
-        .map(entry => `条目注释: ${entry.comment}\n关键词: ${entry.keys.join(', ')}\n内容: ${entry.content.substring(0, 200)}${entry.content.length > 200 ? '...' : ''}`)
+        .map(entry => `条目注释: ${entry.comment}\n关键词: ${entry.keys.join(', ')}\n内容: ${entry.content}`)
         .join('\n\n');
 
     let prompt = `<Literary_Style_Configuration_Generator>
@@ -4366,7 +4898,9 @@ async function analyzeSortSuggestions() {
                     .replace('{current}', batchIdx + 1).replace('{total}', batches.length);
             }
 
-            var batchPrompt = promptHeader + '\n\n## 当前条目列表\n' + JSON.stringify(batch, null, 2);
+            var batchPrompt = (typeof PromptManager !== 'undefined')
+                ? PromptManager.render('wb_ai_sort', { entriesJson: JSON.stringify(batch, null, 2) })
+                : (promptHeader + '\n\n## 当前条目列表\n' + JSON.stringify(batch, null, 2));
 
             mylog(`📤 [AI排序建议] ` + (isBatch ? '批次' + (batchIdx + 1) + '/' + batches.length + ' ' : '') + `发送分析请求...`);
             const response = await callSimpleAPI(batchPrompt);

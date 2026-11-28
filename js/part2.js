@@ -309,10 +309,10 @@ function initIncrementalOutputModeToggle() {
     agentContainer.innerHTML = `
         <label style="display: flex; align-items: center; gap: 10px; cursor: pointer;">
             <input type="checkbox" id="agent-incremental-mode" style="width: 18px; height: 18px;" checked>
-            <span style="color: var(--label-color); font-weight: bold;">🤖 智能 Agent 增量编辑模式</span>
+            <span style="color: var(--label-color); font-weight: bold;" data-i18n="ntw-agent-inc-title">${typeof t === 'function' ? t('ntw-agent-inc-title') : '🤖 智能 Agent 增量编辑模式'}</span>
         </label>
-        <p style="margin: 5px 0 0 28px; font-size: 12px; color: var(--text-secondary-color);">
-            以打补丁（Patch Commit）方式对条目内部属性字段进行局部追加与精确替换（append/replace），避免覆写遗忘历史记忆；启用时自动锁定增量输出
+        <p style="margin: 5px 0 0 28px; font-size: 12px; color: var(--text-secondary-color);" data-i18n="ntw-agent-inc-desc">
+            ${typeof t === 'function' ? t('ntw-agent-inc-desc') : '以打补丁（Patch Commit）方式对条目内部属性字段进行局部追加与精确替换（append/replace），避免覆写遗忘历史记忆；启用时自动锁定增量输出'}
         </p>
     `;
 
@@ -323,9 +323,9 @@ function initIncrementalOutputModeToggle() {
     container.innerHTML = `
         <label style="display: flex; align-items: center; gap: 10px; cursor: pointer;">
             <input type="checkbox" id="incremental-output-mode" style="width: 18px; height: 18px;" checked disabled>
-            <span style="color: var(--label-color); font-weight: bold;">📝 增量输出模式</span>
+            <span style="color: var(--label-color); font-weight: bold;" data-i18n="ntw-inc-output-title">${typeof t === 'function' ? t('ntw-inc-output-title') : '📝 增量输出模式'}</span>
         </label>
-        <p style="margin: 5px 0 0 28px; font-size: 12px; color: var(--text-secondary-color);">每次只输出变更的条目，避免上下文字数限制，降低消耗并提升生成速度</p>
+        <p style="margin: 5px 0 0 28px; font-size: 12px; color: var(--text-secondary-color);" data-i18n="ntw-inc-output-desc">${typeof t === 'function' ? t('ntw-inc-output-desc') : '每次只输出变更的条目，避免上下文字数限制，降低消耗并提升生成速度'}</p>
     `;
 
     // 插入到高级设置的最前面
@@ -379,11 +379,11 @@ function initCustomCategoriesUI() {
         <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
             <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
                 <input type="checkbox" id="strict-custom-categories-mode" style="width: 18px; height: 18px;" ${strictCustomCategoriesMode ? 'checked' : ''}>
-                <span style="color: var(--label-color); font-weight: bold; font-size: 14px;">🏷️ 严格按自定义分类提取</span>
+                <span style="color: var(--label-color); font-weight: bold; font-size: 14px;" data-i18n="ntw-strict-cat-title">${typeof t === 'function' ? t('ntw-strict-cat-title') : '🏷️ 严格按自定义分类提取'}</span>
             </label>
             <div id="custom-categories-actions" style="transition: opacity 0.2s;">
-                <button id="add-custom-category-btn" style="background: #e67e22; color: white; padding: 4px 10px; border: none; border-radius: 3px; cursor: pointer; font-size: 12px; margin-right: 5px;">➕ 添加分类</button>
-                <button id="reset-categories-btn" style="background: #6c757d; color: white; padding: 4px 10px; border: none; border-radius: 3px; cursor: pointer; font-size: 12px;">🔄 重置默认</button>
+                <button id="add-custom-category-btn" data-i18n="ntw-add-cat-btn" style="background: #e67e22; color: white; padding: 4px 10px; border: none; border-radius: 3px; cursor: pointer; font-size: 12px; margin-right: 5px;">${typeof t === 'function' ? t('ntw-add-cat-btn') : '➕ 添加分类'}</button>
+                <button id="reset-categories-btn" data-i18n="ntw-reset-cat-btn" style="background: #6c757d; color: white; padding: 4px 10px; border: none; border-radius: 3px; cursor: pointer; font-size: 12px;">${typeof t === 'function' ? t('ntw-reset-cat-btn') : '🔄 重置默认'}</button>
             </div>
         </div>
         <p id="strict-categories-hint" style="margin: 0 0 10px 0; font-size: 12px; line-height: 1.4;"></p>
@@ -413,12 +413,14 @@ function initCustomCategoriesUI() {
         } catch (e) { }
 
         if (strictCustomCategoriesMode) {
-            hintElem.innerHTML = '🔒 <strong style="color: #e67e22;">严格模式生效中</strong>：AI 将严格仅提取下方启用的分类，严禁生成未经指定的分类。';
+            hintElem.setAttribute('data-i18n-html', 'ntw-strict-cat-hint-on');
+            hintElem.innerHTML = typeof t === 'function' ? t('ntw-strict-cat-hint-on') : '🔒 <strong style="color: #e67e22;">严格模式生效中</strong>：AI 将严格仅提取下方启用的分类，严禁生成未经指定的分类。';
             hintElem.style.color = '#e67e22';
             listElem.style.opacity = '1';
             actionsElem.style.opacity = '1';
         } else {
-            hintElem.innerHTML = '🌐 <strong style="color: #3498db;">自由发挥模式（推荐）</strong>：未勾选时，AI 将根据小说题材自由提炼合适的类别（如功法、势力、神兵、心境等）。';
+            hintElem.setAttribute('data-i18n-html', 'ntw-strict-cat-hint-off');
+            hintElem.innerHTML = typeof t === 'function' ? t('ntw-strict-cat-hint-off') : '🌐 <strong style="color: #3498db;">自由发挥模式（推荐）</strong>：未勾选时，AI 将根据小说题材自由提炼合适的类别（如功法、势力、神兵、心境等）。';
             hintElem.style.color = 'var(--text-secondary-color)';
             listElem.style.opacity = '0.6';
             actionsElem.style.opacity = '0.8';
@@ -461,11 +463,22 @@ function renderCategoriesList() {
             saveCustomCategories();
         });
 
+        const isEn = (typeof currentLanguage !== 'undefined' ? currentLanguage : localStorage.getItem('language')) === 'en';
+        const catEnMap = {
+            '角色': 'Characters',
+            '地点': 'Locations',
+            '组织': 'Organizations',
+            '道具': 'Items',
+            '玩法': 'Gameplay',
+            '章节剧情': 'Chapter Plot',
+            '角色内心': 'Character Inner Thoughts',
+            '知识书': 'Lorebook',
+        };
         const label = document.createElement('span');
         label.style.cssText = 'flex: 1; color: var(--text-color); font-size: 13px;';
-        label.textContent = cat.name;
+        label.textContent = (isEn && catEnMap[cat.name]) ? catEnMap[cat.name] : cat.name;
         if (cat.isBuiltin) {
-            label.innerHTML += ' <span style="color: #888; font-size: 11px;">(内置)</span>';
+            label.innerHTML += ` <span style="color: #888; font-size: 11px;">${isEn ? '(Built-in)' : '(内置)'}</span>`;
         }
 
         const editBtn = document.createElement('button');
@@ -2089,6 +2102,72 @@ function splitByChapters(content, regex) {
     return chapters;
 }
 
+// 公共工具：将少于 minChars 字（默认 500 字，含 0 字伪章节）的章节自动归纳至上一章
+// - 若存在上一章：非空内容自动追加至上一章末尾，0 字伪章节直接吞并吸收
+// - 若位于开头尚无上一章：暂存非空内容，自动归并至首个有效章节（>= minChars）的开头
+// - 若全部章节均不足 minChars：合并为单一有效块，确保不丢内容
+function mergeShortChapters(items, minChars = 500) {
+    if (!Array.isArray(items) || items.length === 0) {
+        return { merged: [], mergedShortCount: 0, droppedEmptyCount: 0 };
+    }
+
+    const merged = [];
+    const leadingBuffer = [];
+    let mergedShortCount = 0;
+    let droppedEmptyCount = 0;
+
+    for (const item of items) {
+        const title = String(item.title || '').trim();
+        const rawBody = String(item.body !== undefined ? item.body : (item.content || ''));
+        const bodyLen = rawBody.trim().length;
+        const fullContent = String(item.content !== undefined ? item.content : rawBody).trim();
+
+        if (bodyLen < minChars) {
+            if (bodyLen === 0) {
+                droppedEmptyCount++;
+                continue;
+            }
+            mergedShortCount++;
+            if (merged.length > 0) {
+                const prev = merged[merged.length - 1];
+                prev.content = prev.content ? `${prev.content}\n\n${fullContent}` : fullContent;
+                prev._mergedCount = (prev._mergedCount || 0) + 1;
+            } else {
+                leadingBuffer.push({ title, content: fullContent });
+            }
+        } else {
+            let finalContent = fullContent;
+            let extraMerged = 0;
+            if (leadingBuffer.length > 0) {
+                const prefixText = leadingBuffer.map(b => b.content).filter(Boolean).join('\n\n');
+                if (prefixText) {
+                    finalContent = `${prefixText}\n\n${finalContent}`;
+                }
+                extraMerged = leadingBuffer.length;
+                leadingBuffer.length = 0;
+            }
+            merged.push({
+                ...item,
+                title: title || `第${merged.length + 1}章`,
+                content: finalContent,
+                _mergedCount: extraMerged
+            });
+        }
+    }
+
+    // 兜底：如果整本书没有任何单章达到 minChars，把暂存的非空短章合并为 1 章
+    if (merged.length === 0 && leadingBuffer.length > 0) {
+        merged.push({
+            title: leadingBuffer[0].title || '第1章',
+            content: leadingBuffer.map(b => b.content).filter(Boolean).join('\n\n'),
+            _mergedCount: Math.max(0, leadingBuffer.length - 1)
+        });
+    }
+
+    return { merged, mergedShortCount, droppedEmptyCount };
+}
+window.mergeShortChapters = mergeShortChapters;
+
 // 更新记忆队列UI
 function updateMemoryQueueUI() {
     const queueContainer = document.getElementById('memory-queue');
@@ -2435,6 +2514,15 @@ function buildAgentIncrementalPrompt({ langPrefix, index, memory, lastEnding, wo
         : `\n🏷️ 【分类规则】：你可以沿用现有分类，也可以根据小说具体内容灵活提炼更贴切的分类（如角色、势力组织、场景地点、神兵道具、功法技能等）。`;
 
     const categorySpecs = generateCategoryPromptSpecs(enabledCategories, isStrictCategories);
+    if (typeof PromptManager !== 'undefined') {
+        return langPrefix + PromptManager.render('ntw_agent_incremental', {
+            categoryRule,
+            categorySpecs,
+            lastEnding: lastEnding || '（无上文结尾）',
+            worldbookJson: JSON.stringify(worldbook, null, 2),
+            memoryContent: memory.content || ''
+        });
+    }
 
     return `${langPrefix}你现在是小说世界书智能维护 Agent。请仔细分析本次阅读的最新内容，对当前记忆库中的世界书条目发出**精准、非覆盖式的增量编辑指令集（Actions）**。
 
@@ -2541,6 +2629,15 @@ function buildAgentInitialPrompt({ langPrefix, memory, isStrictCategories, enabl
     // 动态取第一个分类作为示例
     const firstCat = enabledCategories[0] || { name: '角色', entryExample: '主角名' };
     const exampleEntryName = firstCat.entryExample || '主角名';
+    if (typeof PromptManager !== 'undefined') {
+        return langPrefix + PromptManager.render('ntw_agent_initial', {
+            categorySpecs,
+            categoryRule,
+            firstCatName: firstCat.name,
+            exampleEntryName,
+            memoryContent: memory.content || ''
+        });
+    }
 
     return `${langPrefix}你是专业的小说世界书生成专家，当前正在处理小说的【第1章/开篇部分】。
 本次生成将作为整部作品的基础记忆，需要为后续章节的智能 Agent 增量维护奠定优良的结构化基础。
@@ -2589,6 +2686,30 @@ function buildLegacyPrompt({ langPrefix, index, memory, lastEnding, worldbook, i
     }
 
     const categorySpecs = generateCategoryPromptSpecs(enabledCategories, isStrictCategories);
+    if (typeof PromptManager !== 'undefined') {
+        const extraGuide = categoryGuide
+            + (enablePlotOutline ? '\n- 剧情大纲是必需项，必须生成' : '')
+            + (enableLiteraryStyle ? '\n- 文风配置字段为可选项，如果能够分析出明确的文风特征则生成，否则可以省略' : '');
+        const historyContextBlock = index > 0
+            ? `这是你上一次阅读的结尾部分：\n---\n${lastEnding}\n---\n\n这是当前你对该作品的记忆：\n${JSON.stringify(worldbook, null, 2)}\n\n`
+            : '';
+        let modeInstruction = '';
+        if (index === 0) {
+            modeInstruction = '现在开始分析小说内容，请专注于提取文中实际出现的信息：\n\n';
+        } else if (isIncMode) {
+            modeInstruction = '请基于新内容**增量更新**世界书，采用**点对点覆盖**模式：仅输出本次新增或变更的条目，未变更条目系统会自动保留。\n\n';
+        } else {
+            modeInstruction = '请基于新内容**累积补充**世界书：已有角色请在原有内容基础上追加新信息，不要删除或覆盖已有描述。\n\n';
+        }
+        return langPrefix + PromptManager.render('ntw_legacy', {
+            categoryGuide: extraGuide,
+            categorySpecs,
+            jsonTemplate,
+            historyContextBlock,
+            memoryContent: memory.content || '',
+            modeInstruction
+        });
+    }
 
     let prompt = `${langPrefix}你是专业的小说世界书生成专家。请仔细阅读提供的小说内容，提取其中的关键信息，生成高质量的世界书条目。
 
@@ -2954,7 +3075,9 @@ ${generateFixPromptJsonStructure()}
 - 如果原文中某条目值不是对象（比如直接是字符串），请在不改变语义的前提下包装成 {"关键词":[], "内容":"原内容"}。`;
 
                             // 构建纠正提示词（严格输出控制，参考世界书输出格式风格）
-                            const fixPrompt = getLanguagePrefix() + `你是专业的JSON修复专家。请将下面“格式错误的JSON文本”修复为严格有效、可被 JavaScript 的 JSON.parse() 直接解析的JSON。
+                            const fixPrompt = (typeof PromptManager !== 'undefined' && PromptManager.isCustomized('json_repair'))
+                                ? getLanguagePrefix() + PromptManager.render('json_repair', { brokenJson: `错误信息：${secondError.message}\n\n${structureSpec}\n\n${cleanResponse}` })
+                                : getLanguagePrefix() + `你是专业的JSON修复专家。请将下面“格式错误的JSON文本”修复为严格有效、可被 JavaScript 的 JSON.parse() 直接解析的JSON。
 
 ## 📋 核心要求
 1. **只修复格式**：保持原有数据语义与内容不变，不要总结、不要改写字段名、不要增删字段。
@@ -3456,13 +3579,13 @@ function initContextThresholdUI() {
     const currentVal = getContextThreshold();
     container.innerHTML = `
         <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 5px;">
-            <span style="color: var(--label-color); font-weight: bold;">📏 上下文分裂阈值</span>
+            <span style="color: var(--label-color); font-weight: bold;" data-i18n="ntw-ctx-threshold-title">${typeof t === 'function' ? t('ntw-ctx-threshold-title') : '📏 上下文分裂阈值'}</span>
             <input type="number" id="context-threshold-input"
                    style="width: 60px; padding: 4px; background: rgba(0,0,0,0.3); border: 1px solid #555; border-radius: 3px; color: white; text-align: center;"
                    value="${currentVal}" min="1" max="100">
             <span style="color: var(--text-color);">%</span>
         </div>
-        <p style="margin: 0; font-size: 12px; color: var(--text-secondary-color);">当token使用量超过此百分比时自动分裂记忆块，避免上下文超限</p>
+        <p style="margin: 0; font-size: 12px; color: var(--text-secondary-color);" data-i18n="ntw-ctx-threshold-desc">${typeof t === 'function' ? t('ntw-ctx-threshold-desc') : '当token使用量超过此百分比时自动分裂记忆块，避免上下文超限'}</p>
         <p id="recommended-threshold-text" style="margin: 4px 0 0 0; font-size: 11px; color: #888;"></p>
     `;
 
@@ -5227,52 +5350,30 @@ async function callDeepSeek(fieldId) {
         const referenceWorldbook = shouldReferenceWorldbookSettings('ai-guidance-reference-worldbook') && hasWorldbookEntries;
         const existingEntries = referenceWorldbook ? allWorldbookEntries : [];
         const existingEntriesText = existingEntries
-            .map(e => `- ${e.comment}: ${e.content.substring(0, 100)}...`)
+            .map(e => `- ${e.comment}: ${e.content}`)
             .join('\n');
 
-        let prompt = getLanguagePrefix() + `请根据以下已经提供的角色信息，为我生成或补全【${labelText}】这一项。
-请直接返回最适合填入该项的内容，语言风格要自然
-
-已提供信息:
-
-- 角色名: ${currentCard.name || '未指定'}
-- 性别: ${currentCard.gender || '未指定'}
-- 角色描述: ${currentCard.description || '未指定'}
-- 分类标签: ${currentCard.tags && currentCard.tags.length > 0 ? currentCard.tags.join(', ') : '未指定'}
-- 个性: ${currentCard.personality || '未指定'}
-- 场景设定: ${currentCard.scenario || '未指定'}
-- 首次发言: ${currentCard.first_mes || '未指定'}
-- 范例对话: ${currentCard.mes_example || '未指定'}
-- 已有的世界书条目 (用于参考):
-${existingEntriesText || '无'}
-
-注意：我的代词为"{{user}}"，角色的代词为"{{char}}，在输出中已知名字时，必须输出为代词\n\n
-
-根据以上提供的角色信息，生成或补全【${labelText}】这一项。
-请直接返回最适合填入该项的内容，语言风格要自然
-特别注意：你不是角色
-**Avoid** writing {{char}}'s words and thoughts
-${fieldId === 'first_mes' ? `- 对于 "first_mes" 字段，请保证具有充足篇幅和沉浸感的开场白，生成或补全，要求：
+        const cardInfoText = [
+            `- 角色名: ${currentCard.name || '未指定'}`,
+            `- 性别: ${currentCard.gender || '未指定'}`,
+            `- 角色描述: ${currentCard.description || '未指定'}`,
+            `- 分类标签: ${currentCard.tags && currentCard.tags.length > 0 ? currentCard.tags.join(', ') : '未指定'}`,
+            `- 个性: ${currentCard.personality || '未指定'}`,
+            `- 场景设定: ${currentCard.scenario || '未指定'}`,
+            `- 首次发言: ${currentCard.first_mes || '未指定'}`,
+            `- 范例对话: ${currentCard.mes_example || '未指定'}`
+        ].join('\n');
+        const worldbookBlock = referenceWorldbook ? `\n- 已有的世界书条目 (用于参考):\n${existingEntriesText || '无'}\n` : '\n';
+        const firstMesGuide = fieldId === 'first_mes' ? `- 对于 "first_mes" 字段，请保证具有充足篇幅和沉浸感的开场白，生成或补全，要求：
   * **篇幅要求**：至少500-800字，充分展开场景描写
-  * **结构层次**：
-    - 环境描写：详细描绘场景氛围、视觉细节、空间感
-    - 感官体验：失重感、眩晕感等身体感受，视觉、听觉等多感官描写
-    - 角色登场：{{char}}的出场要有仪式感，包含外貌、神态、动作的细致刻画
-    - 对话互动：包含{{char}}的台词，展现性格特征和当前情境
-    - 情境说明：通过对话和描写自然引出当前场景的背景信息
+  * **结构层次**：环境描写、感官体验、角色登场、对话互动、情境说明
   * **叙事视角**：以第二人称"你"({{user}})的视角展开，营造代入感
-  * **氛围营造**：根据角色和场景特点，营造相应的氛围（恋爱、科幻、奇幻、日常、紧张等）
-  * **细节丰富**：包含具体的视觉细节、动作描写、表情刻画、环境元素
-  * **留白设计**：结尾留下互动空间，引导{{user}}做出回应` : ''}
-`;
+  * **留白设计**：结尾留下互动空间，引导{{user}}做出回应\n` : '';
+        const userGuidanceBlock = userGuidance ? `\n用户的额外指令: ${userGuidance}\n` : '';
 
-        if (!referenceWorldbook) {
-            prompt = prompt.replace(/- 已有的世界书条目[\s\S]*?\n\n/, '\n');
-        }
-        if (userGuidance) {
-            prompt += `\n用户的额外指令: ${userGuidance}\n`;
-        }
-        prompt += `\n现在，请生成【${labelText}】的内容。`;
+        let prompt = getLanguagePrefix() + (typeof PromptManager !== 'undefined'
+            ? PromptManager.render('single_field_generate', { labelText, cardInfoText, worldbookBlock, firstMesGuide, userGuidanceBlock })
+            : `请根据以下已经提供的角色信息，为我生成或补全【${labelText}】这一项。\n${cardInfoText}${worldbookBlock}${firstMesGuide}${userGuidanceBlock}`);
 
         const result = await callApi(prompt, button);
         if (result) {
@@ -5299,7 +5400,9 @@ async function callAiForRegex(index, button) {
             return;
         }
 
-        let prompt = getLanguagePrefix() + `你是一个正则表达式生成助手。根据用户的描述，生成对应的正则表达式脚本。
+        let prompt = (typeof PromptManager !== 'undefined')
+            ? getLanguagePrefix() + PromptManager.render('regex_generate', { userGuidance })
+            : getLanguagePrefix() + `你是一个正则表达式生成助手。根据用户的描述，生成对应的正则表达式脚本。
 
 用户描述：${userGuidance}
 
@@ -5426,7 +5529,9 @@ async function aiTestRegex(index, button) {
     button.textContent = t('generating');
 
     try {
-        let prompt = getLanguagePrefix() + `你是一个正则表达式测试助手。请根据以下正则脚本，生成一段合适的测试文本。
+        let prompt = (typeof PromptManager !== 'undefined')
+            ? getLanguagePrefix() + PromptManager.render('regex_test_input', { findRegex: script.findRegex, replaceString: script.replaceString || '(空)' })
+            : getLanguagePrefix() + `你是一个正则表达式测试助手。请根据以下正则脚本，生成一段合适的测试文本。
 
 查找正则: ${script.findRegex}
 替换为: ${script.replaceString || '(空)'}
@@ -5487,7 +5592,9 @@ async function callAiForRegexAndVerify(index, button) {
 
                 let prompt;
                 if (attempt === 1) {
-                    prompt = getLanguagePrefix() + `你是一个正则表达式生成助手。根据用户的描述，生成对应的正则表达式脚本。
+                    prompt = (typeof PromptManager !== 'undefined')
+                        ? getLanguagePrefix() + PromptManager.render('regex_verify_init', { userGuidance })
+                        : getLanguagePrefix() + `你是一个正则表达式生成助手。根据用户的描述，生成对应的正则表达式脚本。
 
 用户描述：${userGuidance}
 
@@ -5511,7 +5618,9 @@ async function callAiForRegexAndVerify(index, button) {
 4. replaceString 正确引用捕获组
 5. testInput 是能验证该正则的测试文本`;
                 } else {
-                    prompt = getLanguagePrefix() + `我正在尝试生成一个正则表达式，但之前的版本没有通过验证。
+                    prompt = (typeof PromptManager !== 'undefined')
+                        ? getLanguagePrefix() + PromptManager.render('regex_verify_retry', { userGuidance, findRegex, replaceString })
+                        : getLanguagePrefix() + `我正在尝试生成一个正则表达式，但之前的版本没有通过验证。
 
 用户需求：${userGuidance}
 
@@ -5662,9 +5771,6 @@ async function callWorldbookDeepSeek(button) {
         const worldbookTree = buildWorldbookDataFromDOM();
         const hasWBEntries = countAllEntries(worldbookTree) > 0;
         const referenceWorldbook = shouldReferenceWorldbookSettings('ai-guidance-reference-worldbook') && hasWBEntries;
-        const apiSettings = loadApiSettings();
-        const isDeepSeek = apiSettings.provider === 'deepseek';
-
         // 收集所有世界书条目（排除当前条目）
         function collectAllEntries(entries, result = []) {
             entries.forEach(entry => {
@@ -5678,47 +5784,34 @@ async function callWorldbookDeepSeek(button) {
             return result;
         }
 
-        // 只有勾选“参考已有世界书”时才收集其他条目
+        // 只有勾选“参考已有世界书”时才收集其他条目（已解除 DeepSeek 与 500 字截断限制，发送完整内容）
         const allEntries = referenceWorldbook ? collectAllEntries(worldbookTree) : [];
-        const totalEntries = allEntries.length;
-
-        // 根据模型类型调整截断长度
-        const truncationLength = isDeepSeek && totalEntries > 0 ? Math.floor(20000 / totalEntries) : 500;
 
         let worldbookContext = '';
         if (allEntries.length > 0) {
             worldbookContext = `**现有世界书条目参考:**\n`;
             allEntries.forEach((entry, index) => {
                 const content = entry.content || '';
-                const truncatedContent = content.length > truncationLength ?
-                    content.substring(0, truncationLength) + '...' : content;
-                worldbookContext += `${index + 1}. **${entry.comment}** (关键词: ${(entry.keys || []).join(', ')})\n${truncatedContent}\n\n`;
+                worldbookContext += `${index + 1}. **${entry.comment}** (关键词: ${(entry.keys || []).join(', ')})\n${content}\n\n`;
             });
         }
 
-        let prompt = getLanguagePrefix() + `请基于以下提供的角色信息${referenceWorldbook ? '和世界书结构' : ''}，为我撰写条目【${currentComment}】的"注入内容"。内容需要详细、富有想象力，并与角色设定保持高度一致。
+        const charInfoText = [
+            `- 角色名: ${characterContext.name || '未指定'}`,
+            `- 描述: ${characterContext.description || '未指定'}`,
+            `- 个性: ${characterContext.personality || '未指定'}`
+        ].join('\n');
+        const userGuidanceBlock = userGuidance ? `\n**用户的额外指令:** ${userGuidance}\n` : '';
 
----
-**角色核心设定:**
-- 角色名: ${characterContext.name || '未指定'}
-- 描述: ${characterContext.description || '未指定'}
-- 个性: ${characterContext.personality || '未指定'}
-
-**世界书上下文:**
-- **当前条目标题 (Comment):** ${currentComment}
-- **当前条目主要关键词 (Keys):** ${currentKeys || '未指定'}
-
-${worldbookContext}
-`;
-        if (userGuidance) {
-            prompt += `\n**用户的额外指令:** ${userGuidance}\n`;
-        }
-        prompt += `
----
-**你的任务:**
-现在，请为条目【${currentComment}】生成详细的"注入内容"。
-${referenceWorldbook ? `**写作指导:**\r\n1. 仔细参考上述所有现有世界书条目，确保内容与整个世界观保持一致\r\n2. 避免与现有条目内容重复，而是补充和丰富世界观\r\n3. 利用现有条目的信息作为背景支撑，创造更深入的内容\r\n4. 确保风格与现有条目保持统一\r\n` : ''}
-**要求：** 直接返回注入内容本身，不要包含任何额外解释、标题或引用。`;
+        let prompt = getLanguagePrefix() + (typeof PromptManager !== 'undefined'
+            ? PromptManager.render('wb_entry_content', {
+                currentComment,
+                currentKeys: currentKeys || '未指定',
+                charInfoText,
+                worldbookContext,
+                userGuidanceBlock
+            })
+            : `请为条目【${currentComment}】生成详细的"注入内容"。\n${charInfoText}\n${worldbookContext}${userGuidanceBlock}`);
 
         const result = await callApi(prompt, button);
         if (result) {
@@ -5758,7 +5851,15 @@ async function callAiForXiaobaixTask(index, button) {
                 scenario: cardData.scenario || '',
             };
 
-            const prompt = getLanguagePrefix() + `你是一个SillyTavern小白X插件的任务脚本编写专家。请根据角色设定和用户需求，生成小白X循环任务的 <<taskjs>> 代码。
+            const charInfoText = [
+                `- 角色名: ${characterContext.name || '未指定'}`,
+                `- 描述: ${characterContext.description || '未指定'}`,
+                `- 个性: ${characterContext.personality || '未指定'}`,
+                `- 场景: ${characterContext.scenario || '未指定'}`
+            ].join('\n');
+            const prompt = (typeof PromptManager !== 'undefined')
+                ? getLanguagePrefix() + PromptManager.render('xiaobaix_task_gen', { charInfoText, userGuidance })
+                : getLanguagePrefix() + `你是一个SillyTavern小白X插件的任务脚本编写专家。请根据角色设定和用户需求，生成小白X循环任务的 <<taskjs>> 代码。
 
 **角色信息:**
 - 角色名: ${characterContext.name || '未指定'}
@@ -6011,11 +6112,29 @@ async function batchGenerateGreetings(button) {
             if (_useWB) {
                 const _flat = [];
                 (function _collect(arr) { arr.forEach(e => { _flat.push(e); if (e.children?.length) _collect(e.children); }); })(_allWBEntries);
-                worldbookContext = _flat.map(e => `- ${e.comment}: ${(e.content || '').substring(0, 150)}...`).join('\n') || '无';
+                worldbookContext = _flat.map(e => `- ${e.comment}: ${e.content || ''}`).join('\n') || '无';
             }
 
+            const cardInfoText = [
+                `- 角色名: ${currentCard.name || '未指定'}`,
+                `- 性别: ${currentCard.gender || '未指定'}`,
+                `- 角色描述: ${currentCard.description || '未指定'}`,
+                `- 个性: ${currentCard.personality || '未指定'}`,
+                `- 场景设定: ${currentCard.scenario || '未指定'}`
+            ].join('\n');
+            const worldbookBlock = _useWB ? `**世界书参考：**\n${worldbookContext}\n` : '';
+            const extraSettingsBlock = [
+                styleInput ? `**用户指定的剧情风格偏向：** ${styleInput}` : '',
+                locationInput ? `**地点/场景：** ${locationInput}\n请在生成的问候消息中考虑这些地点或场景设定。` : '',
+                userSettingInput ? `**User设定：** ${userSettingInput}\n请在生成的问候消息中考虑这些user设定，让开场白更有针对性和代入感。` : '',
+                sceneCharacterInput ? `**场景人物设定：** ${sceneCharacterInput}\n请在生成的问候消息中包含这些场景人物。` : '',
+                noExtraCharacters ? `**重要约束：** 除了上述明确指定的人物外，不要擅自添加其他角色或人物。` : ''
+            ].filter(Boolean).join('\n') + (styleInput || locationInput || userSettingInput || sceneCharacterInput || noExtraCharacters ? '\n' : '');
+
             // 构建提示词
-            let prompt = getLanguagePrefix() + `你是一个专业的角色扮演剧情设计师。请根据以下角色信息，生成${count}个不同风格的问候消息（开场白）。
+            let prompt = (typeof PromptManager !== 'undefined')
+                ? getLanguagePrefix() + PromptManager.render('batch_generate_greetings', { count, wordCount, cardInfoText, worldbookBlock, extraSettingsBlock })
+                : getLanguagePrefix() + `你是一个专业的角色扮演剧情设计师。请根据以下角色信息，生成${count}个不同风格的问候消息（开场白）。
 
 **角色信息：**
 - 角色名: ${currentCard.name || '未指定'}
@@ -6173,14 +6292,13 @@ async function generateAiNames(button) {
     modal.style.display = 'flex';
 
     const currentCard = buildCardObject();
-    const prompt = getLanguagePrefix() + `请根据以下角色设定，为角色生成5个好听、贴切的名字。
-请严格按照JSON数组的格式返回，例如：["名字A", "名字B", "名字C", "名字D", "名字E"]。不要包含任何额外的解释或文本。
-
-角色设定:
-
-- 性别: ${currentCard.gender || '未指定'}
-- 角色描述: ${currentCard.description || '未指定'}
-- 个性: ${currentCard.personality || '未指定'}`;
+    const prompt = getLanguagePrefix() + (typeof PromptManager !== 'undefined'
+        ? PromptManager.render('generate_ai_names', {
+            gender: currentCard.gender || '未指定',
+            description: currentCard.description || '未指定',
+            personality: currentCard.personality || '未指定'
+        })
+        : `请根据以下角色设定，为角色生成5个好听、贴切的名字。\n- 性别: ${currentCard.gender || '未指定'}\n- 角色描述: ${currentCard.description || '未指定'}\n- 个性: ${currentCard.personality || '未指定'}`);
 
     const originalRegenerateText = regenerateButton.textContent;
     regenerateButton.disabled = true;
@@ -6377,10 +6495,25 @@ async function generateWorldbookFromRequest(userRequest) {
     const existingEntries = referenceWorldbook ? allWorldbookEntries : [];
 
     const existingEntriesText = existingEntries
-        .map(entry => `条目注释: ${entry.comment}\n关键词: ${entry.keys.join(', ')}\n内容: ${entry.content.substring(0, 200)}${entry.content.length > 200 ? '...' : ''}`)
+        .map(entry => `条目注释: ${entry.comment}\n关键词: ${entry.keys.join(', ')}\n内容: ${entry.content}`)
         .join('\n\n');
 
-    let prompt = getLanguagePrefix() + `你是一个专业的sillytavern世界观构建师和剧情设计师。请根据用户的要求生成世界书条目。
+    const wbCustomCharInfo = [
+        `- 角色名: ${characterContext.name || '未指定'}`,
+        `- 性别: ${characterContext.gender || '未指定'}`,
+        `- 角色描述: ${characterContext.description || '未指定'}`,
+        `- 个性: ${characterContext.personality || '未指定'}`,
+        `- 场景设定: ${characterContext.scenario || '未指定'}`
+    ].join('\n');
+    const wbCustomExistingBlock = referenceWorldbook ? `\n世界书设定参考（避免重复）：\n${existingEntriesText || '无'}\n` : '';
+
+    let prompt = (typeof PromptManager !== 'undefined')
+        ? getLanguagePrefix() + PromptManager.render('wb_custom_generate', {
+            userRequest,
+            charInfoText: wbCustomCharInfo,
+            existingEntriesBlock: wbCustomExistingBlock
+        })
+        : getLanguagePrefix() + `你是一个专业的sillytavern世界观构建师和剧情设计师。请根据用户的要求生成世界书条目。
 
 用户要求：
 ${userRequest}
@@ -6594,18 +6727,9 @@ async function fetchWorldbookStoryNodes(button, generationType) {
     const referenceWorldbook = shouldReferenceWorldbookSettings('wb-reference-worldbook') && hasWorldbookEntries;
     const existingEntries = referenceWorldbook ? allWorldbookEntries : [];
 
-    // DeepSeek 限制逻辑
-    const apiSettings = loadApiSettings();
-    const isDeepSeek = apiSettings.provider === 'deepseek';
-    const totalEntries = countAllEntries(existingEntries);
-    const truncationLength = isDeepSeek && totalEntries > 0 ? Math.floor(40000 / totalEntries) : Infinity;
-
+    // 已解除 DeepSeek 40000 字截断限制，全部模型统一发送完整世界书条目
     const existingEntriesText = existingEntries
-        .map(entry => {
-            const truncatedContent = entry.content.substring(0, truncationLength);
-            return `条目注释: ${entry.comment}\n关键词: ${entry.keys.join(', ')}\n内容: ${truncatedContent}${entry.content.length > truncationLength ? '...' : ''
-                }\n`;
-        })
+        .map(entry => `条目注释: ${entry.comment}\n关键词: ${entry.keys.join(', ')}\n内容: ${entry.content}\n`)
         .join('\n---\n');
 
     let prompt;
@@ -6735,9 +6859,36 @@ ${existingEntriesText || '无'}
     }
 
     getAiGuidance(t('ai-guidance-title'), async userGuidance => {
-        let finalPrompt = getLanguagePrefix() + prompt;
-        if (userGuidance) {
-            finalPrompt += `\n**用户的额外指令:** ${userGuidance}\n`;
+        let finalPrompt;
+        const pmMap = {
+            worldview: 'wb_worldview',
+            main_plot: 'wb_main_plot',
+            ability_system: 'wb_ability_system',
+            literary_style: 'wb_literary_style'
+        };
+        const pmId = pmMap[generationType];
+        if (typeof PromptManager !== 'undefined' && pmId) {
+            const charInfoText = `- 角色名: ${characterContext.name || '未指定'}\n- 角色描述: ${characterContext.description || '未指定'}`;
+            const useWbForAbility = document.getElementById('ability-use-worldbook')?.checked || false;
+            const showExisting = generationType === 'ability_system' ? (useWbForAbility && referenceWorldbook) : referenceWorldbook;
+            const existingEntriesBlock = showExisting ? `\n**世界书设定参考（避免重复）:**\n${existingEntriesText || '无'}\n` : '';
+            const userGuidanceBlock = userGuidance ? `\n**用户的额外指令:** ${userGuidance}\n` : '';
+            const vars = { charInfoText, existingEntriesBlock, userGuidanceBlock };
+            if (generationType === 'ability_system') {
+                vars.abilityCount = parseInt(document.getElementById('ability-count')?.value || '5');
+                vars.abilityDescription = document.getElementById('ability-description')?.value.trim() || '';
+                vars.worldbookHint = (useWbForAbility && referenceWorldbook)
+                    ? '请结合角色设定和已有世界书条目，确保技能与世界观一致。'
+                    : '可以自由发挥创意，但仍要严格满足用户硬性条件。';
+            } else if (generationType === 'literary_style') {
+                vars.literaryStyleReference = document.getElementById('literary-style-reference')?.value.trim() || '';
+            }
+            finalPrompt = getLanguagePrefix() + PromptManager.render(pmId, vars);
+        } else {
+            finalPrompt = getLanguagePrefix() + prompt;
+            if (userGuidance) {
+                finalPrompt += `\n**用户的额外指令:** ${userGuidance}\n`;
+            }
         }
 
         const result = await callApi(finalPrompt, button);
@@ -6921,17 +7072,9 @@ async function aiCompleteAllFields(button) {
     const referenceWorldbook = shouldReferenceWorldbookSettings('ai-guidance-reference-worldbook') && hasWorldbookEntries;
     const existingEntries = referenceWorldbook ? allWorldbookEntries : [];
 
-    // DeepSeek 限制逻辑
-    const apiSettings = loadApiSettings();
-    const isDeepSeek = apiSettings.provider === 'deepseek';
-    const totalEntries = countAllEntries(existingEntries);
-    const truncationLength = isDeepSeek && totalEntries > 0 ? Math.floor(40000 / totalEntries) : Infinity;
-
+    // 已解除 DeepSeek 40000 字截断限制，发送完整世界书条目
     const existingEntriesText = existingEntries
-        .map(entry => {
-            const truncatedContent = entry.content.substring(0, truncationLength);
-            return `- ${entry.comment}: ${truncatedContent}${entry.content.length > truncationLength ? '...' : ''}`;
-        })
+        .map(entry => `- ${entry.comment}: ${entry.content}`)
         .join('\n');
 
     let worldbookContextPrompt = `
@@ -6959,34 +7102,18 @@ ${existingEntriesText || '无'}
                     if (el) el.dataset.aiBackup = el.value;
                 });
 
-                let prompt = getLanguagePrefix() + `你正在设计角色/多角色世界。请根据以下已经提供的角色信息，为角色/世界补全剩余的空白字段。
----
-**已提供的信息:**
-${Object.entries(filledFields)
-                        .map(([key, value]) => `- ${t(key)}: ${value}`)
-                        .join('\n')}
-${worldbookContextPrompt}
----
-**需要你补全的字段:**
-"${emptyFields.join('", "')}"
----
-`;
-                if (userGuidance) {
-                    prompt += `**用户的额外指令:** ${userGuidance}\n---`;
-                }
-                prompt += `**你的任务:**
-请为需要补全的字段生成内容，并**严格以一个单一的JSON对象格式返回**，只包含你需要补全的字段的键和值。不要包含任何解释或Markdown标记。
-- 对于 "tags" 字段, 请返回一个由逗号分隔的字符串。
-- 对于 "mes_example", 请生成一段包含{{user}}和{{char}}的对话示例，对话开始另起一行以<START>开头。例如：
-<START>
-{{user}}: 你好。
-{{char}}: (微笑着向你点头) 你好，{{user}}。找我有什么事吗？
-
-<START>
-{{user}}: 再见。
-{{char}}: (微笑着向你挥手) 再见，{{user}}。
-
-`;
+                const filledFieldsText = Object.entries(filledFields)
+                    .map(([key, value]) => `- ${t(key)}: ${value}`)
+                    .join('\n');
+                const userGuidanceBlock = userGuidance ? `**用户的额外指令:** ${userGuidance}\n---\n` : '';
+                let prompt = getLanguagePrefix() + (typeof PromptManager !== 'undefined'
+                    ? PromptManager.render('complete_all_fill', {
+                        filledFieldsText,
+                        worldbookContextPrompt,
+                        emptyFields: emptyFields.join('", "'),
+                        userGuidanceBlock
+                    })
+                    : `请补全字段：${emptyFields.join(', ')}\n${filledFieldsText}\n${worldbookContextPrompt}\n${userGuidanceBlock}`);
                 const result = await callApi(prompt, button);
                 if (result) {
                     try {
@@ -7060,7 +7187,13 @@ ${worldbookContextPrompt}
                     if (el) el.dataset.aiBackup = el.value;
                 });
 
-                const prompt = getLanguagePrefix() + `你是专业的角色信息生成专家。请根据用户提供的角色概念，深度思考并生成完整的角色信息.
+                const prompt = (typeof PromptManager !== 'undefined')
+                    ? getLanguagePrefix() + PromptManager.render('complete_all_new', {
+                        userGuidance,
+                        worldbookContextPrompt,
+                        fieldsToComplete: fieldsToComplete.join('", "')
+                    })
+                    : getLanguagePrefix() + `你是专业的角色信息生成专家。请根据用户提供的角色概念，深度思考并生成完整的角色信息.
 ## 用户需求
 **用户核心概念:** ${userGuidance}
 ${worldbookContextPrompt}
@@ -8858,6 +8991,17 @@ function processIdReferences(instruction, selectedEntries) {
 
 // 构建全局修改提示
 function buildGlobalEditPrompt(instruction, selectedEntries) {
+    if (typeof PromptManager !== 'undefined') {
+        let entriesText = '';
+        selectedEntries.forEach((entry, index) => {
+            if (entry.type === 'worldbook') {
+                entriesText += `${index + 1}. [世界书条目 ID:${entry.id}]\n标题：${entry.data.comment || '无标题'}\n触发词：${Array.isArray(entry.data.keys) ? entry.data.keys.join(', ') : entry.data.keys || ''}\n内容：${entry.data.content || ''}\n\n`;
+            } else if (entry.type === 'character') {
+                entriesText += `${index + 1}. [角色字段：${getFieldDisplayName(entry.field)}]\n内容：${entry.data.content}\n\n`;
+            }
+        });
+        return getLanguagePrefix() + PromptManager.render('global_edit', { instruction, entriesText });
+    }
     let prompt = getLanguagePrefix() + `请根据用户的指令修改以下内容。
 
 用户指令：${instruction}
@@ -10393,20 +10537,18 @@ async function repairSingleMemory(index) {
         mylog('🔧 修复记忆：未启用破限模式');
     }
 
-    prompt += `你是专业的小说世界书生成专家。请仔细阅读提供的小说内容，提取关键信息，生成世界书条目。
-
-## 输出格式
-请生成标准JSON格式：
-${simpleJsonTemplate}
-
-直接输出更新后的JSON，保持一致性，不要包含代码块标记。
-`;
-
-    if (Object.keys(generatedWorldbook).length > 0) {
-        prompt += `当前记忆：\n${JSON.stringify(generatedWorldbook, null, 2)}\n\n`;
+    const currentMemoryBlock = Object.keys(generatedWorldbook).length > 0
+        ? `当前记忆：\n${JSON.stringify(generatedWorldbook, null, 2)}\n\n`
+        : '';
+    if (typeof PromptManager !== 'undefined') {
+        prompt += PromptManager.render('ntw_repair_memory', {
+            simpleJsonTemplate,
+            currentMemoryBlock,
+            memoryContent: memory.content || ''
+        });
+    } else {
+        prompt += `你是专业的小说世界书生成专家。\n${simpleJsonTemplate}\n${currentMemoryBlock}阅读内容：\n---\n${memory.content}\n---`;
     }
-
-    prompt += `阅读内容：\n---\n${memory.content}\n---\n\n请基于内容更新世界书，直接输出JSON。`;
 
     // 添加prompt查看功能（与普通处理一致）
     mylog(`=== 修复记忆 第${index + 1}步 Prompt ===`);
@@ -11604,18 +11746,9 @@ function buildEvolutionText(entryData) {
 // 调用AI进行演变总结
 async function callAIForEvolutionSummary(entryName, evolutionText) {
     try {
-        const prompt = `请根据以下世界书条目的变更历史，总结这个条目（角色/事物/概念）的常态信息。
-
-**重要要求：**
-1. 这是为SillyTavern RPG角色卡准备的世界书条目
-2. 人物状态应设置为**常态**（活着、正常状态），不能是死亡、受伤等临时状态
-3. 提取该条目的核心特征、背景、能力、关系等持久性信息
-4. 忽略故事中的临时变化，保留角色/事物的本质特征
-5. 输出应该是精炼的、适合作为RPG世界书条目的描述
-
-${evolutionText}
-
-请直接输出总结内容，不要包含任何解释或前缀。`;
+        const prompt = (typeof PromptManager !== 'undefined')
+            ? PromptManager.render('ntw_evolution_summary', { evolutionText })
+            : `请根据以下世界书条目的变更历史，总结常态信息。\n${evolutionText}`;
 
         mylog(`📤 [AI演变总结] 条目: ${entryName}\n完整Prompt:\n`, prompt);
         const response = await callSimpleAPI(prompt);
@@ -12004,7 +12137,7 @@ function buildBatchOptimizationPrompt(batch) {
         entriesContent += `\n--- ${data.entryName} [${data.category}] ---\n`;
         data.changes.forEach((change, i) => {
             if (change.newValue?.['内容']) {
-                entriesContent += `${change.newValue['内容'].substring(0, 300)}...\n`;
+                entriesContent += `${change.newValue['内容']}\n`;
             }
         });
     });
@@ -12015,6 +12148,10 @@ function buildBatchOptimizationPrompt(batch) {
         let prompt = customOptimizationPrompt.replace(/\{\{条目\}\}/g, entriesContent);
         mylog('📝 使用自定义Prompt');
         return prompt;
+    }
+
+    if (typeof PromptManager !== 'undefined') {
+        return PromptManager.render('ntw_batch_optimize', { entriesBlock: entriesContent });
     }
 
     // 否则使用默认prompt

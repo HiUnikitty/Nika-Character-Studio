@@ -465,6 +465,627 @@
       background-color: var(--primary-color);
     }
 
+    /* --- 小说转卡 (Novel to Card View) 样式 --- */
+    #novel-to-card-view {
+      display: none;
+      justify-content: center;
+      align-items: flex-start;
+      width: 100%;
+      padding-top: 2vh;
+    }
+
+    #novel-to-card-view .worldbook-container {
+      width: 100%;
+      max-width: 1120px;
+      background: var(--light-bg);
+      border-radius: 8px;
+      box-shadow: 0 4px 18px rgba(0, 0, 0, 0.35);
+      border: 1px solid #555;
+      overflow: hidden;
+      max-height: 94vh;
+      color: var(--text-color);
+      display: flex;
+      flex-direction: column;
+    }
+
+    #novel-to-card-view .worldbook-header {
+      background: var(--primary-color);
+      padding: 14px 20px;
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-shrink: 0;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    #ntc-start-btn {
+      padding: 10px 22px;
+      background: #27ae60;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: bold;
+      font-size: 14px;
+      box-shadow: 0 2px 8px rgba(39, 174, 96, 0.35);
+      transition: all 0.2s;
+    }
+
+    #ntc-start-btn:hover:not(:disabled) {
+      background: #2ecc71;
+      transform: translateY(-1px);
+    }
+
+    #ntc-start-btn:disabled {
+      opacity: 0.55;
+      cursor: not-allowed;
+      box-shadow: none;
+    }
+
+    #ntc-go-step2-btn {
+      margin-left: auto;
+      padding: 8px 14px;
+      background: rgba(255, 255, 255, 0.06);
+      color: #bbb;
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 13px;
+      transition: all 0.2s;
+    }
+
+    #ntc-go-step2-btn:hover {
+      background: rgba(255, 255, 255, 0.14);
+      color: #fff;
+    }
+
+    #ntc-go-step2-btn.ready {
+      background: var(--primary-color);
+      color: white;
+      border-color: var(--primary-color);
+      font-weight: bold;
+      box-shadow: 0 2px 8px rgba(230, 126, 34, 0.35);
+    }
+
+    #novel-to-card-view .worldbook-header h1 {
+      font-size: 20px;
+      margin: 0;
+      text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
+    }
+
+    .view-header-title-group {
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+    }
+
+    .view-header-subtitle {
+      margin: 0;
+      font-size: 12.5px;
+      color: rgba(255, 255, 255, 0.86);
+      font-weight: normal;
+      line-height: 1.35;
+    }
+
+    .ntc-step-tabs {
+      display: flex;
+      gap: 8px;
+      background: rgba(0, 0, 0, 0.28);
+      padding: 8px 20px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      flex-shrink: 0;
+    }
+
+    .ntc-step-tab {
+      padding: 8px 16px;
+      border-radius: 6px;
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      background: rgba(255, 255, 255, 0.05);
+      color: #ccc;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: bold;
+      transition: all 0.2s;
+    }
+
+    .ntc-step-tab.active {
+      background: var(--primary-color);
+      color: white;
+      border-color: var(--primary-color);
+      box-shadow: 0 2px 8px rgba(230, 126, 34, 0.35);
+    }
+
+    #novel-to-card-view .worldbook-body {
+      flex: 1;
+      overflow-y: auto;
+      padding: 20px 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+      min-height: 0;
+    }
+
+    .ntc-card-box {
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.09);
+      border-radius: 8px;
+      padding: 18px 20px;
+    }
+
+    .ntc-card-box h3 {
+      margin: 0 0 14px 0;
+      color: #f0f0f0;
+      font-size: 15px;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      flex-wrap: wrap;
+      padding-bottom: 10px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+    }
+
+    .ntc-section-num {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      background: rgba(230, 126, 34, 0.2);
+      color: var(--primary-color);
+      font-size: 12px;
+      font-weight: 700;
+      margin-right: 6px;
+      flex-shrink: 0;
+    }
+
+    .ntc-btn-primary {
+      padding: 8px 16px;
+      background: var(--primary-color);
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 13px;
+      transition: background 0.15s;
+      white-space: nowrap;
+    }
+
+    .ntc-btn-primary:hover:not(:disabled) {
+      background: #d35400;
+    }
+
+    .ntc-btn-primary:disabled {
+      opacity: 0.55;
+      cursor: not-allowed;
+    }
+
+    .ntc-btn-secondary {
+      padding: 8px 16px;
+      background: rgba(255, 255, 255, 0.07);
+      color: #e6e6e6;
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: 500;
+      font-size: 13px;
+      transition: background 0.15s;
+      white-space: nowrap;
+    }
+
+    .ntc-btn-secondary:hover {
+      background: rgba(255, 255, 255, 0.14);
+    }
+
+    .ntc-row-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+      align-items: end;
+    }
+
+    .ntc-row-3 {
+      display: grid;
+      grid-template-columns: 1.4fr 1fr 1.2fr;
+      gap: 14px;
+      align-items: end;
+    }
+
+    @media (max-width: 780px) {
+
+      .ntc-row-2,
+      .ntc-row-3 {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .ntc-highlight-select {
+      border-color: rgba(230, 126, 34, 0.8) !important;
+      background-color: #32261c !important;
+      color: #f5f5f5 !important;
+    }
+
+    #novel-to-card-view select,
+    #ntc-category-modal select {
+      background-color: #252528;
+      color: #f0f0f0;
+      color-scheme: dark;
+    }
+
+    #novel-to-card-view select option,
+    #ntc-category-modal select option {
+      background-color: #252528;
+      color: #f0f0f0;
+    }
+
+    .ntc-sub-card {
+      background: rgba(0, 0, 0, 0.22);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 6px;
+      padding: 14px 16px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      gap: 10px;
+    }
+
+    .ntc-sub-card h4 {
+      margin: 0;
+      font-size: 13.5px;
+      font-weight: 600;
+      color: #e6e6e6;
+    }
+
+    .ntc-lock-bar {
+      padding: 9px 13px;
+      background: rgba(230, 126, 34, 0.08);
+      border: 1px solid rgba(230, 126, 34, 0.3);
+      border-radius: 6px;
+      font-size: 12.5px;
+      color: #e6d3be;
+      line-height: 1.5;
+    }
+
+    .ntc-notice-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 10px 14px;
+      margin-bottom: 14px;
+      border-radius: 6px;
+      background: rgba(230, 126, 34, 0.08);
+      border: 1px solid rgba(230, 126, 34, 0.3);
+      font-size: 12.5px;
+      color: #e6d3be;
+      flex-wrap: wrap;
+    }
+
+    .ntc-adv-details {
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.09);
+      border-radius: 8px;
+      padding: 12px 18px;
+    }
+
+    .ntc-adv-details>summary {
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 14px;
+      font-weight: 600;
+      color: #ddd;
+      list-style: none;
+    }
+
+    .ntc-adv-details>summary::-webkit-details-marker {
+      display: none;
+    }
+
+    .ntc-cat-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+      gap: 8px;
+      margin-top: 10px;
+    }
+
+    .ntc-cat-chip {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      padding: 8px 10px;
+      border-radius: 6px;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      background: rgba(255, 255, 255, 0.04);
+      font-size: 13px;
+    }
+
+    .ntc-cat-chip.enabled {
+      border-color: rgba(230, 126, 34, 0.55);
+      background: rgba(230, 126, 34, 0.1);
+    }
+
+    .ntc-cat-chip.disabled {
+      opacity: 0.65;
+    }
+
+    .ntc-badge {
+      font-size: 11px;
+      padding: 1px 6px;
+      border-radius: 10px;
+      background: rgba(255, 255, 255, 0.12);
+      color: #ddd;
+    }
+
+    .ntc-mini-btn {
+      padding: 4px 10px;
+      font-size: 12px;
+      border-radius: 4px;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      background: rgba(255, 255, 255, 0.08);
+      color: #eee;
+      cursor: pointer;
+    }
+
+    .ntc-mini-btn:hover {
+      background: rgba(255, 255, 255, 0.18);
+    }
+
+    .ntc-mini-btn.danger {
+      border-color: rgba(231, 76, 60, 0.5);
+      color: #ff8c80;
+    }
+
+    .ntc-queue-list {
+      max-height: 200px;
+      overflow-y: auto;
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      gap: 6px;
+      margin-top: 10px;
+    }
+
+    .ntc-queue-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 6px 10px;
+      border-radius: 5px;
+      background: rgba(0, 0, 0, 0.28);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      font-size: 12px;
+    }
+
+    .ntc-queue-item.status-done {
+      border-color: rgba(46, 204, 113, 0.45);
+    }
+
+    .ntc-queue-item.status-processing {
+      border-color: var(--primary-color);
+      background: rgba(230, 126, 34, 0.18);
+    }
+
+    .ntc-queue-item.status-failed {
+      border-color: rgba(231, 76, 60, 0.7);
+      background: rgba(231, 76, 60, 0.14);
+    }
+
+    .ntc-summary-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 10px;
+      padding: 10px 14px;
+      background: rgba(230, 126, 34, 0.14);
+      border: 1px solid rgba(230, 126, 34, 0.4);
+      border-radius: 6px;
+      margin-bottom: 10px;
+    }
+
+    .ntc-chapter-details,
+    .ntc-phase-details {
+      background: rgba(0, 0, 0, 0.22);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 6px;
+      margin-bottom: 8px;
+      padding: 8px 12px;
+    }
+
+    .ntc-chapter-details summary,
+    .ntc-phase-details summary {
+      cursor: pointer;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+      font-size: 13px;
+    }
+
+    .ntc-chapter-body {
+      margin-top: 8px;
+    }
+
+    .ntc-overview-box {
+      background: rgba(255, 255, 255, 0.04);
+      padding: 8px 10px;
+      border-radius: 5px;
+      font-size: 12px;
+      color: #ddd;
+      margin-bottom: 8px;
+    }
+
+    .ntc-scene-card,
+    .ntc-lore-item {
+      background: rgba(255, 255, 255, 0.03);
+      border-left: 3px solid var(--primary-color);
+      padding: 8px 10px;
+      margin-bottom: 6px;
+      border-radius: 4px;
+      font-size: 12px;
+    }
+
+    .ntc-scene-head {
+      display: flex;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-bottom: 4px;
+      color: #f3c68f;
+    }
+
+    .ntc-scene-recap {
+      white-space: pre-wrap;
+      color: #ddd;
+      line-height: 1.5;
+    }
+
+    .ntc-form-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 12px;
+    }
+
+    .ntc-field label {
+      display: block;
+      font-size: 13px;
+      color: var(--label-color);
+      margin-bottom: 5px;
+    }
+
+    .ntc-field input[type="text"],
+    .ntc-field input[type="number"],
+    .ntc-field select,
+    .ntc-field textarea {
+      width: 100%;
+      padding: 8px;
+      background: rgba(0, 0, 0, 0.3);
+      border: 1px solid #555;
+      border-radius: 4px;
+      color: white;
+      font-size: 13px;
+      box-sizing: border-box;
+    }
+
+    .ntc-assembly-stats {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: 10px;
+    }
+
+    .ntc-stat-box {
+      background: rgba(0, 0, 0, 0.28);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 6px;
+      padding: 10px;
+      text-align: center;
+    }
+
+    .ntc-stat-box .num {
+      font-size: 18px;
+      font-weight: bold;
+      color: var(--primary-color);
+    }
+
+    .ntc-stat-box .lbl {
+      font-size: 12px;
+      color: #aaa;
+      margin-top: 3px;
+    }
+
+    .ntc-preview-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+      padding: 5px 6px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+      font-size: 12px;
+    }
+
+    .ntc-epub-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 5px 8px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+      font-size: 13px;
+      cursor: pointer;
+    }
+
+    .ntc-greeting-tabs {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 6px;
+      margin-bottom: 12px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .ntc-greeting-tab {
+      padding: 6px 12px;
+      border-radius: 5px;
+      border: 1px solid rgba(255, 255, 255, 0.16);
+      background: rgba(255, 255, 255, 0.05);
+      color: #ccc;
+      font-size: 12px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .ntc-greeting-tab.active {
+      background: var(--primary-color);
+      border-color: var(--primary-color);
+      color: #fff;
+      font-weight: bold;
+    }
+
+    .ntc-ref-ch-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      max-height: 150px;
+      overflow-y: auto;
+      padding: 10px;
+      background: rgba(0, 0, 0, 0.22);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 6px;
+    }
+
+    .ntc-ref-ch-item {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 11px;
+      border-radius: 6px;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      background: rgba(255, 255, 255, 0.04);
+      font-size: 12.5px;
+      color: #ccc;
+      cursor: pointer;
+      transition: all 0.15s;
+      max-width: 100%;
+    }
+
+    .ntc-ref-ch-item:hover {
+      border-color: rgba(255, 255, 255, 0.28);
+      color: #fff;
+    }
+
+    .ntc-ref-ch-item.checked {
+      border-color: rgba(230, 126, 34, 0.7);
+      background: rgba(230, 126, 34, 0.16);
+      color: #fff;
+    }
+
     /* --- 长文本转世界书 (Novel to WorldBook View) 样式 --- */
     #novel-to-worldbook-view {
       display: none;
@@ -500,6 +1121,7 @@
 
     #novel-to-worldbook-view .worldbook-header h1 {
       font-size: 22px;
+      margin: 0;
       text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
     }
 
@@ -870,14 +1492,14 @@
       align-items: flex-start !important;
     }
 
-    #editor-view.dual-pane-active > .editor-container {
+    #editor-view.dual-pane-active>.editor-container {
       flex: 1 1 50% !important;
       max-width: calc(50% - 8px) !important;
       min-width: 440px !important;
       box-sizing: border-box !important;
     }
 
-    #editor-view.dual-pane-active > .editor-container .editor-body {
+    #editor-view.dual-pane-active>.editor-container .editor-body {
       max-height: calc(100vh - 120px) !important;
       overflow-y: auto !important;
       overflow-x: hidden !important;
@@ -2842,6 +3464,8 @@
     /* --- 其他设置 Modal 样式 --- */
     #other-settings-modal .modal-content {
       max-width: 600px;
+      max-height: 88vh;
+      overflow-y: auto;
     }
 
     #api-settings-modal .api-provider-options {
@@ -3145,12 +3769,73 @@
       #library-view .header {
         justify-content: center;
         text-align: center;
+        gap: 10px;
+        margin-bottom: 18px;
+        padding-bottom: 14px;
       }
 
-      #library-view .header-buttons {
-        justify-content: center;
+      #library-view .header>div:first-child {
         width: 100%;
-        margin-left: 0;
+        justify-content: space-between;
+        gap: 8px !important;
+      }
+
+      #library-view .header h1 {
+        font-size: 20px;
+        margin: 0;
+        white-space: nowrap;
+      }
+
+      /* 方案 2A：1 个全宽主按钮 + 2×2 深底描边功能网格 */
+      #library-view .header-buttons {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 8px;
+        width: 100%;
+        margin: 4px 0 0 0;
+      }
+
+      #library-view .header-buttons button:first-of-type {
+        grid-column: 1 / -1;
+        background: linear-gradient(135deg, var(--primary-color), #d35400);
+        color: #fff;
+        font-size: 15px;
+        font-weight: 700;
+        padding: 12px 16px;
+        border-radius: 8px;
+        border: none;
+        box-shadow: 0 3px 10px rgba(230, 126, 34, 0.32);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        white-space: nowrap;
+      }
+
+      #library-view .header-buttons button:not(:first-of-type) {
+        background: rgba(255, 255, 255, 0.06);
+        color: #f2f2f2;
+        border: 1px solid rgba(230, 126, 34, 0.42);
+        padding: 10px 8px;
+        border-radius: 8px;
+        font-size: 13.5px;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 5px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      #library-view .header-buttons button:not(:first-of-type):hover,
+      #library-view .header-buttons button:not(:first-of-type):active {
+        background: rgba(230, 126, 34, 0.18);
+        border-color: var(--primary-color);
+        color: #fff;
+        box-shadow: none;
+        transform: none;
       }
 
       #library-view .character-grid {
@@ -3172,8 +3857,58 @@
         padding: 15px;
       }
 
+      /* 手机端无双开功能：隐藏双开对比及同步滚动，顶栏压成清爽单行 */
+      #dual-pane-toggle-btn,
+      #dp-sync-scroll-btn {
+        display: none !important;
+      }
+
+      #editor-view .editor-header {
+        padding: 11px 14px;
+        gap: 8px;
+        flex-wrap: nowrap;
+      }
+
       #editor-view .editor-header h1 {
-        font-size: 18px;
+        font-size: 16.5px;
+        margin: 0;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        flex-shrink: 1;
+        min-width: 0;
+      }
+
+      #editor-view .editor-header>div {
+        flex-wrap: nowrap !important;
+        gap: 6px !important;
+        flex-shrink: 0;
+      }
+
+      #editor-view .editor-header>div button {
+        padding: 6px 10px !important;
+        font-size: 12.5px !important;
+        white-space: nowrap;
+        background: rgba(0, 0, 0, 0.24) !important;
+        border: 1px solid rgba(255, 255, 255, 0.22) !important;
+        border-radius: 6px !important;
+        line-height: 1.3;
+      }
+
+      /* 同步优化小说转剧情卡 & 小说转世界书手机端顶栏与副标题 */
+      #novel-to-card-view .worldbook-header,
+      #novel-to-worldbook-view .worldbook-header {
+        padding: 12px 14px;
+        gap: 8px;
+      }
+
+      #novel-to-card-view .worldbook-header h1,
+      #novel-to-worldbook-view .worldbook-header h1 {
+        font-size: 17px;
+      }
+
+      .view-header-subtitle {
+        font-size: 11.5px;
       }
 
       .entry-grid {
@@ -3645,6 +4380,515 @@
         width: 100%;
       }
     }
+
+    /* --- 全量提示词自定义中心 & 可视化色块编辑器样式 --- */
+    #prompt-manager-modal {
+      z-index: 10080;
+    }
+
+    #prompt-manager-modal .pm-modal-box {
+      width: 95vw;
+      max-width: 1180px;
+      height: 88vh;
+      max-height: 860px;
+      background: var(--light-bg, #2b2b2b);
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      border-radius: 12px;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      box-shadow: 0 18px 50px rgba(0, 0, 0, 0.55);
+      color: var(--text-color, #eee);
+    }
+
+    .pm-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 20px;
+      background: linear-gradient(135deg, var(--primary-color, #e67e22), #c86416);
+      color: #fff;
+      gap: 12px;
+      flex-shrink: 0;
+    }
+
+    .pm-header h3 {
+      margin: 0;
+      font-size: 17px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .pm-header-sub {
+      font-size: 12px;
+      color: rgba(255, 255, 255, 0.88);
+      margin-top: 2px;
+    }
+
+    .pm-body {
+      flex: 1;
+      display: grid;
+      grid-template-columns: 260px 1fr;
+      min-height: 0;
+      overflow: hidden;
+    }
+
+    .pm-sidebar {
+      border-right: 1px solid rgba(255, 255, 255, 0.1);
+      background: rgba(0, 0, 0, 0.22);
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+    }
+
+    .pm-search-wrap {
+      padding: 10px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .pm-search-wrap input {
+      width: 100%;
+      box-sizing: border-box;
+      padding: 7px 10px;
+      border-radius: 6px;
+      border: 1px solid rgba(255, 255, 255, 0.16);
+      background: rgba(0, 0, 0, 0.32);
+      color: #fff;
+      font-size: 12.5px;
+    }
+
+    .pm-sidebar-list {
+      flex: 1;
+      overflow-y: auto;
+      padding: 8px;
+    }
+
+    .pm-cat-group {
+      margin-bottom: 12px;
+    }
+
+    .pm-cat-title {
+      font-size: 11.5px;
+      font-weight: 700;
+      color: #aaa;
+      padding: 4px 8px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .pm-cat-badge {
+      background: rgba(46, 204, 113, 0.2);
+      color: #58d68d;
+      font-size: 10.5px;
+      padding: 1px 6px;
+      border-radius: 10px;
+    }
+
+    .pm-nav-item {
+      width: 100%;
+      text-align: left;
+      background: transparent;
+      border: 1px solid transparent;
+      color: #d8d8d8;
+      padding: 7px 10px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 12.5px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 6px;
+      margin-bottom: 3px;
+      transition: background 0.15s, border-color 0.15s;
+    }
+
+    .pm-nav-item:hover {
+      background: rgba(255, 255, 255, 0.06);
+      color: #fff;
+    }
+
+    .pm-nav-item.active {
+      background: rgba(230, 126, 34, 0.22);
+      border-color: rgba(230, 126, 34, 0.65);
+      color: #fff;
+      font-weight: 600;
+    }
+
+    .pm-nav-name {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .pm-edited-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: #2ecc71;
+      flex-shrink: 0;
+    }
+
+    .pm-main {
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+      padding: 14px 18px;
+      gap: 10px;
+      overflow: hidden;
+    }
+
+    .pm-main-head {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 12px;
+      flex-shrink: 0;
+    }
+
+    .pm-main-head h4 {
+      margin: 0;
+      font-size: 16px;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .pm-main-desc {
+      margin: 4px 0 0;
+      font-size: 12.5px;
+      color: #aaa;
+    }
+
+    .pm-status-tag {
+      font-size: 11px;
+      padding: 2px 8px;
+      border-radius: 10px;
+      font-weight: 600;
+    }
+
+    .pm-status-tag.is-default {
+      background: rgba(255, 255, 255, 0.1);
+      color: #bbb;
+    }
+
+    .pm-status-tag.is-custom {
+      background: rgba(46, 204, 113, 0.22);
+      color: #58d68d;
+    }
+
+    .pm-usage-tip {
+      font-size: 12px;
+      color: #ccc;
+      background: rgba(52, 152, 219, 0.12);
+      border: 1px solid rgba(52, 152, 219, 0.3);
+      border-radius: 7px;
+      padding: 7px 11px;
+      flex-shrink: 0;
+    }
+
+    .pm-missing-warn {
+      display: none;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      font-size: 12px;
+      color: #ffdf8e;
+      background: rgba(231, 76, 60, 0.18);
+      border: 1px solid rgba(231, 76, 60, 0.55);
+      border-radius: 7px;
+      padding: 7px 11px;
+      flex-shrink: 0;
+    }
+
+    .pm-workspace {
+      flex: 1;
+      display: grid;
+      grid-template-columns: 1fr 250px;
+      gap: 12px;
+      min-height: 0;
+      overflow: hidden;
+    }
+
+    .pm-editor-wrap {
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+    }
+
+    #pm-rich-editor {
+      flex: 1;
+      overflow-y: auto;
+      background: rgba(0, 0, 0, 0.34);
+      border: 1px solid rgba(255, 255, 255, 0.16);
+      border-radius: 8px;
+      padding: 12px 14px;
+      color: #f1f1f1;
+      font-size: 13.5px;
+      line-height: 1.75;
+      white-space: pre-wrap;
+      word-break: break-word;
+      outline: none;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+    }
+
+    #pm-rich-editor:focus {
+      border-color: var(--primary-color, #e67e22);
+      box-shadow: 0 0 0 2px rgba(230, 126, 34, 0.22);
+    }
+
+    .pm-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 1px 9px;
+      margin: 0 2px;
+      border-radius: 999px;
+      font-size: 12.5px;
+      font-weight: 600;
+      line-height: 1.5;
+      vertical-align: baseline;
+      user-select: all;
+      cursor: default;
+      border: 1px solid transparent;
+    }
+
+    .pm-chip-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    .pm-chip-star {
+      color: #ff7675;
+      font-weight: 800;
+      margin-left: 1px;
+    }
+
+    .pm-color-orange {
+      background: rgba(230, 126, 34, 0.22);
+      border-color: rgba(230, 126, 34, 0.65);
+      color: #ffd099;
+    }
+
+    .pm-color-orange .pm-chip-dot {
+      background: #f39c12;
+    }
+
+    .pm-color-blue {
+      background: rgba(52, 152, 219, 0.22);
+      border-color: rgba(52, 152, 219, 0.65);
+      color: #aedcff;
+    }
+
+    .pm-color-blue .pm-chip-dot {
+      background: #3498db;
+    }
+
+    .pm-color-purple {
+      background: rgba(155, 89, 182, 0.24);
+      border-color: rgba(155, 89, 182, 0.68);
+      color: #e2bfff;
+    }
+
+    .pm-color-purple .pm-chip-dot {
+      background: #af7ac5;
+    }
+
+    .pm-color-green {
+      background: rgba(46, 204, 113, 0.2);
+      border-color: rgba(46, 204, 113, 0.6);
+      color: #b5f5cc;
+    }
+
+    .pm-color-green .pm-chip-dot {
+      background: #2ecc71;
+    }
+
+    .pm-color-teal {
+      background: rgba(26, 188, 156, 0.22);
+      border-color: rgba(26, 188, 156, 0.6);
+      color: #a8f0e2;
+    }
+
+    .pm-color-teal .pm-chip-dot {
+      background: #1abc9c;
+    }
+
+    .pm-token-panel {
+      background: rgba(0, 0, 0, 0.22);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 8px;
+      padding: 10px;
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+      overflow-y: auto;
+      gap: 7px;
+    }
+
+    .pm-token-panel-head {
+      font-size: 12.5px;
+      font-weight: 700;
+      color: #fff;
+      padding-bottom: 6px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .pm-token-group-title {
+      font-size: 11px;
+      color: #999;
+      margin: 4px 0 2px;
+      font-weight: 600;
+    }
+
+    .pm-token-btn {
+      width: 100%;
+      text-align: left;
+      padding: 7px 9px;
+      border-radius: 7px;
+      cursor: pointer;
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      transition: transform 0.12s, box-shadow 0.12s, border-color 0.12s;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .pm-token-btn:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 3px 10px rgba(0, 0, 0, 0.28);
+    }
+
+    .pm-token-btn.is-missing-req {
+      border-color: #e74c3c !important;
+      box-shadow: 0 0 0 1px rgba(231, 76, 60, 0.45);
+    }
+
+    .pm-token-btn-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 6px;
+    }
+
+    .pm-token-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 12.5px;
+      font-weight: 700;
+    }
+
+    .pm-token-state {
+      font-size: 10.5px;
+      opacity: 0.9;
+      white-space: nowrap;
+    }
+
+    .pm-token-desc {
+      font-size: 11px;
+      color: rgba(255, 255, 255, 0.72);
+      line-height: 1.35;
+    }
+
+    .pm-footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 12px 18px;
+      background: rgba(0, 0, 0, 0.24);
+      border-top: 1px solid rgba(255, 255, 255, 0.1);
+      flex-wrap: wrap;
+      flex-shrink: 0;
+    }
+
+    .pm-footer .cancel-btn {
+      background: rgba(255, 255, 255, 0.1);
+      color: #e0e0e0;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      padding: 8px 18px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 600;
+      transition: background 0.15s, border-color 0.15s;
+    }
+
+    .pm-footer .cancel-btn:hover {
+      background: rgba(255, 255, 255, 0.18);
+      border-color: rgba(255, 255, 255, 0.35);
+      color: #fff;
+    }
+
+    .pm-footer .action-btn {
+      background: linear-gradient(135deg, var(--primary-color, #e67e22), #d35400);
+      color: #fff;
+      border: none;
+      padding: 8px 20px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 700;
+      box-shadow: 0 3px 10px rgba(230, 126, 34, 0.35);
+      transition: filter 0.15s, transform 0.15s;
+    }
+
+    .pm-footer .action-btn:hover {
+      filter: brightness(1.08);
+      transform: translateY(-1px);
+    }
+
+    .pm-toast {
+      position: fixed;
+      bottom: 28px;
+      left: 50%;
+      transform: translateX(-50%) translateY(16px);
+      background: #27ae60;
+      color: #fff;
+      padding: 9px 18px;
+      border-radius: 999px;
+      font-size: 13px;
+      font-weight: 600;
+      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
+      opacity: 0;
+      pointer-events: none;
+      transition: all 0.25s;
+      z-index: 10120;
+    }
+
+    .pm-toast.show {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+
+    @media (max-width: 820px) {
+      #prompt-manager-modal .pm-modal-box {
+        width: 100vw;
+        height: 96vh;
+        max-height: none;
+        border-radius: 8px;
+      }
+
+      .pm-body {
+        grid-template-columns: 1fr;
+        grid-template-rows: 170px 1fr;
+      }
+
+      .pm-sidebar {
+        border-right: none;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+      }
+
+      .pm-workspace {
+        grid-template-columns: 1fr;
+        grid-template-rows: 1fr 165px;
+      }
+    }
   </style>
 </head>
 
@@ -3662,12 +4906,10 @@
       <div class="field-group">
         <label for="api-provider-selector" data-i18n="select-provider">选择服务商</label>
         <select id="api-provider-selector">
-          <option value="deepseek" data-i18n="api-provider-deepseek">DeepSeek【已更新v4】</option>
-          <option value="gemini" data-i18n="api-provider-gemini">Gemini (直链，需魔法)[废弃]</option>
-          <option value="gemini-proxy" data-i18n="api-provider-gemini-proxy">Gemini (中转站)[废弃]</option>
+          <option value="deepseek" data-i18n="api-provider-deepseek">DeepSeek</option>
           <option value="ollama" data-i18n="api-provider-ollama">Ollama</option>
           <option value="local" data-i18n="api-provider-local">本地大模型（bat启动用这个）</option>
-          <option value="tavern" data-i18n="api-provider-tavern">公益站/自定义（推荐）</option>
+          <option value="tavern" data-i18n="api-provider-tavern">自定义</option>
         </select>
       </div>
 
@@ -3679,65 +4921,25 @@
         </div>
         <div class="field-group">
           <label for="deepseek-model" data-i18n="select-model">选择模型</label>
-          <select id="deepseek-model">
-            <option value="deepseek-v4-flash">DeepSeek V4 Flash</option>
-            <option value="deepseek-v4-pro">DeepSeek V4 Pro</option>
-          </select>
+          <div style="display: flex; gap: 8px; align-items: center;">
+            <select id="deepseek-model" style="flex: 1;">
+              <option value="deepseek-chat">deepseek-chat</option>
+              <option value="deepseek-reasoner">deepseek-reasoner</option>
+              <option value="deepseek-v4-flash">DeepSeek V4 Flash</option>
+              <option value="deepseek-v4-pro">DeepSeek V4 Pro</option>
+            </select>
+            <button type="button" id="refresh-deepseek-models-btn" data-i18n="refresh-models"
+              style="background: var(--primary-color); color: white; padding: 8px 12px; border: none; border-radius: 4px; cursor: pointer; white-space: nowrap;">
+              刷新
+            </button>
+          </div>
         </div>
         <div class="field-group">
-          <label for="deepseek-context-window">最大上下文</label>
+          <label for="deepseek-context-window" data-i18n="max-context-label">最大上下文</label>
           <input type="number" id="deepseek-context-window" value="1000000" min="1000" step="1000"
-            placeholder="默认 1000000 (1M)">
-          <p class="help-text">模型的最大上下文窗口大小（token），用于小说转世界书判断是否超限</p>
+            data-i18n-placeholder="max-context-placeholder" placeholder="默认 1000000 (1M)">
+          <p class="help-text" data-i18n="max-context-help">模型的最大上下文窗口大小（token），用于小说转世界书判断是否超限</p>
         </div>
-      </div>
-
-      <div id="gemini-options" class="api-provider-options">
-        <div class="field-group">
-          <label for="gemini-api-key" data-i18n="api-key">API Key</label>
-          <input type="password" id="gemini-api-key" placeholder="输入你的 Google AI Studio API Key">
-        </div>
-        <div class="field-group">
-          <label for="gemini-model" data-i18n="select-model">选择模型</label>
-          <select id="gemini-model">
-            <option value="gemini-2.5-flash">Gemini 2.5 Flash</option>
-            <option value="gemini-2.5-pro">Gemini 2.5 Pro</option>
-          </select>
-        </div>
-        <div class="field-group">
-          <label for="gemini-context-window">最大上下文</label>
-          <input type="number" id="gemini-context-window" value="1000000" min="1000" step="1000"
-            placeholder="默认 1000000 (1M)">
-          <p class="help-text">模型的最大上下文窗口大小（token），用于小说转世界书判断是否超限</p>
-        </div>
-      </div>
-
-      <div id="gemini-proxy-options" class="api-provider-options">
-        <div class="field-group">
-          <label for="gemini-proxy-endpoint" data-i18n="proxy-endpoint">代理 Endpoint URL</label>
-          <input type="text" id="gemini-proxy-endpoint" data-i18n-placeholder="proxy-endpoint-placeholder"
-            placeholder="例如: https://mydomain.com/v1beta/models">
-        </div>
-        <div class="field-group">
-          <label for="gemini-proxy-api-key" data-i18n="api-key">API Key</label>
-          <input type="password" id="gemini-proxy-api-key" placeholder="输入你的 Google AI Studio API Key">
-        </div>
-        <div class="field-group">
-          <label for="gemini-proxy-model" data-i18n="select-model">选择模型</label>
-          <select id="gemini-proxy-model">
-            <option value="gemini-2.5-flash">Gemini 2.5 Flash</option>
-            <option value="gemini-2.5-pro">Gemini 2.5 Pro</option>
-          </select>
-        </div>
-        <div class="field-group">
-          <label for="gemini-proxy-context-window">最大上下文</label>
-          <input type="number" id="gemini-proxy-context-window" value="1000000" min="1000" step="1000"
-            placeholder="默认 1000000 (1M)">
-          <p class="help-text">模型的最大上下文窗口大小（token），用于小说转世界书判断是否超限</p>
-        </div>
-        <p class="help-text" data-i18n="proxy-help">
-          用于连接 Cloudflare Worker 等自定义反向代理。Endpoint URL 应为不包含模型名称的完整路径。
-        </p>
       </div>
 
       <div id="ollama-options" class="api-provider-options">
@@ -3759,10 +4961,10 @@
           </div>
         </div>
         <div class="field-group">
-          <label for="ollama-context-window">最大上下文</label>
+          <label for="ollama-context-window" data-i18n="max-context-label">最大上下文</label>
           <input type="number" id="ollama-context-window" value="1000000" min="1000" step="1000"
-            placeholder="默认 1000000 (1M)">
-          <p class="help-text">模型的最大上下文窗口大小（token），用于小说转世界书判断是否超限</p>
+            data-i18n-placeholder="max-context-placeholder" placeholder="默认 1000000 (1M)">
+          <p class="help-text" data-i18n="max-context-help">模型的最大上下文窗口大小（token），用于小说转世界书判断是否超限</p>
         </div>
         <p class="help-text" data-i18n="ollama-help">用于连接本地运行的Ollama服务，默认地址为 http://localhost:11434</p>
       </div>
@@ -3774,10 +4976,10 @@
             placeholder="例如: http://localhost:1234/v1">
         </div>
         <div class="field-group">
-          <label for="local-context-window">最大上下文</label>
+          <label for="local-context-window" data-i18n="max-context-label">最大上下文</label>
           <input type="number" id="local-context-window" value="1000000" min="1000" step="1000"
-            placeholder="默认 1000000 (1M)">
-          <p class="help-text">模型的最大上下文窗口大小（token），用于小说转世界书判断是否超限</p>
+            data-i18n-placeholder="max-context-placeholder" placeholder="默认 1000000 (1M)">
+          <p class="help-text" data-i18n="max-context-help">模型的最大上下文窗口大小（token），用于小说转世界书判断是否超限</p>
         </div>
         <p class="help-text" data-i18n="local-help">用于连接LM Studio, 需下载项目源文件启动才能使用。</p>
       </div>
@@ -3788,15 +4990,15 @@
           style="border-bottom: 1px solid var(--border-color); padding-bottom: 12px; margin-bottom: 12px;">
           <div style="display: flex; gap: 6px; align-items: center; flex-wrap: wrap;">
             <select id="tavern-config-select" style="flex: 1; min-width: 120px;">
-              <option value="">选择配置...</option>
+              <option value="" data-i18n="select-config-placeholder">选择配置...</option>
             </select>
-            <input type="text" id="tavern-config-name" placeholder="配置名称"
-              style="flex: 0.6; min-width: 80px; padding: 6px 8px;">
-            <button type="button" id="tavern-config-save-btn"
+            <input type="text" id="tavern-config-name" data-i18n-placeholder="config-name-placeholder"
+              placeholder="配置名称" style="flex: 0.6; min-width: 80px; padding: 6px 8px;">
+            <button type="button" id="tavern-config-save-btn" data-i18n="save"
               style="background: var(--primary-color); color: white; padding: 6px 10px; border: none; border-radius: 4px; cursor: pointer; white-space: nowrap;">保存</button>
-            <button type="button" id="tavern-config-delete-btn"
+            <button type="button" id="tavern-config-delete-btn" data-i18n="delete"
               style="background: var(--danger-color, #f44336); color: white; padding: 6px 10px; border: none; border-radius: 4px; cursor: pointer; white-space: nowrap;">删除</button>
-            <button type="button" id="tavern-config-reset-btn"
+            <button type="button" id="tavern-config-reset-btn" data-i18n="reset"
               style="background: #888; color: white; padding: 6px 10px; border: none; border-radius: 4px; cursor: pointer; white-space: nowrap;">重置</button>
           </div>
         </div>
@@ -3814,16 +5016,17 @@
             <label for="tavern-api-endpoint" data-i18n="api-url">API URL</label>
             <div style="display:flex;gap:8px;align-items:center;">
               <input type="text" id="tavern-api-endpoint" placeholder="http://api.xxx.com/v1" style="flex:1;">
-              <button type="button" id="pick-provider-btn"
-                onclick="showProviderPickerModal(function(r){document.getElementById('tavern-api-endpoint').value=r.endpoint;document.getElementById('tavern-model').value=r.model;var hint=document.getElementById('tavern-model-hint');if(r.context){hint.textContent='根据数据库，来自'+r.providerName+'的「'+r.modelName+'」模型的最大上下文为 '+r.context.toLocaleString()+(r.maxTokens?'，最大输出为 '+r.maxTokens.toLocaleString():'')+'。';hint.style.display='block';}else{hint.style.display='none';}})"
+              <button type="button" id="pick-provider-btn" data-i18n="pick-from-provider-lib"
+                onclick="pickTavernProviderFromLib()"
                 style="background:var(--primary-color,#e67e22);color:white;padding:8px 12px;border:none;border-radius:4px;cursor:pointer;white-space:nowrap;font-size:13px;">从模型库选择</button>
-              <button type="button" onclick="checkProvidersUpdate()"
+              <button type="button" onclick="checkProvidersUpdate()" data-i18n="sync-cloud-providers"
                 style="background:#555;color:white;padding:8px 12px;border:none;border-radius:4px;cursor:pointer;white-space:nowrap;font-size:13px;">同步云端模型库</button>
             </div>
           </div>
           <div class="field-group">
             <label for="tavern-api-key" data-i18n="api-key">API Key</label>
-            <input type="password" id="tavern-api-key" placeholder="输入 API Key">
+            <input type="password" id="tavern-api-key" data-i18n-placeholder="api-key-placeholder"
+              placeholder="输入 API Key">
           </div>
           <div class="field-group">
             <label for="tavern-model" data-i18n="model-name">模型名称</label>
@@ -3865,10 +5068,10 @@
           </div>
         </div>
         <div class="field-group">
-          <label for="tavern-context-window">最大上下文</label>
+          <label for="tavern-context-window" data-i18n="max-context-label">最大上下文</label>
           <input type="number" id="tavern-context-window" value="1000000" min="1000" step="1000" style="width: 150px;"
-            placeholder="默认 1000000 (1M)">
-          <p class="help-text">模型的最大上下文窗口大小（token），用于小说转世界书字数超限判断</p>
+            data-i18n-placeholder="max-context-placeholder" placeholder="默认 1000000 (1M)">
+          <p class="help-text" data-i18n="max-context-help">模型的最大上下文窗口大小（token），用于小说转世界书字数超限判断</p>
           <p id="tavern-model-hint" class="help-text" style="display:none;color:#e67e22;"></p>
         </div>
       </div>
@@ -3890,7 +5093,7 @@
         <div class="Plus-switch-container" style="margin: 0; justify-content: space-between; width: 100%;">
           <div>
             <span class="switch-label" id="style-mode-label" data-i18n="style-mode">格式增强</span>
-            <p class="help-text" style="margin: 5px 0 0 0; font-size: 12px; color: #888;">
+            <p class="help-text" style="margin: 5px 0 0 0; font-size: 12px; color: #888;" data-i18n="style-mode-help">
               开启后，AI生成内容将使用Markdown格式，包含粗体、斜体、列表等结构化输出
             </p>
           </div>
@@ -3929,13 +5132,57 @@
         </label>
         <textarea id="custom-limitless-prompt" rows="8"
           style="width: 100%; padding: 10px; background: rgba(0,0,0,0.3); border: 1px solid #555; border-radius: 5px; color: white; font-family: monospace; font-size: 13px; resize: vertical; box-sizing: border-box;"></textarea>
-        <div style="margin-top: 8px;">
+        <div style="margin-top: 8px; margin-bottom: 12px;">
           <button id="reset-limitless-prompt-btn"
-            style="background: #6c757d; color: white; padding: 6px 12px; border: none; border-radius: 4px; cursor: pointer; font-size: 12px;"
+            style="background: rgba(255,255,255,0.08); color: #e5e5e5; border: 1px solid rgba(255,255,255,0.18); padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 12px;"
             data-i18n="reset-to-default">
-            🔄 恢复默认
+            恢复默认
           </button>
         </div>
+      </div>
+
+      <!-- 全部 AI 提示词自定义中心入口 -->
+      <div class="field-group"
+        style="background: rgba(230, 126, 34, 0.08); border: 1px solid rgba(230, 126, 34, 0.35); border-radius: 8px; padding: 12px 14px; margin-bottom: 12px;">
+        <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;">
+          <div style="flex: 1; min-width: 200px;">
+            <span class="switch-label" style="color: #ffd099;" data-i18n="custom-all-prompts-title">自定义全部 AI 提示词</span>
+            <p class="help-text" style="margin: 4px 0 0 0; font-size: 12px; color: #aaa;"
+              data-i18n="custom-all-prompts-desc">
+              支持编辑全站所有 AI 提示词（角色生成、世界书、小说转卡/世界书、正则、美化等），内置可视化中文色块占位符
+            </p>
+          </div>
+          <button type="button" onclick="PromptManager.openModal()" data-i18n="manage-all-prompts-btn"
+            style="background: var(--primary-color); color: #fff; border: none; padding: 8px 15px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 13px; white-space: nowrap;">
+            管理全部提示词
+          </button>
+        </div>
+      </div>
+
+      <!-- 全站数据一键备份与恢复（工作室 index + 聊天页 chat） -->
+      <div class="field-group"
+        style="background: rgba(255, 255, 255, 0.04); border: 1px solid rgba(255, 255, 255, 0.14); border-radius: 8px; padding: 12px 14px; margin-bottom: 14px;">
+        <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;">
+          <div style="flex: 1; min-width: 200px;">
+            <span class="switch-label" style="color: #ffd099;" data-i18n="full-backup-title">全站数据备份与恢复</span>
+            <p class="help-text" style="margin: 4px 0 0 0; font-size: 12px; color: #aaa; line-height: 1.5;"
+              data-i18n="full-backup-desc">
+              一键打包或恢复工作室（index）与聊天页（chat）的全部角色、世界书、聊天记录、预设、快速回复及插件设置
+            </p>
+          </div>
+          <div style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center;">
+            <button type="button" id="full-backup-export-btn" data-i18n="full-backup-export-btn"
+              style="background: var(--primary-color); color: #fff; border: none; padding: 8px 14px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 13px; white-space: nowrap;">
+              一键备份
+            </button>
+            <button type="button" id="full-backup-import-btn" data-i18n="full-backup-import-btn"
+              style="background: rgba(255, 255, 255, 0.09); color: #f0f0f0; border: 1px solid rgba(255, 255, 255, 0.22); padding: 7px 14px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 13px; white-space: nowrap;">
+              恢复备份
+            </button>
+            <input type="file" id="full-backup-import-file" accept=".json" style="display: none;">
+          </div>
+        </div>
+        <div id="full-backup-status" style="font-size: 12px; color: #ffd099; margin-top: 8px; display: none;"></div>
       </div>
 
       <!-- 调试模式开关 -->
@@ -3960,6 +5207,91 @@
       </div>
     </div>
   </div>
+
+  <!-- 全量提示词自定义中心弹窗 -->
+  <div id="prompt-manager-modal" class="modal-overlay" style="display: none;">
+    <div class="pm-modal-box">
+      <div class="pm-header">
+        <div>
+          <h3 data-i18n="pm-title">📝 全站提示词自定义中心</h3>
+          <div id="pm-custom-summary" class="pm-header-sub" data-i18n="pm-subtitle">支持自定义全站所有 AI 提示词</div>
+        </div>
+        <button type="button" onclick="PromptManager.closeModal()" data-i18n="pm-close-x"
+          style="background: rgba(0,0,0,0.28); color: #fff; border: 1px solid rgba(255,255,255,0.28); border-radius: 6px; padding: 6px 14px; cursor: pointer; font-size: 13px;">✕
+          关闭</button>
+      </div>
+
+      <div class="pm-body">
+        <div class="pm-sidebar">
+          <div class="pm-search-wrap">
+            <input type="text" id="pm-search-input" data-i18n-placeholder="pm-search-placeholder"
+              placeholder="🔍 搜索提示词名称或功能...">
+          </div>
+          <div id="pm-sidebar-list" class="pm-sidebar-list"></div>
+        </div>
+
+        <div class="pm-main">
+          <div class="pm-main-head">
+            <div>
+              <h4>
+                <span id="pm-current-title" data-i18n="pm-prompt-name">提示词名称</span>
+                <span id="pm-current-status" class="pm-status-tag is-default" data-i18n="pm-status-default">默认模板</span>
+              </h4>
+              <p id="pm-current-desc" class="pm-main-desc"></p>
+            </div>
+            <button type="button" onclick="PromptManager.resetCurrentPrompt()" data-i18n="pm-reset-current"
+              style="background: rgba(255,255,255,0.08); color: #ddd; border: 1px solid rgba(255,255,255,0.18); padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 12px; white-space: nowrap;">
+              🔄 恢复本条默认
+            </button>
+          </div>
+
+          <div class="pm-usage-tip" data-i18n-html="pm-usage-tip">
+            💡 <b>说明：</b>输入框中的彩色胶囊代表运行时自动填入的动态内容。<b>点击右侧色块</b>可插入到当前光标处；带 <b>*</b> 为必填项，保存时必须保留。
+          </div>
+
+          <div id="pm-missing-warn" class="pm-missing-warn">
+            <span class="pm-warn-text"></span>
+            <button type="button" onclick="PromptManager.insertAllMissingRequired()" data-i18n="pm-add-missing"
+              style="background: #e74c3c; color: #fff; border: none; padding: 4px 10px; border-radius: 5px; cursor: pointer; font-size: 11.5px; white-space: nowrap;">
+              + 一键补回必填项
+            </button>
+          </div>
+
+          <div class="pm-workspace">
+            <div class="pm-editor-wrap">
+              <div id="pm-rich-editor" contenteditable="true" spellcheck="false"></div>
+            </div>
+            <div class="pm-token-panel">
+              <div class="pm-token-panel-head" data-i18n="pm-token-panel-head">🧩 点击插入占位符色块</div>
+              <div id="pm-token-list"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="pm-footer">
+        <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+          <button type="button" onclick="PromptManager.exportAllCustomPrompts()" data-i18n="pm-export"
+            style="background: rgba(255,255,255,0.08); color: #ddd; border: 1px solid rgba(255,255,255,0.16); padding: 7px 12px; border-radius: 6px; cursor: pointer; font-size: 12.5px;">📤
+            导出自定义</button>
+          <button type="button" onclick="document.getElementById('pm-import-file').click()" data-i18n="pm-import"
+            style="background: rgba(255,255,255,0.08); color: #ddd; border: 1px solid rgba(255,255,255,0.16); padding: 7px 12px; border-radius: 6px; cursor: pointer; font-size: 12.5px;">📥
+            导入自定义</button>
+          <input type="file" id="pm-import-file" accept=".json" style="display: none;"
+            onchange="PromptManager.importCustomPrompts(event)">
+          <button type="button" onclick="PromptManager.resetAllPrompts()" data-i18n="pm-reset-all"
+            style="background: rgba(231,76,60,0.16); color: #ff9b90; border: 1px solid rgba(231,76,60,0.4); padding: 7px 12px; border-radius: 6px; cursor: pointer; font-size: 12.5px;">🗑️
+            全部恢复默认</button>
+        </div>
+        <div style="display: flex; gap: 10px;">
+          <button type="button" class="cancel-btn" onclick="PromptManager.closeModal()" data-i18n="close">关闭</button>
+          <button type="button" class="action-btn" onclick="PromptManager.saveCurrentPrompt()"
+            data-i18n="pm-save-current">💾 保存当前提示词</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div id="pm-toast" class="pm-toast"></div>
 
   <div id="name-generator-modal" class="modal-overlay">
     <div class="modal-content">
@@ -4382,7 +5714,8 @@
         </div>
         <div class="header-buttons">
           <button onclick="showEditorView()">+ 创建新角色</button>
-          <button onclick="showNovelToWorldbookView()">📚 txt转世界书</button>
+          <button onclick="showNovelToWorldbookView()">📚 小说转世界书</button>
+          <button id="novel-to-card-btn" onclick="showNovelToCardView()">🃏 小说转剧情卡</button>
           <button onclick="document.getElementById('file-importer').click()">📥 导入</button>
           <button onclick="continueChatting()">💬 继续聊天</button>
           <input type="file" id="file-importer" accept=".json,.png" onchange="importCharacter(event)" multiple="">
@@ -4493,11 +5826,569 @@
     </div>
   </div>
 
-  <!-- 长文本转世界书视图 -->
+  <!-- 小说转剧情卡视图 (小白X 2.0 动态章节与自由续写引擎) -->
+  <div id="novel-to-card-view">
+    <div class="worldbook-container">
+      <div class="worldbook-header">
+        <div class="view-header-title-group">
+          <h1 id="novel-to-card-title" data-i18n="ntc-title">🃏 小说转剧情卡</h1>
+          <p id="novel-to-card-subtitle" class="view-header-subtitle" data-i18n="ntc-subtitle">动态章节引擎 · 从头亲历改命 ·
+            终章自动切入自由续写</p>
+        </div>
+        <div style="display:flex;gap:8px;align-items:center;">
+          <button data-i18n="api-settings-btn"
+            style="background:rgba(0,0,0,0.28);color:white;padding:7px 12px;border:1px solid rgba(255,255,255,0.25);border-radius:5px;cursor:pointer;"
+            onclick="openApiSettingsModal()">⚙️ API 设置</button>
+          <button data-i18n="return"
+            style="background:rgba(0,0,0,0.28);color:white;padding:7px 14px;border:1px solid rgba(255,255,255,0.25);border-radius:5px;cursor:pointer;"
+            onclick="showLibraryView()">返回</button>
+        </div>
+      </div>
+
+      <div class="ntc-step-tabs">
+        <button id="ntc-tab-step1" class="ntc-step-tab active" onclick="NTC.switchStep(1)"
+          data-i18n="ntc-tab-step1">第一步：📖 原著精炼提取</button>
+        <button id="ntc-tab-step2" class="ntc-step-tab" onclick="NTC.switchStep(2)"
+          data-i18n="ntc-tab-step2">第二步：🧩打包角色卡</button>
+      </div>
+
+      <div class="worldbook-body">
+        <!-- ==================== 步骤 1 面板 ==================== -->
+        <div id="ntc-step1-panel" style="display:flex;flex-direction:column;gap:14px;">
+
+          <!-- 卡片 1：导入原著与切分 -->
+          <div class="ntc-card-box">
+            <h3>
+              <span style="display:flex;align-items:center;">
+                <span class="ntc-section-num">1</span><span data-i18n="ntc-s1-card1-title">导入原著与切分队列</span>
+              </span>
+              <span style="display:flex;gap:6px;flex-wrap:wrap;">
+                <button type="button" class="ntc-mini-btn" data-i18n="ntc-import-json"
+                  onclick="document.getElementById('ntc-import-extracted-input').click()">导入提取 JSON</button>
+                <button type="button" class="ntc-mini-btn" onclick="NTC.exportExtractedData()"
+                  data-i18n="ntc-export-json">导出提取 JSON</button>
+                <button type="button" class="ntc-mini-btn danger" onclick="NTC.resetWorkspace()"
+                  data-i18n="ntc-reset-workspace">清空重来</button>
+              </span>
+            </h3>
+            <input type="file" id="ntc-import-extracted-input" accept=".json" style="display:none;"
+              onchange="NTC.importExtractedData(event)">
+
+            <div class="file-drop-zone" id="ntc-drop-zone" onclick="document.getElementById('ntc-file-input').click()"
+              style="padding:20px;border-color:rgba(255,255,255,0.2);background:rgba(0,0,0,0.18);">
+              <div style="font-size:28px;margin-bottom:6px;">📖</div>
+              <p style="margin:0;font-size:14px;color:#eee;" data-i18n="ntc-drop-title">点击或拖拽 TXT / EPUB 小说文件到此处</p>
+              <p id="ntc-file-info" style="color:#999;font-size:12.5px;margin:6px 0 0;" data-i18n="ntc-drop-desc">
+                支持格式：txt、epub（自动编码检测与章节识别，少于 500 字短/空章自动归并）</p>
+            </div>
+            <input type="file" id="ntc-file-input" accept=".txt,.epub" style="display:none;"
+              onchange="NTC.handleFileSelect(event)">
+
+            <div style="margin-top:12px;display:flex;align-items:center;gap:10px;">
+              <label style="color:#bbb;font-size:12.5px;" data-i18n="ntc-txt-encoding">TXT 编码</label>
+              <select id="ntc-encoding"
+                style="padding:5px 10px;border:1px solid #555;border-radius:4px;font-size:12.5px;">
+                <option value="auto" data-i18n="auto-detect">自动检测</option>
+                <option value="UTF-8">UTF-8</option>
+                <option value="GBK">GBK</option>
+                <option value="GB2312">GB2312</option>
+                <option value="Big5">Big5</option>
+              </select>
+            </div>
+
+            <div id="ntc-txt-split-grid" class="ntc-row-2" style="margin-top:12px;align-items:stretch;">
+              <div class="ntc-sub-card">
+                <h4 data-i18n="ntc-split-regex-title">按章回正则切分</h4>
+                <input type="text" id="ntc-chapter-regex" value="第[零一二三四五六七八九十百千万0-9]+[章回卷节部篇]"
+                  style="width:100%;padding:8px;background:rgba(0,0,0,0.3);border:1px solid #555;border-radius:4px;color:white;font-size:13px;box-sizing:border-box;">
+                <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">
+                  <button type="button" class="ntc-mini-btn" data-i18n="ntc-regex-zh"
+                    onclick="document.getElementById('ntc-chapter-regex').value='第[零一二三四五六七八九十百千万0-9]+[章回卷节部篇]'">中文通用</button>
+                  <button type="button" class="ntc-mini-btn" data-i18n="ntc-regex-en"
+                    onclick="document.getElementById('ntc-chapter-regex').value='Chapter\\s+[0-9]+'">英文 Chapter</button>
+                  <button type="button" class="ntc-btn-primary" style="margin-left:auto;padding:6px 14px;"
+                    onclick="NTC.splitByRegexAndPrepare()" data-i18n="ntc-split-regex-btn">检测并载入队列</button>
+                </div>
+              </div>
+              <div class="ntc-sub-card">
+                <h4 data-i18n="ntc-split-size-title">按固定字数切分</h4>
+                <div>
+                  <select id="ntc-split-size"
+                    style="width:100%;padding:8px;border:1px solid #555;border-radius:4px;font-size:13px;">
+                    <option value="5000" data-i18n="ntc-size-5k">5 千字 / 块</option>
+                    <option value="10000" selected data-i18n="ntc-size-10k">1 万字 / 块（推荐）</option>
+                    <option value="20000" data-i18n="ntc-size-20k">2 万字 / 块</option>
+                    <option value="30000" data-i18n="ntc-size-30k">3 万字 / 块</option>
+                    <option value="50000" data-i18n="ntc-size-50k">5 万字 / 块</option>
+                    <option value="custom" data-i18n="ntc-size-custom">自定义字数</option>
+                  </select>
+                  <input type="number" id="ntc-split-size-custom" data-i18n-placeholder="ntc-size-custom-placeholder"
+                    placeholder="输入自定义字数" min="1000"
+                    style="display:none;width:100%;padding:8px;margin-top:6px;background:rgba(0,0,0,0.3);border:1px solid var(--primary-color);border-radius:4px;color:white;font-size:13px;box-sizing:border-box;">
+                </div>
+                <div style="text-align:right;">
+                  <button type="button" class="ntc-btn-secondary" style="padding:6px 14px;"
+                    onclick="NTC.splitBySizeAndPrepare()" data-i18n="ntc-split-size-btn">按字数载入队列</button>
+                </div>
+              </div>
+            </div>
+
+            <div id="ntc-epub-panel" class="ntc-sub-card" style="display:none;margin-top:12px;">
+              <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+                <strong id="ntc-epub-stats" style="color:var(--primary-color);font-size:13px;"
+                  data-i18n="ntw-epub-title">EPUB 章节列表</strong>
+                <div style="display:flex;gap:6px;align-items:center;">
+                  <button type="button" class="ntc-mini-btn" onclick="NTC.selectAllEpub(true)"
+                    data-i18n="select-all">全选</button>
+                  <button type="button" class="ntc-mini-btn" onclick="NTC.selectAllEpub(false)"
+                    data-i18n="deselect-all">全不选</button>
+                  <button type="button" class="ntc-btn-primary" style="padding:5px 12px;"
+                    onclick="NTC.prepareEpubChunks()" data-i18n="ntc-load-queue">载入队列</button>
+                </div>
+              </div>
+              <div id="ntc-epub-list" style="max-height:200px;overflow-y:auto;"></div>
+            </div>
+          </div>
+
+          <!-- 卡片 2：提取结构与设定分类 -->
+          <div class="ntc-card-box">
+            <h3>
+              <span style="display:flex;align-items:center;">
+                <span class="ntc-section-num">2</span><span data-i18n="ntc-s1-card2-title">提取结构与设定分类</span>
+              </span>
+              <span style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+                <label
+                  style="font-size:12px;color:#bbb;display:inline-flex;align-items:center;gap:5px;cursor:pointer;font-weight:normal;">
+                  <input type="checkbox" id="ntc-strict-categories" onchange="NTC.toggleStrictCategories(this.checked)">
+                  <span data-i18n="ntc-strict-categories">严格仅提取勾选分类</span>
+                </label>
+                <button type="button" class="ntc-mini-btn" onclick="NTC.openCategoryModal(-1)"
+                  data-i18n="ntc-add-category">+ 新增分类</button>
+                <button type="button" class="ntc-mini-btn" onclick="NTC.resetDefaultCategories()"
+                  data-i18n="restore-default">恢复默认</button>
+              </span>
+            </h3>
+            <div id="ntc-categories-list" class="ntc-cat-grid"></div>
+          </div>
+
+          <!-- 卡片 3：Patch-Agent 实时提取控制台 -->
+          <div class="ntc-card-box">
+            <h3>
+              <span style="display:flex;align-items:center;">
+                <span class="ntc-section-num">3</span><span data-i18n="ntc-s1-card3-title">Patch-Agent 提取控制台</span>
+              </span>
+              <span id="ntc-queue-stats" style="font-size:12px;color:#aaa;font-weight:normal;"
+                data-i18n="ntc-queue-stats-init">总块数: 0</span>
+            </h3>
+            <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:12px;">
+              <button id="ntc-start-btn" type="button" onclick="NTC.startExtraction()" data-i18n="ntc-start-btn">🚀
+                开始提取</button>
+              <button id="ntc-pause-btn" type="button" data-i18n="ntc-pause-btn"
+                style="display:none;padding:9px 16px;background:#c0392b;color:white;border:none;border-radius:6px;cursor:pointer;font-size:13px;"
+                onclick="NTC.pauseExtraction()">暂停并保存</button>
+              <button id="ntc-retry-failed-btn" type="button" data-i18n="ntc-retry-failed-btn"
+                style="display:none;padding:9px 16px;background:#d68910;color:white;border:none;border-radius:6px;cursor:pointer;font-size:13px;"
+                onclick="NTC.retryFailed()">重试失败块</button>
+              <button type="button" class="ntc-btn-secondary" onclick="NTC.openHistoryModal()"
+                data-i18n="ntc-history-btn">历史快照回退</button>
+              <button id="ntc-go-step2-btn" type="button" onclick="NTC.goStep2()"
+                data-i18n="ntc-go-step2-btn">前往第二步：注入框架 →</button>
+            </div>
+            <div class="progress-bar"
+              style="height:8px;background:rgba(255,255,255,0.08);border-radius:4px;overflow:hidden;">
+              <div id="ntc-progress-fill"
+                style="height:100%;width:0%;background:var(--primary-color);transition:width 0.3s;">
+              </div>
+            </div>
+            <p id="ntc-progress-text" style="font-size:12.5px;color:#bbb;margin:8px 0 0;" data-i18n="ntc-progress-wait">
+              等待导入并切分原著文本...</p>
+            <div id="ntc-chunk-queue" class="ntc-queue-list"></div>
+          </div>
+
+          <!-- 提取内容实时预览 -->
+          <div class="ntc-card-box">
+            <h3><span data-i18n="ntc-preview-title">提取内容实时预览</span></h3>
+            <div id="ntc-extraction-preview"></div>
+          </div>
+        </div>
+
+        <!-- ==================== 步骤 2 面板 ==================== -->
+        <div id="ntc-step2-panel" style="display:none;flex-direction:column;gap:14px;">
+
+          <!-- 卡片 1：基础信息 & <user> 身份定制 -->
+          <div class="ntc-card-box">
+            <h3>
+              <span style="display:flex;align-items:center;">
+                <span class="ntc-section-num">1</span><span data-i18n="ntc-s2-card1-title">角色卡名称与 &lt;user&gt;
+                  身份设定</span>
+              </span>
+              <span style="display:flex;align-items:center;gap:10px;">
+                <label
+                  style="font-size:12px;color:#bbb;font-weight:normal;display:inline-flex;align-items:center;gap:5px;cursor:pointer;">
+                  <input type="checkbox" id="ntc-tpl-en-userSetting" checked onchange="NTC.refreshPreview()">
+                  <span data-i18n="ntc-enable-user-setting">启用 User 设定条目</span>
+                </label>
+                <button id="ntc-ai-userset-btn" type="button" class="ntc-btn-primary" data-i18n="ntc-ai-userset-btn"
+                  onclick="NTC.aiGenerateUserSetting()">✨ AI 参考全书定制身份</button>
+              </span>
+            </h3>
+
+            <div class="ntc-row-2" style="margin-bottom:12px;">
+              <div class="ntc-field">
+                <label data-i18n="ntc-card-name-label">角色卡名称</label>
+                <input type="text" id="ntc-card-name" data-i18n-placeholder="ntc-card-name-placeholder"
+                  placeholder="输入角色卡名称" onchange="NTC.refreshPreview()">
+              </div>
+              <div class="ntc-field">
+                <label data-i18n="ntc-user-role-mode-label">&lt;user&gt; 定位模式</label>
+                <select id="ntc-user-role-mode" onchange="NTC.applyUserRolePreset(this.value)">
+                  <option value="companion" data-i18n="ntc-role-companion">同行者 / 关键变量融入原著</option>
+                  <option value="protagonist" data-i18n="ntc-role-protagonist">直接扮演原著第一视角主角</option>
+                  <option value="observer" data-i18n="ntc-role-observer">入局知情者 / 观察者</option>
+                  <option value="custom" data-i18n="ntc-role-custom">自定义</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="ntc-field" style="margin-bottom:10px;">
+              <div
+                style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:5px;">
+                <label style="margin:0;" data-i18n="ntc-user-hint-label">身份偏好补充（选填）</label>
+                <label
+                  style="margin:0;font-size:12px;color:#aaa;display:inline-flex;align-items:center;gap:5px;cursor:pointer;"
+                  data-i18n-title="ntc-user-overview-tip" title="勾选后 AI 会阅读全书各章总览，设计能贯穿多个舞台的身份，避免换章掉线">
+                  <input type="checkbox" id="ntc-user-include-overview" checked onchange="NTC.refreshPreview()">
+                  <span data-i18n="ntc-user-overview-label">参考全书章节总览（推荐）</span>
+                </label>
+              </div>
+              <input type="text" id="ntc-user-custom-hint" data-i18n-placeholder="ntc-user-hint-placeholder"
+                placeholder="例：想当主角同班熟人 / 刚转学来的邻居 / 取代原著男主..." onchange="NTC.refreshPreview()">
+            </div>
+
+            <div class="ntc-field">
+              <label data-i18n="ntc-user-body-label">1️⃣User设定 正文</label>
+              <textarea id="ntc-tpl-txt-userSetting" rows="5" data-i18n-placeholder="ntc-user-body-placeholder"
+                placeholder="点击右上角「✨ AI 参考全书定制身份」自动生成带具体身份、初始位置与人物关系锚点的设定，也可手动编辑..."
+                onchange="NTC.refreshPreview()"></textarea>
+            </div>
+          </div>
+
+          <!-- 卡片 2：开场白与章节切入（支持多开场） -->
+          <div class="ntc-card-box">
+            <h3>
+              <span style="display:flex;align-items:center;">
+                <span class="ntc-section-num">2</span><span data-i18n="ntc-s2-card2-title">开场白与开局起始章节</span>
+              </span>
+              <button id="ntc-ai-firstmes-btn" type="button" class="ntc-btn-primary" data-i18n="ntc-ai-firstmes-btn"
+                onclick="NTC.aiGenerateFirstMes()">✨ 生成当前开场白</button>
+            </h3>
+
+            <!-- 多开场白标签栏 -->
+            <div id="ntc-greeting-tabs" class="ntc-greeting-tabs"></div>
+
+            <!-- 严格等高三列：开局起始章节高亮置前 -->
+            <div class="ntc-row-3" style="margin-bottom:12px;">
+              <div class="ntc-field">
+                <label style="color:var(--primary-color);font-weight:600;"
+                  data-i18n="ntc-start-chapter-label">开局起始章节（同步世界书）</label>
+                <select id="ntc-greeting-start-chapter" class="ntc-highlight-select"
+                  onchange="NTC.changeGreetingStartChapter(this.value)"></select>
+              </div>
+              <div class="ntc-field">
+                <label data-i18n="ntc-greeting-label-title">开场白标签名</label>
+                <input type="text" id="ntc-greeting-label" data-i18n-placeholder="ntc-greeting-label-placeholder"
+                  placeholder="例：主开场 / 正篇线" onchange="NTC.refreshPreview()">
+              </div>
+              <div class="ntc-field">
+                <label data-i18n="ntc-greeting-hint-label">生成指引（选填）</label>
+                <input type="text" id="ntc-greeting-hint" data-i18n-placeholder="ntc-greeting-hint-placeholder"
+                  placeholder="例：跳过回忆直接切入教室..." onchange="NTC.refreshPreview()">
+              </div>
+            </div>
+
+            <!-- 紧凑参考章节胶囊列表 -->
+            <div style="margin-bottom:12px;">
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+                <span style="font-size:12.5px;color:#bbb;"
+                  data-i18n="ntc-ref-chapters-tip">勾选本开场白需要参考的章节（悬停可查看阶段）：</span>
+                <span style="display:flex;gap:6px;">
+                  <button type="button" class="ntc-mini-btn" data-i18n="select-all"
+                    onclick="NTC.selectAllGreetingRefChapters(true)">全选</button>
+                  <button type="button" class="ntc-mini-btn" data-i18n="clear-selection"
+                    onclick="NTC.selectAllGreetingRefChapters(false)">清空</button>
+                </span>
+              </div>
+              <div id="ntc-greeting-ref-chapters" class="ntc-ref-ch-grid"></div>
+            </div>
+
+            <div class="ntc-field">
+              <label data-i18n="ntc-first-mes-label">开场白正文</label>
+              <textarea id="ntc-first-mes" rows="7" data-i18n-placeholder="ntc-first-mes-placeholder"
+                placeholder="勾选参考章节并选好「开局起始章节」后，点击右上角「✨ 生成当前开场白」，也可直接手动编写..."
+                onchange="NTC.refreshPreview()"></textarea>
+            </div>
+          </div>
+
+          <!-- 可选折叠：高级参数与 RP 规则框架（不计入主流程序号） -->
+          <details class="ntc-adv-details">
+            <summary>
+              <span style="display:flex;align-items:center;">
+                <span data-i18n="ntc-adv-title">高级配置与 RP 规则框架</span>
+                <span style="font-size:12px;font-weight:normal;color:#999;margin-left:8px;"
+                  data-i18n="ntc-adv-subtitle">（选填：字数预算、更新通道、主线与自由模式运行规则，默认已优化）</span>
+              </span>
+              <span style="font-size:12px;color:#aaa;" data-i18n="ntc-expand-collapse">展开 / 收起 ▾</span>
+            </summary>
+
+            <div style="margin-top:14px;padding-top:14px;border-top:1px solid rgba(255,255,255,0.08);">
+              <div class="ntc-row-2" style="margin-bottom:12px;">
+                <div class="ntc-field">
+                  <label data-i18n="ntc-max-chars-label">动态世界书字数预算（MAX_ACTIVE_CHARS）</label>
+                  <input type="number" id="ntc-max-active-chars" value="12000" min="2000" max="60000" step="1000"
+                    onchange="NTC.refreshPreview()">
+                </div>
+                <div class="ntc-field">
+                  <label data-i18n="ntc-var-channel-label">小白X 2.0 变量更新通道</label>
+                  <select id="ntc-var-channel" onchange="NTC.refreshPreview()">
+                    <option value="inline_state" data-i18n="ntc-var-inline">正文末尾 &lt;state&gt; 块（默认开箱即用 + 隐藏正则）</option>
+                    <option value="plugin_updater" data-i18n="ntc-var-updater">小白X 2.0 独立变量更新器</option>
+                  </select>
+                </div>
+              </div>
+
+              <div style="margin-bottom:14px;">
+                <label
+                  style="font-size:12.5px;color:#ccc;display:inline-flex;align-items:center;gap:6px;cursor:pointer;">
+                  <input type="checkbox" id="ntc-include-buttons" checked onchange="NTC.refreshPreview()">
+                  <span data-i18n="ntc-include-buttons">注入快捷按钮任务（查看剧情进度 / 手动推进阶段与章节 / 切换自由模式）</span>
+                </label>
+              </div>
+
+              <details class="ntc-chapter-details">
+                <summary>
+                  <label onclick="event.stopPropagation()" style="display:flex;align-items:center;gap:6px;">
+                    <input type="checkbox" id="ntc-tpl-en-creationGuideline" checked onchange="NTC.refreshPreview()">
+                    <b data-i18n="ntc-tpl-creation-title">创作准则</b> <span class="ntc-badge"
+                      data-i18n="ntc-tpl-creation-badge">D0 · order 700 · 全程常驻</span>
+                  </label>
+                </summary>
+                <div class="ntc-field" style="margin-top:8px;">
+                  <textarea id="ntc-tpl-txt-creationGuideline" rows="5" onchange="NTC.refreshPreview()"></textarea>
+                </div>
+              </details>
+
+              <details class="ntc-chapter-details">
+                <summary>
+                  <label onclick="event.stopPropagation()" style="display:flex;align-items:center;gap:6px;">
+                    <input type="checkbox" id="ntc-tpl-en-plotProgressionRule" checked onchange="NTC.refreshPreview()">
+                    <b data-i18n="ntc-tpl-plot-title">1️⃣剧情推进规则</b> <span class="ntc-badge"
+                      data-i18n="ntc-tpl-plot-badge">D0 · order 598 · 主线期启用，自由模式自动关闭</span>
+                  </label>
+                </summary>
+                <div class="ntc-field" style="margin-top:8px;">
+                  <textarea id="ntc-tpl-txt-plotProgressionRule" rows="7" onchange="NTC.refreshPreview()"></textarea>
+                </div>
+              </details>
+
+              <details class="ntc-chapter-details">
+                <summary>
+                  <label onclick="event.stopPropagation()" style="display:flex;align-items:center;gap:6px;">
+                    <input type="checkbox" id="ntc-tpl-en-outlinePerformanceRule" checked
+                      onchange="NTC.refreshPreview()">
+                    <b data-i18n="ntc-tpl-outline-title">1️⃣⚙剧情大纲演绎规则</b> <span class="ntc-badge"
+                      data-i18n="ntc-tpl-outline-badge">D0 · order 4 · 主线期启用，自由模式自动关闭</span>
+                  </label>
+                </summary>
+                <div class="ntc-field" style="margin-top:8px;">
+                  <textarea id="ntc-tpl-txt-outlinePerformanceRule" rows="6" onchange="NTC.refreshPreview()"></textarea>
+                </div>
+              </details>
+
+              <details class="ntc-chapter-details">
+                <summary>
+                  <label onclick="event.stopPropagation()" style="display:flex;align-items:center;gap:6px;">
+                    <input type="checkbox" id="ntc-tpl-en-extraThinkingChecklist" checked
+                      onchange="NTC.refreshPreview()">
+                    <b data-i18n="ntc-tpl-thinking-title">1️⃣⚙额外思考</b> <span class="ntc-badge"
+                      data-i18n="ntc-tpl-thinking-badge">D0 · order 1 · 主线期启用，自由模式自动关闭</span>
+                  </label>
+                </summary>
+                <div class="ntc-field" style="margin-top:8px;">
+                  <textarea id="ntc-tpl-txt-extraThinkingChecklist" rows="7" onchange="NTC.refreshPreview()"></textarea>
+                </div>
+              </details>
+
+              <details class="ntc-chapter-details">
+                <summary>
+                  <label onclick="event.stopPropagation()" style="display:flex;align-items:center;gap:6px;">
+                    <input type="checkbox" id="ntc-tpl-en-freeRoamGuideline" checked onchange="NTC.refreshPreview()">
+                    <b data-i18n="ntc-tpl-freeroam-title">1️⃣自由演绎指引</b> <span class="ntc-badge"
+                      data-i18n="ntc-tpl-freeroam-badge">D0 · order 598 · 终章完结/自由模式自动启用</span>
+                  </label>
+                </summary>
+                <div class="ntc-field" style="margin-top:8px;">
+                  <textarea id="ntc-tpl-txt-freeRoamGuideline" rows="5" onchange="NTC.refreshPreview()"></textarea>
+                </div>
+              </details>
+
+              <details class="ntc-chapter-details">
+                <summary>
+                  <label onclick="event.stopPropagation()" style="display:flex;align-items:center;gap:6px;">
+                    <input type="checkbox" id="ntc-tpl-en-freeRoamThinkingChecklist" checked
+                      onchange="NTC.refreshPreview()">
+                    <b data-i18n="ntc-tpl-freethink-title">1️⃣⚙额外思考（自由模式）</b> <span class="ntc-badge"
+                      data-i18n="ntc-tpl-freethink-badge">D0 · order 1 · 极简版，自由模式自动切换</span>
+                  </label>
+                </summary>
+                <div class="ntc-field" style="margin-top:8px;">
+                  <textarea id="ntc-tpl-txt-freeRoamThinkingChecklist" rows="7"
+                    onchange="NTC.refreshPreview()"></textarea>
+                </div>
+              </details>
+            </div>
+          </details>
+
+          <!-- 卡片 3：导出角色卡 -->
+          <div class="ntc-card-box">
+            <h3>
+              <span style="display:flex;align-items:center;">
+                <span class="ntc-section-num">3</span><span data-i18n="ntc-s2-card3-title">导出角色卡</span>
+              </span>
+            </h3>
+            <div class="ntc-notice-bar">
+              <span data-i18n-html="ntc-lwb-notice">运行前提：在 SillyTavern 的 <b>扩展设置 → 小白X</b> 中开启「变量管理 → <b>2.0
+                  (state)</b>」与「<b>循环任务</b>」。</span>
+              <span onclick="openLWBInstallTutorial(false)" data-i18n="ntc-install-tutorial-btn"
+                style="font-size: 12px; color: #3498db; cursor: pointer; border: 1px solid #3498db; padding: 3px 10px; border-radius: 4px; white-space: nowrap;">📦
+                安装教程 &amp; 必看</span>
+            </div>
+            <div id="ntc-card-assembly-preview"></div>
+            <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-top:16px;">
+              <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
+                <button type="button" class="ntc-btn-primary" style="padding:10px 22px;font-size:14px;"
+                  onclick="NTC.exportCardV3Json()" data-i18n="ntc-export-v3-btn">📦 导出 SillyTavern V3 角色卡 JSON</button>
+                <button type="button" class="ntc-btn-secondary" style="padding:10px 18px;font-size:13.5px;"
+                  onclick="NTC.saveCardToLibrary()" data-i18n="ntc-save-library-btn">💾 保存到角色库</button>
+                <button type="button" class="ntc-mini-btn" style="margin-left:auto;padding:8px 14px;"
+                  onclick="NTC.switchStep(1)" data-i18n="ntc-back-step1-btn">← 返回第一步</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 小说转卡：分类编辑弹窗 -->
+    <div id="ntc-category-modal" class="modal-overlay" style="display:none;z-index:10050;">
+      <div class="modal-content" style="max-width:540px;width:92%;">
+        <h3 id="ntc-cat-modal-title" style="color:var(--primary-color);margin-top:0;" data-i18n="ntc-cat-modal-title">
+          编辑设定分类</h3>
+        <div class="ntc-field" style="margin-bottom:10px;">
+          <label data-i18n="ntc-cat-name-label">分类名称</label>
+          <input type="text" id="ntc-cat-name" data-i18n-placeholder="ntc-cat-name-placeholder"
+            placeholder="例如：角色详情 / 势力 / 功法 / 线索">
+        </div>
+        <div class="ntc-field" style="margin-bottom:10px;">
+          <label data-i18n="ntc-cat-trigger-label">默认触发方式</label>
+          <select id="ntc-cat-trigger">
+            <option value="keyword" data-i18n="ntc-cat-trigger-keyword">绿灯关键词触发（按需省 Token）</option>
+            <option value="constant" data-i18n="ntc-cat-trigger-constant">蓝灯常驻（全局可见）</option>
+          </select>
+        </div>
+        <div class="ntc-field" style="margin-bottom:10px;">
+          <label data-i18n="ntc-cat-example-label">条目命名示例</label>
+          <input type="text" id="ntc-cat-example" data-i18n-placeholder="ntc-cat-example-placeholder"
+            placeholder="例如：角色全名">
+        </div>
+        <div class="ntc-field" style="margin-bottom:10px;">
+          <label data-i18n="ntc-cat-keywords-label">关键词建议（逗号分隔）</label>
+          <input type="text" id="ntc-cat-keywords" data-i18n-placeholder="ntc-cat-keywords-placeholder"
+            placeholder="例如：全名, 别名, 绰号">
+        </div>
+        <div class="ntc-field" style="margin-bottom:14px;">
+          <label data-i18n="ntc-cat-guide-label">内容提取指南（建议列出 **字段名**: 结构）</label>
+          <textarea id="ntc-cat-guide" rows="4" data-i18n-placeholder="ntc-cat-guide-placeholder"
+            placeholder="描述该分类需要提取哪些 **字段名**: ..."></textarea>
+        </div>
+        <div style="display:flex;justify-content:flex-end;gap:10px;">
+          <button type="button" class="cancel-btn" data-i18n="cancel"
+            onclick="document.getElementById('ntc-category-modal').style.display='none'">取消</button>
+          <button type="button" class="action-btn" onclick="NTC.saveCategoryFromModal()"
+            data-i18n="ntc-cat-save-btn">保存分类</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 小说转卡：历史快照回退弹窗 -->
+    <div id="ntc-history-modal" class="modal-overlay" style="display:none;z-index:10050;">
+      <div class="modal-content" style="max-width:560px;width:92%;">
+        <h3 style="color:var(--primary-color);margin-top:0;" data-i18n="ntc-history-modal-title">🕒 提取历史快照（点击回退）</h3>
+        <div id="ntc-history-list" style="max-height:360px;overflow-y:auto;margin-bottom:14px;"></div>
+        <div style="text-align:right;">
+          <button type="button" class="cancel-btn" data-i18n="close"
+            onclick="document.getElementById('ntc-history-modal').style.display='none'">关闭</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 小说转卡：章节编辑弹窗 -->
+    <div id="ntc-chapter-modal" class="modal-overlay" style="display:none;z-index:10050;">
+      <div class="modal-content" style="max-width:760px;width:94%;max-height:88vh;display:flex;flex-direction:column;">
+        <h3 id="ntc-ch-modal-title" style="color:var(--primary-color);margin-top:0;margin-bottom:12px;"
+          data-i18n="ntc-ch-modal-title">编辑章节</h3>
+        <div style="overflow-y:auto;padding-right:4px;flex:1;">
+          <div style="display:grid;grid-template-columns:160px 1fr;gap:10px;margin-bottom:10px;">
+            <div class="ntc-field">
+              <label data-i18n="ntc-ch-id-label">章节编号</label>
+              <input type="text" id="ntc-ch-id" data-i18n-placeholder="ntc-ch-id-placeholder" placeholder="例如：A1_C1">
+            </div>
+            <div class="ntc-field">
+              <label data-i18n="ntc-ch-title-label">章节标题</label>
+              <input type="text" id="ntc-ch-title" data-i18n-placeholder="ntc-ch-title-placeholder"
+                placeholder="例如：第一章 序幕">
+            </div>
+          </div>
+          <div class="ntc-field" style="margin-bottom:10px;">
+            <label data-i18n="ntc-ch-summary-label">本章梗概</label>
+            <textarea id="ntc-ch-summary" rows="3" data-i18n-placeholder="ntc-ch-summary-placeholder"
+              placeholder="本章剧情主线概述"></textarea>
+          </div>
+          <div class="ntc-field" style="margin-bottom:12px;">
+            <label data-i18n="ntc-ch-transition-label">切章条件</label>
+            <input type="text" id="ntc-ch-transition" data-i18n-placeholder="ntc-ch-transition-placeholder"
+              placeholder="本章节全部阶段演绎完毕后进入下一章">
+          </div>
+          <div style="display:flex;justify-content:space-between;align-items:center;margin:12px 0 8px;">
+            <strong style="color:#eee;font-size:13px;" data-i18n="ntc-ch-phases-title">动态阶段与场景</strong>
+            <button type="button" class="ntc-mini-btn" onclick="NTC.addChapterModalPhase()"
+              data-i18n="ntc-ch-add-phase">+ 新增阶段</button>
+          </div>
+          <div id="ntc-ch-phases-editor" style="display:flex;flex-direction:column;gap:10px;"></div>
+        </div>
+        <div
+          style="display:flex;justify-content:space-between;align-items:center;gap:10px;margin-top:14px;padding-top:10px;border-top:1px solid rgba(255,255,255,0.1);">
+          <button type="button" class="ntc-mini-btn danger" onclick="NTC.deleteChapterFromModal()"
+            data-i18n="ntc-ch-delete-btn">删除本章</button>
+          <div style="display:flex;gap:10px;">
+            <button type="button" class="cancel-btn" data-i18n="cancel"
+              onclick="document.getElementById('ntc-chapter-modal').style.display='none'">取消</button>
+            <button type="button" class="action-btn" onclick="NTC.saveChapterFromModal()"
+              data-i18n="save-changes">保存修改</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 小说转世界书视图 -->
   <div id="novel-to-worldbook-view">
     <div class="worldbook-container">
       <div class="worldbook-header">
-        <h1 id="novel-to-worldbook-title">📚 长文本转世界书</h1>
+        <div class="view-header-title-group">
+          <h1 id="novel-to-worldbook-title">📚 小说转世界书</h1>
+          <p id="novel-to-worldbook-subtitle" class="view-header-subtitle" data-i18n="ntw-subtitle">常态设定百科 · 终态角色与世界观 ·
+            适合结局续写 / 自由沙盒</p>
+        </div>
         <button id="novel-return-btn"
           style="background: var(--secondary-color); color: white; padding: 8px 15px; border-radius: 5px"
           onclick="showLibraryView()">返回</button>
@@ -4574,25 +6465,30 @@
             <div id="epub-chapter-section" class="epub-chapter-panel" style="display: none;">
               <div class="epub-panel-header">
                 <div class="epub-panel-title">
-                  <h4>📖 EPUB 章节列表</h4>
+                  <h4 data-i18n="ntw-epub-title">📖 EPUB 章节列表</h4>
                   <span id="epub-chapter-stats" class="epub-stats-badge">共 0 章，已勾选 0 章</span>
                 </div>
                 <div class="epub-panel-toolbar">
-                  <button type="button" class="epub-btn-sm" onclick="toggleAllEpubChapters(true)">全选</button>
-                  <button type="button" class="epub-btn-sm" onclick="toggleAllEpubChapters(false)">全不选</button>
-                  <button type="button" class="epub-btn-sm" onclick="invertEpubChapters()">反选</button>
+                  <button type="button" class="epub-btn-sm" onclick="toggleAllEpubChapters(true)"
+                    data-i18n="select-all">全选</button>
+                  <button type="button" class="epub-btn-sm" onclick="toggleAllEpubChapters(false)"
+                    data-i18n="deselect-all">全不选</button>
+                  <button type="button" class="epub-btn-sm" onclick="invertEpubChapters()"
+                    data-i18n="invert-select">反选</button>
                   <button type="button" class="epub-btn-sm" onclick="exportEpubChaptersJson()"
+                    data-i18n="export-json-short" data-i18n-title="export-epub-json-tip"
                     title="导出当前勾选章节为JSON">导出JSON</button>
                 </div>
               </div>
-              <p class="epub-tips">💡 请取消非正文内容（如封面、插图、版权页、目录、广告等）的勾选，以便组合高质量章节分块：</p>
+              <p class="epub-tips" data-i18n="ntw-epub-tips">💡 请取消非正文内容（如封面、插图、版权页、目录、广告等）的勾选，以便组合高质量章节分块：</p>
               <div id="epub-chapter-list" class="epub-chapter-list-container">
                 <!-- 动态渲染章节条目 -->
               </div>
               <div class="epub-panel-footer">
                 <button id="epub-generate-btn" type="button" class="epub-generate-btn"
                   onclick="generateEpubWorldbook()">
-                  🚀 生成世界书 (已选 <span id="epub-btn-count">0</span> 个章节分块)
+                  <span data-i18n="ntw-epub-gen-prefix">🚀 生成世界书 (已选 </span><span id="epub-btn-count">0</span><span
+                    data-i18n="ntw-epub-gen-suffix"> 个章节分块)</span>
                 </button>
               </div>
             </div>
@@ -4600,10 +6496,11 @@
             <div>
               <!-- 高级设置（默认折叠） -->
               <div style="margin-top: 15px;">
-                <button
-                  onclick="document.getElementById('advanced-novel-settings').style.display = document.getElementById('advanced-novel-settings').style.display === 'none' ? 'block' : 'none'; this.textContent = this.textContent.includes('▶') ? '▼ 高级设置' : '▶ 高级设置';"
-                  style="padding: 5px 10px; background: rgba(255,255,255,0.1); border: 1px solid var(--input-border); border-radius: 3px; color: var(--text-color); cursor: pointer; font-size: 13px;">▶
-                  高级设置</button>
+                <button id="novel-advanced-toggle-btn"
+                  onclick="var box = document.getElementById('advanced-novel-settings'); var opening = box.style.display === 'none'; box.style.display = opening ? 'block' : 'none'; var arr = document.getElementById('novel-advanced-arrow'); if (arr) arr.textContent = opening ? '▼' : '▶';"
+                  style="padding: 5px 10px; background: rgba(255,255,255,0.1); border: 1px solid var(--input-border); border-radius: 3px; color: var(--text-color); cursor: pointer; font-size: 13px;"><span
+                    id="novel-advanced-arrow">▶</span>
+                  <span data-i18n="ntw-advanced-settings">高级设置</span></button>
 
                 <div id="advanced-novel-settings" style="display: none; margin-top: 10px;">
                   <!-- 剧情大纲开关 -->
@@ -4611,9 +6508,11 @@
                     style="padding: 10px; background: rgba(0,0,0,0.2); border-radius: 5px; border: 1px solid RGB(52,52,52); margin-bottom: 10px;">
                     <label style="display: flex; align-items: center; gap: 10px; cursor: pointer;">
                       <input type="checkbox" id="enable-plot-outline" style="width: 18px; height: 18px;" checked>
-                      <span style="color: var(--label-color); font-weight: bold;">📖 生成剧情大纲</span>
+                      <span style="color: var(--label-color); font-weight: bold;" data-i18n="ntw-plot-outline-title">📖
+                        生成剧情大纲</span>
                     </label>
-                    <p style="margin: 5px 0 0 28px; font-size: 12px; color: var(--text-secondary-color);">
+                    <p style="margin: 5px 0 0 28px; font-size: 12px; color: var(--text-secondary-color);"
+                      data-i18n="ntw-plot-outline-desc">
                       提取主线、支线、转折点等剧情信息</p>
                   </div>
 
@@ -4622,9 +6521,11 @@
                     style="padding: 10px; background: rgba(0,0,0,0.2); border-radius: 5px; border: 1px solid RGB(52,52,52);">
                     <label style="display: flex; align-items: center; gap: 10px; cursor: pointer;">
                       <input type="checkbox" id="enable-literary-style" style="width: 18px; height: 18px;">
-                      <span style="color: var(--label-color); font-weight: bold;">📝 生成文风配置</span>
+                      <span style="color: var(--label-color); font-weight: bold;"
+                        data-i18n="ntw-literary-style-title">📝 生成文风配置</span>
                     </label>
-                    <p style="margin: 5px 0 0 28px; font-size: 12px; color: var(--text-secondary-color);">
+                    <p style="margin: 5px 0 0 28px; font-size: 12px; color: var(--text-secondary-color);"
+                      data-i18n="ntw-literary-style-desc">
                       分析叙事系统、表达系统、美学系统</p>
                   </div>
                 </div>
@@ -4679,11 +6580,12 @@
         <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
           <button id="dp-sync-scroll-btn" onclick="DualPane.toggleSyncScroll()"
             style="display: none; background: rgba(0, 0, 0, 0.35); color: white; border: 1px solid rgba(255, 255, 255, 0.4); border-radius: 5px; padding: 8px 15px; cursor: pointer; font-weight: bold; align-items: center; gap: 6px; transition: all 0.2s;"
-            title="点击切换 同步滚动 / 分别独立滚动">
+            data-i18n="dp-sync-scroll-on" data-i18n-title="dp-sync-scroll-tip" title="点击切换 同步滚动 / 分别独立滚动">
             🔗 同步滚动: 开启
           </button>
           <button id="dual-pane-toggle-btn" onclick="toggleDualPaneMode()"
-            style="background: var(--secondary-color); color: white; padding: 8px 15px; border-radius: 5px">
+            style="background: var(--secondary-color); color: white; padding: 8px 15px; border-radius: 5px"
+            data-i18n="dp-toggle-open">
             🪟 双开对比
           </button>
           <button onclick="openApiSettingsModal()"
@@ -4791,7 +6693,8 @@
                   </div>
                 </div>
                 <div class="instruction-content">[系统指令]:
-                  在生成回应时，请使用括号来描述{{char}}的动作、表情，星号包裹内心想法。对话本身应在括号之外被""包围。例如："你在这里做什么？" *奇怪，他怎么在这里？* (她挑起眉毛，双臂交叉)。</div>
+                  在生成回应时，请使用括号来描述{{char}}的动作、表情，星号包裹内心想法。对话本身应在括号之外被""包围。例如："你在这里做什么？" *奇怪，他怎么在这里？* (她挑起眉毛，双臂交叉)。
+                </div>
               </div>
               <div class="instruction-card" data-instruction-id="1756898751755.6323">
                 <div class="instruction-header">
@@ -4801,7 +6704,8 @@
                     <button class="delete-btn" onclick="deleteInstruction('1756898751755.6323')">删除</button>
                   </div>
                 </div>
-                <div class="instruction-content">[系统指令]: 在每次回应的末尾，你必须包含一个当前角色的关键状态的状态栏。状态栏应该用代码块((```))包围。格式为：| 健康: [数值]
+                <div class="instruction-content">[系统指令]: 在每次回应的末尾，你必须包含一个当前角色的关键状态的状态栏。状态栏应该用代码块((```))包围。格式为：| 健康:
+                  [数值]
                   | 理智: [数值] | 对{{user}}的好感: [数值] | 位置: [当前位置] |</div>
               </div>
               <div class="instruction-card add-instruction" onclick="addNewInstruction()">
@@ -4888,15 +6792,20 @@
           </div>
           <div class="field-group">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
-              <label for="depth_prompt_prompt" style="margin-bottom: 0;" data-i18n="character-note">角色备忘录 (Character's Note)</label>
+              <label for="depth_prompt_prompt" style="margin-bottom: 0;" data-i18n="character-note">角色备忘录 (Character's
+                Note)</label>
               <div style="display: flex; gap: 12px; align-items: center;">
                 <div style="display: flex; align-items: center; gap: 4px;">
-                  <span style="font-size: 12px; color: var(--text-color, #ccc);" data-i18n="depth-prompt-depth">深度:</span>
-                  <input id="depth_prompt_depth" type="number" min="0" max="9999" value="4" style="width: 60px; padding: 2px 6px; font-size: 12px; height: 26px;" title="插入深度 (@ Depth)">
+                  <span style="font-size: 12px; color: var(--text-color, #ccc);"
+                    data-i18n="depth-prompt-depth">深度:</span>
+                  <input id="depth_prompt_depth" type="number" min="0" max="9999" value="4"
+                    style="width: 60px; padding: 2px 6px; font-size: 12px; height: 26px;" title="插入深度 (@ Depth)">
                 </div>
                 <div style="display: flex; align-items: center; gap: 4px;">
-                  <span style="font-size: 12px; color: var(--text-color, #ccc);" data-i18n="depth-prompt-role">角色:</span>
-                  <select id="depth_prompt_role" style="padding: 2px 6px; font-size: 12px; height: 26px;" title="插入角色 (Role)">
+                  <span style="font-size: 12px; color: var(--text-color, #ccc);"
+                    data-i18n="depth-prompt-role">角色:</span>
+                  <select id="depth_prompt_role" style="padding: 2px 6px; font-size: 12px; height: 26px;"
+                    title="插入角色 (Role)">
                     <option value="system" selected>System</option>
                     <option value="user">User</option>
                     <option value="assistant">Assistant</option>
@@ -4904,7 +6813,8 @@
                 </div>
               </div>
             </div>
-            <textarea id="depth_prompt_prompt" rows="3" placeholder="在聊天指定深度插入的提示词内容 (depth_prompt)" data-i18n="[placeholder]character-note-placeholder"></textarea>
+            <textarea id="depth_prompt_prompt" rows="3" placeholder="在聊天指定深度插入的提示词内容 (depth_prompt)"
+              data-i18n="[placeholder]character-note-placeholder"></textarea>
           </div>
 
           <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
@@ -5067,15 +6977,15 @@
 
   <div class="agent-panel" id="agent-panel">
     <div class="agent-panel-header">
-      <h3>🤖 智能助手</h3>
+      <h3 data-i18n="agent-title">🤖 智能助手</h3>
       <div style="display:flex;gap:6px;">
-        <button onclick="agentClearChat()" style="background:none;border:none;color:#aaa;cursor:pointer;font-size:14px;"
-          title="清空对话">🗑</button>
+        <button onclick="agentClearChat()" data-i18n-title="agent-clear-tip"
+          style="background:none;border:none;color:#aaa;cursor:pointer;font-size:14px;" title="清空对话">🗑</button>
         <button class="agent-close-btn" onclick="toggleAgentPanel()">×</button>
       </div>
     </div>
     <div class="agent-panel-messages" id="agent-messages">
-      <div class="agent-msg agent-msg-ai">
+      <div class="agent-msg agent-msg-ai" data-i18n-html="agent-welcome-html">
         👋 你好！我是角色卡制作助手。<br><br>
         <b>我能做什么：</b><br>
         • 审查角色卡并提出修改建议<br>
@@ -5093,23 +7003,24 @@
     <div class="agent-preview-area" id="agent-preview-area"></div>
     <div class="agent-html-preview" id="agent-html-preview-panel">
       <div class="preview-header">
-        <span>HTML 预览</span>
+        <span data-i18n="agent-html-preview">HTML 预览</span>
         <button onclick="document.getElementById('agent-html-preview-panel').style.display='none'"
           style="background:none;border:none;color:#aaa;cursor:pointer;">✕</button>
       </div>
       <iframe id="agent-html-preview" sandbox="allow-scripts allow-same-origin allow-forms allow-modals"></iframe>
     </div>
     <div class="agent-quick-row">
-      <button onclick="agentQuickAction('review')">审查角色卡</button>
-      <button onclick="agentQuickAction('statusbar')">设计状态栏</button>
-      <button onclick="agentQuickAction('worldbook')">建议世界书</button>
-      <button onclick="agentQuickAction('variables')">设计变量系统</button>
-      <button id="agent-compare-btn" onclick="agentQuickAction('compare')" style="background: #8e44ad; color: white;">⚖️ 对比两卡差异</button>
+      <button onclick="agentQuickAction('review')" data-i18n="agent-quick-review">审查角色卡</button>
+      <button onclick="agentQuickAction('statusbar')" data-i18n="agent-quick-statusbar">设计状态栏</button>
+      <button onclick="agentQuickAction('worldbook')" data-i18n="agent-quick-worldbook">建议世界书</button>
+      <button onclick="agentQuickAction('variables')" data-i18n="agent-quick-variables">设计变量系统</button>
+      <button id="agent-compare-btn" onclick="agentQuickAction('compare')" data-i18n="agent-quick-compare"
+        style="background: #8e44ad; color: white;">⚖️ 对比两卡差异</button>
     </div>
     <div class="agent-panel-input">
-      <textarea id="agent-input" rows="1" placeholder="输入消息，Enter发送..."
+      <textarea id="agent-input" rows="1" data-i18n-placeholder="agent-input-placeholder" placeholder="输入消息，Enter发送..."
         onkeydown="handleAgentKeypress(event)"></textarea>
-      <button id="agent-send-btn" onclick="agentSendMessage()">发送</button>
+      <button id="agent-send-btn" onclick="agentSendMessage()" data-i18n="agent-send">发送</button>
     </div>
   </div>
 
@@ -5117,8 +7028,8 @@
   <div id="batch-modify-modal" class="modal-overlay" style="display: none;">
     <div class="modal-content" style="max-width: 600px;">
       <h3 id="batch-modify-modal-title">批量修改世界书条目</h3>
-      <p id="batch-selected-info" style="color: #888; margin-bottom: 20px;">已选择 <span id="batch-selected-count">0</span>
-        个条目</p>
+      <p id="batch-selected-info" style="color: #888; margin-bottom: 20px;"><span data-i18n="batch-selected-prefix">已选择
+        </span><span id="batch-selected-count">0</span><span data-i18n="batch-selected-suffix"> 个条目</span></p>
 
       <div class="field-group">
         <label id="modify-option-label">修改选项：</label>
@@ -5139,92 +7050,92 @@
       </div>
 
       <div id="batch-position-options" class="field-group" style="display: none; margin-top: 15px;">
-        <label>选择注入位置：</label>
+        <label data-i18n="batch-select-pos">选择注入位置：</label>
         <select id="batch-position-value"
           style="width: 100%; padding: 10px; background: var(--input-bg); color: var(--text-color); border: 1px solid var(--input-border); border-radius: 5px;">
-          <option value="0">角色卡前 - 很高注意力</option>
-          <option value="1">角色卡后 - 中等注意力</option>
-          <option value="4-0">系统视角 - 最高注意力</option>
-          <option value="4-1">用户视角 - 最高注意力</option>
-          <option value="4-2">AI视角 - 最高注意力</option>
+          <option value="0" data-i18n="batch-pos-0">角色卡前 - 很高注意力</option>
+          <option value="1" data-i18n="batch-pos-1">角色卡后 - 中等注意力</option>
+          <option value="4-0" data-i18n="batch-pos-4-0">系统视角 - 最高注意力</option>
+          <option value="4-1" data-i18n="batch-pos-4-1">用户视角 - 最高注意力</option>
+          <option value="4-2" data-i18n="batch-pos-4-2">AI视角 - 最高注意力</option>
         </select>
       </div>
 
       <div id="batch-priority-options" class="field-group" style="display: none; margin-top: 15px;">
-        <label>设置优先级：</label>
+        <label data-i18n="batch-set-priority">设置优先级：</label>
         <input type="number" id="batch-priority-value" value="100" step="100"
           style="width: 100%; padding: 10px; background: var(--input-bg); color: var(--text-color); border: 1px solid var(--input-border); border-radius: 5px;">
       </div>
 
       <div id="batch-enabled-options" class="field-group" style="display: none; margin-top: 15px;">
-        <label>条目状态：</label>
+        <label data-i18n="batch-entry-status">条目状态：</label>
         <select id="batch-enabled-value"
           style="width: 100%; padding: 10px; background: var(--input-bg); color: var(--text-color); border: 1px solid var(--input-border); border-radius: 5px;">
-          <option value="true">✅ 启用</option>
-          <option value="false">❌ 禁用</option>
+          <option value="true" data-i18n="batch-opt-enable">✅ 启用</option>
+          <option value="false" data-i18n="batch-opt-disable">❌ 禁用</option>
         </select>
       </div>
 
       <div id="batch-constant-options" class="field-group" style="display: none; margin-top: 15px;">
-        <label>恒定注入：</label>
+        <label data-i18n="batch-constant-label">恒定注入：</label>
         <select id="batch-constant-value"
           style="width: 100%; padding: 10px; background: var(--input-bg); color: var(--text-color); border: 1px solid var(--input-border); border-radius: 5px;">
-          <option value="true">⭐ 永久注入（始终触发）</option>
-          <option value="false">🔑 关键词触发</option>
+          <option value="true" data-i18n="batch-opt-permanent">⭐ 永久注入（始终触发）</option>
+          <option value="false" data-i18n="batch-opt-keyword">🔑 关键词触发</option>
         </select>
       </div>
 
       <div id="batch-recursion-options" class="field-group" style="display: none; margin-top: 15px;">
-        <label>防止进一步递归：</label>
+        <label data-i18n="batch-prevent-rec">防止进一步递归：</label>
         <select id="batch-recursion-value"
           style="width: 100%; padding: 10px; background: var(--input-bg); color: var(--text-color); border: 1px solid var(--input-border); border-radius: 5px;">
-          <option value="true">✅ 启用</option>
-          <option value="false">❌ 禁用</option>
+          <option value="true" data-i18n="batch-opt-enable">✅ 启用</option>
+          <option value="false" data-i18n="batch-opt-disable">❌ 禁用</option>
         </select>
       </div>
 
       <div id="batch-exclude-recursion-options" class="field-group" style="display: none; margin-top: 15px;">
-        <label>不可被递归：</label>
+        <label data-i18n="batch-exclude-rec">不可被递归：</label>
         <select id="batch-exclude-recursion-value"
           style="width: 100%; padding: 10px; background: var(--input-bg); color: var(--text-color); border: 1px solid var(--input-border); border-radius: 5px;">
-          <option value="true">✅ 启用</option>
-          <option value="false">❌ 禁用</option>
+          <option value="true" data-i18n="batch-opt-enable">✅ 启用</option>
+          <option value="false" data-i18n="batch-opt-disable">❌ 禁用</option>
         </select>
       </div>
 
       <div id="batch-selective-options" class="field-group" style="display: none; margin-top: 15px;">
-        <label>选择性触发：</label>
+        <label data-i18n="batch-selective">选择性触发：</label>
         <select id="batch-selective-value"
           style="width: 100%; padding: 10px; background: var(--input-bg); color: var(--text-color); border: 1px solid var(--input-border); border-radius: 5px;">
-          <option value="true">✅ 启用</option>
-          <option value="false">❌ 禁用</option>
+          <option value="true" data-i18n="batch-opt-enable">✅ 启用</option>
+          <option value="false" data-i18n="batch-opt-disable">❌ 禁用</option>
         </select>
       </div>
 
       <div id="batch-regex-options" class="field-group" style="display: none; margin-top: 15px;">
-        <label>正则表达式：</label>
+        <label data-i18n="batch-regex">正则表达式：</label>
         <select id="batch-regex-value"
           style="width: 100%; padding: 10px; background: var(--input-bg); color: var(--text-color); border: 1px solid var(--input-border); border-radius: 5px;">
-          <option value="true">✅ 启用</option>
-          <option value="false">❌ 禁用</option>
+          <option value="true" data-i18n="batch-opt-enable">✅ 启用</option>
+          <option value="false" data-i18n="batch-opt-disable">❌ 禁用</option>
         </select>
       </div>
 
       <div id="batch-wholewords-options" class="field-group" style="display: none; margin-top: 15px;">
-        <label>全词匹配：</label>
+        <label data-i18n="batch-wholewords">全词匹配：</label>
         <select id="batch-wholewords-value"
           style="width: 100%; padding: 10px; background: var(--input-bg); color: var(--text-color); border: 1px solid var(--input-border); border-radius: 5px;">
-          <option value="true">✅ 启用</option>
-          <option value="false">❌ 禁用</option>
+          <option value="true" data-i18n="batch-opt-enable">✅ 启用</option>
+          <option value="false" data-i18n="batch-opt-disable">❌ 禁用</option>
         </select>
       </div>
 
       <div id="batch-casesensitive-options" class="field-group" style="display: none; margin-top: 15px;">
-        <label>大小写敏感：</label>
+        <label data-i18n="batch-casesensitive">大小写敏感：</label>
         <select id="batch-casesensitive-value"
           style="width: 100%; padding: 10px; background: var(--input-bg); color: var(--text-color); border: 1px solid var(--input-border); border-radius: 5px;">
-          <option value="true">✅ 启用</option>
-          <option value="false">❌ 禁用</option>
+          <option value="true" data-i18n="batch-opt-enable">✅ 启用</option>
+          <option value="false" data-i18n="batch-opt-disable">❌ 禁用</option>
         </select>
       </div>
 
@@ -5563,6 +7474,8 @@
         // 新增翻译
         'continue-chatting': '💬 继续聊天',
         'txt-to-worldbook': '📚 小说转世界书',
+        'novel-to-card': '🃏 小说转剧情卡',
+        'novel-to-card-subtitle': '动态章节引擎 · 从头亲历改命 · 终章自动切入自由续写',
         'resource-box': '📦 资源箱',
         'english-cards': '🌍 英文卡资源',
         'community-resources': '💬 社区资源',
@@ -5623,8 +7536,9 @@
         'generation-failed': '生成失败，请检查API设置和网络连接。',
         'generation-error': '生成错误：{error}',
 
-        // 长文本转世界书
-        'novel-to-worldbook': '📚 长文本转世界书',
+        // 小说转世界书
+        'novel-to-worldbook': '📚 小说转世界书',
+        'novel-to-worldbook-subtitle': '常态设定百科 · 终态角色与世界观 · 适合结局续写 / 自由沙盒',
         'return': '返回',
         'import-novel': '📁 导入小说/资料文件',
         'drop-zone-text': '点击或拖拽文件到此处',
@@ -5926,12 +7840,10 @@
         'api-settings-btn': '⚙️ API 设置',
         'other-settings-btn': '其他设置',
         'other-settings': '其他设置',
-        'api-provider-deepseek': 'DeepSeek【已更新v4】',
-        'api-provider-gemini': 'Gemini (直链，需魔法)[废弃]',
-        'api-provider-gemini-proxy': 'Gemini (中转站)[废弃]',
+        'api-provider-deepseek': 'DeepSeek',
         'api-provider-ollama': 'Ollama (bat启动)',
         'api-provider-local': 'LM Studio (bat启动)',
-        'api-provider-tavern': '公益站/自定义（推荐）',
+        'api-provider-tavern': '自定义',
         'edit-instruction': '编辑指令',
         'instruction-beautify': '指令与前端美化',
         'instruction-name': '名称：',
@@ -5951,6 +7863,252 @@
         'fold-view': '📖 折叠视图',
         'edit-mode': '📝 编辑模式',
         'toggle-fold': '折叠/展开',
+
+        // API 上下文 & 多配置
+        'max-context-label': '最大上下文',
+        'max-context-placeholder': '默认 1000000 (1M)',
+        'max-context-help': '模型的最大上下文窗口大小（token），用于小说转世界书判断是否超限',
+        'select-config-placeholder': '选择配置...',
+        'config-name-placeholder': '配置名称',
+        'reset': '重置',
+        'pick-from-provider-lib': '从模型库选择',
+        'sync-cloud-providers': '同步云端模型库',
+        'api-key-placeholder': '输入 API Key',
+
+        // 其他设置新增（提示词管理 + 全站备份）
+        'custom-all-prompts-title': '自定义全部 AI 提示词',
+        'custom-all-prompts-desc': '支持编辑全站所有 AI 提示词（角色生成、世界书、小说转卡/世界书、正则、美化等），内置可视化中文色块占位符',
+        'manage-all-prompts-btn': '管理全部提示词',
+        'full-backup-title': '全站数据备份与恢复',
+        'full-backup-desc': '一键打包或恢复工作室（index）与聊天页（chat）的全部角色、世界书、聊天记录、预设、快速回复及插件设置',
+        'full-backup-export-btn': '一键备份',
+        'full-backup-import-btn': '恢复备份',
+        'restore-default': '恢复默认',
+        'close': '关闭',
+        'copy': '复制',
+        'got-it': '我知道了',
+        'save-changes': '保存修改',
+        'clear-selection': '清空',
+        'deselect-all': '全不选',
+        'invert-select': '反选',
+        'export-json-short': '导出JSON',
+        'export-epub-json-tip': '导出当前勾选章节为JSON',
+
+        // 提示词自定义中心
+        'pm-title': '📝 全站提示词自定义中心',
+        'pm-subtitle': '支持自定义全站所有 AI 提示词',
+        'pm-close-x': '✕ 关闭',
+        'pm-search-placeholder': '🔍 搜索提示词名称或功能...',
+        'pm-prompt-name': '提示词名称',
+        'pm-status-default': '默认模板',
+        'pm-reset-current': '🔄 恢复本条默认',
+        'pm-usage-tip': '💡 <b>说明：</b>输入框中的彩色胶囊代表运行时自动填入的动态内容。<b>点击右侧色块</b>可插入到当前光标处；带 <b>*</b> 为必填项，保存时必须保留。',
+        'pm-add-missing': '+ 一键补回必填项',
+        'pm-token-panel-head': '🧩 点击插入占位符色块',
+        'pm-export': '📤 导出自定义',
+        'pm-import': '📥 导入自定义',
+        'pm-reset-all': '🗑️ 全部恢复默认',
+        'pm-save-current': '💾 保存当前提示词',
+
+        // 小说转世界书（高级设置 + EPUB）
+        'ntw-subtitle': '常态设定百科 · 终态角色与世界观 · 适合结局续写 / 自由沙盒',
+        'ntw-epub-title': '📖 EPUB 章节列表',
+        'ntw-epub-tips': '💡 请取消非正文内容（如封面、插图、版权页、目录、广告等）的勾选，以便组合高质量章节分块：',
+        'ntw-epub-gen-prefix': '🚀 生成世界书 (已选 ',
+        'ntw-epub-gen-suffix': ' 个章节分块)',
+        'ntw-advanced-settings': '高级设置',
+        'ntw-plot-outline-title': '📖 生成剧情大纲',
+        'ntw-plot-outline-desc': '提取主线、支线、转折点等剧情信息',
+        'ntw-literary-style-title': '📝 生成文风配置',
+        'ntw-literary-style-desc': '分析叙事系统、表达系统、美学系统',
+
+        // 小说转剧情卡（完整界面）
+        'ntc-title': '🃏 小说转剧情卡',
+        'ntc-subtitle': '动态章节引擎 · 从头亲历改命 · 终章自动切入自由续写',
+        'ntc-tab-step1': '第一步：📖 原著精炼提取',
+        'ntc-tab-step2': '第二步：🧩 打包角色卡',
+        'ntc-s1-card1-title': '导入原著与切分队列',
+        'ntc-import-json': '导入提取 JSON',
+        'ntc-export-json': '导出提取 JSON',
+        'ntc-reset-workspace': '清空重来',
+        'ntc-drop-title': '点击或拖拽 TXT / EPUB 小说文件到此处',
+        'ntc-drop-desc': '支持格式：txt、epub（自动编码检测与章节识别，少于 500 字短/空章自动归并）',
+        'ntc-txt-encoding': 'TXT 编码',
+        'ntc-split-regex-title': '按章回正则切分',
+        'ntc-regex-zh': '中文通用',
+        'ntc-regex-en': '英文 Chapter',
+        'ntc-split-regex-btn': '检测并载入队列',
+        'ntc-split-size-title': '按固定字数切分',
+        'ntc-size-5k': '5 千字 / 块',
+        'ntc-size-10k': '1 万字 / 块（推荐）',
+        'ntc-size-20k': '2 万字 / 块',
+        'ntc-size-30k': '3 万字 / 块',
+        'ntc-size-50k': '5 万字 / 块',
+        'ntc-size-custom': '自定义字数',
+        'ntc-size-custom-placeholder': '输入自定义字数',
+        'ntc-split-size-btn': '按字数载入队列',
+        'ntc-load-queue': '载入队列',
+        'ntc-s1-card2-title': '提取结构与设定分类',
+        'ntc-strict-categories': '严格仅提取勾选分类',
+        'ntc-add-category': '+ 新增分类',
+        'ntc-s1-card3-title': 'Patch-Agent 提取控制台',
+        'ntc-queue-stats-init': '总块数: 0',
+        'ntc-start-btn': '🚀 开始提取',
+        'ntc-pause-btn': '暂停并保存',
+        'ntc-retry-failed-btn': '重试失败块',
+        'ntc-history-btn': '历史快照回退',
+        'ntc-go-step2-btn': '前往第二步：注入框架 →',
+        'ntc-progress-wait': '等待导入并切分原著文本...',
+        'ntc-preview-title': '提取内容实时预览',
+        'ntc-s2-card1-title': '角色卡名称与 <user> 身份设定',
+        'ntc-enable-user-setting': '启用 User 设定条目',
+        'ntc-ai-userset-btn': '✨ AI 参考全书定制身份',
+        'ntc-card-name-label': '角色卡名称',
+        'ntc-card-name-placeholder': '输入角色卡名称',
+        'ntc-user-role-mode-label': '<user> 定位模式',
+        'ntc-role-companion': '同行者 / 关键变量融入原著',
+        'ntc-role-protagonist': '直接扮演原著第一视角主角',
+        'ntc-role-observer': '入局知情者 / 观察者',
+        'ntc-role-custom': '自定义',
+        'ntc-user-hint-label': '身份偏好补充（选填）',
+        'ntc-user-overview-tip': '勾选后 AI 会阅读全书各章总览，设计能贯穿多个舞台的身份，避免换章掉线',
+        'ntc-user-overview-label': '参考全书章节总览（推荐）',
+        'ntc-user-hint-placeholder': '例：想当主角同班熟人 / 刚转学来的邻居 / 取代原著男主...',
+        'ntc-user-body-label': '1️⃣User设定 正文',
+        'ntc-user-body-placeholder': '点击右上角「✨ AI 参考全书定制身份」自动生成带具体身份、初始位置与人物关系锚点的设定，也可手动编辑...',
+        'ntc-s2-card2-title': '开场白与开局起始章节',
+        'ntc-ai-firstmes-btn': '✨ 生成当前开场白',
+        'ntc-start-chapter-label': '开局起始章节（同步世界书）',
+        'ntc-greeting-label-title': '开场白标签名',
+        'ntc-greeting-label-placeholder': '例：主开场 / 正篇线',
+        'ntc-greeting-hint-label': '生成指引（选填）',
+        'ntc-greeting-hint-placeholder': '例：跳过回忆直接切入教室...',
+        'ntc-ref-chapters-tip': '勾选本开场白需要参考的章节（悬停可查看阶段）：',
+        'ntc-first-mes-label': '开场白正文',
+        'ntc-first-mes-placeholder': '勾选参考章节并选好「开局起始章节」后，点击右上角「✨ 生成当前开场白」，也可直接手动编写...',
+        'ntc-adv-title': '高级配置与 RP 规则框架',
+        'ntc-adv-subtitle': '（选填：字数预算、更新通道、主线与自由模式运行规则，默认已优化）',
+        'ntc-expand-collapse': '展开 / 收起 ▾',
+        'ntc-max-chars-label': '动态世界书字数预算（MAX_ACTIVE_CHARS）',
+        'ntc-var-channel-label': '小白X 2.0 变量更新通道',
+        'ntc-var-inline': '正文末尾 <state> 块（默认开箱即用 + 隐藏正则）',
+        'ntc-var-updater': '小白X 2.0 独立变量更新器',
+        'ntc-include-buttons': '注入快捷按钮任务（查看剧情进度 / 手动推进阶段与章节 / 切换自由模式）',
+        'ntc-tpl-creation-title': '创作准则',
+        'ntc-tpl-creation-badge': 'D0 · order 700 · 全程常驻',
+        'ntc-tpl-plot-title': '1️⃣剧情推进规则',
+        'ntc-tpl-plot-badge': 'D0 · order 598 · 主线期启用，自由模式自动关闭',
+        'ntc-tpl-outline-title': '1️⃣⚙剧情大纲演绎规则',
+        'ntc-tpl-outline-badge': 'D0 · order 4 · 主线期启用，自由模式自动关闭',
+        'ntc-tpl-thinking-title': '1️⃣⚙额外思考',
+        'ntc-tpl-thinking-badge': 'D0 · order 1 · 主线期启用，自由模式自动关闭',
+        'ntc-tpl-freeroam-title': '1️⃣自由演绎指引',
+        'ntc-tpl-freeroam-badge': 'D0 · order 598 · 终章完结/自由模式自动启用',
+        'ntc-tpl-freethink-title': '1️⃣⚙额外思考（自由模式）',
+        'ntc-tpl-freethink-badge': 'D0 · order 1 · 极简版，自由模式自动切换',
+        'ntc-s2-card3-title': '导出角色卡',
+        'ntc-lwb-notice': '运行前提：在 SillyTavern 的 <b>扩展设置 → 小白X</b> 中开启「变量管理 → <b>2.0 (state)</b>」与「<b>循环任务</b>」。',
+        'ntc-install-tutorial-btn': '📦 安装教程 & 必看',
+        'ntc-export-v3-btn': '📦 导出 SillyTavern V3 角色卡 JSON',
+        'ntc-save-library-btn': '💾 保存到角色库',
+        'ntc-back-step1-btn': '← 返回第一步',
+        'ntc-cat-modal-title': '编辑设定分类',
+        'ntc-cat-name-label': '分类名称',
+        'ntc-cat-name-placeholder': '例如：角色详情 / 势力 / 功法 / 线索',
+        'ntc-cat-trigger-label': '默认触发方式',
+        'ntc-cat-trigger-keyword': '绿灯关键词触发（按需省 Token）',
+        'ntc-cat-trigger-constant': '蓝灯常驻（全局可见）',
+        'ntc-cat-example-label': '条目命名示例',
+        'ntc-cat-example-placeholder': '例如：角色全名',
+        'ntc-cat-keywords-label': '关键词建议（逗号分隔）',
+        'ntc-cat-keywords-placeholder': '例如：全名, 别名, 绰号',
+        'ntc-cat-guide-label': '内容提取指南（建议列出 **字段名**: 结构）',
+        'ntc-cat-guide-placeholder': '描述该分类需要提取哪些 **字段名**: ...',
+        'ntc-cat-save-btn': '保存分类',
+        'ntc-history-modal-title': '🕒 提取历史快照（点击回退）',
+        'ntc-ch-modal-title': '编辑章节',
+        'ntc-ch-id-label': '章节编号',
+        'ntc-ch-id-placeholder': '例如：A1_C1',
+        'ntc-ch-title-label': '章节标题',
+        'ntc-ch-title-placeholder': '例如：第一章 序幕',
+        'ntc-ch-summary-label': '本章梗概',
+        'ntc-ch-summary-placeholder': '本章剧情主线概述',
+        'ntc-ch-transition-label': '切章条件',
+        'ntc-ch-transition-placeholder': '本章节全部阶段演绎完毕后进入下一章',
+        'ntc-ch-phases-title': '动态阶段与场景',
+        'ntc-ch-add-phase': '+ 新增阶段',
+        'ntc-ch-delete-btn': '删除本章',
+
+        // 双开对比
+        'dp-toggle-open': '🪟 双开对比',
+        'dp-toggle-close': '🪟 退出双开',
+        'dp-sync-scroll-on': '🔗 同步滚动: 开启',
+        'dp-sync-scroll-off': '🔓 分别滚动: 独立',
+        'dp-sync-scroll-tip': '点击切换 同步滚动 / 分别独立滚动',
+
+        // 智能助手 Agent
+        'agent-title': '🤖 智能助手',
+        'agent-clear-tip': '清空对话',
+        'agent-welcome-html': '👋 你好！我是角色卡制作助手。<br><br><b>我能做什么：</b><br>• 审查角色卡并提出修改建议<br>• 设计状态栏等前端HTML效果（通过正则脚本实现）<br>• 创建变量管理系统（小白X任务 + &lt;state&gt; 语法）<br>• 设计世界书条目<br>• 创建正则脚本<br><br><b>怎么用：</b><br>• 直接描述你想要的效果，我会先理解再动手<br>• 代码块带"预览变更"按钮，确认后生效<br>• HTML效果可在右侧iframe中预览<br><br>试试说："帮我设计一个RPG状态栏" 或 "审查当前角色卡"',
+        'agent-html-preview': 'HTML 预览',
+        'agent-quick-review': '审查角色卡',
+        'agent-quick-statusbar': '设计状态栏',
+        'agent-quick-worldbook': '建议世界书',
+        'agent-quick-variables': '设计变量系统',
+        'agent-quick-compare': '⚖️ 对比两卡差异',
+        'agent-input-placeholder': '输入消息，Enter发送...',
+        'agent-send': '发送',
+
+        // 批量修改世界书
+        'batch-selected-prefix': '已选择 ',
+        'batch-selected-suffix': ' 个条目',
+        'batch-select-pos': '选择注入位置：',
+        'batch-pos-0': '角色卡前 - 很高注意力',
+        'batch-pos-1': '角色卡后 - 中等注意力',
+        'batch-pos-4-0': '系统视角 - 最高注意力',
+        'batch-pos-4-1': '用户视角 - 最高注意力',
+        'batch-pos-4-2': 'AI视角 - 最高注意力',
+        'batch-set-priority': '设置优先级：',
+        'batch-entry-status': '条目状态：',
+        'batch-opt-enable': '✅ 启用',
+        'batch-opt-disable': '❌ 禁用',
+        'batch-constant-label': '恒定注入：',
+        'batch-opt-permanent': '⭐ 永久注入（始终触发）',
+        'batch-opt-keyword': '🔑 关键词触发',
+        'batch-prevent-rec': '防止进一步递归：',
+        'batch-exclude-rec': '不可被递归：',
+        'batch-selective': '选择性触发：',
+        'batch-regex': '正则表达式：',
+        'batch-wholewords': '全词匹配：',
+        'batch-casesensitive': '大小写敏感：',
+
+        // 其他设置补充 + 小说转世界书高级设置动态项
+        'style-mode-help': '开启后，AI生成内容将使用Markdown格式，包含粗体、斜体、列表等结构化输出',
+        'jailbreak-help-global': '防止模型敏感，适用于所有API请求（包括角色卡生成、世界书转换等）',
+        'debug-mode': '调试模式',
+        'debug-mode-help': '开启后会在控制台输出详细日志，⚠️ 非常占内存，不建议打开',
+        'ntw-agent-inc-title': '🤖 智能 Agent 增量编辑模式',
+        'ntw-agent-inc-desc': '以打补丁（Patch Commit）方式对条目内部属性字段进行局部追加与精确替换（append/replace），避免覆写遗忘历史记忆；启用时自动锁定增量输出',
+        'ntw-inc-output-title': '📝 增量输出模式',
+        'ntw-inc-output-desc': '每次只输出变更的条目，避免上下文字数限制，降低消耗并提升生成速度',
+        'ntw-ctx-threshold-title': '📏 上下文分裂阈值',
+        'ntw-ctx-threshold-desc': '当token使用量超过此百分比时自动分裂记忆块，避免上下文超限',
+        'ntw-strict-cat-title': '🏷️ 严格按自定义分类提取',
+        'ntw-add-cat-btn': '➕ 添加分类',
+        'ntw-reset-cat-btn': '🔄 重置默认',
+        'ntw-strict-cat-hint-on': '🔒 <strong style="color: #e67e22;">严格模式生效中</strong>：AI 将严格仅提取下方启用的分类，严禁生成未经指定的分类。',
+        'ntw-strict-cat-hint-off': '🌐 <strong style="color: #3498db;">自由发挥模式（推荐）</strong>：未勾选时，AI 将根据小说题材自由提炼合适的类别（如功法、势力、神兵、心境等）。',
+
+        // 小白X 安装教程弹窗
+        'lwb-install-title': '📦 小白X 插件安装教程',
+        'lwb-step1-title': '1. 安装',
+        'lwb-step1-desc': '复制仓库地址：',
+        'lwb-step2-title': '2. 安装扩展',
+        'lwb-step2-desc': '进入 SillyTavern → <b>扩展管理器</b> → <b>安装扩展</b>，粘贴地址后确认。',
+        'lwb-step3-title': '3. 启用功能 (必看)',
+        'lwb-step3-desc': '刷新页面后，在 <b>扩展设置</b> → <b>小白X</b> 中开启所需功能模块。',
+        'lwb-step3-warn': '⚠️ 特别是"数据互动"中的"变量管理"，必须选择"2.0(state)"',
+        'lwb-main-prompt-tip': '，另外，预设中的Main Prompt要打勾哦！',
       },
 
       en: {
@@ -6291,6 +8449,8 @@
         // 新增翻译
         'continue-chatting': '💬 Continue Chatting',
         'txt-to-worldbook': '📚 Novel to Worldbook',
+        'novel-to-card': '🃏 Novel to Story Card',
+        'novel-to-card-subtitle': 'Dynamic chapter engine · Immersive playthrough · Seamless free-roam after finale',
         'resource-box': '📦 Resource Box',
         'english-cards': '🌍 English Character Cards',
         'community-resources': '💬 Community Resources',
@@ -6348,8 +8508,9 @@
         'generation-failed': 'Generation failed, please check API settings and network connection.',
         'generation-error': 'Generation error: {error}',
 
-        // 长文本转世界书
+        // 小说转世界书
         'novel-to-worldbook': '📚 Novel to Worldbook',
+        'novel-to-worldbook-subtitle': 'Persistent lore encyclopedia · Final character & world state · Ideal for sequels / sandbox',
         'return': 'Return',
         'import-novel': '📁 Import Novel/Document File',
         'drop-zone-text': 'Click or drag file here',
@@ -6651,12 +8812,10 @@
         'api-settings-btn': '⚙️ API Settings',
         'other-settings-btn': 'Other Settings',
         'other-settings': 'Other Settings',
-        'api-provider-deepseek': 'DeepSeek[Updated to v4]',
-        'api-provider-gemini': 'Gemini (Direct)[Deprecated]',
-        'api-provider-gemini-proxy': 'Gemini (Proxy)[Deprecated]',
+        'api-provider-deepseek': 'DeepSeek',
         'api-provider-ollama': 'Ollama (Use with .bat)',
         'api-provider-local': 'LM Studio (Use with .bat)',
-        'api-provider-tavern': 'Public Proxy / Custom (Recommended)',
+        'api-provider-tavern': 'Custom',
         'edit-instruction': 'Edit Instruction',
         'instruction-beautify': 'Instruction & Frontend Beautify',
         'instruction-name': 'Name:',
@@ -6676,6 +8835,252 @@
         'fold-view': '📖 Fold View',
         'edit-mode': '📝 Edit Mode',
         'toggle-fold': 'Toggle Fold',
+
+        // API Context & Multi-Config
+        'max-context-label': 'Max Context Window',
+        'max-context-placeholder': 'Default 1000000 (1M)',
+        'max-context-help': 'Maximum model context window (tokens), used to check limits in Novel to Worldbook',
+        'select-config-placeholder': 'Select config...',
+        'config-name-placeholder': 'Config name',
+        'reset': 'Reset',
+        'pick-from-provider-lib': 'Pick from Models',
+        'sync-cloud-providers': 'Sync Cloud Models',
+        'api-key-placeholder': 'Enter API Key',
+
+        // Other Settings additions (Prompt Manager + Full Backup)
+        'custom-all-prompts-title': 'Customize All AI Prompts',
+        'custom-all-prompts-desc': 'Edit all AI prompts across the studio (character gen, worldbook, novel-to-card/worldbook, regex, beautify) with visual placeholder chips',
+        'manage-all-prompts-btn': 'Manage All Prompts',
+        'full-backup-title': 'Full Site Backup & Restore',
+        'full-backup-desc': 'One-click backup or restore of all Studio (index) and Chat (chat) characters, worldbooks, chat histories, presets, quick replies, and plugin settings',
+        'full-backup-export-btn': 'Backup Now',
+        'full-backup-import-btn': 'Restore Backup',
+        'restore-default': 'Restore Default',
+        'close': 'Close',
+        'copy': 'Copy',
+        'got-it': 'Got It',
+        'save-changes': 'Save Changes',
+        'clear-selection': 'Clear',
+        'deselect-all': 'Deselect All',
+        'invert-select': 'Invert',
+        'export-json-short': 'Export JSON',
+        'export-epub-json-tip': 'Export selected chapters as JSON',
+
+        // Prompt Manager Modal
+        'pm-title': '📝 Prompt Customization Center',
+        'pm-subtitle': 'Customize all AI prompts across the studio',
+        'pm-close-x': '✕ Close',
+        'pm-search-placeholder': '🔍 Search prompt name or feature...',
+        'pm-prompt-name': 'Prompt Name',
+        'pm-status-default': 'Default Template',
+        'pm-reset-current': '🔄 Reset This Prompt',
+        'pm-usage-tip': '💡 <b>Tip:</b> Colored chips represent dynamic runtime placeholders. <b>Click a chip on the right</b> to insert at cursor; chips with <b>*</b> are required.',
+        'pm-add-missing': '+ Insert Missing Required',
+        'pm-token-panel-head': '🧩 Click to Insert Placeholder Chip',
+        'pm-export': '📤 Export Custom',
+        'pm-import': '📥 Import Custom',
+        'pm-reset-all': '🗑️ Reset All to Default',
+        'pm-save-current': '💾 Save Current Prompt',
+
+        // Novel to Worldbook (Advanced Settings + EPUB)
+        'ntw-subtitle': 'Lore Encyclopedia · End-State Characters & Worldview · Ideal for Sequels / Free Sandbox',
+        'ntw-epub-title': '📖 EPUB Chapter List',
+        'ntw-epub-tips': '💡 Uncheck non-story pages (cover, illustrations, copyright, TOC, ads) for cleaner chapter chunks:',
+        'ntw-epub-gen-prefix': '🚀 Generate Worldbook (',
+        'ntw-epub-gen-suffix': ' chunks selected)',
+        'ntw-advanced-settings': 'Advanced Settings',
+        'ntw-plot-outline-title': '📖 Generate Plot Outline',
+        'ntw-plot-outline-desc': 'Extract main storyline, subplots, and turning points',
+        'ntw-literary-style-title': '📝 Generate Writing Style Profile',
+        'ntw-literary-style-desc': 'Analyze narrative system, expression style, and aesthetic tone',
+
+        // Novel to Story Card (Full View)
+        'ntc-title': '🃏 Novel to Story Card',
+        'ntc-subtitle': 'Dynamic Chapter Engine · Relive & Reshape the Plot · Auto-Switch to Free Roam After Finale',
+        'ntc-tab-step1': 'Step 1: 📖 Extract Novel Lore & Plot',
+        'ntc-tab-step2': 'Step 2: 🧩 Assemble Character Card',
+        'ntc-s1-card1-title': 'Import Novel & Split Queue',
+        'ntc-import-json': 'Import Extracted JSON',
+        'ntc-export-json': 'Export Extracted JSON',
+        'ntc-reset-workspace': 'Clear Workspace',
+        'ntc-drop-title': 'Click or drag & drop a TXT / EPUB novel here',
+        'ntc-drop-desc': 'Supports TXT & EPUB (auto encoding & chapter detection; short/empty chapters under 500 chars auto-merged)',
+        'ntc-txt-encoding': 'TXT Encoding',
+        'ntc-split-regex-title': 'Split by Chapter Regex',
+        'ntc-regex-zh': 'Chinese Chapters',
+        'ntc-regex-en': 'English Chapter',
+        'ntc-split-regex-btn': 'Detect & Queue',
+        'ntc-split-size-title': 'Split by Fixed Length',
+        'ntc-size-5k': '5k chars / chunk',
+        'ntc-size-10k': '10k chars / chunk (Recommended)',
+        'ntc-size-20k': '20k chars / chunk',
+        'ntc-size-30k': '30k chars / chunk',
+        'ntc-size-50k': '50k chars / chunk',
+        'ntc-size-custom': 'Custom Length',
+        'ntc-size-custom-placeholder': 'Enter custom character count',
+        'ntc-split-size-btn': 'Split & Queue',
+        'ntc-load-queue': 'Load to Queue',
+        'ntc-s1-card2-title': 'Extraction Structure & Lore Categories',
+        'ntc-strict-categories': 'Strictly extract checked categories only',
+        'ntc-add-category': '+ Add Category',
+        'ntc-s1-card3-title': 'Patch-Agent Extraction Console',
+        'ntc-queue-stats-init': 'Total chunks: 0',
+        'ntc-start-btn': '🚀 Start Extraction',
+        'ntc-pause-btn': 'Pause & Save',
+        'ntc-retry-failed-btn': 'Retry Failed',
+        'ntc-history-btn': 'History Snapshots',
+        'ntc-go-step2-btn': 'Next Step: Inject Framework →',
+        'ntc-progress-wait': 'Waiting to import and split novel text...',
+        'ntc-preview-title': 'Live Extraction Preview',
+        'ntc-s2-card1-title': 'Card Name & <user> Identity Setup',
+        'ntc-enable-user-setting': 'Enable User Identity Entry',
+        'ntc-ai-userset-btn': '✨ AI Craft Identity from Novel',
+        'ntc-card-name-label': 'Character Card Name',
+        'ntc-card-name-placeholder': 'Enter character card name',
+        'ntc-user-role-mode-label': '<user> Role Mode',
+        'ntc-role-companion': 'Companion / Key Variable in Story',
+        'ntc-role-protagonist': 'Play as First-Person Protagonist',
+        'ntc-role-observer': 'Informed Insider / Observer',
+        'ntc-role-custom': 'Custom',
+        'ntc-user-hint-label': 'Identity Preferences (Optional)',
+        'ntc-user-overview-tip': 'When checked, AI reads all chapter overviews to design an identity spanning multiple arcs',
+        'ntc-user-overview-label': 'Reference Full Chapter Overviews (Recommended)',
+        'ntc-user-hint-placeholder': 'e.g., Protagonist\'s classmate / New transfer student / Replace original MC...',
+        'ntc-user-body-label': '1️⃣ User Identity Content',
+        'ntc-user-body-placeholder': 'Click "✨ AI Craft Identity from Novel" above to auto-generate identity, starting location & relationships, or edit manually...',
+        'ntc-s2-card2-title': 'Greetings & Starting Chapter',
+        'ntc-ai-firstmes-btn': '✨ Generate Current Greeting',
+        'ntc-start-chapter-label': 'Starting Chapter (Syncs Worldbook)',
+        'ntc-greeting-label-title': 'Greeting Tab Label',
+        'ntc-greeting-label-placeholder': 'e.g., Main Greeting / Canon Route',
+        'ntc-greeting-hint-label': 'Generation Guidance (Optional)',
+        'ntc-greeting-hint-placeholder': 'e.g., Skip flashbacks and start right in the classroom...',
+        'ntc-ref-chapters-tip': 'Select chapters for this greeting to reference (hover for phases):',
+        'ntc-first-mes-label': 'Greeting Content',
+        'ntc-first-mes-placeholder': 'Select reference chapters and Starting Chapter, then click "✨ Generate Current Greeting", or write manually...',
+        'ntc-adv-title': 'Advanced Config & RP Rule Framework',
+        'ntc-adv-subtitle': '(Optional: char budget, update channel, main plot & free-roam rules — pre-optimized)',
+        'ntc-expand-collapse': 'Expand / Collapse ▾',
+        'ntc-max-chars-label': 'Dynamic Worldbook Char Budget (MAX_ACTIVE_CHARS)',
+        'ntc-var-channel-label': 'LittleWhiteBox 2.0 Variable Update Channel',
+        'ntc-var-inline': 'Inline <state> block at reply end (Out-of-the-box + hide regex)',
+        'ntc-var-updater': 'LittleWhiteBox 2.0 Standalone Variable Updater',
+        'ntc-include-buttons': 'Inject quick action tasks (View Plot Progress / Advance Phase or Chapter / Toggle Free Roam)',
+        'ntc-tpl-creation-title': 'Writing Guidelines',
+        'ntc-tpl-creation-badge': 'D0 · order 700 · Always On',
+        'ntc-tpl-plot-title': '1️⃣ Plot Progression Rules',
+        'ntc-tpl-plot-badge': 'D0 · order 598 · Main story on, auto-off in Free Roam',
+        'ntc-tpl-outline-title': '1️⃣⚙ Plot Outline Performance Rules',
+        'ntc-tpl-outline-badge': 'D0 · order 4 · Main story on, auto-off in Free Roam',
+        'ntc-tpl-thinking-title': '1️⃣⚙ Extra Thinking Checklist',
+        'ntc-tpl-thinking-badge': 'D0 · order 1 · Main story on, auto-off in Free Roam',
+        'ntc-tpl-freeroam-title': '1️⃣ Free Roam Guidelines',
+        'ntc-tpl-freeroam-badge': 'D0 · order 598 · Auto-enabled after finale / Free Roam',
+        'ntc-tpl-freethink-title': '1️⃣⚙ Extra Thinking (Free Roam)',
+        'ntc-tpl-freethink-badge': 'D0 · order 1 · Lightweight, auto-enabled in Free Roam',
+        'ntc-s2-card3-title': 'Export Character Card',
+        'ntc-lwb-notice': 'Prerequisite: In SillyTavern <b>Extensions → LittleWhiteBox</b>, enable "Variable Management → <b>2.0 (state)</b>" and "<b>Scheduled Tasks</b>".',
+        'ntc-install-tutorial-btn': '📦 Setup Guide',
+        'ntc-export-v3-btn': '📦 Export SillyTavern V3 Card JSON',
+        'ntc-save-library-btn': '💾 Save to Library',
+        'ntc-back-step1-btn': '← Back to Step 1',
+        'ntc-cat-modal-title': 'Edit Lore Category',
+        'ntc-cat-name-label': 'Category Name',
+        'ntc-cat-name-placeholder': 'e.g., Characters / Factions / Skills / Clues',
+        'ntc-cat-trigger-label': 'Default Trigger Mode',
+        'ntc-cat-trigger-keyword': 'Green Light Keyword Trigger (Saves Tokens)',
+        'ntc-cat-trigger-constant': 'Blue Light Constant (Always Active)',
+        'ntc-cat-example-label': 'Entry Naming Example',
+        'ntc-cat-example-placeholder': 'e.g., Character Full Name',
+        'ntc-cat-keywords-label': 'Suggested Keywords (comma-separated)',
+        'ntc-cat-keywords-placeholder': 'e.g., Full Name, Alias, Nickname',
+        'ntc-cat-guide-label': 'Extraction Guide (list **Field**: structure)',
+        'ntc-cat-guide-placeholder': 'Describe which **Field**: ... details to extract for this category',
+        'ntc-cat-save-btn': 'Save Category',
+        'ntc-history-modal-title': '🕒 Extraction Snapshots (Click to Rollback)',
+        'ntc-ch-modal-title': 'Edit Chapter',
+        'ntc-ch-id-label': 'Chapter ID',
+        'ntc-ch-id-placeholder': 'e.g., A1_C1',
+        'ntc-ch-title-label': 'Chapter Title',
+        'ntc-ch-title-placeholder': 'e.g., Chapter 1: Prologue',
+        'ntc-ch-summary-label': 'Chapter Summary',
+        'ntc-ch-summary-placeholder': 'Summary of main events in this chapter',
+        'ntc-ch-transition-label': 'Transition Condition',
+        'ntc-ch-transition-placeholder': 'Proceed to next chapter once all phases complete',
+        'ntc-ch-phases-title': 'Dynamic Phases & Scenes',
+        'ntc-ch-add-phase': '+ Add Phase',
+        'ntc-ch-delete-btn': 'Delete Chapter',
+
+        // Dual Pane
+        'dp-toggle-open': '🪟 Dual Pane',
+        'dp-toggle-close': '🪟 Exit Dual Pane',
+        'dp-sync-scroll-on': '🔗 Sync Scroll: ON',
+        'dp-sync-scroll-off': '🔓 Sync Scroll: OFF',
+        'dp-sync-scroll-tip': 'Click to toggle synced vs independent scrolling',
+
+        // AI Agent Panel
+        'agent-title': '🤖 AI Assistant',
+        'agent-clear-tip': 'Clear conversation',
+        'agent-welcome-html': '👋 Hi! I\'m your Character Card Assistant.<br><br><b>What I can do:</b><br>• Review character cards & suggest improvements<br>• Design status bars & HTML effects (via regex scripts)<br>• Build variable systems (LittleWhiteBox tasks + &lt;state&gt; syntax)<br>• Design worldbook entries<br>• Create regex scripts<br><br><b>How to use:</b><br>• Describe what you want in plain language<br>• Code blocks include a "Preview Changes" button before applying<br>• Preview HTML effects live in the right iframe<br><br>Try saying: "Design an RPG status bar" or "Review this character card"',
+        'agent-html-preview': 'HTML Preview',
+        'agent-quick-review': 'Review Card',
+        'agent-quick-statusbar': 'Status Bar',
+        'agent-quick-worldbook': 'Worldbook Ideas',
+        'agent-quick-variables': 'Variable System',
+        'agent-quick-compare': '⚖️ Compare Cards',
+        'agent-input-placeholder': 'Type a message, Enter to send...',
+        'agent-send': 'Send',
+
+        // Batch Modify Worldbook
+        'batch-selected-prefix': 'Selected ',
+        'batch-selected-suffix': ' entries',
+        'batch-select-pos': 'Injection Position:',
+        'batch-pos-0': 'Before Char Defs - High Attention',
+        'batch-pos-1': 'After Char Defs - Medium Attention',
+        'batch-pos-4-0': 'System Depth - Highest Attention',
+        'batch-pos-4-1': 'User Depth - Highest Attention',
+        'batch-pos-4-2': 'AI Depth - Highest Attention',
+        'batch-set-priority': 'Set Priority:',
+        'batch-entry-status': 'Entry Status:',
+        'batch-opt-enable': '✅ Enable',
+        'batch-opt-disable': '❌ Disable',
+        'batch-constant-label': 'Constant Injection:',
+        'batch-opt-permanent': '⭐ Constant (Always Active)',
+        'batch-opt-keyword': '🔑 Keyword Triggered',
+        'batch-prevent-rec': 'Prevent Further Recursion:',
+        'batch-exclude-rec': 'Non-Recursable:',
+        'batch-selective': 'Selective Logic:',
+        'batch-regex': 'Use Regex:',
+        'batch-wholewords': 'Match Whole Words:',
+        'batch-casesensitive': 'Case Sensitive:',
+
+        // Other Settings additions + Novel to Worldbook dynamic Advanced Settings
+        'style-mode-help': 'When enabled, AI uses structured Markdown formatting (bold, italics, lists, etc.)',
+        'jailbreak-help-global': 'Helps prevent refusals across all API requests (character generation, worldbook conversion, etc.)',
+        'debug-mode': 'Debug Mode',
+        'debug-mode-help': 'Outputs verbose logs to the console. ⚠️ Uses significant memory; not recommended unless debugging.',
+        'ntw-agent-inc-title': '🤖 Smart Agent Incremental Patch Mode',
+        'ntw-agent-inc-desc': 'Uses Patch Commit (append/replace) to update individual entry fields without overwriting earlier lore; locks Incremental Output when enabled',
+        'ntw-inc-output-title': '📝 Incremental Output Mode',
+        'ntw-inc-output-desc': 'Outputs only changed entries each pass to stay within context limits, reduce cost, and speed up generation',
+        'ntw-ctx-threshold-title': '📏 Context Split Threshold',
+        'ntw-ctx-threshold-desc': 'Automatically splits memory chunks when token usage exceeds this percentage to avoid context overflow',
+        'ntw-strict-cat-title': '🏷️ Strictly Extract Custom Categories',
+        'ntw-add-cat-btn': '➕ Add Category',
+        'ntw-reset-cat-btn': '🔄 Reset Default',
+        'ntw-strict-cat-hint-on': '🔒 <strong style="color: #e67e22;">Strict Mode Active</strong>: AI will strictly extract only the enabled categories below and will not invent new ones.',
+        'ntw-strict-cat-hint-off': '🌐 <strong style="color: #3498db;">Flexible Mode (Recommended)</strong>: When unchecked, AI freely extracts categories fitting the novel genre (skills, factions, artifacts, etc.).',
+
+        // LittleWhiteBox Install Modal
+        'lwb-install-title': '📦 LittleWhiteBox Setup Guide',
+        'lwb-step1-title': '1. Copy Repository URL',
+        'lwb-step1-desc': 'Copy the GitHub repository URL:',
+        'lwb-step2-title': '2. Install Extension',
+        'lwb-step2-desc': 'Open SillyTavern → <b>Extensions</b> → <b>Install Extension</b>, paste the URL and confirm.',
+        'lwb-step3-title': '3. Enable Features (Required)',
+        'lwb-step3-desc': 'Refresh the page, then open <b>Extensions</b> → <b>LittleWhiteBox</b> to enable required modules.',
+        'lwb-step3-warn': '⚠️ Under Variable Management, you must select "2.0 (state)"',
+        'lwb-main-prompt-tip': ', and make sure Main Prompt is checked in your preset!',
       },
     };
 
@@ -6718,48 +9123,68 @@
       style="background: #2a2a2a; border: 1px solid #444; border-radius: 12px; padding: 25px; max-width: 500px; width: 90%; color: white; box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
       <div
         style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid #444; padding-bottom: 10px;">
-        <h3 style="margin: 0; color: #3498db; display: flex; align-items: center; gap: 8px;">📦 小白X 插件安装教程</h3>
+        <h3 style="margin: 0; color: #3498db; display: flex; align-items: center; gap: 8px;"
+          data-i18n="lwb-install-title">📦 小白X 插件安装教程</h3>
         <button onclick="closeLWBInstallTutorial()"
           style="background: none; border: none; color: #888; font-size: 24px; cursor: pointer; line-height: 1;">×</button>
       </div>
 
       <div style="margin-bottom: 20px;">
-        <h4 style="color: #f1c40f; margin-bottom: 8px;">1. 安装</h4>
-        <p style="font-size: 14px; color: #ccc; margin-bottom: 10px;">复制仓库地址：</p>
+        <h4 style="color: #f1c40f; margin-bottom: 8px;" data-i18n="lwb-step1-title">1. 安装</h4>
+        <p style="font-size: 14px; color: #ccc; margin-bottom: 10px;" data-i18n="lwb-step1-desc">复制仓库地址：</p>
         <div
           style="display: flex; gap: 8px; background: #1a1a1a; padding: 10px; border-radius: 6px; align-items: center; margin-bottom: 10px;">
           <code id="lwb-repo-url"
             style="flex-grow: 1; font-size: 12px; color: #3498db; word-break: break-all;">https://github.com/RT15548/LittleWhiteBox</code>
-          <button onclick="copyLWBRepo()"
+          <button onclick="copyLWBRepo()" data-i18n="copy"
             style="background: #3498db; color: white; border: none; padding: 4px 10px; border-radius: 4px; font-size: 12px; cursor: pointer; white-space: nowrap;">复制</button>
         </div>
       </div>
 
       <div style="margin-bottom: 20px;">
-        <h4 style="color: #f1c40f; margin-bottom: 8px;">2. 安装扩展</h4>
-        <p style="font-size: 14px; color: #ccc;">进入 SillyTavern → <b>扩展管理器</b> → <b>安装扩展</b>，粘贴地址后确认。</p>
+        <h4 style="color: #f1c40f; margin-bottom: 8px;" data-i18n="lwb-step2-title">2. 安装扩展</h4>
+        <p style="font-size: 14px; color: #ccc;" data-i18n-html="lwb-step2-desc">进入 SillyTavern → <b>扩展管理器</b> →
+          <b>安装扩展</b>，粘贴地址后确认。</p>
       </div>
 
       <div style="margin-bottom: 25px;">
-        <h4 style="color: #f1c40f; margin-bottom: 8px;">3. 启用功能 (必看)</h4>
+        <h4 style="color: #f1c40f; margin-bottom: 8px;" data-i18n="lwb-step3-title">3. 启用功能 (必看)</h4>
         <p style="font-size: 14px; color: #ccc; line-height: 1.6;">
-          刷新页面后，在 <b>扩展设置</b> → <b>小白X</b> 中开启所需功能模块。<br>
+          <span data-i18n-html="lwb-step3-desc">刷新页面后，在 <b>扩展设置</b> → <b>小白X</b> 中开启所需功能模块。</span><br>
           <span
             style="color: #e74c3c; font-weight: bold; background: rgba(231, 76, 60, 0.1); padding: 2px 4px; border-radius: 3px;">
-            ⚠️ 特别是"数据互动"中的"变量管理"，必须选择"2.0(state)"
-            另外，预设中的Main Prompt要打勾哦！
+            <span data-i18n="lwb-step3-warn">⚠️ 特别是"数据互动"中的"变量管理"，必须选择"2.0(state)"</span><span id="lwb-main-prompt-tip"
+              data-i18n="lwb-main-prompt-tip">，另外，预设中的Main Prompt要打勾哦！</span>
           </span>
         </p>
       </div>
 
-      <button onclick="closeLWBInstallTutorial()"
+      <button onclick="closeLWBInstallTutorial()" data-i18n="got-it"
         style="width: 100%; background: #e67e22; color: white; border: none; padding: 12px; border-radius: 6px; cursor: pointer; font-weight: bold;">我知道了</button>
     </div>
   </div>
 
   <script>
-    function openLWBInstallTutorial() {
+    function openLWBInstallTutorial(showMainPromptTip = true) {
+      const tipEl = document.getElementById('lwb-main-prompt-tip');
+      if (tipEl) tipEl.style.display = showMainPromptTip ? 'inline' : 'none';
       document.getElementById('lwbInstallModal').style.display = 'flex';
+    }
+    function pickTavernProviderFromLib() {
+      showProviderPickerModal(function (r) {
+        document.getElementById('tavern-api-endpoint').value = r.endpoint;
+        document.getElementById('tavern-model').value = r.model;
+        var hint = document.getElementById('tavern-model-hint');
+        if (r.context) {
+          var isEn = typeof currentLanguage !== 'undefined' && currentLanguage === 'en';
+          hint.textContent = isEn
+            ? 'Per database, ' + r.providerName + ' "' + r.modelName + '" max context is ' + r.context.toLocaleString() + (r.maxTokens ? ', max output ' + r.maxTokens.toLocaleString() : '') + '.'
+            : '根据数据库，来自' + r.providerName + '的「' + r.modelName + '」模型的最大上下文为 ' + r.context.toLocaleString() + (r.maxTokens ? '，最大输出为 ' + r.maxTokens.toLocaleString() : '') + '。';
+          hint.style.display = 'block';
+        } else {
+          hint.style.display = 'none';
+        }
+      });
     }
     function closeLWBInstallTutorial() {
       document.getElementById('lwbInstallModal').style.display = 'none';
@@ -6769,7 +9194,7 @@
       navigator.clipboard.writeText(url).then(() => {
         const btn = event.target;
         const originalText = btn.textContent;
-        btn.textContent = '已复制!';
+        btn.textContent = (typeof currentLanguage !== 'undefined' && currentLanguage === 'en') ? 'Copied!' : '已复制!';
         btn.style.background = '#27ae60';
         setTimeout(() => {
           btn.textContent = originalText;
@@ -6779,11 +9204,13 @@
     }
   </script>
 
-  <script src="js/part1.js"></script>
+  <script src="js/prompt_manager.js"></script>
+  <script src="js/part1.js?v=20261128"></script>
   <script src="js/part2.js"></script>
   <script src="js/part3.js"></script>
   <script src="js/agent.js"></script>
   <script src="js/dual_pane.js"></script>
+  <script src="js/novel_to_card.js"></script>
 
 </body>
 

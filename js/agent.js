@@ -1454,8 +1454,8 @@ async function agentStreamCall(systemPrompt, historyMessages, userMessage, signa
             url = 'https://api.deepseek.com/chat/completions';
             headers = { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + key };
             bodyObj = {
-                model: apiSettings.deepseek?.model || 'deepseek-v4-flash',
-                messages, max_tokens: 8192, temperature: 0.7, stream: true,
+                model: apiSettings.deepseek?.model || 'deepseek-chat',
+                messages, temperature: 0.7, stream: true,
             };
         } else {
             const cfg = apiSettings.tavern || {};
@@ -1524,7 +1524,10 @@ async function agentSendMessage() {
     const sendBtn = document.getElementById('agent-send-btn');
 
     const context = buildAgentContext();
-    const systemPrompt = `你是妮卡角色工作室的智能助手，帮助用户创建和修改SillyTavern角色卡（chara_card_v3格式）。
+    const customAgentPersona = (typeof PromptManager !== 'undefined')
+        ? PromptManager.render('agent_extra_persona')
+        : '你是妮卡角色工作室的智能助手，帮助用户创建和修改SillyTavern角色卡（chara_card_v3格式）。';
+    const systemPrompt = `${customAgentPersona}
 
 ## 核心架构——必须理解才能正确工作
 
@@ -2320,11 +2323,11 @@ async function agentCallAPI(prompt) {
         case 'deepseek': {
             const key = apiSettings.deepseek?.apiKey;
             if (!key) return null;
-            const model = apiSettings.deepseek?.model || 'deepseek-v4-flash';
+            const model = apiSettings.deepseek?.model || 'deepseek-chat';
             const res = await fetch('https://api.deepseek.com/chat/completions', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + key },
-                body: JSON.stringify({ model, messages: [{ role: 'user', content: prompt }], max_tokens: 8192, temperature: 0.7 }),
+                body: JSON.stringify({ model, messages: [{ role: 'user', content: prompt }], temperature: 0.7 }),
             });
             if (!res.ok) throw new Error('DeepSeek ' + res.status);
             const data = await res.json();

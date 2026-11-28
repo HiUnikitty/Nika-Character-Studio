@@ -106,7 +106,7 @@
             toggleBtn.classList.add('active');
             toggleBtn.style.background = 'rgba(0, 0, 0, 0.35)';
             toggleBtn.style.border = '1px solid rgba(255, 255, 255, 0.4)';
-            toggleBtn.innerHTML = '🪟 退出双开';
+            toggleBtn.innerHTML = (typeof t === 'function') ? t('dp-toggle-close') : '🪟 退出双开';
         }
 
         console.log('[DualPane] 双开对比镜像模式已开启');
@@ -140,7 +140,7 @@
             toggleBtn.classList.remove('active');
             toggleBtn.style.background = 'var(--secondary-color)';
             toggleBtn.style.border = 'none';
-            toggleBtn.innerHTML = '🪟 双开对比';
+            toggleBtn.innerHTML = (typeof t === 'function') ? t('dp-toggle-open') : '🪟 双开对比';
         }
 
         console.log('[DualPane] 双开对比模式已关闭');
@@ -491,12 +491,12 @@
                 btn.style.background = 'rgba(0, 0, 0, 0.35)';
                 btn.style.color = '#2ecc71';
                 btn.style.borderColor = '#2ecc71';
-                btn.innerHTML = '🔗 同步滚动: 开启';
+                btn.innerHTML = (typeof t === 'function') ? t('dp-sync-scroll-on') : '🔗 同步滚动: 开启';
             } else {
                 btn.style.background = 'rgba(0, 0, 0, 0.35)';
                 btn.style.color = '#f1c40f';
                 btn.style.borderColor = '#f1c40f';
-                btn.innerHTML = '🔓 分别滚动: 独立';
+                btn.innerHTML = (typeof t === 'function') ? t('dp-sync-scroll-off') : '🔓 分别滚动: 独立';
             }
         }
     }
@@ -2332,7 +2332,14 @@
         batchGenerateGreetingsForSec: batchGenerateGreetingsForSec,
         translateAllFields: translateAllFields,
         aiCompleteAllFields: aiCompleteAllFields,
-        generateAiNames: generateAiNames
+        generateAiNames: generateAiNames,
+        onLanguageChanged: function () {
+            const toggleBtn = document.getElementById('dual-pane-toggle-btn');
+            if (toggleBtn && typeof t === 'function') {
+                toggleBtn.innerHTML = state.active ? t('dp-toggle-close') : t('dp-toggle-open');
+            }
+            updateSyncButtonText();
+        }
     };
 
     window.toggleDualPaneMode = toggleDualPaneMode;

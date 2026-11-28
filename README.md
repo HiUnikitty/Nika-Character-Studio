@@ -15,6 +15,7 @@ A one-stop free AI role-playing studio inspired by Silly Tavern.
 ## 📢 反馈与交流
 
 **Discord**: [妮卡角色工作室 - AI编卡器+内置mini酒馆 开源 | 纯前端 | 无需安装](https://discord.com/channels/1134557553011998840/1443997397415104623)
+
 - 欢迎在discord分享使用体验
 - 反馈问题和建议
 - 与其他用户交流编卡心得
@@ -27,6 +28,7 @@ A one-stop free AI role-playing studio inspired by Silly Tavern.
 ## 主要功能
 
 ### AI辅助
+
 - **多API集成**: 支持DeepSeek、Gemini、本地大模型和自定义OpenAI兼容API
 - **一键补全**: AI协助生成角色描述、性格、对话示例等
 - **AI前端美化**: 智能生成多种HTML对话界面样式，支持实时预览和定制
@@ -36,17 +38,20 @@ A one-stop free AI role-playing studio inspired by Silly Tavern.
 - **智能指引**: 为AI提供具体要求和风格指导
 
 ### 🤖 妮卡智能体 (Nika AI Agent)
+
 - **智能编卡助手**: 内置专业的 AI 角色设计助手，提供修改建议与润色功能
 - **自动化变量系统**: AI 自动构建基于“小白X 2.0 (state)”语法的变量管理系统
 - **隐藏正则生成**: 自动生成用于隐藏 `<state>` 同步标签的正则脚本，确保护更佳沉浸感
 - **交互式变量卡**: 轻松制作带生命值、金币、背包等 UI 的互动冒险角色卡
 
 ### 小说转世界书系统
+
 - **实时编码切换**: 支持txt多种编码格式
 - **章回自动检测**: 智能识别小说章节结构
 - **批量AI处理**: 支持大文件分段处理
 
 ### AI前端美化系统
+
 - **一键生成**: AI自动生成多种精美的HTML对话界面样式
 - **批量生成**: 可选择生成3-8个不同风格的样式方案
 - **实时预览**: 在新窗口中预览生成的HTML效果
@@ -54,29 +59,48 @@ A one-stop free AI role-playing studio inspired by Silly Tavern.
 - **一键注入**: 直接将选中的样式代码注入到指令输入框
 
 ### 一键翻译功能
+
 - **智能翻译**: 将英文角色卡的所有字段一键翻译为中文
 - **撤销支持**: 支持撤销翻译操作，恢复原始内容
 
 ### 世界书系统
+
 - 支持层级结构的角色书条目，可创建复杂的知识体系
 - AI自动生成角色书条目
 
 ### 角色管理
+
 - **角色库**: 网格布局展示，支持收藏和标签筛选
 - **聊天功能**: 一键跳转到聊天界面，与创建的角色进行对话
 
 ### 聊天系统
+
 - **继续聊天**: 首页一键跳转到聊天界面(chat.html)
 - **流式输出**: 实时显示AI回复
 - **消息管理**: 编辑、删除、重新生成消息
 - **聊天记录**: 自动保存对话历史
 - **图片支持**: 发送图片并使用视觉识图API
 
+### 🧩 SillyTavern 内置插件
+
+`chat.html` 原生内置了多款常用 SillyTavern 插件，纯前端免安装开箱即用：
+
+- **酒馆助手 (JS-Slash-Runner)**: 支持前端角色卡渲染、内嵌脚本与 MVU 等生态能力
+- **小白X (LittleWhiteBox)**: 支持 State 变量与任务等角色卡核心功能
+- **提示词模板 (ST-Prompt-Template)**: 支持 EJS 提示词模板与宏编译
+- **快速回复 (Quick Reply)**: 支持 SillyTavern JSON 格式快速回复集的导入/导出与一键触发
+
+### 💾 全站数据一键备份与恢复
+
+- 在首页「其他设置」中支持一键打包导出或恢复工作室（`index`）与聊天页（`chat`）的全部本地数据，方便跨设备迁移与备份
+
 ### 数据兼容性
-- 多格式导入: 支持JSON、PNG角色卡，以及所有封面图片格式（PNG、JPG、WEBP、GIF、BMP）
-- 完全兼容SillyTavern V2和V3角色卡格式
+
+- 多格式导入: 支持 JSON、PNG 角色卡，以及所有封面图片格式（PNG、JPG、WEBP、GIF、BMP）
+- 完全兼容 SillyTavern V2 / V3 角色卡格式与 Quick Reply v2 JSON 格式
 
 ### 界面设计
+
 - **现代化UI**: 酒馆主色调
 - **响应式设计**: 支持桌面和移动设备
 - **中文界面**: 完全中文化的用户界面
@@ -90,23 +114,31 @@ A one-stop free AI role-playing studio inspired by Silly Tavern.
 ## 快速开始
 
 ### 环境要求
+
 - 现代浏览器（开启隐私模式会影响本地库的存储）
 - 可选：API密钥（用于AI功能）
 
 ### 使用步骤
+
 1. 下载项目文件（Code --> Download Zip --> 解压）
-2. 在浏览器中打开 `index.html`
-3. 开始创建和管理你的角色卡
+2. **推荐通过本地 HTTP 服务启动**（确保 `chat.html` 内置 SillyTavern ES 模块插件正常加载）：
+   - Windows 双击 `Start.bat`（macOS / Linux 运行 `./Start.sh`），自动启动本地服务并打开 `http://localhost:9999`
+   - 或直接将整个项目文件夹拖拽部署到 **Netlify / GitHub Pages / Cloudflare Pages** 等纯静态托管平台
+3. 开始创建、管理角色卡并在 `chat.html` 中直接游玩复杂前端角色卡
 
 ### 基本操作
+
 1. **创建角色**: 点击"创建新角色"
 2. **编辑角色**: 在角色库中点击"编辑"
-3. **导入角色**: 支持JSON、PNG
+3. **导入角色**: 支持 JSON、PNG
 4. **导出角色**: 推荐首页导出，方便日后更改
-5. **txt转世界书**: 点击"📚 txt转世界书",上传小说文件，自动生成世界书
+5. **txt转世界书**: 点击"📚 txt转世界书"，上传小说文件，自动生成世界书
 6. **继续聊天**: 点击"💬 继续聊天"按钮，跳转到聊天界面与角色对话
+7. **ST 插件与快速回复**: 在聊天页左侧边栏打开"🧩 ST 插件"，切换配置酒馆助手、小白X 核心、提示词模板及快速回复
+8. **全站一键备份/恢复**: 在首页点击"🔧 其他设置"，使用"全站数据备份与恢复"一键导出或还原工作室与聊天页的全部本地数据
 
 ### AI功能
+
 1. 在API设置中选择AI服务提供商（DeepSeek、Gemini、本地大模型或自定义）
 2. 输入对应的API密钥或服务地址
 3. 点击"🔮 一键生成角色"按钮 生成角色卡
@@ -128,13 +160,19 @@ A one-stop free AI role-playing studio inspired by Silly Tavern.
 A: 支持PNG、JPG、JPEG、WEBP、GIF、BMP等所有常见格式，会自动转换为PNG存储。
 
 **Q: 数据安全吗？**
-A: 所有数据存储在本地浏览器中，不会上传到任何服务器。
+A: 所有数据存储在本地浏览器中，不会上传到任何服务器；如需换设备或防丢，可在首页「其他设置」中一键全量备份 `index` 与 `chat` 的全部数据。
 
 **Q: txt转世界书支持哪些编码？**
 A: 支持UTF-8、GBK、GB2312、Big5等多种中文编码，系统会自动检测最优编码，也可以手动选择。
 
 **Q: txt文件显示乱码怎么办？**
 A: 系统会自动尝试多种编码格式。如果仍显示乱码，可以手动选择正确的编码格式（通常中文小说为GBK）。
+
+**Q: 部署到 Netlify 后右下角出现 "Powered by Netlify" 浮窗遮挡输入框怎么办？**
+A: 登录 Netlify 后台 → 进入站点 **Project configuration** → **General** → 找到 **Powered by Netlify badge** 关闭保存即可（免费版也支持关闭）。
+
+**Q: 为什么直接双击打开 `chat.html` 时内置 ST 插件无法加载？**
+A: 浏览器安全策略限制 `file://` 协议加载 ES Module。请使用项目自带的 `Start.bat` / `Start.sh` 启动本地 HTTP 服务，或部署到静态网站后访问。
 
 ## 许可证
 
@@ -149,6 +187,7 @@ A: 系统会自动尝试多种编码格式。如果仍显示乱码，可以手�
 本项目的聊天功能基于开源项目 **[Midsummer's Bird](https://github.com/csjafuwvbegscbw-star/Midsummer-s-Bird)** 进行开发和扩展。
 
 **Midsummer's Bird** 是一个优雅、强大且完全本地化的 AI 角色扮演聊天前端，提供了：
+
 - 完整的角色卡管理系统
 - 强大的世界书(World Info)系统
 - 流式AI对话支持
@@ -156,6 +195,13 @@ A: 系统会自动尝试多种编码格式。如果仍显示乱码，可以手�
 - 精美的主题定制系统
 
 感谢原作者 **Soaring Bird** 的开源贡献，为AI角色扮演社区提供了如此优秀的工具！
+
+同时衷心感谢以下 SillyTavern 开源社区项目，使纯前端浏览器环境也能原生运行丰富的角色卡生态：
+
+- **[SillyTavern](https://github.com/SillyTavern/SillyTavern)**（Quick Reply v2 规范、STscript 与插件扩展架构参考）
+- **[JS-Slash-Runner（酒馆助手）](https://github.com/N0VI028/JS-Slash-Runner)**
+- **[LittleWhiteBox（小白X）](https://github.com/RT15548/LittleWhiteBox)**
+- **[ST-Prompt-Template（提示词模板）](https://github.com/zonde306/ST-Prompt-Template)**
 
 ---
 
@@ -172,6 +218,7 @@ An elegant AI character card management system designed specifically for ST char
 ## Core Features
 
 ### AI Frontend Beautification System
+
 - **One-click Generation**: AI automatically generates multiple exquisite HTML dialogue interface styles
 - **Batch Generation**: Choose to generate 3-8 different style schemes
 - **Real-time Preview**: Preview generated HTML effects in new windows
@@ -180,37 +227,57 @@ An elegant AI character card management system designed specifically for ST char
 - **Line Control**: Set HTML code line limits (50-150 lines)
 
 ### Name Generator
+
 - **AI Smart Generation**: Generate multiple candidate names for characters
 - **Quick Selection**: One-click selection and application to characters
 
 ### One-click Translation
+
 - **Smart Translation**: Translate Chinese character cards to English with all fields
 - **Undo Support**: Support undo translation operations, restore original content
 
 ### 🤖 Nika AI Agent
+
 - **Smart Creation Assistant**: Built-in professional AI character design assistant providing modification suggestions and polishing
 - **Automated Variable System**: AI automatically builds variable management systems based on "LWB 2.0 (state)" syntax
 - **Hidden Regex Generation**: Automatically generates regex scripts to hide `<state>` sync tags for better immersion
 - **Interactive Variable Cards**: Easily create interactive adventure character cards with UI elements like HP, gold, and inventory
 
 ### Complete Image Format Support
+
 - Support all image format uploads (PNG, JPG, JPEG, WEBP, GIF, BMP)
 - Automatic conversion to PNG format for storage
 - Unified PNG format for exports
 
 ### TXT to World Book System
+
 - **Real-time Encoding Switch**: Support manual encoding selection with immediate file reload and preview
 - **Chapter Auto-detection**: Intelligently recognize novel chapter structure
 - **Batch AI Processing**: Support large file segmented processing, can pause and resume
 
 ### World Book System
+
 - Support hierarchical character book entries
 - Sub-entry functionality for complex knowledge systems
 - AI automatic generation of character book entries
-- Complete import/export support 
+- Complete import/export support
+
+### 🧩 Built-in SillyTavern Plugins
+
+`chat.html` comes with popular SillyTavern plugins built in, pure frontend and ready out of the box:
+
+- **JS-Slash-Runner**: Frontend HTML/iframe card rendering, embedded scripts, and MVU ecosystem support
+- **LittleWhiteBox**: Core State variable and task capabilities for interactive cards
+- **ST-Prompt-Template**: EJS prompt templating and macro evaluation
+- **Quick Reply**: Full SillyTavern Quick Reply JSON import/export and one-click triggers
+
+### 💾 One-Click Full Backup & Restore
+
+- Available in `index.html` → **Other Settings** to export or restore all local data across both the studio (`index`) and chat (`chat`) pages in one file
 
 ### Data Compatibility
-- Fully compatible with V2 and V3 character card formats
+
+- Fully compatible with SillyTavern V2 / V3 character cards and Quick Reply v2 JSON format
 - Support sub-entry import and export
 - Recursive processing of nested structures
 
@@ -219,12 +286,14 @@ An elegant AI character card management system designed specifically for ST char
 ## Main Features
 
 ### World Book System
+
 - Supports hierarchical character book entries
 - Sub-entry functionality for complex knowledge systems
 - AI automatic generation of character book entries
 - Complete import/export support
 
 ### AI Assistance
+
 - **Multi-API Integration**: Support for DeepSeek, Gemini, local models, and custom OpenAI-compatible APIs
 - **One-click Completion**: AI-assisted generation of character descriptions, personality, dialogue examples, etc.
 - **AI Frontend Beautification**: Intelligently generate multiple HTML dialogue interface styles with real-time preview and customization
@@ -234,12 +303,14 @@ An elegant AI character card management system designed specifically for ST char
 - **Smart Guidance**: Provide specific requirements and style guidance for AI
 
 ### Character Management
+
 - **Create/Edit Characters**: Complete character information entry, including avatars, basic information, personality settings, etc.
 - **Character Library**: Grid layout display with favorites and tag filtering
 - **World Book System**: Advanced character book functionality with hierarchical structure and AI generation
 - **Chat Function**: One-click jump to chat interface to converse with created characters
 
 ### Interface Design
+
 - **Modern UI**: Dark theme with ST-like interface
 - **Responsive Design**: Supports desktop and mobile devices
 - **English Interface**: Localized user interface
@@ -253,34 +324,42 @@ An elegant AI character card management system designed specifically for ST char
 ## Quick Start
 
 ### Requirements
+
 - Modern browser (Chrome, Firefox, Safari, Edge)
 - JavaScript and IndexedDB support
 - Optional: AI API key (DeepSeek, Gemini, or custom OpenAI-compatible service for AI features)
 
 ### Usage Steps
+
 1. Download project files (Code --> Download Zip)
-2. Open `index.html` in browser
-3. Start creating and managing your character cards
+2. Start a local HTTP server via `Start.bat` (Windows) or `./Start.sh` (macOS/Linux) to open `http://localhost:9999` (required for ES Module ST plugins in `chat.html`), or deploy statically to Netlify / GitHub Pages / Cloudflare Pages
+3. Start creating, managing, and chatting with your character cards
 
 ### Basic Operations
+
 1. **Create Character**: Click "Create New Character"
 2. **Edit Character**: Click "Edit" in character library
 3. **Import Character**: Supports JSON, PNG and image files
 4. **Export Character**: JSON or PNG format
 5. **TXT to World Book**: Click "📚 TXT to Worldbook", upload novel files, automatically generate world books
 6. **Continue Chatting**: Click "💬 Continue Chat" button to jump to chat interface and talk with characters
+7. **ST Plugins & Quick Reply**: Open "🧩 ST Plugins" in the chat sidebar to manage built-in plugins and import/export SillyTavern Quick Reply JSON sets
+8. **Full Backup & Restore**: Open "🔧 Other Settings" on the home page to export or restore all `index` and `chat` data in one click
 
 ### AI Features
+
 1. Enter DeepSeek API key
 2. Click "AI Help Me Write" button
 3. AI intelligently generates related content
 
 ### Companion Mode
+
 1. Enable "Companion Mode" switch in editor
 2. AI button text changes to "Generate Virtual Companion"
 3. Generated content better fits companion character settings
 
 ### World Book Features
+
 1. Click "AI Generate Reference Entries" for automatic generation
 2. Manually add entries and sub-entries
 3. Set keywords and injection content
@@ -291,13 +370,19 @@ An elegant AI character card management system designed specifically for ST char
 A: Supports all common formats including PNG, JPG, JPEG, WEBP, GIF, BMP, automatically converted to PNG for storage.
 
 **Q: Is data secure?**
-A: All data is stored locally in the browser and will not be uploaded to any server.
+A: All data is stored locally in the browser and will not be uploaded to any server. You can back up and restore all `index` and `chat` data in one click under **Other Settings**.
 
 **Q: What encodings does TXT to World Book support?**
 A: Supports UTF-8, GBK, GB2312, Big5 and other Chinese encodings. The system automatically detects the optimal encoding, and manual selection is also available.
 
 **Q: What to do if TXT files display garbled text?**
 A: The system automatically tries multiple encoding formats. If garbled text still appears, manually select the correct encoding format (usually GBK for Chinese novels).
+
+**Q: How do I hide the "Powered by Netlify" badge if it overlaps the input bar?**
+A: In your Netlify dashboard, go to **Project configuration** → **General** → **Powered by Netlify badge** and switch it to **Off** (supported on the free plan).
+
+**Q: Why don't built-in ST plugins load when opening `chat.html` directly via `file://`?**
+A: Browsers block ES Modules over `file://`. Start the local HTTP server with `Start.bat` / `Start.sh`, or access via a static host.
 
 ## License
 
@@ -312,6 +397,7 @@ See [LICENSE](LICENSE) file for details.
 The chat functionality of this project is developed and extended based on the open-source project **[Midsummer's Bird](https://github.com/csjafuwvbegscbw-star/Midsummer-s-Bird)**.
 
 **Midsummer's Bird** is an elegant, powerful, and fully localized AI role-playing chat frontend that provides:
+
 - Complete character card management system
 - Powerful World Info system
 - Streaming AI conversation support
@@ -320,10 +406,8 @@ The chat functionality of this project is developed and extended based on the op
 
 Thanks to the original author **Soaring Bird** for the open-source contribution, providing such an excellent tool for the AI role-playing community!
 
-Special thanks to **Models.dev** for providing the API configuration data!
+Special thanks to **Models.dev** for providing the API configuration data, and to **[SillyTavern](https://github.com/SillyTavern/SillyTavern)**, **[JS-Slash-Runner](https://github.com/N0VI028/JS-Slash-Runner)**, **[LittleWhiteBox](https://github.com/RT15548/LittleWhiteBox)**, and **[ST-Prompt-Template](https://github.com/zonde306/ST-Prompt-Template)** for powering the open-source role-playing plugin ecosystem!
 
 ---
 
 Start creating your own characters! 
-
-

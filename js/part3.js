@@ -522,25 +522,22 @@ else {
     prompt += `\n请根据这些角色信息来：\n1. 选择符合角色风格的配色方案和视觉设计\n2. 在状态栏中显示与角色相关的信息（如角色状态、场景、好感度等）\n3. 生成符合角色性格和设定的对话内容\n4. 确保整体风格与角色的主题和个性相匹配\n\n参考示例（请参考这个结构和样式风格）：\n\`\`\`html\n<!DOCTYPE html>\n<html>\n<head>\n<style>\nbody {background:#f5f1e6;color:#3a342c;font-family:sans-serif;margin:20px}\n.status-bar {background:#d7c9aa;padding:10px;border-radius:5px;margin-bottom:15px}\n.dialogue {background:#fff;padding:15px;border-radius:8px;border-left:4px solid #9d7463}\n.character {color:#7e5e4f;font-weight:bold}\n</style>\n</head>\n<body>\n\n<div class="status-bar">\n<strong>场景:</strong> 安定区咖啡厅 · 打烊后<br>\n<strong>时间:</strong> 傍晚雨后<br>\n<strong>董香状态:</strong> 警惕→略微放松\n<strong>好感度:</strong> 23<br>\n<strong>...</strong> ...\n</div>\n\n<div class="dialogue">\n<p><span class="character">雾岛董香</span>: （手指无意识地摩挲着咖啡杯边缘，目光在你脸上停留片刻）...又是这种时候来。雨停了？</p>\n<p>她起身时围裙带子松垮地垂在腰间，制服衬衫最上面的扣子不知何时解开了，露出一小段细腻的肌肤。空气中还残留着咖啡渣的苦涩香气，混着她身上淡淡的洗涤剂味道。</p>\n<p><span class="character">雾岛董香</span>: （突然注意到你的视线，立即背过身去整理柜台）没事就快回去，我要锁门了。</p>\n</div>\n\n</body>\n</html>\n\`\`\`\n\n请基于以上示例的结构，生成包含状态栏(.status-bar)和对话内容(.dialogue)的完整HTML页面。状态栏应包含场景、时间、角色状态、好感度等信息，对话部分应包含角色名称和丰富的描述性文本。**请确保生成的内容与提供的角色信息高度匹配，体现角色的独特风格和特色。**`;
 }
 
-// 添加角色信息到prompt中
-if (characterInfo.name) {
-    prompt += `- **角色名称：** ${characterInfo.name}\n`;
-}
-if (characterInfo.gender) {
-    prompt += `- **性别：** ${characterInfo.gender}\n`;
-}
+const charInfoLines = [];
+if (characterInfo.name) charInfoLines.push(`- **角色名称：** ${characterInfo.name}`);
+if (characterInfo.gender) charInfoLines.push(`- **性别：** ${characterInfo.gender}`);
+if (characterInfo.description) charInfoLines.push(`- **角色描述：** ${characterInfo.description}`);
+if (characterInfo.personality) charInfoLines.push(`- **个性特征：** ${characterInfo.personality}`);
+if (characterInfo.scenario) charInfoLines.push(`- **场景设定：** ${characterInfo.scenario}`);
+if (characterInfo.tags) charInfoLines.push(`- **角色标签：** ${characterInfo.tags}`);
+const characterInfoBlock = charInfoLines.join('\n');
 
-if (characterInfo.description) {
-    prompt += `- **角色描述：** ${characterInfo.description}\n`;
-}
-if (characterInfo.personality) {
-    prompt += `- **个性特征：** ${characterInfo.personality}\n`;
-}
-if (characterInfo.scenario) {
-    prompt += `- **场景设定：** ${characterInfo.scenario}\n`;
-}
-if (characterInfo.tags) {
-    prompt += `- **角色标签：** ${characterInfo.tags}\n`;
+if (typeof PromptManager !== 'undefined') {
+    const linesText = lines === '不限制' ? '行数不限制' : `不超过${lines}行`;
+    prompt = getLanguagePrefix() + (requirements.trim()
+        ? PromptManager.render('beautify_style_custom', { requirements: requirements.trim(), count, linesText, characterInfoBlock })
+        : PromptManager.render('beautify_style_default', { count, linesText, characterInfoBlock }));
+} else if (characterInfoBlock) {
+    prompt += characterInfoBlock + '\n';
 }
 
 try {
@@ -755,7 +752,7 @@ try {
             content: prompt,
             },
         ],
-        max_tokens: 4000,
+        max_tokens: 65536,
         temperature: 0.7,
         }),
     });
@@ -772,7 +769,7 @@ try {
             content: prompt,
             },
         ],
-        max_tokens: 4000,
+        max_tokens: 65536,
         temperature: 0.7,
         }),
     });
@@ -1052,19 +1049,9 @@ try {
     undoData.styleCode = code;
     
     // 构建AI修改prompt
-    const aiPrompt = getLanguagePrefix() + `请基于以下HTML/CSS代码，按照用户要求进行修改和优化：${modifyRequest.trim()}。
-
-重要要求：
-1. 保持代码的核心功能不变
-2. 优化代码结构和样式
-3. 直接输出修改后的完整代码
-4. 不要添加任何标题、前缀、后缀或说明文字
-5. 只返回纯净的HTML/CSS代码，无需任何解释
-
-现有代码：
-${code}
-
-请直接输出修改后的代码：`;
+    const aiPrompt = getLanguagePrefix() + (typeof PromptManager !== 'undefined'
+        ? PromptManager.render('beautify_modify', { modifyRequest: modifyRequest.trim(), code })
+        : `请基于以下HTML/CSS代码，按照用户要求进行修改和优化：${modifyRequest.trim()}。\n现有代码：\n${code}`);
 
     // 调用API获取修改后的代码
     const mockButton = { disabled: false, textContent: '生成中...' };
@@ -1568,20 +1555,9 @@ if (generateButton) {
 }
 
 // 构建AI优化prompt
-const aiPrompt = getLanguagePrefix() + `请基于以下现有指令内容，按照用户要求进行优化和修改：${request}。
-
-重要要求：
-1. 保持指令的核心功能不变
-2. 优化表达方式和逻辑结构
-3. 直接输出优化后的完整指令内容
-4. 不要添加任何标题、前缀、后缀或说明文字
-5. 不要包含"优化后的"、"改写说明"等格式化内容
-6. 只返回纯净的指令文本，无需任何解释
-
-现有指令：
-${currentContent}
-
-请直接输出优化后的指令内容：`;
+const aiPrompt = getLanguagePrefix() + (typeof PromptManager !== 'undefined'
+    ? PromptManager.render('instruction_optimize', { request, currentContent })
+    : `请基于以下现有指令内容，按照用户要求进行优化和修改：${request}。\n现有指令：\n${currentContent}`);
 
 try {
     // 调用API获取优化后的指令，传递一个模拟的button对象
@@ -1978,6 +1954,8 @@ if (!(await checkDbReady())) return;
 try {
     editorView.style.display = 'none';
     document.getElementById('novel-to-worldbook-view').style.display = 'none';
+    const ntcView = document.getElementById('novel-to-card-view');
+    if (ntcView) ntcView.style.display = 'none';
     libraryView.style.display = 'block';
     await renderUI(); // 等待渲染完成，renderUI内部会处理加载动画
 } catch (error) {
@@ -1992,6 +1970,8 @@ if (!(await checkDbReady())) return;
 // 隐藏其他视图
 document.getElementById('library-view').style.display = 'none';
 document.getElementById('editor-view').style.display = 'none';
+const ntcView = document.getElementById('novel-to-card-view');
+if (ntcView) ntcView.style.display = 'none';
 
 // 显示长文本转世界书视图
 const worldbookView = document.getElementById('novel-to-worldbook-view');
@@ -2014,6 +1994,8 @@ if (!(await checkDbReady())) return;
 document.getElementById('loading-overlay').style.display = 'flex';
 
 libraryView.style.display = 'none';
+const ntcView = document.getElementById('novel-to-card-view');
+if (ntcView) ntcView.style.display = 'none';
 editorView.style.display = 'flex';
 clearEditorForm();
 
@@ -4619,7 +4601,12 @@ function renderEpubChaptersList() {
 
     const cnt = document.createElement('span');
     cnt.className = 'epub-chapter-cnt';
-    cnt.textContent = (ch.content ? ch.content.length.toLocaleString() : '0') + ' 字';
+    const charLen = ch.content ? ch.content.trim().length : 0;
+    cnt.textContent = charLen.toLocaleString() + ' 字' + (charLen < 500 ? '（自动归并）' : '');
+    if (charLen < 500) {
+      cnt.style.color = '#f39c12';
+      cnt.title = '少于 500 字，加入队列时将自动归纳至上一章，无需手动取消勾选';
+    }
 
     item.appendChild(cb);
     item.appendChild(num);
@@ -4638,14 +4625,25 @@ function updateEpubChapterStats() {
   const pickedCount = picked.length;
   const pickedChars = picked.reduce((sum, c) => sum + (c.content ? c.content.length : 0), 0);
 
+  let effectiveCount = pickedCount;
+  if (typeof mergeShortChapters === 'function' && pickedCount > 0) {
+    const preview = mergeShortChapters(picked.map((ch, idx) => ({
+      title: ch.name ? ch.name.trim() : `第${idx + 1}章`,
+      body: ch.content || '',
+      content: ch.content || ''
+    })), 500);
+    effectiveCount = preview.merged.length;
+  }
+
   const statsEl = document.getElementById('epub-chapter-stats');
   if (statsEl) {
-    statsEl.textContent = `共 ${total} 章，已勾选 ${pickedCount} 章 (${pickedChars.toLocaleString()} 字)`;
+    const mergeHint = effectiveCount !== pickedCount ? ` → 自动归并短/空章后 ${effectiveCount} 块` : '';
+    statsEl.textContent = `共 ${total} 章，已勾选 ${pickedCount} 章 (${pickedChars.toLocaleString()} 字)${mergeHint}`;
   }
 
   const btnCountEl = document.getElementById('epub-btn-count');
   if (btnCountEl) {
-    btnCountEl.textContent = pickedCount;
+    btnCountEl.textContent = effectiveCount;
   }
 }
 
@@ -4685,17 +4683,32 @@ async function generateEpubWorldbook() {
     return;
   }
 
-  // 将 chapter 的 “name” 和 “content” 字段组合为一个章节分块
-  memoryQueue = picked.map((ch, index) => {
+  // 将 chapter 的 “name” 和 “content” 字段组合，并将少于 500 字的短/空章节自动归纳至上一章
+  const rawItems = picked.map((ch, index) => {
     const title = ch.name ? ch.name.trim() : `第${index + 1}章`;
-    const combinedContent = ch.name ? `${ch.name.trim()}\n\n${ch.content || ''}` : (ch.content || '');
-    return {
-      id: `chapter_${index + 1}`,
-      title: title,
-      content: combinedContent,
-      processed: false
-    };
+    const body = ch.content || '';
+    const combinedContent = ch.name && body.trim() ? `${ch.name.trim()}\n\n${body}` : body;
+    return { title, body, content: combinedContent };
   });
+  const { merged, mergedShortCount, droppedEmptyCount } = typeof mergeShortChapters === 'function'
+    ? mergeShortChapters(rawItems, 500)
+    : { merged: rawItems, mergedShortCount: 0, droppedEmptyCount: 0 };
+
+  if (!merged.length) {
+    alert('所选章节均无实质文本内容，请重新勾选！');
+    return;
+  }
+
+  memoryQueue = merged.map((ch, index) => ({
+    id: `chapter_${index + 1}`,
+    title: ch.title || `第${index + 1}章`,
+    content: ch.content,
+    processed: false
+  }));
+
+  if (mergedShortCount > 0 || droppedEmptyCount > 0) {
+    console.log(`[EPUB入队] 已自动归纳 ${mergedShortCount} 个少于500字短章、跳过 ${droppedEmptyCount} 个0字伪章，最终生成 ${memoryQueue.length} 块`);
+  }
 
   // 拼接勾选章节内容到 currentNovelContent（便于 hash 检测、Token 统计与持久化状态）
   currentNovelContent = memoryQueue.map(m => m.content).join('\n\n====================\n\n');
@@ -4901,14 +4914,27 @@ try {
     
     if (matches && matches.length > 0) {
     const matchTexts = matches.map(match => match[0]);
-    alert(`检测到 ${matches.length} 个章节\n\n前5个章节标题：\n${matchTexts.slice(0, 5).join('\n')}`);
     
-    // 按章节切分
+    // 按章节切分，并自动将少于 500 字的短章/伪章归纳至上一章
     const chapters = splitByChapters(currentNovelContent, regex);
-    memoryQueue = chapters.map((chapter, index) => ({
-        id: `chapter_${index + 1}`,
+    const rawItems = chapters.map((chapter, index) => ({
         title: matchTexts[index] || `第${index + 1}章`,
-        content: chapter,
+        body: chapter,
+        content: chapter
+    }));
+    const { merged, mergedShortCount, droppedEmptyCount } = typeof mergeShortChapters === 'function'
+        ? mergeShortChapters(rawItems, 500)
+        : { merged: rawItems, mergedShortCount: 0, droppedEmptyCount: 0 };
+
+    const mergeTip = (mergedShortCount > 0 || droppedEmptyCount > 0)
+        ? `\n（已自动将 ${mergedShortCount + droppedEmptyCount} 个少于500字的短/空章归纳至相邻章，实际队列 ${merged.length} 块）`
+        : '';
+    alert(`检测到 ${matches.length} 个章节${mergeTip}\n\n前5个队列章节标题：\n${merged.slice(0, 5).map(m => m.title).join('\n')}`);
+
+    memoryQueue = merged.map((ch, index) => ({
+        id: `chapter_${index + 1}`,
+        title: ch.title || `第${index + 1}章`,
+        content: ch.content,
         processed: false
     }));
     

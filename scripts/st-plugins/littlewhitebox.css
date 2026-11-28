@@ -1,0 +1,446 @@
+/* ==================== 基础工具样式 ==================== */
+pre:has(+ .xiaobaix-iframe) {
+    display: none;
+}
+
+/* ==================== 循环任务样式 ==================== */
+.task-container {
+    margin-top: 10px;
+    margin-bottom: 10px;
+}
+
+.task-container:empty::after {
+    content: "No tasks found";
+    font-size: 0.95em;
+    opacity: 0.7;
+    display: block;
+    text-align: center;
+}
+
+.task-item {
+    align-items: center;
+    border: 1px solid var(--SmartThemeBorderColor);
+    border-radius: 10px;
+    padding: 0 5px;
+    margin-top: 1px;
+    margin-bottom: 1px;
+}
+
+.task-item:has(.disable_task:checked) .task_name {
+    text-decoration: line-through;
+    filter: grayscale(0.5);
+}
+
+.task_name {
+    font-weight: normal;
+    color: var(--SmartThemeEmColor);
+    font-size: 0.9em;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.drag-handle {
+    cursor: grab;
+    color: var(--SmartThemeQuoteColor);
+    margin-right: 8px;
+    user-select: none;
+}
+
+.drag-handle:active {
+    cursor: grabbing;
+}
+
+.checkbox {
+    align-items: center;
+}
+
+.task_editor {
+    width: 100%;
+}
+
+.task_editor .flex-container {
+    gap: 10px;
+}
+
+.task_editor textarea {
+    font-family: 'Courier New', monospace;
+}
+
+.task-save-error {
+    margin-top: 12px;
+    padding: 10px 12px;
+    border-left: 3px solid var(--warning, #e9a45c);
+    background: rgb(233 164 92 / 10%);
+    border-radius: 4px;
+    overflow-wrap: anywhere;
+    text-align: left;
+}
+
+input.disable_task {
+    display: none !important;
+}
+
+.task-toggle-off {
+    cursor: pointer;
+    opacity: 0.5;
+    filter: grayscale(0.5);
+    transition: opacity 0.2s ease-in-out;
+}
+
+.task-toggle-off:hover {
+    opacity: 1;
+    filter: none;
+}
+
+.task-toggle-on {
+    cursor: pointer;
+}
+
+.disable_task:checked~.task-toggle-off {
+    display: block;
+}
+
+.disable_task:checked~.task-toggle-on {
+    display: none;
+}
+
+.disable_task:not(:checked)~.task-toggle-off {
+    display: none;
+}
+
+.disable_task:not(:checked)~.task-toggle-on {
+    display: block;
+}
+
+/* ==================== 沉浸式显示模式样式 ==================== */
+body.immersive-mode #chat {
+    padding: 0 !important;
+    border: 0px !important;
+    overflow-y: auto;
+    margin: 0 0px 0px 4px !important;
+    scrollbar-width: thin;
+    scrollbar-gutter: auto;
+}
+
+.xiaobaix-top-group {
+    margin-top: 1em !important;
+}
+
+@media screen and (min-width: 1001px) {
+    body.immersive-mode #chat {
+        scrollbar-width: none;
+        -ms-overflow-style: none;
+        /* IE and Edge */
+    }
+
+    body.immersive-mode #chat::-webkit-scrollbar {
+        display: none;
+    }
+}
+
+body.immersive-mode .mesAvatarWrapper {
+    margin-top: 1em;
+    padding-bottom: 0px;
+}
+
+body.immersive-mode .swipe_left,
+body.immersive-mode .swipeRightBlock {
+    position: absolute !important;
+    width: 1px !important;
+    height: 1px !important;
+    min-width: 1px !important;
+    min-height: 1px !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border: 0 !important;
+    overflow: hidden !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
+    clip-path: inset(50%) !important;
+}
+
+body.immersive-mode .mes {
+    margin: 2% 0 0% 0 !important;
+}
+
+body.immersive-mode .ch_name {
+    padding-bottom: 5px;
+    border-bottom: 0.5px dashed color-mix(in srgb, var(--SmartThemeEmColor) 30%, transparent);
+}
+
+body.immersive-mode .mes_block {
+    padding-left: 0 !important;
+    margin: 0 0 5px 0 !important;
+}
+
+body.immersive-mode .mes_text {
+    padding: 0px !important;
+    max-width: 100%;
+    width: 100%;
+    margin-top: 5px;
+}
+
+body.immersive-mode .mes {
+    width: 99%;
+    margin: 0 0.5%;
+    padding: 0px !important;
+}
+
+body.immersive-mode.immersive-all .mes.immersive-virtualized-message {
+    content-visibility: auto;
+    contain: layout paint style;
+    contain-intrinsic-size: auto var(--immersive-message-height, 220px);
+}
+
+body.immersive-mode .mes_buttons,
+body.immersive-mode .mes_edit_buttons {
+    position: absolute !important;
+    top: 0 !important;
+    right: 0 !important;
+}
+
+body.immersive-mode .mes_buttons {
+    height: 20px;
+    overflow-x: clip;
+}
+
+body.immersive-mode .swipes-counter {
+    padding-left: 0px;
+    margin-bottom: 0 !important;
+}
+
+body.immersive-mode .flex-container.flex1.alignitemscenter {
+    min-height: 32px;
+}
+
+.immersive-navigation {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    margin-top: 5px;
+    opacity: 0.7;
+}
+
+.immersive-nav-btn {
+    color: var(--SmartThemeBodyColor);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    background: none;
+    border: none;
+    font-size: 12px;
+}
+
+.immersive-nav-btn:hover:not(:disabled) {
+    background-color: rgba(var(--SmartThemeBodyColor), 0.2);
+    transform: scale(1.1);
+}
+
+.immersive-nav-btn:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+}
+
+/* ==================== 模板编辑器样式 ==================== */
+.xiaobai_template_editor {
+    max-height: 80vh;
+    overflow-y: auto;
+    padding: 20px;
+    border-radius: 8px;
+}
+
+/* ==================== 消息预览插件样式 ==================== */
+#message_preview_btn {
+    width: var(--bottomFormBlockSize);
+    height: var(--bottomFormBlockSize);
+    margin: 0;
+    border: none;
+    cursor: pointer;
+    opacity: 0.7;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: opacity 300ms;
+    color: var(--SmartThemeBodyColor);
+    font-size: var(--bottomFormIconSize);
+}
+
+#message_preview_btn:hover {
+    opacity: 1;
+    filter: brightness(1.2);
+}
+
+.message-preview-content-box {
+    --mp-scrollbar-thumb: #9ca3af;
+    --mp-scrollbar-track: #202020;
+    scrollbar-width: auto;
+    scrollbar-color: var(--mp-scrollbar-thumb) var(--mp-scrollbar-track);
+    scrollbar-gutter: stable;
+    font-family: 'Courier New', 'Monaco', 'Menlo', monospace;
+    white-space: pre-wrap;
+    max-height: 82vh;
+    overflow-y: auto;
+    padding: 15px;
+    background: #000000 !important;
+    border: 1px solid var(--SmartThemeBorderColor);
+    border-radius: 5px;
+    color: #ffffff !important;
+    font-size: 12px;
+    line-height: 1.4;
+    text-align: left;
+    padding-bottom: 80px;
+}
+
+.mes_history_preview {
+    opacity: 0.6;
+    transition: opacity 0.2s ease-in-out;
+}
+
+.mes_history_preview:hover {
+    opacity: 1;
+}
+
+/* ==================== Wallhaven自定义标签样式 ==================== */
+.custom-tags-container {
+    margin-top: 10px;
+}
+
+.custom-tags-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 8px;
+    min-height: 20px;
+    padding: 8px;
+    background: #2a2a2a;
+    border-radius: 4px;
+    border: 1px solid #444;
+}
+
+.custom-tag-item {
+    display: flex;
+    align-items: center;
+    background: #007acc;
+    color: white;
+    padding: 4px 8px;
+    border-radius: 12px;
+    font-size: 12px;
+    gap: 6px;
+}
+
+.custom-tag-text {
+    font-weight: 500;
+}
+
+.custom-tag-remove {
+    cursor: pointer;
+    color: rgba(255, 255, 255, 0.8);
+    font-weight: bold;
+    transition: color 0.2s ease;
+}
+
+.custom-tag-remove:hover {
+    color: #ff6b6b;
+}
+
+.custom-tags-empty {
+    color: #888;
+    font-style: italic;
+    font-size: 12px;
+    text-align: center;
+    padding: 8px;
+}
+
+.task_editor .menu_button{
+  white-space: nowrap;
+}
+
+.message-preview-content-box:hover {
+    --mp-scrollbar-thumb: #d1d5db;
+}
+
+.message-preview-content-box::-webkit-scrollbar {
+    width: 12px;
+    height: 12px;
+}
+
+.message-preview-content-box::-webkit-scrollbar-track {
+    background: var(--mp-scrollbar-track);
+    border-radius: 6px;
+}
+
+.message-preview-content-box::-webkit-scrollbar-thumb {
+    background: var(--mp-scrollbar-thumb);
+    border: 2px solid transparent;
+    background-clip: content-box;
+    border-radius: 6px;
+    min-height: 40px;
+    min-width: 40px;
+}
+
+.xiaobai_template_editor:hover::-webkit-scrollbar-thumb {
+    background: var(--SmartThemeAccent);
+}
+
+/* ==================== 滚动条样式 ==================== */
+.xiaobai_template_editor::-webkit-scrollbar {
+    width: 5px;
+}
+
+.xiaobai_template_editor::-webkit-scrollbar-track {
+    background: var(--SmartThemeBlurTintColor);
+    border-radius: 3px;
+}
+
+.xiaobai_template_editor::-webkit-scrollbar-thumb {
+    background: var(--SmartThemeBorderColor);
+    border-radius: 3px;
+
+}
+
+/* ==================== Story Outline PromptManager 编辑表单 ==================== */
+/* 当编辑 lwb_story_outline 条目时，隐藏名称输入框和内容编辑区 */
+
+.completion_prompt_manager_popup_entry_form:has([data-pm-prompt="lwb_story_outline"]) #completion_prompt_manager_popup_entry_form_name {
+    pointer-events: none;
+    user-select: none;
+}
+
+.1completion_prompt_manager_popup_entry_form:has([data-pm-prompt="lwb_story_outline"]) #completion_prompt_manager_popup_entry_form_prompt {
+    display: none !important;
+}
+
+/* 显示"内容来自外部"的提示 */
+.1completion_prompt_manager_popup_entry_form:has([data-pm-prompt="lwb_story_outline"]) .completion_prompt_manager_popup_entry_form_control:has(#completion_prompt_manager_popup_entry_form_prompt)::after {
+    content: "此提示词的内容来自「LittleWhiteBox」，请在小白板中修改哦！";
+    display: block;
+    padding: 12px;
+    margin-top: 8px;
+    border: 1px solid var(--SmartThemeBorderColor);
+    color: var(--SmartThemeEmColor);
+    text-align: center;
+}
+
+/* 隐藏 lwb_story_outline 条目的 Remove 按钮（保留占位） */
+.completion_prompt_manager_prompt[data-pm-identifier="lwb_story_outline"] .prompt-manager-detach-action {
+    visibility: hidden !important;
+}
+
+.completion_prompt_manager_prompt[data-pm-identifier="lwb_story_outline"] .fa-fw.fa-solid.fa-asterisk {
+    visibility: hidden !important;
+    position: relative;
+}
+
+.completion_prompt_manager_prompt[data-pm-identifier="lwb_story_outline"] .fa-fw.fa-solid.fa-asterisk::after {
+    content: "\f00d";
+    /* fa-xmark 的 unicode */
+    font-family: "Font Awesome 6 Free";
+    visibility: visible;
+    position: absolute;
+    left: 0;
+    font-size: 1.2em;
+}
+
+#completion_prompt_manager_footer_append_prompt option[value="lwb_story_outline"] {
+    display: none;
+}
